@@ -210,7 +210,7 @@ All design decisions documented in `docs/adr/`:
 
 ---
 
-## 📘 Portfolio / Recruiter Takeaways
+## 📘 Portfolio  Takeaways
 
 - End-to-end **AI-assisted developer tooling** — ingestion to answer
 - **Structured code + document reasoning** with separate optimised query paths
