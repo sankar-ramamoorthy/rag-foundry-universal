@@ -47,11 +47,20 @@ class RepoGraphBuilder:
                 #artifact.setdefault("doc_type", "python source")
                 if "doc_type" not in artifact:
                     artifact["doc_type"] = "python source"
+                # fix canonical_id double filename
+                # artifact["id"] is already "relative_path#symbol" — extract symbol only
+                artifact_id = artifact.get("id", "")
+                if artifact_id.startswith(relative_path + "#"):
+                    symbol_path = artifact_id[len(relative_path) + 1:]  # strip "relative_path#"
+                elif artifact_id == relative_path:
+                    symbol_path = None  # MODULE node — no symbol
+                else:
+                    symbol_path = artifact_id  # fallback — use as-is
 
                 global_id = build_global_id(
                     self.ingestion_id,
                     relative_path,
-                    artifact.get("id")
+                    symbol_path
                 )
 
                 artifact["global_id"] = global_id

@@ -14,7 +14,7 @@ COPY ingestion_service /app/ingestion_service
 COPY alembic.ini /app/alembic.ini
 COPY migrations /app/migrations
 
-# System dependencies for tree-sitter and other tools
+# System dependencies
 RUN apt-get update && \
     apt-get install -y \
         postgresql-client \
@@ -22,19 +22,32 @@ RUN apt-get update && \
         curl \
         build-essential \
         git \
-        python3-dev && \
+        python3-dev \
+        libgl1 \
+        libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies from pyproject.toml using uv
-RUN uv sync
+#  Install Python dependencies with CPU-only PyTorch
+# --extra-index-url ensures torch installs CPU variant (~2GB vs ~8GB for CUDA)
+RUN uv sync --extra-index-url https://download.pytorch.org/whl/cpu
+
+# Pre-download Docling models at build time
+# Avoids slow first-run download when a document is first ingested
+# Models cached at /root/.cache/docling/
+RUN uv run python -c "\
+from docling.document_converter import DocumentConverter; \
+print('Downloading Docling models...'); \
+DocumentConverter(); \
+print('Docling models ready.')"
 
 # Set PYTHONPATH for service and shared code
 ENV PYTHONPATH=/app:/app/shared
 
-# Expose ingestion service port
+# Docling model cache location (explicit for clarity)
+ENV DOCLING_CACHE_DIR=/root/.cache/docling
+
 EXPOSE 8000
 
-# Default command to run the ingestion service
 CMD ["uv", "run", "--directory", "/app/ingestion_service", \
      "uvicorn", "src.api.v1.main:app", \
      "--host", "0.0.0.0", "--port", "8000"]
