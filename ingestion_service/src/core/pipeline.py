@@ -12,7 +12,7 @@ from src.core.crud.crud_document_node import create_document_node
 from src.core.crud.document_relationships import create_document_relationship
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 

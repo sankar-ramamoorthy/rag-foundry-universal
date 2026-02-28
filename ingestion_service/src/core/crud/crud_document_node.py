@@ -9,7 +9,7 @@ from shared.models.document_node import DocumentNode
 
 # Set up logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 def create_document_node(

@@ -27,18 +27,22 @@ RUN apt-get update && \
         libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
-#  Install Python dependencies with CPU-only PyTorch
-# --extra-index-url ensures torch installs CPU variant (~2GB vs ~8GB for CUDA)
-RUN uv sync --extra-index-url https://download.pytorch.org/whl/cpu
+# IS2: Install Python dependencies with CPU-only PyTorch
+# --no-dev excludes ruff/pre-commit/pyright (dev tools, not needed in image)
+# --extra-index-url ensures torch installs CPU variant
+ENV UV_HTTP_TIMEOUT=120
+ENV PATH="/app/.venv/bin:$PATH"
+RUN uv sync --no-dev --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Pre-download Docling models at build time
 # Avoids slow first-run download when a document is first ingested
 # Models cached at /root/.cache/docling/
-RUN uv run python -c "\
-from docling.document_converter import DocumentConverter; \
-print('Downloading Docling models...'); \
-DocumentConverter(); \
-print('Docling models ready.')"
+# IS2: Pre-download Docling models at build time
+#RUN /app/.venv/bin/python -c "\
+#from docling.document_converter import DocumentConverter; \
+#print('Downloading Docling models...'); \
+#DocumentConverter(); \
+#print('Docling models ready.')"
 
 # Set PYTHONPATH for service and shared code
 ENV PYTHONPATH=/app:/app/shared

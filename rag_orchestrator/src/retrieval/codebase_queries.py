@@ -5,7 +5,7 @@ from src.core.config import get_settings
 import logging 
 
 # Set up logging configuration
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 settings = get_settings()

@@ -6,7 +6,7 @@ from typing import List
 from shared.embedders.base import BaseEmbedder
 from shared.chunks import Chunk
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 class OllamaEmbedder(BaseEmbedder):

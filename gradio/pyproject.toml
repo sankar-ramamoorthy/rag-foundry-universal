@@ -1,0 +1,10 @@
+[project]
+name = "rag-foundry-gradio"
+version = "0.1.0"
+description = "Gradio UI for rag-foundry-universal"
+requires-python = ">=3.12"
+dependencies = [
+    "gradio>=5.0.0",
+    "requests>=2.32.5",
+    "httpx>=0.28.1",
+]

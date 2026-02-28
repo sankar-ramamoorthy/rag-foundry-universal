@@ -9,7 +9,7 @@ from src.core.simple_service import run_simple_rag  # new - no graph
 router = APIRouter()
 
 # Set up logging configuration
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
