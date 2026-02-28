@@ -4,7 +4,7 @@ from shared.embedders.ollama import OllamaEmbedder
 from src.core.config import get_settings
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 def get_embedder(provider: str | None = None):

@@ -9,7 +9,7 @@ import logging
 from src.core.vectorstore.base import VectorStore
 from shared.models.vector import VectorRecord, VectorMetadata
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.WARNING)
 
 
 class PgVectorStore(VectorStore):
