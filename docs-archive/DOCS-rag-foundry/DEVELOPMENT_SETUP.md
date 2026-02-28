@@ -1,0 +1,5 @@
+- uv usage
+- Docker setup
+- migrations
+- tests
+- lint/type checks

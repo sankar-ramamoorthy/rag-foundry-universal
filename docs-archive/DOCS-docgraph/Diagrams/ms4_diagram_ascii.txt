@@ -1,0 +1,40 @@
++-------------------------------+
+|       RetrievalPlan            |
+|  - seed_document_ids           |
+|  - expanded_document_ids       |
+|  - expansion_metadata          |
+|      (relation_type, source)   |
+|  - constraints (depth, flags) |
++-------------------------------+
+               |
+               v
++-------------------------------+
+| Relationship Expansion Planner |
+|  - Expands seed documents     |
+|  - Applies constraints        |
++-------------------------------+
+               |
+               v
++-------------------------------+
+| RAG Orchestrator / Execution  |
+|  - Executes retrieval plan    |
+|  - Handles vector queries     |
++-------------------------------+
+               |
+               v
++-------------------------------+
+| Document Retrieval             |
+|  - DB / Vector Store access    |
++-------------------------------+
+               |
+               v
++-------------------------------+
+| Rank & Score Documents         |
+|  - Optional scoring / ranking |
++-------------------------------+
+               |
+               v
++-------------------------------+
+| LLM / Downstream Consumer      |
+|  - Uses retrieved documents    |
++-------------------------------+

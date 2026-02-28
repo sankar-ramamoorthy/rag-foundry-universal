@@ -1,0 +1,56 @@
+                   +--------------------+
+                   | INGESTION_REQUESTS |
+                   +--------------------+
+                   | ingestion_id (PK)  |
+                   | source_type        |
+                   | ingestion_metadata |
+                   | status             |
+                   | created_at         |
+                   | started_at         |
+                   | finished_at        |
+                   +--------------------+
+                             |
+                             | 1
+                             | produces
+                             v
+                   +--------------------+
+                   |   DOCUMENT_NODE    |
+                   +--------------------+
+                   | document_id (PK)   |
+                   | title              |
+                   | summary            |
+                   | summary_embedding  |
+                   | doc_type           |
+                   | source_metadata    |
+                   | ingestion_id (FK)  |
+                   +--------------------+
+                             |
+                             | 1
+                             | contains
+                             v
+                   +--------------------+
+                   |       VECTORS      |
+                   +--------------------+
+                   | id (PK)            |
+                   | vector             |
+                   | chunk_id           |
+                   | chunk_index        |
+                   | chunk_text         |
+                   | chunk_strategy     |
+                   | source_metadata    |
+                   | provider           |
+                   | document_id (FK)   |
+                   +--------------------+
+
+        +-----------------------------------+
+        |         DOCUMENT_RELATION         |
+        +-----------------------------------+
+        | id (PK)                           |
+        | from_document_id (FK)             |
+        | to_document_id (FK)               |
+        | relation_type                      |
+        +-----------------------------------+
+                 ^               ^
+                 |               |
+                 +---------------+
+                 | connects documents

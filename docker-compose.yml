@@ -1,0 +1,151 @@
+services:
+  ######################
+  # 🗃️ Database
+  ######################
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: ingestion-db
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ingestion_user
+      POSTGRES_PASSWORD: ingestion_pass
+      POSTGRES_DB: ingestion_db
+    volumes:
+      - ./volumes/ingestion-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ingestion_user -d ingestion_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ragnet
+
+  ######################
+  # 🚀 RAG Services
+  ######################
+  ingestion_service:
+    build:
+      context: .
+      dockerfile: ingestion_service/Dockerfile
+    container_name: ingestion-service
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./ingestion_service/src:/app/ingestion_service/src
+      - ./shared:/app/shared
+    #  - ./ingestion_service:/app/ingestion_service
+    #  - ./shared:/app/shared
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_db
+      VECTOR_STORE_API: http://vector_store_service:8002
+      PYTHONPATH: /app:/app/src
+    healthcheck:
+      test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8002/health').status_code==200 else exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ragnet
+
+  vector_store_service:
+    build:
+      context: .
+      dockerfile: vector_store_service/Dockerfile
+    container_name: vector-store-service
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./vector_store_service:/app/vector_store_service
+      - ./shared:/app/shared
+    env_file:
+      - ./.env
+    environment:
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_db
+    healthcheck:
+      test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8002/health').status_code==200 else exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ragnet
+
+  llm_service:
+    build:
+      context: .
+      dockerfile: llm_service/Dockerfile
+    container_name: llm-service
+    ports:
+      - "8003:8000"
+    volumes:
+      - ./llm_service:/app/src
+      - ./shared:/app/shared
+    env_file:
+      - ./.env
+    environment:
+      PYTHONPATH: /app:/app/src
+    healthcheck:
+      test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8003/health').status_code==200 else exit(1)"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - ragnet
+    depends_on:
+      vector_store_service:
+        condition: service_healthy
+
+  rag_orchestrator:
+    build:
+      context: .
+      dockerfile: rag_orchestrator/Dockerfile
+    container_name: rag-orchestrator
+    ports:
+      - "8004:8000"
+    volumes:
+      - ./rag_orchestrator:/app/src
+      - ./shared:/app/shared
+    env_file:
+      - ./.env
+    environment:
+      PYTHONPATH: /app:/app/src
+    networks:
+      - ragnet
+    depends_on:
+      ingestion_service:
+        condition: service_healthy
+      vector_store_service:
+        condition: service_healthy
+      llm_service:
+        condition: service_healthy
+
+  ######################
+  # 🎨 Optional UI
+  ######################
+  gradio:
+    build:
+      context: .
+      dockerfile: gradio/Dockerfile
+    container_name: gradio-ui
+    ports:
+      - "7860:7860"
+    environment:
+      API_BASE_URL: http://ingestion_service:8000
+      RAG_API_BASE_URL: http://rag_orchestrator:8000
+    depends_on:
+      - ingestion_service
+      - rag_orchestrator
+    networks:
+      - ragnet
+networks:
+  ragnet:
+    driver: bridge

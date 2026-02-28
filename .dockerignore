@@ -1,0 +1,46 @@
+# Python cache and virtual environment
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyd
+.venv/
+venv/
+.env
+**/.venv/
+**/__pycache__/
+**/.git/
+**/.pytest_cache/
+
+# Docker files (if rebuilding)
+Dockerfile*
+docker-compose.override.yml
+
+# Git
+.git
+.gitignore
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Bytecode, caches, and temp
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Testing / coverage
+.coverage
+htmlcov/
+*.cover
+*.pytest_cache/
+
+# Node modules (if any accidentally present)
+node_modules/
+
+# Misc
+*.bak
+*.old
+.DS_Store

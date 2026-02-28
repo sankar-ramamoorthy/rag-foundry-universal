@@ -1,0 +1,40 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: ingestion-db-test
+    environment:
+      POSTGRES_USER: ingestion_user
+      POSTGRES_PASSWORD: ingestion_pass
+      POSTGRES_DB: ingestion_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ingestion_user -d ingestion_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  vector_store_service:
+    build:
+      context: .
+      dockerfile: vector_store_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_test
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ingestion_service:
+    build:
+      context: .
+      dockerfile: ingestion_service/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_test
+      LLM_PROVIDER: ollama
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+      PYTHONPATH: /app:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vector_store_service:
+        condition: service_started

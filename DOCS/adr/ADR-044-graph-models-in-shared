@@ -1,0 +1,265 @@
+---
+
+# 📘 ADR-044 — Promote Graph ORM Models to Shared Platform Layer
+#  DOCS\architecture\platform-graph-architecture-expanded.md
+#  DOCS\adr\ADR-044-graph-models-in-shared
+---
+
+# ADR-044: Promote Document Graph ORM Models to Shared Platform Layer
+
+**Status:** Proposed
+**Date:** 2026-02-17
+**Deciders:** Platform Architecture
+**Supersedes:** None
+
+---
+
+## Context
+
+The system currently consists of multiple services:
+
+* `ingestion_service`
+* `rag_orchestrator`
+* Shared libraries under `shared/`
+
+The `DocumentNode` and `DocumentRelationship` ORM models currently live inside:
+
+```
+ingestion_service/src/core/models_v2/
+```
+
+However:
+
+* `rag_orchestrator` requires direct read access to the same graph schema.
+* Both services share the same PostgreSQL database.
+* The document graph is no longer ingestion-only.
+* The graph now represents a **platform-wide canonical artifact model**.
+
+This creates an architectural violation:
+
+> `rag_orchestrator` must not import ORM models from `ingestion_service`.
+
+Doing so creates:
+
+* Tight coupling
+* Circular ownership
+* Hidden schema dependency
+* Poor service boundary enforcement
+
+---
+
+## Problem
+
+Who owns the graph schema?
+
+Currently:
+
+* `ingestion_service` owns the ORM models.
+* `rag_orchestrator` depends on them.
+* The schema logically represents the platform graph, not ingestion logic.
+
+This creates a **misplaced ownership boundary**.
+
+---
+
+## Decision
+
+We will promote the following ORM models to the shared platform layer:
+
+* `DocumentNode`
+* `DocumentRelationship`
+* `VectorChunk` (if used cross-service)
+* SQLAlchemy `Base` (if shared)
+
+They will be moved to:
+
+```
+shared/models/
+```
+
+New structure:
+
+```
+shared/
+ ├── models/
+ │    base.py
+ │    document_node.py
+ │    document_relationship.py
+ │    vector_chunk.py
+ │    __init__.py
+```
+
+Both `ingestion_service` and `rag_orchestrator` will import from:
+
+```python
+from shared.models import DocumentNode, DocumentRelationship
+```
+
+The database schema remains unchanged.
+
+---
+
+## Rationale
+
+### 1️⃣ The graph is a platform concern, not an ingestion concern
+
+The document graph now serves:
+
+* Ingestion
+* Graph traversal
+* Retrieval planning
+* Relationship expansion
+* Future reasoning workflows
+
+Therefore it is:
+
+> A core platform abstraction
+
+---
+
+### 2️⃣ Enforces correct service boundaries
+
+After the change:
+
+```
+shared      → schema + contracts
+ingestion   → writes graph
+orchestrator→ reads graph
+```
+
+No service imports another service.
+
+---
+
+### 3️⃣ Reduces Schema Drift Risk
+
+Duplicating ORM models across services was rejected because:
+
+* Migration drift risk
+* Column mismatch risk
+* Silent production failures
+
+A shared model guarantees a single source of truth.
+
+---
+
+### 4️⃣ Prepares for Future Platform Expansion
+
+Future likely features:
+
+* Graph traversal API
+* Graph-based retrieval
+* Symbolic reasoning
+* Relationship-aware chunk ranking
+* Multi-repo graph federation
+
+All require platform-level schema ownership.
+
+---
+
+## Alternatives Considered
+
+### ❌ Option A: Keep models inside ingestion_service
+
+Rejected because:
+
+* Violates service boundary
+* Makes ingestion the de facto platform owner
+* Architecturally brittle
+
+---
+
+### ❌ Option B: Duplicate models in orchestrator
+
+Rejected because:
+
+* Schema drift risk
+* Migration inconsistency
+* Operational fragility
+
+---
+
+### ❌ Option C: Orchestrator fetches graph via ingestion API
+
+Rejected because:
+
+* Adds latency
+* Over-engineers internal DB access
+* Reduces query flexibility
+* Not aligned with current shared database model
+
+---
+
+## Consequences
+
+### Positive
+
+* Clear schema ownership
+* Clean dependency graph
+* Stronger service isolation
+* Platform abstraction layer established
+* Future-proof for graph reasoning features
+
+### Neutral
+
+* Minor refactor required
+* Import paths updated
+
+### Negative
+
+* Slight increase in shared-layer responsibility
+* Requires discipline to prevent shared-layer bloat
+
+---
+
+## Implementation Plan
+
+1. Move ORM files from:
+
+```
+ingestion_service/src/core/models_v2/
+```
+
+to:
+
+```
+shared/models/
+```
+
+2. Move SQLAlchemy `Base` if currently defined in ingestion_service.
+
+3. Update imports in:
+
+   * ingestion_service
+   * rag_orchestrator
+
+4. Verify:
+
+   * `__tablename__` unchanged
+   * `__table_args__` unchanged
+   * Schema name unchanged
+
+5. Run integration tests.
+
+6. Deploy without migration changes (no schema change expected).
+
+---
+
+## Future Direction
+
+The `shared/` layer is evolving into:
+
+> RAG Platform Core
+
+Long-term it may be renamed to:
+
+```
+rag_core/
+```
+
+This ADR formally establishes:
+
+> Graph schema is a platform contract.
+
+---
+

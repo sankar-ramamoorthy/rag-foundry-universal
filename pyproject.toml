@@ -1,0 +1,38 @@
+[project]
+name = "agentic-rag-ingestion"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.17.2",
+    "fastapi>=0.125.0",
+    "pgvector>=0.4.2",
+    "psycopg2-binary>=2.9.11",
+    "psycopg[binary]>=3.3.2",
+    "pydantic>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "pytest>=9.0.2",
+    "python-multipart>=0.0.21",
+    "sqlalchemy>=1.4,<2.0",
+    "sqlalchemy-utils>=0.42.1",
+    "uvicorn>=0.38.0",
+    "requests>=2.32.5",
+    "pillow>=12.0.0",
+    "pytesseract>=0.3.13",
+    "pymupdf>=1.22.5",
+    "gradio>=6.2.0",
+]
+
+[project.optional-dependencies]
+ui = [
+    "gradio>=6.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pre-commit>=4.5.1",
+    "pyright>=1.1.407",
+    "ruff>=0.14.10",
+]
