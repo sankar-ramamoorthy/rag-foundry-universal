@@ -1,4 +1,4 @@
-# rag-foundry-coderag
+# rag-foundry-universal
 
 **AI-Powered Code & Document Intelligence**
 *Query code repositories and documents like a developer assistant. Extracts functions, classes, and dependencies, performs graph-aware semantic search, and answers questions using LLMs.*
@@ -7,7 +7,7 @@
 
 ## 🚀 Overview
 
-`rag-foundry-coderag` provides **semantic retrieval and graph-aware querying** across both **codebases** and **documents**.
+`rag-foundry-universal` provides **semantic retrieval and graph-aware querying** across both **codebases** and **documents**.
 
 It enables you to:
 
@@ -133,8 +133,8 @@ README.md#overview.installation    ← Markdown H2 section
 **1. Clone the repository**
 
 ```bash
-git clone https://github.com/sankar-ramamoorthy/rag-foundry-coderag.git
-cd rag-foundry-coderag
+git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
+cd rag-foundry-universal
 ```
 
 **2. Start services**
@@ -210,7 +210,7 @@ All design decisions documented in `docs/adr/`:
 
 ---
 
-## 📘 Portfolio / Recruiter Takeaways
+## 📘 Portfolio Takeaways
 
 - End-to-end **AI-assisted developer tooling** — ingestion to answer
 - **Structured code + document reasoning** with separate optimised query paths
@@ -228,4 +228,4 @@ MIT License
 
 ---
 
-*This project is the second in a series: `rag-foundry-docgraph` → `rag-foundry-coderag` → `rag-foundry-universal`*
+*This project is the second in a series: `rag-foundry-docgraph` → `rag-foundry-universal` → `rag-foundry-universal`*
