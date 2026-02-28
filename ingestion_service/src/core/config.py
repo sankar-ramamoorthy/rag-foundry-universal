@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
     OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
     OLLAMA_BATCH_SIZE: int = 50  # default batch size for Ollama embedding
-
+    DOCLING_ENABLED: bool = True   # When False → PyMuPDF fallback for PDF
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

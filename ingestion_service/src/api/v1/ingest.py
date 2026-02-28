@@ -92,6 +92,32 @@ def extract_text_from_bytes(
     logger.warning(f"⚠️ Using fallback decoder for {filename}")
     return file_bytes.decode("latin-1", errors="ignore")
 
+def _ingest_pdf_pymupdf(
+    *,
+    pipeline: IngestionPipeline,
+    file_bytes: bytes,
+    filename: str,
+    ingestion_id: UUID,
+    doc_type: str,
+) -> None:
+    """
+    PyMuPDF fallback for PDF ingestion.
+    Used when DOCLING_ENABLED=False or Docling conversion fails.
+    """
+    pdf_extractor = PDFExtractor()
+    artifacts = pdf_extractor.extract(
+        file_bytes=file_bytes, source_name=filename
+    )
+    graph = DocumentGraphBuilder().build(artifacts)
+    chunks = PDFChunkAssembler().assemble(graph)
+    if not chunks:
+        raise RuntimeError("No extractable text found in uploaded PDF")
+    pipeline.run_with_chunks(
+        chunks=chunks,
+        ingestion_id=str(ingestion_id),
+        filename=filename,
+        doc_type=doc_type,
+    )
 
 # -----------------------------
 # Background ingestion
@@ -135,26 +161,54 @@ def background_ingest_file(
 
     try:
         # ------------------------------------------------------------------
-        # PDF — PyMuPDF path (Docling PDF replacement comes in IS6)
+        # PDF — Docling primary, PyMuPDF fallback  
         # ------------------------------------------------------------------
         if is_pdf:
-            pdf_extractor = PDFExtractor()
-            artifacts = pdf_extractor.extract(
-                file_bytes=file_bytes, source_name=filename
-            )
-            graph = DocumentGraphBuilder().build(artifacts)
-            chunks = PDFChunkAssembler().assemble(graph)
-            if not chunks:
-                raise RuntimeError("No extractable text found in uploaded PDF")
-            pipeline.run_with_chunks(
-                chunks=chunks,
-                ingestion_id=str(ingestion_id),
-                filename=filename,
-                doc_type=doc_type,
-            )
+            if settings.DOCLING_ENABLED:
+                logger.info(f"📄 IS6: Docling PDF conversion: {filename}")
+                try:
+                    converter = DoclingConverter()
+                    markdown_text = converter.convert(
+                        file_bytes=file_bytes, filename=filename
+                    )
+                    if not markdown_text.strip():
+                        raise RuntimeError(
+                            f"Docling produced empty output for {filename}"
+                        )
+                    logger.info(
+                        f"IS6: {filename} → {len(markdown_text)} chars Markdown "
+                        f"→ MarkdownSectionExtractor"
+                    )
+                    pipeline.run_with_sections(
+                        source=markdown_text,
+                        ingestion_id=str(ingestion_id),
+                        filename=filename,
+                        doc_type=doc_type,
+                    )
+                except Exception as docling_exc:
+                    logger.warning(
+                        f"⚠️ IS6: Docling failed for {filename} "
+                        f"({docling_exc}) — falling back to PyMuPDF"
+                    )
+                    _ingest_pdf_pymupdf(
+                        pipeline=pipeline,
+                        file_bytes=file_bytes,
+                        filename=filename,
+                        ingestion_id=ingestion_id,
+                        doc_type=doc_type,
+                    )
+            else:
+                logger.info(f"📄 IS6: PyMuPDF path (Docling disabled): {filename}")
+                _ingest_pdf_pymupdf(
+                    pipeline=pipeline,
+                    file_bytes=file_bytes,
+                    filename=filename,
+                    ingestion_id=ingestion_id,
+                    doc_type=doc_type,
+                )
 
         # ------------------------------------------------------------------
-        # Markdown — structured section extraction (MS6-IS3)
+        # Markdown — structured section extraction  
         # ------------------------------------------------------------------
         elif is_markdown:
             text = extract_text_from_bytes(
