@@ -78,7 +78,8 @@ def build_symbol_table(graph: RepoGraph) -> SymbolTable:
 
         if artifact_type in {"CLASS", "FUNCTION", "METHOD"}:
             name = entity.get("name")
-            canonical_id = entity.get("id")
+            #canonical_id = entity.get("id")
+            canonical_id = entity.get("canonical_id")   
 
             if isinstance(name, str) and isinstance(canonical_id, str):
                 table.add(name, canonical_id)
