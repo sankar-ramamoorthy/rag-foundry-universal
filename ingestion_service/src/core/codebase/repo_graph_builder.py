@@ -14,6 +14,9 @@ from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+# IS8: code artifact types eligible for DOCUMENTS relationships
+DOCUMENTABLE_TYPES = {"CLASS", "FUNCTION", "METHOD", "MODULE"}
+
 
 class RepoGraphBuilder:
 
@@ -44,23 +47,22 @@ class RepoGraphBuilder:
                 artifact["relative_path"] = relative_path
                 artifact["ingestion_id"] = self.ingestion_id
                 artifact.setdefault("title", artifact.get("name", "Untitled"))
-                #artifact.setdefault("doc_type", "python source")
                 if "doc_type" not in artifact:
                     artifact["doc_type"] = "python source"
-                # fix canonical_id double filename
-                # artifact["id"] is already "relative_path#symbol" — extract symbol only
+
+                # IS1: fix canonical_id double filename
                 artifact_id = artifact.get("id", "")
                 if artifact_id.startswith(relative_path + "#"):
-                    symbol_path = artifact_id[len(relative_path) + 1:]  # strip "relative_path#"
+                    symbol_path = artifact_id[len(relative_path) + 1:]
                 elif artifact_id == relative_path:
                     symbol_path = None  # MODULE node — no symbol
                 else:
-                    symbol_path = artifact_id  # fallback — use as-is
+                    symbol_path = artifact_id  # fallback
 
                 global_id = build_global_id(
                     self.ingestion_id,
                     relative_path,
-                    symbol_path
+                    symbol_path,
                 )
 
                 artifact["global_id"] = global_id
@@ -73,6 +75,7 @@ class RepoGraphBuilder:
         symbol_table = build_symbol_table(graph)
         self._attach_defines(graph)
         self._resolve_calls(graph, symbol_table)
+        self._link_docs_to_code(graph, symbol_table)   # IS8 — last step
 
         return graph
 
@@ -81,8 +84,10 @@ class RepoGraphBuilder:
     # -----------------------------
 
     def _attach_defines(self, graph: RepoGraph):
-        definition_types = {"CLASS", "FUNCTION", "METHOD",
-                            "MARKDOWN_SECTION",}
+        definition_types = {
+            "CLASS", "FUNCTION", "METHOD",
+            "MARKDOWN_SECTION",
+        }
 
         for entity in graph.all_entities():
             if entity.get("artifact_type") not in definition_types:
@@ -123,7 +128,6 @@ class RepoGraphBuilder:
                 continue
 
             name = call.get("name") or ""
-
             resolution, confidence = self._resolve_in_scope(call, graph)
 
             if not resolution:
@@ -131,7 +135,7 @@ class RepoGraphBuilder:
                 confidence = 0.5 if resolution else 0.0
 
             if not resolution:
-                continue  # Skip EXTERNAL for now
+                continue
 
             target = graph.get_entity(
                 self._canonical_from_id(graph, resolution)
@@ -147,6 +151,83 @@ class RepoGraphBuilder:
             })
 
     # -----------------------------
+    # IS8: DOCUMENTS Relationships
+    # Markdown sections → code symbols (exact name match)
+    # -----------------------------
+
+    def _link_docs_to_code(self, graph: RepoGraph, symbol_table) -> None:
+        """
+        IS8: Create DOCUMENTS relationships from MARKDOWN_SECTION nodes
+        to the code symbols they document.
+
+        Strategy: exact name match via symbol table.
+        Deterministic, no LLM, rebuild-safe (ADR-048).
+
+        Only runs within repo ingestion — uploaded files are out of scope.
+        """
+        linked = 0
+        skipped = 0
+
+        for entity in graph.all_entities():
+            if entity.get("artifact_type") != "MARKDOWN_SECTION":
+                continue
+
+            # Raw heading text e.g. "add", "Calculator", "run_demo"
+            section_name = entity.get("name", "").strip()
+            if not section_name:
+                continue
+
+            # Normalise: lowercase, strip whitespace
+            normalised = section_name.lower().strip()
+
+            # Try original casing first, then normalised lowercase
+            target_canonical = symbol_table.lookup(section_name) or \
+                            symbol_table.lookup(normalised)
+
+            if not target_canonical:
+                skipped += 1
+                continue
+
+            # Verify target is a documentable code artifact
+            target = graph.get_entity(target_canonical)
+            if not target:
+                skipped += 1
+                continue
+
+            if target.get("artifact_type") not in DOCUMENTABLE_TYPES:
+                skipped += 1
+                continue
+
+            # Don't link a section to itself (shouldn't happen but guard)
+            if entity["canonical_id"] == target["canonical_id"]:
+                skipped += 1
+                continue
+
+            graph.add_relationship({
+                "from_canonical_id": entity["canonical_id"],
+                "to_canonical_id": target["canonical_id"],
+                "relation_type": "DOCUMENTS",
+                "relationship_metadata": {
+                    "match_strategy": "exact_name",
+                    "section_name": section_name,
+                    "confidence": 1.0,
+                },
+            })
+
+            logger.debug(
+                "IS8: DOCUMENTS link: %s → %s",
+                entity["canonical_id"],
+                target["canonical_id"],
+            )
+            linked += 1
+
+        logger.info(
+            "IS8: _link_docs_to_code complete — %d DOCUMENTS links created, "
+            "%d sections skipped (no match)",
+            linked, skipped,
+        )
+
+    # -----------------------------
     # Helpers
     # -----------------------------
 
@@ -155,7 +236,9 @@ class RepoGraphBuilder:
             if entity.get("artifact_type") == "CALL":
                 yield entity
 
-    def _resolve_in_scope(self, call: dict, graph: RepoGraph) -> Tuple[Optional[str], float]:
+    def _resolve_in_scope(
+        self, call: dict, graph: RepoGraph
+    ) -> Tuple[Optional[str], float]:
         current_parent = call.get("parent_id")
 
         while current_parent:
@@ -170,14 +253,16 @@ class RepoGraphBuilder:
 
         return None, 0.0
 
-    def _canonical_from_id(self, graph: RepoGraph, entity_id: str) -> Optional[str]:
+    def _canonical_from_id(
+        self, graph: RepoGraph, entity_id: str
+    ) -> Optional[str]:
         for entity in graph.all_entities():
             if entity.get("id") == entity_id:
                 return entity.get("canonical_id")
         return None
 
     def _walk_repo(self):
-        SUPPORTED = {".py", ".md"}   # MS6-IS2: added .md
+        SUPPORTED = {".py", ".md"}
         for path in self.repo_root.rglob("*"):
             if path.suffix not in SUPPORTED:
                 continue
@@ -188,17 +273,16 @@ class RepoGraphBuilder:
     def _select_extractor(self, file_path: Path):
         rel = file_path.relative_to(self.repo_root).as_posix()
         if file_path.suffix == ".py":
-            #rel = file_path.relative_to(self.repo_root).as_posix()
             return PythonASTExtractor(relative_path=rel)
         if file_path.suffix == ".md":
-            return MarkdownSectionExtractor(relative_path=rel)     
+            return MarkdownSectionExtractor(relative_path=rel)
         return None
 
     def _extract_artifact_text(self, source: str, artifact: dict) -> str:
-            #  Markdown extractors pre-populate text — don't re-extract
+        # Markdown extractors pre-populate text — don't re-extract
         if artifact.get("text"):
             return artifact["text"]
-    
+
         artifact_type = artifact.get("artifact_type")
 
         if artifact_type == "MODULE":
