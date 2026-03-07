@@ -9,7 +9,7 @@ import logging
 from src.core.vectorstore.base import VectorStore
 from shared.models.vector import VectorRecord, VectorMetadata
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class PgVectorStore(VectorStore):
@@ -74,6 +74,9 @@ class PgVectorStore(VectorStore):
     ) -> List[VectorRecord]:
         """
         Search vector_chunks with optional metadata filtering.
+        Uses cosine distance (<=>)  — correct for mxbai-embed-large and
+        nomic-embed-text which both produce cosine-optimised embeddings.
+        Score is returned as 1 - cosine_distance, range 0–1 (higher = more similar).
 
         metadata_filter supports:
             {"source_type": "code"}              → equality
@@ -127,11 +130,13 @@ class PgVectorStore(VectorStore):
 
             where_clause = sql.SQL(" AND ").join(conditions)
             search_sql = sql.SQL("""
-                SELECT vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
-                       chunk_text, source_metadata, provider, document_id
-                FROM {schema}.vector_chunks
+                WITH query AS (SELECT {qvec}::vector AS qvec)
+                SELECT vc.vector, vc.ingestion_id, vc.chunk_id, vc.chunk_index, vc.chunk_strategy,
+                       vc.chunk_text, vc.source_metadata, vc.provider, vc.document_id,
+                       1 - (vc.vector <=> query.qvec) AS score
+                FROM {schema}.vector_chunks vc, query
                 WHERE {where}
-                ORDER BY vector <-> ({qvec}::vector)
+                ORDER BY vc.vector <=> query.qvec
                 LIMIT {limit}
             """).format(
                 schema=sql.Identifier(self.SCHEMA),
@@ -139,14 +144,16 @@ class PgVectorStore(VectorStore):
                 qvec=sql.Placeholder(),
                 limit=sql.Placeholder(),
             )
-            params = filter_values + [query_vector, k]
+            params = [query_vector] + filter_values + [k]
 
         else:
             search_sql = sql.SQL("""
-                SELECT vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
-                       chunk_text, source_metadata, provider, document_id
-                FROM {schema}.vector_chunks
-                ORDER BY vector <-> ({qvec}::vector)
+                WITH query AS (SELECT {qvec}::vector AS qvec)
+                SELECT vc.vector, vc.ingestion_id, vc.chunk_id, vc.chunk_index, vc.chunk_strategy,
+                       vc.chunk_text, vc.source_metadata, vc.provider, vc.document_id,
+                       1 - (vc.vector <=> query.qvec) AS score
+                FROM {schema}.vector_chunks vc, query
+                ORDER BY vc.vector <=> query.qvec
                 LIMIT {limit}
             """).format(
                 schema=sql.Identifier(self.SCHEMA),
@@ -161,7 +168,7 @@ class PgVectorStore(VectorStore):
                 cur.execute(search_sql, params)
                 for row in cur.fetchall():
                     (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
-                     chunk_text, source_metadata, provider, document_id) = row
+                     chunk_text, source_metadata, provider, document_id, score) = row
                     metadata = VectorMetadata(
                         ingestion_id=ingestion_id,
                         chunk_id=chunk_id,
@@ -171,6 +178,7 @@ class PgVectorStore(VectorStore):
                         source_metadata=source_metadata,
                         provider=provider,
                         document_id=document_id,
+                        score=score,
                     )
                     results.append(VectorRecord(vector=vector, metadata=metadata))
         return results

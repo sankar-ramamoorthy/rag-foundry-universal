@@ -11,8 +11,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     EMBEDDING_PROVIDER: str = "mock"
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
-    OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
+    #OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
+    OLLAMA_EMBED_MODEL: str = "mxbai-embed-large:latest"
     OLLAMA_BATCH_SIZE: int = 50
+    VECTOR_DIMENSION: int = 1024  # mxbai-embed-large; set in .env to override
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -32,7 +34,7 @@ def get_vector_store() -> PgVectorStore:
     settings = get_settings()
 
     dsn = settings.DATABASE_URL
-    dimension = int(os.getenv("VECTOR_DIMENSION", "768"))
+    dimension = settings.VECTOR_DIMENSION
     provider = settings.EMBEDDING_PROVIDER
 
     return PgVectorStore(

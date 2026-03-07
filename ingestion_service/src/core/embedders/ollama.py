@@ -6,12 +6,12 @@ from typing import List
 from shared.embedders.base import BaseEmbedder
 from shared.chunks import Chunk
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
 
 
 class OllamaEmbedder(BaseEmbedder):
     name = "ollama"
-    dimension = 768
+    dimension = 1024
 
     def __init__(self, base_url: str, model: str, batch_size: int = 50):
         self.base_url = base_url.rstrip("/")

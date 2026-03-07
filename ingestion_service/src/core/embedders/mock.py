@@ -12,7 +12,7 @@ class MockEmbedder(BaseEmbedder):
     """
 
     name = "mock"
-    dimension = 768
+    dimension = 1024
 
     def embed(self, chunks: List[Chunk]) -> List[List[float]]:
         embeddings: List[List[float]] = []
