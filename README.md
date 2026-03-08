@@ -35,6 +35,7 @@ It enables you to:
 ---
 
 ## 🏗️ Architecture
+```
 
 
 ┌─────────────────────────────┐
@@ -122,6 +123,7 @@ It enables you to:
 | Text files               | Chunking + embedding        | ✅          | — flat                  | Document RAG    |
 | Images                   | OCR via Tesseract → chunks  | ✅          | — flat                  | Document RAG    |
 
+```
 ---
 
 ## 💡 Getting Started
@@ -134,7 +136,7 @@ It enables you to:
 
 **Steps**
 
-```bash
+```
 git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
 cd rag-foundry-universal
 
