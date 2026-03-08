@@ -39,7 +39,8 @@ os.environ.setdefault(
 )
 os.environ.setdefault("EMBEDDING_PROVIDER", "ollama")
 os.environ.setdefault("OLLAMA_BASE_URL", "http://host.docker.internal:11434")
-os.environ.setdefault("OLLAMA_EMBED_MODEL", "nomic-embed-text:15")
+os.environ.setdefault("OLLAMA_EMBED_MODEL", "mxbai-embed-large:latest")
+
 
 # ---------------------------------------------------------------------
 # Database fixtures

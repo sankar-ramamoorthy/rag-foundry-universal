@@ -1,4 +1,5 @@
 # shared/embedders/factory.py
+
 from shared.embedders.mock import MockEmbedder
 from shared.embedders.ollama import OllamaEmbedder
 
@@ -9,6 +10,7 @@ def get_embedder(
     ollama_base_url: str | None = None,
     ollama_model: str | None = None,
     ollama_batch_size: int = 50,
+    ollama_dimension: int | None = None,   # merged support
 ):
     if provider == "ollama":
         if not ollama_base_url or not ollama_model:
@@ -18,6 +20,7 @@ def get_embedder(
             base_url=ollama_base_url,
             model=ollama_model,
             batch_size=ollama_batch_size,
+            dimension=ollama_dimension,  # safe if None
         )
 
     if provider == "mock":

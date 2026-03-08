@@ -32,11 +32,12 @@ def _truncate(text: str, max_words: int = MAX_EMBEDDING_WORDS) -> str:
 class OllamaEmbedder(BaseEmbedder):
     name = "ollama"
 
-    def __init__(self, base_url: str, model: str, batch_size: int = 50, dimension: int = 1024):
+    def __init__(self, base_url: str, model: str, batch_size: int = 50,
+                  dimension: int | None = None,):
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.batch_size = batch_size
-        self.dimension = dimension
+        self.dimension = dimension or 1024
 
         logging.debug(
             "OllamaEmbedder base_url=%s model=%s dimension=%d",
