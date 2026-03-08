@@ -1,34 +1,40 @@
+
+## **1. `README.md`**
+
+```
 # rag-foundry-universal
 
-**AI-Powered Code & Document Intelligence**
-*Query code repositories and documents like a developer assistant. Extracts functions, classes, and dependencies, performs graph-aware semantic search, and answers questions using LLMs.*
+**AI-Powered Code & Document Intelligence**  
+*Semantic RAG over Python code and documents for entire repositories*
 
 ---
 
 ## 🚀 Overview
 
-`rag-foundry-universal` provides **semantic retrieval and graph-aware querying** across both **codebases** and **documents**.
+`rag-foundry-universal` provides **graph-aware retrieval-augmented generation (RAG)** across both **codebases** and **documents**, enabling precise developer-style queries across entire repositories — something standard RAG systems cannot handle.
 
 It enables you to:
 
-- Navigate code repositories and dependencies using AST-extracted graph structure
-- Search documents and Markdown files semantically with section-level precision
-- Ask natural-language questions about code structure (*"what calls add()"*, *"methods in Calculator"*)
-- Query uploaded documents with relationship-aware retrieval planning
+- Navigate Python code repositories using AST-extracted graph structures
+- Search Markdown and documents with section-level semantic precision
+- Ask natural-language questions about code relationships (*"what calls add()"*, *"methods in Calculator"*)
+- Perform structured document retrieval for uploaded files (PDF, DOCX, PPTX, HTML, CSV, XLSX)
 - Combine deterministic graph traversal with LLM-powered reasoning
 
 ---
 
 ## 🧩 Key Features
 
-- **Dual Ingestion Paths**: Git repositories (graph-aware) and regular file uploads (PDF, text, Markdown)
-- **Deterministic Artifact Graph**: AST-based extraction for precise code structure (modules, classes, functions, calls, imports)
+- **Dual Ingestion Paths**: Git repositories (graph-aware) and regular file uploads (PDF, DOCX, Markdown, etc.)
+- **Universal Document Preprocessing with Docling**: Handles PDFs, Office files, and HTML → Markdown; preserves tables, reading order, and sections
+- **OCR Support with Tesseract**: Extract text from scanned PDFs or images
+- **1024-Dimensional Embeddings**: Using Ollama embedder (`mxbai-embed-large`) for high-quality vector search
+- **Deterministic Artifact Graph**: AST-based extraction for Python code (modules, classes, functions, calls, imports)
 - **Markdown Section Extraction**: Heading hierarchy extracted as graph nodes with DEFINES relationships (ADR-043)
-- **Canonical Artifact Identity**: `(repo_id, canonical_id)` for reproducible, collision-free graph queries (ADR-031)
-- **Graph-Aware Code Queries**: BFS multi-hop traversal for function calls, dependencies, and code relationships
-- **Document Graph Retrieval**: Uploaded Markdown files get structured section nodes with relationship-aware retrieval (ADR-046)
-- **Dual RAG Query Paths**: Separate endpoints for code repo queries and document queries
-- **ADR-045 Compliant**: Clean service boundaries — all DB access owned exclusively by `ingestion_service`
+- **Relationship-Aware Document Retrieval**: Sections and artifacts linked deterministically for precise semantic RAG (ADR-046)
+- **Cross-Artifact Linking**: Repo Markdown sections linked to code symbols (ADR-048)
+- **Dual RAG Query Paths**: Separate endpoints for code repo queries and uploaded document queries
+- **Pluggable Embeddings & LLMs**: Tested with Ollama on host, works on CPU-only Windows laptops, can be adapted to external cloud LLMs
 
 ---
 
@@ -42,11 +48,14 @@ Traditional RAG systems handle unstructured text but miss structure that matters
 - **BFS graph traversal** for relational queries (callers, callees, definitions, imports)
 - **Relationship-aware retrieval planning** fulfilling the ADR-005 docgraph vision
 
+This allows semantic queries that span the entire repository and linked documents — a scenario where simpler RAG systems fail.
+
 ---
 
 ## 🏗️ Architecture
 
 ```
+
 ┌─────────────────────────────────────────────────────┐
 │  Gradio UI  :7860                                    │
 │  ├── Repo ingestion (Git URL or local path)          │
@@ -54,27 +63,28 @@ Traditional RAG systems handle unstructured text but miss structure that matters
 │  ├── Graph-aware RAG query (repo selector)           │
 │  └── Document RAG query (simple path)                │
 └─────────────────┬───────────────────────────────────┘
-                  │
-       ┌──────────▼──────────┐
-       │  rag_orchestrator   │  :8004
-       │  ├── /v1/rag        │  ← graph-aware (code repo queries)
-       │  └── /v1/rag/simple │  ← document graph retrieval
-       └──────┬──────┬───────┘
-              │      │
-   ┌──────────▼─┐  ┌─▼────────────┐
-   │ ingestion  │  │ vector_store │  :8002
-   │ _service   │  │ _service     │
-   │ :8001      │  └──────────────┘
-   │            │
-   │ /v1/repos  │  ← repo discovery
-   │ /v1/graph  │  ← graph API (nodes, relationships, doc relationships)
-   └──────┬─────┘
-          │
-   ┌──────▼──────┐    ┌─────────────┐
-   │ ingestion   │    │ llm_service │  :8003
-   │ _db (pg)    │    │ /generate   │
-   └─────────────┘    └─────────────┘
-```
+│
+┌──────────▼──────────┐
+│  rag_orchestrator   │  :8004
+│  ├── /v1/rag        │  ← graph-aware (code repo queries)
+│  └── /v1/rag/simple │  ← document graph retrieval
+└──────┬──────┬───────┘
+│      │
+┌──────────▼─┐  ┌─▼────────────┐
+│ ingestion  │  │ vector_store │  :8002
+│ _service   │  │ _service     │
+│ :8001      │  └──────────────┘
+│            │
+│ /v1/repos  │  ← repo discovery
+│ /v1/graph  │  ← graph API (nodes, relationships, doc relationships)
+└──────┬─────┘
+│
+┌──────▼──────┐    ┌─────────────┐
+│ ingestion   │    │ llm_service │  :8003
+│ _db (pg)    │    │ /generate   │
+└─────────────┘    └─────────────┘
+
+````
 
 ---
 
@@ -85,8 +95,9 @@ Traditional RAG systems handle unstructured text but miss structure that matters
 | API / Orchestration | Python + FastAPI |
 | Database | PostgreSQL with `pgvector` |
 | Code Parsing | Python AST extraction |
-| Markdown Parsing | `markdown-it-py` |
-| Embeddings | Pluggable (Ollama, OpenAI, etc.) |
+| Markdown & Document Parsing | `markdown-it-py`, Docling |
+| OCR | Tesseract |
+| Embeddings | Ollama, Mock (pluggable) |
 | Vector Operations | HTTP Vector Store Service |
 | Graph Traversal | In-memory BFS + relationship-aware planning |
 | UI | Gradio Web App |
@@ -102,29 +113,8 @@ Traditional RAG systems handle unstructured text but miss structure that matters
 | Markdown (repo) | Section extraction | ✅ | ✅ DEFINES hierarchy | Graph-aware RAG |
 | Markdown (upload) | Section extraction | ✅ | ✅ DEFINES hierarchy | Document RAG |
 | Text files | Chunking + embedding | ✅ | — flat | Document RAG |
-| PDFs | PyMuPDF → chunks | ✅ | — flat | Document RAG |
-
-**Canonical ID examples:**
-
-```
-math_utils.py                      ← Python module
-math_utils.py#Calculator           ← class
-math_utils.py#Calculator.add       ← method
-README.md#overview                 ← Markdown H1 section
-README.md#overview.installation    ← Markdown H2 section
-```
-
----
-
-## 🌐 Service URLs
-
-| Service | Host port | Internal port | Purpose |
-| --- | --- | --- | --- |
-| `ingestion_service` | 8001 | 8000 | Ingestion API + graph API |
-| `vector_store_service` | 8002 | 8002 | Vector search with metadata filtering |
-| `llm_service` | 8003 | 8000 | LLM generation |
-| `rag_orchestrator` | 8004 | 8000 | RAG pipeline (code + document) |
-| `gradio` | 7860 | 7860 | Web UI |
+| PDFs / Scanned PDFs | Docling + Tesseract | ✅ | — flat | Document RAG |
+| Office files (DOCX, PPTX, XLSX, CSV) | Docling → Markdown / flat chunking | ✅ | — flat | Document RAG |
 
 ---
 
@@ -132,51 +122,53 @@ README.md#overview.installation    ← Markdown H2 section
 
 **1. Clone the repository**
 
-```bash
+```
 git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
 cd rag-foundry-universal
+````
+
+**2. Make sure Ollama is installed on the host**
+
+* The containers expect Ollama served at `http://host.docker.internal:11434`.
+* Ensure the embedder `mxbai-embed-large` and the LLM `granite4:350m` are already downloaded.
+
+**3. Start services**
+
 ```
-
-**2. Start services**
-
-```bash
 docker compose up --build
 ```
 
-**3. Run database migrations**
+**4. Run database migrations**
 
-```bash
+```
 alembic upgrade head
 ```
 
-**4. Ingest a Git repository**
+**5. Ingest a Git repository**
 
-```bash
+```
 curl -X POST http://localhost:8001/v1/ingest-repo \
      -F git_url=https://github.com/your/repo.git
 ```
 
-**5. Ingest a document or Markdown file**
+**6. Ingest a document or Markdown file**
 
-```bash
+```
 curl -X POST http://localhost:8001/v1/ingest/file \
      -F file=@my_doc.txt
-
-curl -X POST http://localhost:8001/v1/ingest/file \
-     -F file=@README.md
 ```
 
-**6. Query a code repository (graph-aware)**
+**7. Query a code repository (graph-aware)**
 
-```bash
+```
 curl -X POST http://localhost:8004/v1/rag \
      -H "Content-Type: application/json" \
      -d '{"query": "what calls the add function", "repo_id": "<repo_id>", "top_k": 5}'
 ```
 
-**7. Query documents (relationship-aware)**
+**8. Query documents (relationship-aware)**
 
-```bash
+```
 curl -X POST http://localhost:8004/v1/rag/simple \
      -H "Content-Type: application/json" \
      -d '{"query": "what are the key features", "top_k": 5}'
@@ -184,41 +176,24 @@ curl -X POST http://localhost:8004/v1/rag/simple \
 
 ---
 
-## 🔍 Graph Query Examples
+## 🔍 Architectural Decisions (ADRs)
 
-| Query pattern | Traversal | Direction |
-| --- | --- | --- |
-| *"what calls add()"* | CALL edges | Reverse |
-| *"what does run_demo call"* | CALL edges | Forward |
-| *"methods in Calculator"* | DEFINES edges | Forward |
-| *"what imports Calculator"* | IMPORT edges | Reverse |
-| *"installation steps"* | DEFINES edges | Document graph |
-
----
-
-## 🤖 Architectural Decisions (ADRs)
-
-All design decisions documented in `docs/adr/`:
-
-| ADR | Decision |
-| --- | --- |
-| ADR-030 | Unified Artifact Graph — all artifacts in one graph |
-| ADR-031 | Canonical Identity Model `(repo_id, canonical_id)` |
-| ADR-043 | Markdown Section Extraction into Unified Artifact Graph |
-| ADR-045 | DB access restricted to `ingestion_service` |
-| ADR-046 | Document Graph Retrieval for uploaded files (fulfills ADR-005) |
+* ADR-030: Unified Artifact Graph — all artifacts in one graph
+* ADR-031: Canonical Identity Model `(repo_id, canonical_id)`
+* ADR-043: Markdown Section Extraction into Unified Artifact Graph
+* ADR-045: DB access restricted to `ingestion_service`
+* ADR-046: Document Graph Retrieval for uploaded files (fulfills ADR-005)
+* ADR-047: Docling Universal Document Pre-processor
+* ADR-048: Cross-Artifact Linking — Markdown documentation → code symbols
 
 ---
 
-## 📘 Portfolio Takeaways
+## ⚡ Notes
 
-- End-to-end **AI-assisted developer tooling** — ingestion to answer
-- **Structured code + document reasoning** with separate optimised query paths
-- **Deterministic and reproducible pipelines** via canonical identity (ADR-031)
-- **Graph-aware semantic search** — BFS traversal over code and document graphs
-- **Relationship-aware retrieval planning** — fulfills docgraph ADR-005 vision
-- Clean **microservices architecture** with enforced service boundaries (ADR-045)
-- Progressive system design documented through ADR lineage across three projects
+* The system does **not** include an inbuilt LLM; tested with Ollama on host CPU.
+* Can be adapted to external cloud LLMs with minimal changes.
+* Tested on Windows laptops without GPU.
+* Acknowledgement: ChatGPT, Claude, and other chatbot LLMs were used as coding and documentation assistants.
 
 ---
 
@@ -226,6 +201,3 @@ All design decisions documented in `docs/adr/`:
 
 MIT License
 
----
-
-*This project is the second in a series: `rag-foundry-docgraph` → `rag-foundry-universal` → `rag-foundry-universal`*
