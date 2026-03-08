@@ -54,7 +54,7 @@ This allows semantic queries that span the entire repository and linked document
 
 ## 🏗️ Architecture
 
-```
+
 
 ┌─────────────────────────────────────────────────────┐
 │  Gradio UI  :7860                                    │
@@ -84,7 +84,7 @@ This allows semantic queries that span the entire repository and linked document
 │ _db (pg)    │    │ /generate   │
 └─────────────┘    └─────────────┘
 
-````
+
 
 ---
 
@@ -194,6 +194,7 @@ curl -X POST http://localhost:8004/v1/rag/simple \
 * Can be adapted to external cloud LLMs with minimal changes.
 * Tested on Windows laptops without GPU.
 * Acknowledgement: ChatGPT, Claude, and other chatbot LLMs were used as coding and documentation assistants.
+* Future vision: evolving towards an agentic RAG orchestrator capable of forming intermediate goals, choosing actions conditionally, observing results, and adapting strategies dynamically. This includes reranking results and improving observability.
 
 ---
 
