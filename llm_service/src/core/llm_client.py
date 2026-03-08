@@ -25,7 +25,7 @@ async def generate_completion(
     return_dict = {"provider": active_provider, "model": active_model, "response": ""}
 
     if active_provider == "ollama":
-        async with httpx.AsyncClient( timeout=90) as client:
+        async with httpx.AsyncClient( timeout=600) as client:
             response = await client.post(
                 f"{OLLAMA_BASE_URL}/api/generate",
                 json={"model": active_model, "prompt": prompt, "stream": False},

@@ -19,7 +19,7 @@ class TestPgVectorStore:
 
         # Patch _validate_table at instantiation to avoid RuntimeError
         with patch.object(PgVectorStore, "_validate_table", lambda self: None):
-            store = PgVectorStore(dsn="mock_dsn", dimension=768)
+            store = PgVectorStore(dsn="mock_dsn", dimension=1024)
 
         records = [
             VectorRecord(
@@ -55,7 +55,7 @@ class TestPgVectorStore:
         mock_connect.return_value.__enter__.return_value = mock_conn
 
         with patch.object(PgVectorStore, "_validate_table", lambda self: None):
-            store = PgVectorStore(dsn="mock_dsn", dimension=768)
+            store = PgVectorStore(dsn="mock_dsn", dimension=1024)
 
         store.delete_by_ingestion_id("ing_123")
 

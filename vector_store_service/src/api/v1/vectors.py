@@ -19,7 +19,7 @@ class VectorMetadataAPI(BaseModel):
     chunk_text: str
     source_metadata: Optional[Dict[str, Any]] = {}
     provider: str = "mock"
-    document_id: Optional[str] = None  # MS6-IS3: NEW
+    document_id: Optional[str] = None
 
 class VectorRecordAPI(BaseModel):
     vector: List[float]
@@ -31,7 +31,7 @@ class VectorBatchRequest(BaseModel):
 class VectorSearchRequest(BaseModel):
     query_vector: List[float]
     k: int = 5
-    metadata_filter: Optional[Dict[str, Any]] = None  # ADD THIS
+    metadata_filter: Optional[Dict[str, Any]] = None
 
 class VectorSearchByDocRequest(BaseModel):
     document_id: str
@@ -53,7 +53,7 @@ async def add_vectors(
                 chunk_text=api_record.metadata.chunk_text,
                 source_metadata=api_record.metadata.source_metadata,
                 provider=api_record.metadata.provider,
-                document_id=api_record.metadata.document_id,  # MS6-IS3: Pass through
+                document_id=api_record.metadata.document_id,
             )
             domain_records.append(
                 VectorRecord(vector=api_record.vector, metadata=metadata)
@@ -66,8 +66,6 @@ async def add_vectors(
         logger.error(f"Error adding vectors: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# ... rest of file unchanged (search, delete endpoints)
-
 
 @router.post("/search")
 async def similarity_search(
@@ -75,18 +73,20 @@ async def similarity_search(
 ):
     """Search for similar vectors - MS6 RAG compatible."""
     try:
-        logger.debug("similarity_search Search for similar vectors - MS6 RAG compatible")
-        results = store.similarity_search(request.query_vector, request.k,
-        metadata_filter=request.metadata_filter  )
+        logger.debug("similarity_search: searching vector store")
+        results = store.similarity_search(
+            request.query_vector,
+            request.k,
+            metadata_filter=request.metadata_filter,
+        )
 
-        # MS6 RAG FIX: Match exact fields expected by rag-orchestrator
         return {
             "results": [
                 {
                     "chunk_id": r.metadata.chunk_id,
-                    "text": r.metadata.chunk_text,           #  TOP-LEVEL text
-                    "document_id": r.metadata.document_id,   #  TOP-LEVEL document_id
-                    "score": 0.1,                            #  Add dummy score
+                    "text": r.metadata.chunk_text,
+                    "document_id": r.metadata.document_id,
+                    "score": r.metadata.score,          # real cosine similarity score
                     "metadata": {
                         "ingestion_id": r.metadata.ingestion_id,
                         "chunk_index": r.metadata.chunk_index,
@@ -117,7 +117,6 @@ async def delete_by_ingestion(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 @router.post("/search-by-doc")
 async def search_by_document(
     request: VectorSearchByDocRequest,
@@ -132,7 +131,7 @@ async def search_by_document(
                     "chunk_id": r.metadata.chunk_id,
                     "text": r.metadata.chunk_text,
                     "document_id": r.metadata.document_id,
-                    "score": 1.0,
+                    "score": 1.0,   # no similarity computed for doc fetch, treat as full match
                     "metadata": {
                         "ingestion_id": r.metadata.ingestion_id,
                         "chunk_index": r.metadata.chunk_index,

@@ -20,7 +20,7 @@ from shared.models.base import Base
 # Alembic config
 # -----------------------------------------------------
 config = context.config
-
+VECTOR_DIMENSION=1024
 # Allow overriding DB URL via env var or `-x db_url=...`
 db_url = (
     context.get_x_argument(as_dictionary=True).get("db_url")

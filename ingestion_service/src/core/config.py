@@ -9,9 +9,15 @@ class Settings(BaseSettings):
     VECTOR_STORE_SERVICE_URL: str = "http://vector_store_service:8002"
     EMBEDDING_PROVIDER: str = "ollama"
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
-    OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
-    OLLAMA_BATCH_SIZE: int = 50  # default batch size for Ollama embedding
+
+    # Coderag upgrade
+    OLLAMA_EMBED_MODEL: str = "mxbai-embed-large:latest"
+    OLLAMA_BATCH_SIZE: int = 50
+    VECTOR_DIMENSION: int = 1024
+
+    # Universal feature
     DOCLING_ENABLED: bool = True   # When False → PyMuPDF fallback for PDF
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
@@ -19,11 +25,9 @@ class Settings(BaseSettings):
 
 
 @lru_cache
-def get_settings() -> Settings:
-    """Returns cached application settings."""
-    return Settings()  # type: ignore[reportCallIssue]
+def get_settings() -> "Settings":
+    return Settings()
 
 
 def reset_settings_cache():
-    """Clear cached settings for testing or reload."""
     get_settings.cache_clear()

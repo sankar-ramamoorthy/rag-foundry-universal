@@ -11,7 +11,9 @@ class Settings(BaseSettings):
     # -------------------------------------------------
     EMBEDDING_PROVIDER: str = "ollama"
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
-    OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
+    #OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
+    OLLAMA_EMBED_MODEL: str = "mxbai-embed-large:latest"
+
     OLLAMA_BATCH_SIZE: int = 50
 
     # -------------------------------------------------
