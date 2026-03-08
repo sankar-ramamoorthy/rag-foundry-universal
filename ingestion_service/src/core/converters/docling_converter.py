@@ -52,7 +52,7 @@ class DoclingConverter:
         """
         Build and return a configured DocumentConverter.
         CPU-only — no GPU acceleration configured.
-        Tesseract used for OCR (already installed in Docker image).
+        OCR enabled; engine is selected automatically based on installed backends.
         """
         from docling.document_converter import DocumentConverter, PdfFormatOption
         from docling.datamodel.base_models import InputFormat
@@ -60,16 +60,17 @@ class DoclingConverter:
             PdfPipelineOptions,
             TableStructureOptions,
         )
-        from docling.models.tesseract_ocr_cli_model import TesseractCliOcrOptions
 
-        # IS3: PDF pipeline — table structure + Tesseract OCR (CPU-safe)
         pdf_pipeline_options = PdfPipelineOptions()
         pdf_pipeline_options.do_ocr = True
         pdf_pipeline_options.do_table_structure = True
         pdf_pipeline_options.table_structure_options = TableStructureOptions(
             do_cell_matching=True
         )
-        pdf_pipeline_options.ocr_options = TesseractCliOcrOptions()
+
+        # No explicit pdf_pipeline_options.ocr_options:
+        # Docling will use its Auto engine selection based on what extras
+        # you installed (Tesseract, OcrMac, RapidOCR, etc.)
 
         converter = DocumentConverter(
             allowed_formats=[
@@ -87,7 +88,7 @@ class DoclingConverter:
             },
         )
 
-        logger.debug("IS3: DoclingConverter initialised (CPU mode)")
+        logger.debug("IS3: DoclingConverter initialised (CPU mode, auto OCR)")
         return converter
 
     def convert(self, file_bytes: bytes, filename: str) -> str:
