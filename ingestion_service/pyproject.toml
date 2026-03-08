@@ -3,7 +3,8 @@ name = "agentic-rag-ingestion"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10,<3.13"  # Docling 2.70+ requires 3.10+
+
 dependencies = [
     "alembic>=1.17.2",
     "fastapi>=0.125.0",
@@ -24,10 +25,20 @@ dependencies = [
     "tree_sitter>=0.20.0",
     "GitPython>=3.1.43",
     "markdown-it-py>=3.0.0",
-    "docling>=2.0.0",                 
-    "torch>=2.0.0",        
-    "markitdown[all]>=0.1.0",             
+
+    # ---- Docling + OCR ----
+    "docling>=2.18.0,<3.0.0",
+    "docling[ocrmac]; sys_platform == 'darwin'",
+
+    # ---- Torch (CPU-only) ----
+    "torch>=2.0.0; sys_platform != 'darwin'",
+    "torch>=2.0.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "torch==2.2.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchvision==0.17.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+
+    "markitdown[all]>=0.1.0",
 ]
+
 
 [project.optional-dependencies]
 ui = [
