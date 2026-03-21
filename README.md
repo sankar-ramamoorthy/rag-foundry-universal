@@ -5,6 +5,7 @@
 
 **AI-Powered Code & Document Intelligence**
 *Query code repositories and documents like a developer assistant.*
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sankar-ramamoorthy/rag-foundry-universal)
 
 ---
 
