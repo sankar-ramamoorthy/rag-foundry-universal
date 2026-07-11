@@ -1,0 +1,108 @@
+---
+title: "Roadmap — Sequenced Delivery Plan"
+date: 2026-07-09
+type: audit-roadmap
+status: proposed
+horizon: "~2 quarters, agent-assisted"
+tags:
+  - audit
+  - roadmap
+  - planning
+  - rag-foundry
+related:
+  - "[[00-Audit-Overview]]"
+---
+
+# 🗺️ Roadmap — Sequenced Delivery Plan
+
+> [!abstract] How to read this
+> Five phases, each shippable and independently valuable. Every item references a fully specified work package (WP) in the plan documents — hand the WP section directly to Codex (GPT-5.5) or Claude Sonnet 5 as the task brief, together with the ground rules from [[00-Audit-Overview#📐 How the work packages are written|the overview]]. Checkboxes are Obsidian tasks — track progress here.
+
+## Phase 1 — Fix the foundation (1–2 weeks)
+*Theme: the graph tells the truth, and ingestion doesn't melt.*
+
+- [ ] [[02-Graph-Depth-Analysis#WP-G1 — Async functions + richer metadata|WP-G1]] Async functions + metadata + rstrip bug (fixes F-01, F-05)
+- [ ] [[01-Codebase-Audit-Findings#F-12 · Graph traversal starts from ONE arbitrary seed|F-12]] Multi-seed traversal (one-liner class of fix, big quality win)
+- [ ] [[04-Scalability-Plan#WP-S1 — Make graph build O(N)|WP-S1]] O(N) graph build + ignore semantics + benchmark harness
+- [ ] [[04-Scalability-Plan#WP-S2 — Batch embedding + persistence|WP-S2]] Batch embedding/persistence, kill dual-write
+- [ ] [[04-Scalability-Plan#WP-S3 — Transactional, bulk graph persistence|WP-S3]] Atomic bulk persistence + per-repo lock
+- [ ] [[04-Scalability-Plan#WP-S4 — ANN index + query-path hygiene|WP-S4]] HNSW index + real filter columns
+- [ ] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (CI part)]] Working CI (F-17) — do early so all later WPs land gated
+
+**Exit criteria:** benchmark repo (2k files) ingests < 2 min; vector search uses index; CI green on every PR.
+
+## Phase 2 — Graph depth + LLM freedom (2–3 weeks, two parallel tracks)
+*Theme: answers get materially better.*
+
+**Track A — graph (sequential):**
+- [ ] [[02-Graph-Depth-Analysis#WP-G3 — Remove CALL nodes from identity space; keep call sites as evidence|WP-G3]] Call-site model fix (F-03)
+- [ ] [[02-Graph-Depth-Analysis#WP-G2 — Materialize `IMPORTS` edges|WP-G2]] IMPORTS edges (F-02)
+- [ ] [[02-Graph-Depth-Analysis#WP-G4 — Scope- and import-aware call resolution (implement ADR-032 fully)|WP-G4]] Real call resolution (F-04)
+- [ ] [[02-Graph-Depth-Analysis#WP-G5 — `INHERITS` and `OVERRIDES` edges|WP-G5]] Inheritance edges
+- [ ] [[02-Graph-Depth-Analysis#WP-G6 — Traversal layer catches up with the deeper graph|WP-G6]] Traversal strategies catch up
+
+**Track B — LLM (independent, small):**
+- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M1 — LiteLLM core swap|WP-M1]] LiteLLM swap
+- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M2 — Resilience fallbacks, retries, timeouts|WP-M2]] Fallbacks/retries
+- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M5 — Model switching in the product surface|WP-M5]] Model picker
+
+**Exit criteria:** "what calls X" correct on eval fixtures incl. methods & cross-file; any cloud model usable by alias.
+
+## Phase 3 — Multi-language (4–6 weeks)
+*Theme: the headline feature.*
+
+- [ ] [[03-Multi-Language-Graph-Plan#WP-L1 — IR + GraphAssembler refactor (the enabler)|WP-L1]] IR + GraphAssembler (absorbs Track A learnings)
+- [ ] [[03-Multi-Language-Graph-Plan#WP-L2 — tree-sitter runtime + TypeScript/JavaScript extractor (first new language)|WP-L2]] TypeScript/JavaScript
+- [ ] [[03-Multi-Language-Graph-Plan#WP-L3 — Rust extractor|WP-L3]] Rust
+- [ ] [[03-Multi-Language-Graph-Plan#WP-L4 — Java extractor|WP-L4]] Java
+- [ ] [[03-Multi-Language-Graph-Plan#WP-L6 — Query/UI awareness of language|WP-L6]] Language filters
+- [ ] [[03-Multi-Language-Graph-Plan#WP-L5 — Python on tree-sitter (parity migration, last)|WP-L5]] Python parity migration (can slip to Phase 5)
+
+**Exit criteria:** a polyglot fixture monorepo (py+ts+rs+java) ingests into one graph; language-filtered queries work; golden-file determinism suite green.
+
+## Phase 4 — Scale + operate (3–4 weeks, parallel with late Phase 3)
+*Theme: survives real repos and real ops.*
+
+- [ ] [[04-Scalability-Plan#WP-S5 — Job queue for ingestion|WP-S5]] Job queue (arq + Redis)
+- [ ] [[04-Scalability-Plan#WP-S6 — Incremental ingestion (the massive-repo unlock)|WP-S6]] Incremental ingestion + snapshot lineage
+- [ ] [[04-Scalability-Plan#WP-S7 — Bounded graph service instead of whole-graph-in-RAM|WP-S7]] Traverse endpoint, kill whole-graph RAM cache
+- [ ] [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]] Concurrent fetch, real tokenizer, reranker flag
+- [ ] [[05-Enterprise-Platform-Plan#WP-E1 — Security baseline (do first, small)|WP-E1]] Security baseline *(can and should be pulled earlier if anything is network-exposed)*
+- [ ] [[05-Enterprise-Platform-Plan#WP-E5 — Observability|WP-E5]] Observability
+- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M3 — Streaming|WP-M3]] / [[06-LLM-Provider-LiteLLM-Plan#WP-M4 — Cost & usage telemetry|WP-M4]] Streaming + cost telemetry
+
+**Exit criteria:** 1M-LOC monorepo cold-ingests < 30 min; 1-file PR re-ingests < 30 s; traces + dashboards live; nothing unauthenticated.
+
+## Phase 5 — Enterprise product (5–8 weeks)
+*Theme: something a team can buy and log into.*
+
+- [ ] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (deploy part)]] Helm/K8s deployment
+- [ ] [[05-Enterprise-Platform-Plan#WP-E3 — Identity & multi-tenancy|WP-E3]] OIDC + teams + repo grants + audit log
+- [ ] [[05-Enterprise-Platform-Plan#WP-E4 — Private git-host integration|WP-E4]] Private repos, then GitHub App + PR comments *(the vision-doc killer feature)*
+- [ ] [[05-Enterprise-Platform-Plan#WP-E6 — Product web UI (replace Gradio)|WP-E6]] React web UI with streaming + graph explorer
+
+**Exit criteria:** demo flow — SSO login → connect private polyglot repo → nightly incremental ingest → PR opened → bot comments callers-of-changed-code → dev asks follow-ups in web UI with model of choice.
+
+---
+
+## Dependency graph (phases)
+
+```mermaid
+graph LR
+  P1[Phase 1<br/>Foundation] --> P2A[Phase 2A<br/>Graph depth]
+  P1 --> P2B[Phase 2B<br/>LiteLLM]
+  P2A --> P3[Phase 3<br/>Multi-language]
+  P1 --> P4[Phase 4<br/>Scale + Ops]
+  P2B --> P4
+  P3 --> P5[Phase 5<br/>Enterprise]
+  P4 --> P5
+```
+
+> [!warning] Two rules that keep this roadmap honest
+> 1. **Nothing ships without its benchmark/eval delta recorded** (`DOCS/test_results/`). Phase 1 builds the harness; every later WP reports against it.
+> 2. **Graph-depth work after Phase 2 goes through the IR** ([[03-Multi-Language-Graph-Plan]]) — no more Python-only resolution code once WP-L1 lands.
+
+> [!note] Suggested first three agent tasks (this week)
+> 1. WP-G1 + F-05 + F-12 in one PR (small, high-value, builds trust in the loop)
+> 2. WP-S1 with the benchmark fixture generator
+> 3. CI rewrite (WP-E2 CI part) so tasks 1–2 land gated
