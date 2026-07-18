@@ -10,7 +10,10 @@ Requires:
 - RepoGraphBuilder output nodes and relationships
 """
 
-from typing import List, Optional, Tuple
+import uuid
+from typing import List, Optional
+from sqlalchemy import text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 import logging
@@ -67,158 +70,132 @@ class CodebaseGraphPersistence:
             raise
 
 
-    def upsert_nodes(self, repo_id: str, nodes: List[dict]) -> None:
+    BULK_BATCH_SIZE = 1000
+
+    def persist_graph(
+        self,
+        repo_id: str,
+        nodes: List[dict],
+        relationships: List[dict],
+    ) -> dict:
         """
-        Upsert a list of nodes (functions, classes, modules) into document_nodes.
+        Atomically replace a repo's graph (F-06/F-09, WP-S3).
 
-        Each node dict must include:
-        - relative_path: path relative to repo root
-        - symbol_path: optional symbol path (for functions/methods)
-        - title: display title
-        - doc_type: function/class/module
-        - source: source file path
-        - summary: optional summary
-        """
+        Delete + node insert + relationship insert run in ONE transaction:
+        any failure rolls back everything, leaving the previous graph
+        intact. A transaction-scoped Postgres advisory lock keyed on
+        repo_id serializes concurrent rebuilds of the same repo, so two
+        ingests can never interleave delete/insert (F-11 mitigation).
 
-        # ----------------------
-        # MS12 Repo-Level Deletion
-        # ----------------------
-        try:
-            with self._session.begin():  # atomic transaction
-                deleted_count = (
-                    self._session.query(DocumentNode)
-                    .filter(DocumentNode.repo_id == repo_id)
-                    .delete(synchronize_session=False)
-                )
-                logger.info(f"[MS12] Repo {repo_id}: deleted {deleted_count} old document nodes")
-        except SQLAlchemyError as e:
-            logger.error(f"Failed to delete old nodes for repo {repo_id}: {e}")
-            self._session.rollback()
-            raise
+        Relationship endpoints resolve through the in-memory
+        canonical_id -> document_id map of the nodes being inserted — no
+        per-edge queries. Edges referencing unknown endpoints are skipped
+        (same behavior as before); duplicate edges are absorbed by
+        ON CONFLICT DO NOTHING on uq_document_relationship.
 
-        # ----------------------
-        # Insert New Nodes
-        # ----------------------
-        for node in nodes:
-            try:
-                if "title" not in node:
-                    node["title"] = "Untitled"
-                if "doc_type" not in node:
-                    node["doc_type"] = "unknown"
-                if "source" not in node:
-                    node["source"] = node.get("relative_path", "unknown_source")
-                if "relative_path" not in node:
-                    node["relative_path"] = "Unknown"
-                if "canonical_id" not in node:
-                    node["canonical_id"] = build_canonical_id(node["relative_path"], node.get("symbol_path"))
-                canonical_id = node["canonical_id"]
-                logger.debug(f"upsert_nodes canonical_id = {canonical_id}")
-                document_node_data = {
-                    'repo_id': repo_id,
-                    'canonical_id': canonical_id,
-                    'relative_path': node.get('relative_path', 'unknown'),
-                    'symbol_path': node.get('symbol_path'),
-                    'title': node.get('title', 'Untitled'),
-                    'summary': node.get('summary', ''),
-                    'source': node.get('source', node.get('relative_path', 'unknown')),
-                    'ingestion_id': str(node.get('ingestion_id')),
-                    'doc_type': node.get('doc_type', 'unknown'),
-                    'text': node.get('text', ''),
-                }
-                new_node = DocumentNode(**document_node_data)
-                self._session.add(new_node)
-                logger.debug(f"[MS12] Inserted DocumentNode with canonical_id : {canonical_id}")
+        Node dict fields are the same as the old upsert_nodes contract:
+        relative_path, optional symbol_path/canonical_id, title, doc_type,
+        source, summary, text, ingestion_id.
 
-            except SQLAlchemyError as e:
-                logger.error(f"Error upserting node {node.get('canonical_id', 'unknown')}: {e}")
-                self._session.rollback()
-                raise
-
-        # Commit all inserts
-        try:
-            self._session.commit()
-        except SQLAlchemyError as e:
-            logger.error(f"Error committing new nodes for repo {repo_id}: {e}")
-            self._session.rollback()
-            raise
-
-    # -----------------------------
-    # Document Relationships
-    # -----------------------------
-    def upsert_relationships(self, repo_id: str, relationships: List[dict]) -> None:
-        """
-        Upsert relationships between nodes into document_relationships.
-
-        Expected relationship format:
-
+        Relationship dict format:
         {
             "from_canonical_id": str,
             "to_canonical_id": str,
             "relation_type": str,
             "relationship_metadata": dict
         }
+
+        Returns {"deleted", "nodes", "relationships", "skipped_relationships"}.
         """
+        node_rows: List[dict] = []
+        canonical_to_doc: dict = {}
+        for node in nodes:
+            relative_path = node.get("relative_path", "Unknown")
+            canonical_id = node.get("canonical_id") or build_canonical_id(
+                relative_path, node.get("symbol_path")
+            )
+            document_id = str(uuid.uuid4())
+            canonical_to_doc[canonical_id] = document_id
+            node_rows.append(
+                {
+                    "document_id": document_id,
+                    "repo_id": repo_id,
+                    "canonical_id": canonical_id,
+                    "relative_path": relative_path,
+                    "symbol_path": node.get("symbol_path"),
+                    "title": node.get("title", "Untitled"),
+                    "summary": node.get("summary", ""),
+                    "source": node.get("source", relative_path),
+                    "ingestion_id": str(node.get("ingestion_id")),
+                    "doc_type": node.get("doc_type", "unknown"),
+                    "text": node.get("text", ""),
+                }
+            )
 
+        rel_rows: List[dict] = []
+        skipped_relationships = 0
         for rel in relationships:
-            from_canonical = rel["from_canonical_id"]
-            to_canonical = rel["to_canonical_id"]
+            from_doc = canonical_to_doc.get(rel["from_canonical_id"])
+            to_doc = canonical_to_doc.get(rel["to_canonical_id"])
+            if not from_doc or not to_doc:
+                logger.warning(
+                    f"Skipping relationship: {rel['from_canonical_id']} -> "
+                    f"{rel['to_canonical_id']} (nodes missing)"
+                )
+                skipped_relationships += 1
+                continue
+            rel_rows.append(
+                {
+                    "from_document_id": from_doc,
+                    "to_document_id": to_doc,
+                    "relation_type": rel["relation_type"],
+                    "relationship_metadata": rel.get("relationship_metadata", {}),
+                }
+            )
 
-            try:
-                from_node = (
+        batch = self.BULK_BATCH_SIZE
+        try:
+            with self._session.begin():
+                # Blocks a concurrent rebuild of the same repo until this
+                # transaction commits or rolls back.
+                self._session.execute(
+                    text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+                    {"key": f"repo_graph:{repo_id}"},
+                )
+                deleted = (
                     self._session.query(DocumentNode)
-                    .filter_by(repo_id=repo_id, canonical_id=from_canonical)
-                    .first()
+                    .filter(DocumentNode.repo_id == repo_id)
+                    .delete(synchronize_session=False)
                 )
-                to_node = (
-                    self._session.query(DocumentNode)
-                    .filter_by(repo_id=repo_id, canonical_id=to_canonical)
-                    .first()
-                )
+                for start in range(0, len(node_rows), batch):
+                    self._session.bulk_insert_mappings(
+                        DocumentNode, node_rows[start:start + batch]
+                    )
+                for start in range(0, len(rel_rows), batch):
+                    stmt = (
+                        pg_insert(DocumentRelationship.__table__)
+                        .values(rel_rows[start:start + batch])
+                        .on_conflict_do_nothing(constraint="uq_document_relationship")
+                    )
+                    self._session.execute(stmt)
+        except SQLAlchemyError:
+            logger.exception(
+                f"Atomic graph persist failed for repo {repo_id}; "
+                f"previous graph left intact"
+            )
+            raise
 
-                if not from_node or not to_node:
-                    logger.warning(
-                        f"Skipping relationship: {from_canonical} -> {to_canonical} (nodes missing)"
-                    )
-                    continue
-
-                existing = (
-                    self._session.query(DocumentRelationship)
-                    .filter_by(
-                        from_document_id=from_node.document_id,
-                        to_document_id=to_node.document_id,
-                        relation_type=rel["relation_type"]
-                    )
-                    .first()
-                )
-
-                if existing:
-                    existing.relationship_metadata = rel.get(
-                        "relationship_metadata",
-                        existing.relationship_metadata
-                    )
-                    logger.debug(
-                        f"Updated DocumentRelationship: {from_canonical} -> {to_canonical}"
-                    )
-                else:
-                    new_rel = DocumentRelationship(
-                        from_document_id=from_node.document_id,
-                        to_document_id=to_node.document_id,
-                        relation_type=rel["relation_type"],
-                        relationship_metadata=rel.get("relationship_metadata", {})
-                    )
-                    self._session.add(new_rel)
-                    logger.debug(
-                        f"Inserted DocumentRelationship: {from_canonical} -> {to_canonical}"
-                    )
-
-            except SQLAlchemyError as e:
-                logger.error(
-                    f"Error upserting relationship {from_canonical} -> {to_canonical}: {e}"
-                )
-                self._session.rollback()
-                raise
-
-        self._session.commit()
+        logger.info(
+            f"Repo {repo_id}: replaced {deleted} old nodes with "
+            f"{len(node_rows)} nodes / {len(rel_rows)} relationships "
+            f"({skipped_relationships} edges skipped)"
+        )
+        return {
+            "deleted": deleted,
+            "nodes": len(node_rows),
+            "relationships": len(rel_rows),
+            "skipped_relationships": skipped_relationships,
+        }
     # -----------------------------
     # Retrieval
     # -----------------------------

@@ -182,10 +182,14 @@ def _background_ingest_repo(
         persistence = CodebaseGraphPersistence(session=session)
         nodes = repo_graph.all_entities()  # ✅ CORRECT method
         logger.debug(f"[{ingestion_id}] Sample node keys: {nodes[0].keys() if nodes else 'NO NODES'}")
-        persistence.upsert_nodes(repo_id = repo_id, nodes=nodes)
-
-        ## Relationships will be added in MS5 - skip for now
-        persistence.upsert_relationships(repo_id = repo_id, relationships=repo_graph.relationships)
+        # F-09/F-06: delete + nodes + relationships in one transaction,
+        # serialized per repo by an advisory lock.
+        stats = persistence.persist_graph(
+            repo_id=repo_id,
+            nodes=nodes,
+            relationships=repo_graph.relationships,
+        )
+        logger.info(f"[{ingestion_id}] Graph persisted: {stats}")
 
         # --- Run embeddings via IngestionPipeline ---
         settings = get_settings()
