@@ -20,7 +20,7 @@ from rag_orchestrator.src.retrieval.types import RetrievedChunk
 from rag_orchestrator.src.retrieval.codebase_utils import extract_canonical_ids_from_chunks
 from rag_orchestrator.src.retrieval.traversal_selector import (
     select_traversal_strategies,
-    execute_traversals,
+    execute_traversals_from_seeds,
 )
 from rag_orchestrator.src.retrieval.codebase_queries import CodebaseGraph, Node
 
@@ -169,9 +169,11 @@ async def hybrid_retrieve(
         from rag_orchestrator.src.retrieval.codebase_utils import get_cached_graph
 
         graph: CodebaseGraph = get_cached_graph(repo_id)
-        start_cid = max(seed_canonical_ids, key=len)
         strategies = select_traversal_strategies(query, seed_canonical_ids)
-        expanded_nodes: List[Node] = execute_traversals(graph, start_cid, strategies)
+        # F-12: expand from every seed, not just the longest-named one
+        expanded_nodes: List[Node] = execute_traversals_from_seeds(
+            graph, seed_canonical_ids, strategies
+        )
         expanded_canonical_ids = {node.canonical_id for node in expanded_nodes}
 
     all_canonical_ids = seed_canonical_ids | expanded_canonical_ids

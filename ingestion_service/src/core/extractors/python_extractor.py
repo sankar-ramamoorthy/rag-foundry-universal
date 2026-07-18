@@ -30,7 +30,14 @@ from typing import List, Dict, Optional
 class PythonASTExtractor(ast.NodeVisitor):
     def __init__(self, relative_path: str):
         self.relative_path = relative_path
-        self.module_name = relative_path.replace("/", ".").rstrip(".py")
+        # F-05: strip the ".py" suffix, not the character set {., p, y} —
+        # rstrip(".py") corrupted names like "happy.py" → "ha".
+        module_path = (
+            relative_path[:-3]
+            if relative_path.endswith(".py")
+            else relative_path
+        )
+        self.module_name = module_path.replace("/", ".")
         self.module_id = relative_path  # canonical module id
         self.artifacts: List[Dict] = []
         self.scope_stack: List[str] = []  # maintains current lexical scope
@@ -110,6 +117,7 @@ class PythonASTExtractor(ast.NodeVisitor):
                 "lineno": node.lineno,
                 "col_offset": node.col_offset,
                 "args": [arg.arg for arg in node.args.args],
+                "is_async": isinstance(node, ast.AsyncFunctionDef),
             },
         }
 
@@ -119,6 +127,11 @@ class PythonASTExtractor(ast.NodeVisitor):
         self.scope_stack.append(canonical_id)
         self.generic_visit(node)
         self.scope_stack.pop()
+
+    # F-01: async defs must produce FUNCTION/METHOD artifacts too —
+    # without this alias every `async def` was invisible to the graph
+    # and calls inside it were mis-attributed to the enclosing scope.
+    visit_AsyncFunctionDef = visit_FunctionDef
 
     def visit_Import(self, node: ast.Import):
         for alias in node.names:
