@@ -5,6 +5,7 @@ from typing import Optional, Tuple
 import ast
 import logging
 import os
+import re
 
 from src.core.codebase.identity import build_global_id
 from src.core.extractors.python_extractor import PythonASTExtractor
@@ -35,6 +36,41 @@ DEFAULT_IGNORED_DIRS = {
 }
 
 
+# F-07: single-parse text extraction. These two helpers replicate
+# ast.get_source_segment(padded=False) over pre-split lines, so each file's
+# source is split once instead of once per artifact. Behavioral contract
+# (verified by tests against ast.get_source_segment): lines split on
+# \n / \r / \r\n only — NOT on form feed or other unicode breaks — and
+# col_offset/end_col_offset are byte offsets into the UTF-8 encoded line.
+_LINE_SPLIT = re.compile(r"[^\r\n]*(?:\r\n|[\r\n])?")
+
+
+def _splitlines_no_ff(source: str) -> list[str]:
+    lines = _LINE_SPLIT.findall(source)
+    if lines and lines[-1] == "":
+        lines.pop()
+    return lines
+
+
+def _source_segment(lines: list[str], node) -> Optional[str]:
+    try:
+        if node.end_lineno is None or node.end_col_offset is None:
+            return None
+        lineno = node.lineno - 1
+        end_lineno = node.end_lineno - 1
+        col_offset = node.col_offset
+        end_col_offset = node.end_col_offset
+    except AttributeError:
+        return None
+
+    if end_lineno == lineno:
+        return lines[lineno].encode()[col_offset:end_col_offset].decode()
+
+    first = lines[lineno].encode()[col_offset:].decode()
+    last = lines[end_lineno].encode()[:end_col_offset].decode()
+    return "".join([first, *lines[lineno + 1:end_lineno], last])
+
+
 class RepoGraphBuilder:
 
     def __init__(self, repo_root: Path, ingestion_id: str):
@@ -60,6 +96,13 @@ class RepoGraphBuilder:
             except Exception:
                 continue
 
+            # F-07: parse the file once and index its AST nodes by line
+            # number, instead of re-parsing per artifact.
+            if file_path.suffix == ".py":
+                line_nodes, source_lines = self._index_python_source(source)
+            else:
+                line_nodes, source_lines = {}, []
+
             for artifact in artifacts:
                 artifact["relative_path"] = relative_path
                 artifact["ingestion_id"] = self.ingestion_id
@@ -84,7 +127,9 @@ class RepoGraphBuilder:
 
                 artifact["global_id"] = global_id
                 artifact["canonical_id"] = global_id[1]
-                artifact["text"] = self._extract_artifact_text(source, artifact)
+                artifact["text"] = self._extract_artifact_text(
+                    source, artifact, line_nodes, source_lines
+                )
                 artifact["defines"] = []
 
                 graph.add_entity(relative_path, artifact)
@@ -259,24 +304,20 @@ class RepoGraphBuilder:
         current_parent = call.get("parent_id")
 
         while current_parent:
-            for entity in graph.all_entities():
-                if entity.get("id") == current_parent:
-                    if entity.get("name") == call.get("name"):
-                        return entity.get("id"), 1.0
-                    current_parent = entity.get("parent_id")
-                    break
-            else:
-                current_parent = None
+            entity = graph.get_entity_by_id(current_parent)
+            if entity is None:
+                break
+            if entity.get("name") == call.get("name"):
+                return entity.get("id"), 1.0
+            current_parent = entity.get("parent_id")
 
         return None, 0.0
 
     def _canonical_from_id(
         self, graph: RepoGraph, entity_id: str
     ) -> Optional[str]:
-        for entity in graph.all_entities():
-            if entity.get("id") == entity_id:
-                return entity.get("canonical_id")
-        return None
+        entity = graph.get_entity_by_id(entity_id)
+        return entity.get("canonical_id") if entity else None
 
     def _walk_repo(self):
         SUPPORTED = {".py", ".md"}
@@ -303,7 +344,28 @@ class RepoGraphBuilder:
             return MarkdownSectionExtractor(relative_path=rel)
         return None
 
-    def _extract_artifact_text(self, source: str, artifact: dict) -> str:
+    def _index_python_source(self, source: str):
+        """F-07: parse a file once; map lineno → first AST node in walk
+        order (matching the pre-refactor per-artifact scan), and pre-split
+        the source lines for segment extraction."""
+        try:
+            tree = ast.parse(source)
+        except SyntaxError:
+            return {}, []
+
+        line_nodes: dict = {}
+        for node in ast.walk(tree):
+            if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
+                line_nodes.setdefault(node.lineno, node)
+        return line_nodes, _splitlines_no_ff(source)
+
+    def _extract_artifact_text(
+        self,
+        source: str,
+        artifact: dict,
+        line_nodes: dict,
+        source_lines: list,
+    ) -> str:
         # Markdown extractors pre-populate text — don't re-extract
         if artifact.get("text"):
             return artifact["text"]
@@ -314,18 +376,12 @@ class RepoGraphBuilder:
             return source
 
         if artifact_type in {"CLASS", "FUNCTION", "METHOD"}:
-            try:
-                tree = ast.parse(source)
-            except SyntaxError:
-                return ""
-
             lineno = artifact.get("metadata", {}).get("lineno")
             if lineno is None:
                 return ""
 
-            for node in ast.walk(tree):
-                if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
-                    if node.lineno == lineno:
-                        return ast.get_source_segment(source, node) or ""
+            node = line_nodes.get(lineno)
+            if node is not None:
+                return _source_segment(source_lines, node) or ""
 
         return ""
