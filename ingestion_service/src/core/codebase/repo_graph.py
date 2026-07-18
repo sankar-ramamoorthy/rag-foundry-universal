@@ -30,6 +30,9 @@ class RepoGraph:
         self.repo_root = repo_root
         self.ingestion_id = ingestion_id
         self.entities: Dict[str, dict] = {}  # canonical_id -> artifact dict
+        # F-07: second index by extractor-local "id" so builder passes are
+        # O(1) lookups instead of full scans. Internal only — never persisted.
+        self.entities_by_id: Dict[str, dict] = {}
         self.files: Dict[str, List[str]] = {}  # relative_path -> [canonical_id]
         self.relationships: List[dict] = []
 
@@ -42,6 +45,9 @@ class RepoGraph:
         """
         canonical_id = entity["canonical_id"]
         self.entities[canonical_id] = entity
+        entity_id = entity.get("id")
+        if entity_id is not None:
+            self.entities_by_id[entity_id] = entity
         self.files.setdefault(relative_path, []).append(canonical_id)
 
     def get_entity(self, canonical_id: str) -> dict | None:
@@ -49,6 +55,12 @@ class RepoGraph:
         Retrieve an artifact by canonical ID.
         """
         return self.entities.get(canonical_id)
+
+    def get_entity_by_id(self, entity_id: str) -> dict | None:
+        """
+        Retrieve an artifact by its extractor-local "id".
+        """
+        return self.entities_by_id.get(entity_id)
 
     def all_entities(self) -> list[dict]:
         """

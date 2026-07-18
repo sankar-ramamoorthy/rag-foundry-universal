@@ -19,7 +19,6 @@ class PgVectorStore(VectorStore):
         self._dsn = dsn
         self._dimension = dimension
         self._provider = provider
-        logging.info("PgVectorStore MS6: Skipping table validation for dual-write test")
 
     @property
     def dimension(self) -> int:
@@ -30,17 +29,17 @@ class PgVectorStore(VectorStore):
         logging.debug("PgVectorStore.persist: added %d records", len(records))
 
     def add(self, records: Iterable[VectorRecord]) -> None:
-        """MS6 Dual-write: vectors + vector_chunks"""
-        vectors_sql = sql.SQL("""
-            INSERT INTO {schema}.vectors 
-            (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy, 
-             chunk_text, source_metadata, provider)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        """).format(schema=sql.Identifier(self.SCHEMA))
+        """Write embeddings to vector_chunks (single write path).
 
+        The legacy `vectors` table is retired (audit F-15): it was a
+        never-removed MS6 dual-write target and is read nowhere in the
+        query path. `document_id` is nullable, so records without one
+        are still persisted.
+        """
+        records = list(records)
         chunks_sql = sql.SQL("""
-            INSERT INTO {schema}.vector_chunks 
-            (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy, 
+            INSERT INTO {schema}.vector_chunks
+            (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
              chunk_text, source_metadata, provider, document_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """).format(schema=sql.Identifier(self.SCHEMA))
@@ -48,23 +47,17 @@ class PgVectorStore(VectorStore):
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
                 for record in records:
-                    cur.execute(vectors_sql, (
+                    cur.execute(chunks_sql, (
                         record.vector, record.metadata.ingestion_id,
                         record.metadata.chunk_id, record.metadata.chunk_index,
                         record.metadata.chunk_strategy, record.metadata.chunk_text,
                         Jsonb(record.metadata.source_metadata or {}),
                         record.metadata.provider or self._provider,
+                        record.metadata.document_id or None,
                     ))
-                    if record.metadata.document_id:
-                        cur.execute(chunks_sql, (
-                            record.vector, record.metadata.ingestion_id,
-                            record.metadata.chunk_id, record.metadata.chunk_index,
-                            record.metadata.chunk_strategy, record.metadata.chunk_text,
-                            Jsonb(record.metadata.source_metadata or {}),
-                            record.metadata.provider or self._provider,
-                            record.metadata.document_id,
-                        ))
-        logging.info(f"MS6 DUAL-WRITE: {len(records)} vectors + chunks complete")
+        logging.info(
+            "PgVectorStore.add: %d records written to vector_chunks", len(records)
+        )
 
     def similarity_search(
         self,
@@ -184,6 +177,9 @@ class PgVectorStore(VectorStore):
         return results
 
     def delete_by_ingestion_id(self, ingestion_id: str) -> None:
+        # "vectors" is no longer written, but rows from before the F-15
+        # dual-write removal may still exist — keep purging it until the
+        # table is dropped by a migration.
         for table in ["vectors", "vector_chunks"]:
             delete_sql = sql.SQL("""
                 DELETE FROM {schema}.{table_name} WHERE ingestion_id = %s
