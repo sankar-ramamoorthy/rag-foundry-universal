@@ -110,8 +110,13 @@ def traverse_incoming_calls(graph: CodebaseGraph, start_cid: str, depth: int = 3
 
 
 def traverse_incoming_imports(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
-    """Traverse IMPORT edges in reverse (what imports this node?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"IMPORT"}, direction="reverse", max_depth=depth)
+    """Traverse IMPORTS edges in reverse (what imports this node?).
+
+    F-02: ingestion now materializes MODULE --IMPORTS--> MODULE edges
+    (relation_type "IMPORTS"); the old "IMPORT" type never existed as an
+    edge, so this traversal used to return nothing.
+    """
+    return bfs_traversal(graph, start_cid, relation_types={"IMPORTS"}, direction="reverse", max_depth=depth)
 
 # --- API Calls ---
 

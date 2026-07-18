@@ -35,6 +35,13 @@ class RepoGraph:
         self.entities_by_id: Dict[str, dict] = {}
         self.files: Dict[str, List[str]] = {}  # relative_path -> [canonical_id]
         self.relationships: List[dict] = []
+        # F-03: call-site evidence records from the extractor — never
+        # entities, never persisted as nodes. Consumed by _resolve_calls.
+        self.call_sites: List[dict] = []
+        # F-02: per-file import bindings (local name -> resolved target),
+        # built by _resolve_imports. In-memory only; consumed by call
+        # resolution (ADR-032 layer 2).
+        self.import_bindings: Dict[str, dict] = {}
 
     def add_entity(self, relative_path: str, entity: dict):
         """

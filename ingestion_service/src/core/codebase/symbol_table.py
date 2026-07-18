@@ -1,76 +1,87 @@
-## ingestion_service\src\core\codebase\symbol_table.py
+# ingestion_service\src\core\codebase\symbol_table.py
 """
 src/core/codebase/symbol_table.py
 
-SymbolTable
+SymbolTable — two-layer symbol index (F-04 / WP-G4, ADR-032).
 
-Builds a repository-wide mapping:
+Layers:
+- per-file: relative_path -> symbol_name -> canonical_id
+  (FUNCTION/CLASS shadow METHODs of the same bare name; ties resolve to
+  the lexicographically smallest canonical id — deterministic.)
+- global: symbol_name -> sorted list of canonical_ids
+  (a list, so ambiguity is surfaced instead of last-write-wins.)
 
-    symbol_name -> canonical_id
-
-Phase 1 scope:
-- CLASS
-- FUNCTION
-- METHOD
-
-This is a global flat symbol index.
-Later phases may extend to scoped or multi-binding resolution.
+Indexed artifact types: CLASS, FUNCTION, METHOD.
 """
-from __future__ import annotations  # Python 3.7+ feature
-#to try and avoid circular reference
-#from src.core.codebase.repo_graph_builder import RepoGraph
+from __future__ import annotations
 
-from typing import Dict
+from typing import Dict, List, Optional, Tuple
+
+# FUNCTION/CLASS are callable/referable by bare name; METHOD is not,
+# so it only matches when nothing else in the file has the name.
+_PRIORITY = {"CLASS": 0, "FUNCTION": 0, "METHOD": 1}
 
 
 class SymbolTable:
-    """
-    Global symbol table for repository artifacts.
-
-    Maps:
-        symbol_name -> canonical_id
-    """
+    """Two-layer symbol table for repository artifacts."""
 
     def __init__(self):
-        self._symbols: Dict[str, str] = {}
+        # relative_path -> name -> (priority, canonical_id)
+        self._per_file: Dict[str, Dict[str, Tuple[int, str]]] = {}
+        # name -> list of canonical_ids (kept sorted on read)
+        self._global: Dict[str, List[str]] = {}
 
     # ------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------
 
-    def add(self, symbol_name: str, canonical_id: str):
-        """
-        Register a symbol in the table.
+    def add(
+        self,
+        symbol_name: str,
+        canonical_id: str,
+        relative_path: Optional[str] = None,
+        artifact_type: str = "FUNCTION",
+    ):
+        """Register a symbol in both layers."""
+        self._global.setdefault(symbol_name, []).append(canonical_id)
 
-        If duplicate symbol exists, last definition wins.
-        (Phase 1 simplification — deterministic but not scoped.)
-        """
-        self._symbols[symbol_name] = canonical_id
+        if relative_path:
+            candidate = (
+                _PRIORITY.get(artifact_type, 1), canonical_id
+            )
+            bucket = self._per_file.setdefault(relative_path, {})
+            existing = bucket.get(symbol_name)
+            if existing is None or candidate < existing:
+                bucket[symbol_name] = candidate
 
     def lookup(self, symbol_name: str) -> str | None:
-        """
-        Retrieve canonical_id for a symbol.
-        """
-        return self._symbols.get(symbol_name)
+        """Repo-wide lookup; ambiguous names resolve to the smallest
+        canonical id (deterministic first match — ADR-048)."""
+        bucket = self._global.get(symbol_name)
+        return min(bucket) if bucket else None
+
+    def lookup_in_file(
+        self, relative_path: str, symbol_name: str
+    ) -> Optional[str]:
+        """Same-file lookup (ADR-032 resolution layer 1)."""
+        entry = self._per_file.get(relative_path, {}).get(symbol_name)
+        return entry[1] if entry else None
+
+    def lookup_global(self, symbol_name: str) -> List[str]:
+        """All bindings of a name across the repo, sorted. Callers use
+        this only when unambiguous (len == 1) — ADR-032 layer 3."""
+        return sorted(self._global.get(symbol_name, []))
 
     def all_symbols(self) -> Dict[str, str]:
-        return dict(self._symbols)
+        return {name: min(cids) for name, cids in self._global.items()}
 
 
 # ----------------------------------------------------------------
 # Builder Function
 # ----------------------------------------------------------------
 
-def build_symbol_table(graph: RepoGraph) -> SymbolTable:
-    """
-    Build a SymbolTable from a RepoGraph.
-
-    Indexes:
-        CLASS
-        FUNCTION
-        METHOD
-    """
-
+def build_symbol_table(graph) -> SymbolTable:
+    """Build a SymbolTable from a RepoGraph (CLASS/FUNCTION/METHOD)."""
     table = SymbolTable()
 
     for entity in graph.all_entities():
@@ -78,11 +89,14 @@ def build_symbol_table(graph: RepoGraph) -> SymbolTable:
 
         if artifact_type in {"CLASS", "FUNCTION", "METHOD"}:
             name = entity.get("name")
-            #canonical_id = entity.get("id")
-            canonical_id = entity.get("canonical_id")   
+            canonical_id = entity.get("canonical_id")
 
             if isinstance(name, str) and isinstance(canonical_id, str):
-                table.add(name, canonical_id)
-
+                table.add(
+                    name,
+                    canonical_id,
+                    relative_path=entity.get("relative_path"),
+                    artifact_type=artifact_type,
+                )
 
     return table

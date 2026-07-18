@@ -97,15 +97,17 @@ def test_sync_defs_marked_not_async(async_artifacts):
     assert funcs["app.py#Handler.load"]["metadata"]["is_async"] is False
 
 
-def test_calls_inside_async_body_attributed_to_async_def(async_artifacts):
-    """Before F-01 the CALL inside `async def main` had the MODULE as its
-    parent — mis-attributing the caller."""
-    calls = {
-        a["name"]: a for a in async_artifacts
-        if a["artifact_type"] == "CALL"
+def test_calls_inside_async_body_attributed_to_async_def():
+    """Before F-01 the call site inside `async def main` had the MODULE as
+    its parent — mis-attributing the caller. F-03: call sites live in the
+    extractor's side list with the receiver split from the name."""
+    extractor = PythonASTExtractor(relative_path="app.py")
+    extractor.extract(ASYNC_SOURCE)
+    sites = {
+        (s["receiver"], s["name"]): s for s in extractor.call_sites
     }
-    assert calls["helper"]["parent_id"] == "app.py#main"
-    assert calls["self.load"]["parent_id"] == "app.py#Handler.handle"
+    assert sites[(None, "helper")]["parent_id"] == "app.py#main"
+    assert sites[("self", "load")]["parent_id"] == "app.py#Handler.handle"
 
 
 def test_async_def_end_to_end_through_graph_builder(tmp_path):
