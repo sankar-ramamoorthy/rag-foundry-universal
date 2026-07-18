@@ -75,6 +75,67 @@ class RepoIngestResponse(BaseModel):
 
 
 # -----------------------------
+# Batch embedding stage (F-08 / WP-S2)
+# -----------------------------
+def _embed_repo_artifacts(
+    pipeline: IngestionPipeline,
+    persistence: CodebaseGraphPersistence,
+    repo_id: str,
+    ingestion_id: str,
+    nodes: list[dict],
+    provider: str,
+) -> tuple[int, int]:
+    """
+    Chunk every embeddable node, then embed + persist the whole repo in
+    batches: one canonical_id→document_id query, embedder-batched Ollama
+    calls, and /v1/vectors/batch posts of bounded size.
+
+    Returns (chunks_persisted, nodes_skipped_missing_db_record).
+    """
+    canonical_to_document_id = persistence.get_canonical_id_map(repo_id)
+
+    all_chunks = []
+    document_ids: list[str] = []
+    skipped_missing = 0
+
+    for node in nodes:
+        text = node.get("text", "")
+        if not text.strip():
+            logger.debug(f"[{ingestion_id}] Skipping node without text")
+            continue
+
+        canonical_id = node["canonical_id"]
+        document_id = canonical_to_document_id.get(canonical_id)
+        if document_id is None:
+            logger.warning(f"Skipping node without DB record: {canonical_id}")
+            skipped_missing += 1
+            continue
+
+        chunks = pipeline._chunk(text, "code", provider)
+        # Inject canonical_id into every chunk metadata here
+        # This is what extract_canonical_ids_from_chunks() reads in rag_orchestrator
+        for chunk in chunks:
+            chunk.metadata["canonical_id"] = canonical_id
+            chunk.metadata["repo_id"] = repo_id
+            chunk.metadata["relative_path"] = node.get("relative_path", "")
+            chunk.metadata["doc_type"] = node.get("doc_type", "code")
+            chunk.metadata["source_metadata"] = {          # keep source_metadata too
+                **chunk.metadata.get("source_metadata", {}),
+                "canonical_id": canonical_id,
+            }
+
+        all_chunks.extend(chunks)
+        document_ids.extend([document_id] * len(chunks))
+
+    pipeline.embed_and_persist_batch(
+        chunks=all_chunks,
+        ingestion_id=ingestion_id,
+        document_ids=document_ids,
+    )
+    return len(all_chunks), skipped_missing
+
+
+# -----------------------------
 # Background ingestion worker
 # -----------------------------
 def _background_ingest_repo(
@@ -121,47 +182,33 @@ def _background_ingest_repo(
         persistence = CodebaseGraphPersistence(session=session)
         nodes = repo_graph.all_entities()  # ✅ CORRECT method
         logger.debug(f"[{ingestion_id}] Sample node keys: {nodes[0].keys() if nodes else 'NO NODES'}")
-        persistence.upsert_nodes(repo_id = repo_id, nodes=nodes)
-
-        ## Relationships will be added in MS5 - skip for now
-        persistence.upsert_relationships(repo_id = repo_id, relationships=repo_graph.relationships)
+        # F-09/F-06: delete + nodes + relationships in one transaction,
+        # serialized per repo by an advisory lock.
+        stats = persistence.persist_graph(
+            repo_id=repo_id,
+            nodes=nodes,
+            relationships=repo_graph.relationships,
+        )
+        logger.info(f"[{ingestion_id}] Graph persisted: {stats}")
 
         # --- Run embeddings via IngestionPipeline ---
         settings = get_settings()
         provider = settings.EMBEDDING_PROVIDER
         pipeline = _build_pipeline(provider)
 
-        # Corrected embedding loop with document_id lookup
-        for node in nodes:
-            logger.debug(f"[{ingestion_id}] Embedding node id={node.get('id')} keys={node.keys()}")
-            text = node.get("text", "")
-            if text.strip():
-                canonical_id = node["canonical_id"]
-
-                # Get the existing document_id from DB using canonical_id
-                doc_node = persistence.get_node_by_canonical_id(repo_id, canonical_id)
-
-                if doc_node:
-                    # Proceed with embedding and persistence
-                    chunks = pipeline._chunk(text, "code", provider)
-                    # Inject canonical_id into every chunk metadata here
-                    # This is what extract_canonical_ids_from_chunks() reads in rag_orchestrator
-                    for chunk in chunks:
-                        chunk.metadata["canonical_id"] = canonical_id
-                        chunk.metadata["repo_id"] = repo_id
-                        chunk.metadata["relative_path"] = node.get("relative_path", "")
-                        chunk.metadata["doc_type"] = node.get("doc_type", "code")
-                        chunk.metadata["source_metadata"] = {          # keep source_metadata too
-                            **chunk.metadata.get("source_metadata", {}),
-                            "canonical_id": canonical_id,
-                        }
-
-                    embeddings = pipeline._embed(chunks)
-                    pipeline._persist(chunks, embeddings, str(ingestion_id), doc_node.document_id)
-                else:
-                    logger.warning(f"Skipping node without DB record: {canonical_id}")
-            else:
-                logger.debug(f"[{ingestion_id}] Skipping node without text")
+        # F-08: batch embedding + persistence (one map query, batched HTTP)
+        chunk_count, skipped_missing = _embed_repo_artifacts(
+            pipeline=pipeline,
+            persistence=persistence,
+            repo_id=repo_id,
+            ingestion_id=str(ingestion_id),
+            nodes=nodes,
+            provider=provider,
+        )
+        logger.info(
+            f"[{ingestion_id}] Embedded {chunk_count} chunks "
+            f"({skipped_missing} nodes had no DB record)"
+        )
 
         StatusManager(session).mark_completed(ingestion_id)
         logger.info(f"✅ Repo ingestion completed: {ingestion_id}")
