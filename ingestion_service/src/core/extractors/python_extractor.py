@@ -166,6 +166,8 @@ class PythonASTExtractor(ast.NodeVisitor):
                 "metadata": {
                     "module": module,
                     "asname": alias.asname,
+                    # F-02: relative-import depth (`from . import x` → 1)
+                    "level": node.level,
                     "lineno": node.lineno,
                     "col_offset": node.col_offset,
                 },

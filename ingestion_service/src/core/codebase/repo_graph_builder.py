@@ -139,6 +139,7 @@ class RepoGraphBuilder:
 
         symbol_table = build_symbol_table(graph)
         self._attach_defines(graph)
+        self._resolve_imports(graph)          # F-02 (WP-G2) — before calls
         self._resolve_calls(graph, symbol_table)
         self._link_docs_to_code(graph, symbol_table)   # IS8 — last step
 
@@ -174,6 +175,169 @@ class RepoGraphBuilder:
                 "relation_type": "DEFINES",
                 "relationship_metadata": {}
             })
+
+    # -----------------------------
+    # F-02 (WP-G2): IMPORTS Relationships
+    # -----------------------------
+
+    def _resolve_imports(self, graph: RepoGraph) -> None:
+        """Materialize MODULE --IMPORTS--> MODULE edges from IMPORT
+        artifacts. Intra-repo imports resolve against the dotted-module
+        map; external imports get one EXTERNAL_MODULE node per root
+        package. Also records per-file import bindings for call
+        resolution (ADR-032 layer 2)."""
+        module_map: dict[str, str] = {}
+        for entity in graph.all_entities():
+            if entity.get("artifact_type") != "MODULE":
+                continue
+            dotted = self._dotted_module_path(entity["canonical_id"])
+            if dotted:
+                module_map[dotted] = entity["canonical_id"]
+
+        imports = sorted(
+            (
+                e for e in graph.all_entities()
+                if e.get("artifact_type") == "IMPORT"
+            ),
+            key=lambda e: (
+                e.get("relative_path", ""),
+                e.get("metadata", {}).get("lineno", 0),
+                e.get("metadata", {}).get("col_offset", 0),
+                e.get("name", ""),
+            ),
+        )
+
+        # (from_cid, to_cid) -> [[imported_name, asname], ...]
+        edges: dict = {}
+
+        for imp in imports:
+            rel = imp.get("relative_path", "")
+            if rel not in graph.entities:
+                continue  # MODULE canonical id == relative path (ADR-031)
+
+            name = imp.get("name", "")
+            asname = imp.get("metadata", {}).get("asname")
+
+            target_cid, binding = self._resolve_import_target(
+                graph, imp, module_map
+            )
+            # `import pkg.util` binds the dotted path as written at call
+            # sites (`pkg.util.calc()`); an asname replaces it.
+            bindings = graph.import_bindings.setdefault(rel, {})
+            bindings[asname or name] = binding
+
+            if target_cid == rel:
+                continue  # a module importing itself is never an edge
+
+            edges.setdefault((rel, target_cid), []).append(
+                [name, asname]
+            )
+
+        for (from_cid, to_cid) in sorted(edges):
+            pairs = sorted(
+                edges[(from_cid, to_cid)],
+                key=lambda p: (p[0], p[1] or ""),
+            )
+            graph.add_relationship({
+                "from_canonical_id": from_cid,
+                "to_canonical_id": to_cid,
+                "relation_type": "IMPORTS",
+                "relationship_metadata": {
+                    "imports": pairs,
+                    "count": len(pairs),
+                },
+            })
+
+    def _resolve_import_target(
+        self, graph: RepoGraph, imp: dict, module_map: dict
+    ) -> Tuple[str, dict]:
+        """Resolve one IMPORT artifact to (target canonical id, binding).
+
+        ImportFrom tries `base.name` as a module first (`from pkg import
+        util`), then `base` as the module the symbol lives in; plain
+        Import tries the dotted name directly. Misses become one
+        EXTERNAL_MODULE per root package.
+        """
+        meta = imp.get("metadata", {})
+        name = imp.get("name", "")
+        rel = imp.get("relative_path", "")
+
+        if "module" not in meta:  # `import X[.Y]`
+            if name in module_map:
+                return module_map[name], {
+                    "kind": "module", "module_cid": module_map[name],
+                }
+            root = name.split(".")[0]
+            return self._external_module_node(graph, root), {
+                "kind": "external_module", "dotted": name,
+            }
+
+        # `from X import name`
+        dotted_base = self._absolute_import_base(
+            rel, meta.get("module", ""), meta.get("level", 0) or 0
+        )
+        as_module = f"{dotted_base}.{name}" if dotted_base else name
+
+        if as_module in module_map:
+            # the imported name is itself a module
+            return module_map[as_module], {
+                "kind": "module", "module_cid": module_map[as_module],
+            }
+        if dotted_base in module_map:
+            return module_map[dotted_base], {
+                "kind": "symbol",
+                "module_cid": module_map[dotted_base],
+                "symbol": name,
+            }
+        root = (dotted_base or name).split(".")[0]
+        return self._external_module_node(graph, root), {
+            "kind": "external_symbol", "dotted": as_module,
+        }
+
+    def _dotted_module_path(self, relative_path: str) -> Optional[str]:
+        """`pkg/util.py` → `pkg.util`; `pkg/__init__.py` → `pkg`."""
+        if not relative_path.endswith(".py"):
+            return None
+        parts = relative_path[:-3].split("/")
+        if parts and parts[-1] == "__init__":
+            parts = parts[:-1]
+        return ".".join(parts) if parts else None
+
+    def _absolute_import_base(
+        self, relative_path: str, base: str, level: int
+    ) -> str:
+        """Resolve an ImportFrom base to an absolute dotted path.
+        level=0 → already absolute; level=n → n-1 packages above the
+        importing file's package."""
+        if not level:
+            return base
+        pkg_parts = relative_path.split("/")[:-1]
+        drop = level - 1
+        pkg_parts = pkg_parts[: len(pkg_parts) - drop] if drop else pkg_parts
+        if base:
+            pkg_parts = pkg_parts + base.split(".")
+        return ".".join(pkg_parts)
+
+    def _external_module_node(self, graph: RepoGraph, root: str) -> str:
+        """Get or create the single EXTERNAL_MODULE node for an external
+        root package (`numpy`, not `numpy.linalg`). Persisted with empty
+        text so it is never embedded (ADR-039)."""
+        canonical_id = f"EXTERNAL_MODULE:{root}"
+        if canonical_id not in graph.entities:
+            graph.add_entity("", {
+                "artifact_type": "EXTERNAL_MODULE",
+                "id": canonical_id,
+                "canonical_id": canonical_id,
+                "name": root,
+                "title": root,
+                "doc_type": "external",
+                "relative_path": "",
+                "text": "",
+                "metadata": {},
+                "ingestion_id": self.ingestion_id,
+                "defines": [],
+            })
+        return canonical_id
 
     # -----------------------------
     # CALL Relationships
