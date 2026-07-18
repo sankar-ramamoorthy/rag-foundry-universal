@@ -65,11 +65,11 @@ def test_extractor_on_self_file(extractor):
     assert "typing" in import_modules  # ensure the module itself is tracked in metadata
 
     # -----------------------------
-    # Call artifacts (unresolved)
+    # Call sites (F-03: evidence list, not artifacts)
     # -----------------------------
-    call_artifacts = [a for a in artifacts if a["artifact_type"] == "CALL"]
-    call_names = [c["name"] for c in call_artifacts]
+    assert not any(a["artifact_type"] == "CALL" for a in artifacts)
+    site_keys = {(s["receiver"], s["name"]) for s in extractor.call_sites}
 
     # Check at least one known call exists: ast.unparse used in extractor
-    assert any("ast.unparse" in c for c in call_names)
+    assert ("ast", "unparse") in site_keys
 

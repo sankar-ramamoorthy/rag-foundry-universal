@@ -35,6 +35,9 @@ class RepoGraph:
         self.entities_by_id: Dict[str, dict] = {}
         self.files: Dict[str, List[str]] = {}  # relative_path -> [canonical_id]
         self.relationships: List[dict] = []
+        # F-03: call-site evidence records from the extractor — never
+        # entities, never persisted as nodes. Consumed by _resolve_calls.
+        self.call_sites: List[dict] = []
 
     def add_entity(self, relative_path: str, entity: dict):
         """

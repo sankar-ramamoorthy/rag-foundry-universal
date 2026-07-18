@@ -11,7 +11,6 @@ Extracts code artifacts from Python source files:
 - FUNCTION
 - METHOD
 - IMPORT
-- CALL (unresolved)
 
 All artifacts include:
 - canonical id
@@ -21,6 +20,11 @@ All artifacts include:
 - parent_id (except MODULE)
 
 Hierarchical relationships are explicitly encoded using a scope stack.
+
+Call sites are NOT artifacts (F-03 / WP-G3): they carry no identity, so they
+are collected in `self.call_sites` as evidence records
+{name, receiver, parent_id, relative_path, lineno, col_offset} and consumed
+by RepoGraphBuilder._resolve_calls to produce aggregated CALL edges.
 """
 
 import ast
@@ -40,6 +44,8 @@ class PythonASTExtractor(ast.NodeVisitor):
         self.module_name = module_path.replace("/", ".")
         self.module_id = relative_path  # canonical module id
         self.artifacts: List[Dict] = []
+        # F-03: call sites are evidence, not identity-bearing artifacts.
+        self.call_sites: List[Dict] = []
         self.scope_stack: List[str] = []  # maintains current lexical scope
 
     # ------------------------------------------------------------------
@@ -166,24 +172,30 @@ class PythonASTExtractor(ast.NodeVisitor):
             })
 
     def visit_Call(self, node: ast.Call):
+        # F-03: record the call site with the receiver split from the
+        # callee name (`self.add()` → name="add", receiver="self") instead
+        # of a fused string, so resolution can use scope/import context.
         try:
             if isinstance(node.func, ast.Attribute):
-                func_name = f"{ast.unparse(node.func.value)}.{node.func.attr}"
+                name = node.func.attr
+                receiver = ast.unparse(node.func.value)
+            elif isinstance(node.func, ast.Name):
+                name = node.func.id
+                receiver = None
             else:
-                func_name = ast.unparse(node.func)
+                name = ast.unparse(node.func)
+                receiver = None
         except Exception:
-            func_name = "<unknown>"
+            name = "<unknown>"
+            receiver = None
 
-        self.artifacts.append({
-            "artifact_type": "CALL",
-            "id": f"{self.relative_path}#call:{func_name}",
-            "name": func_name,
+        self.call_sites.append({
+            "name": name,
+            "receiver": receiver,
             "parent_id": self._current_parent_id(),
             "relative_path": self.relative_path,
-            "metadata": {
-                "lineno": node.lineno,
-                "col_offset": node.col_offset,
-            },
+            "lineno": node.lineno,
+            "col_offset": node.col_offset,
         })
 
         self.generic_visit(node)

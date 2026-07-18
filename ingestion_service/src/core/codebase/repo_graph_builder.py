@@ -134,6 +134,9 @@ class RepoGraphBuilder:
 
                 graph.add_entity(relative_path, artifact)
 
+            # F-03: call sites travel outside the artifact list.
+            graph.call_sites.extend(getattr(extractor, "call_sites", []))
+
         symbol_table = build_symbol_table(graph)
         self._attach_defines(graph)
         self._resolve_calls(graph, symbol_table)
@@ -177,9 +180,18 @@ class RepoGraphBuilder:
     # -----------------------------
 
     def _resolve_calls(self, graph: RepoGraph, symbol_table):
+        """F-03 (WP-G3): consume call-site evidence records and emit one
+        aggregated CALL edge per caller→callee pair. Multiple sites of the
+        same pair land in metadata (call_sites linenos + count) instead of
+        colliding on a shared canonical id."""
+        # (from_cid, to_cid) -> {"linenos": [...], "confidence": float}
+        edges: dict = {}
 
-        for call in self._calls(graph):
-            caller_parent_id = call.get("parent_id")
+        for site in sorted(
+            graph.call_sites,
+            key=lambda s: (s["relative_path"], s["lineno"], s["col_offset"]),
+        ):
+            caller_parent_id = site.get("parent_id")
             if not caller_parent_id:
                 continue
 
@@ -189,13 +201,9 @@ class RepoGraphBuilder:
             if not caller_parent:
                 continue
 
-            name = call.get("name") or ""
-            resolution, confidence = self._resolve_in_scope(call, graph)
-
-            if not resolution:
-                resolution = symbol_table.lookup(name)
-                confidence = 0.5 if resolution else 0.0
-
+            resolution, confidence = self._resolve_call_site(
+                site, graph, symbol_table
+            )
             if not resolution:
                 continue
 
@@ -205,12 +213,49 @@ class RepoGraphBuilder:
             if not target:
                 continue
 
+            key = (caller_parent["canonical_id"], target["canonical_id"])
+            record = edges.setdefault(
+                key, {"linenos": [], "confidence": confidence}
+            )
+            record["linenos"].append(site["lineno"])
+            record["confidence"] = max(record["confidence"], confidence)
+
+        for (from_cid, to_cid) in sorted(edges):
+            record = edges[(from_cid, to_cid)]
             graph.add_relationship({
-                "from_canonical_id": caller_parent["canonical_id"],
-                "to_canonical_id": target["canonical_id"],
+                "from_canonical_id": from_cid,
+                "to_canonical_id": to_cid,
                 "relation_type": "CALL",
-                "relationship_metadata": {"confidence": confidence}
+                "relationship_metadata": {
+                    "confidence": record["confidence"],
+                    "call_sites": record["linenos"],
+                    "count": len(record["linenos"]),
+                },
             })
+
+    def _resolve_call_site(
+        self, site: dict, graph: RepoGraph, symbol_table
+    ) -> Tuple[Optional[str], float]:
+        """Resolve one call site to an extractor-local entity id.
+
+        F-03 keeps the pre-existing resolution semantics (enclosing-scope
+        recursion match, then flat global symbol table) for receiver-less
+        calls; receiver calls (`self.x()`, `obj.x()`) resolve in F-04.
+        """
+        if site.get("receiver") is not None:
+            return None, 0.0
+
+        resolution, confidence = self._resolve_in_scope(site, graph)
+        if resolution:
+            return resolution, confidence
+
+        resolution = symbol_table.lookup(site.get("name") or "")
+        if resolution:
+            # symbol_table stores canonical ids; edge emission expects the
+            # extractor-local id, which for code artifacts is identical.
+            return resolution, 0.5
+
+        return None, 0.0
 
     # -----------------------------
     # IS8: DOCUMENTS Relationships
@@ -293,21 +338,18 @@ class RepoGraphBuilder:
     # Helpers
     # -----------------------------
 
-    def _calls(self, graph: RepoGraph):
-        for entity in graph.all_entities():
-            if entity.get("artifact_type") == "CALL":
-                yield entity
-
     def _resolve_in_scope(
-        self, call: dict, graph: RepoGraph
+        self, site: dict, graph: RepoGraph
     ) -> Tuple[Optional[str], float]:
-        current_parent = call.get("parent_id")
+        """Recursion detection: an enclosing scope whose name matches the
+        called name (works for both artifacts and call-site records)."""
+        current_parent = site.get("parent_id")
 
         while current_parent:
             entity = graph.get_entity_by_id(current_parent)
             if entity is None:
                 break
-            if entity.get("name") == call.get("name"):
+            if entity.get("name") == site.get("name"):
                 return entity.get("id"), 1.0
             current_parent = entity.get("parent_id")
 
