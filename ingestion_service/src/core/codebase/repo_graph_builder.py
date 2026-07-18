@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 import ast
 import logging
+import os
 
 from src.core.codebase.identity import build_global_id
 from src.core.extractors.python_extractor import PythonASTExtractor
@@ -16,6 +17,22 @@ logger.setLevel(logging.DEBUG)
 
 # IS8: code artifact types eligible for DOCUMENTS relationships
 DOCUMENTABLE_TYPES = {"CLASS", "FUNCTION", "METHOD", "MODULE"}
+
+# F-16: directories that never contain first-party code worth ingesting.
+# Dot-directories (.git, .venv, .tox, …) are excluded by a separate rule.
+DEFAULT_IGNORED_DIRS = {
+    "node_modules",
+    "venv",
+    "env",
+    "build",
+    "dist",
+    "target",
+    "vendor",
+    "vendored",
+    "__pycache__",
+    "site-packages",
+    "eggs",
+}
 
 
 class RepoGraphBuilder:
@@ -263,12 +280,20 @@ class RepoGraphBuilder:
 
     def _walk_repo(self):
         SUPPORTED = {".py", ".md"}
-        for path in self.repo_root.rglob("*"):
-            if path.suffix not in SUPPORTED:
-                continue
-            if any(part.startswith(".") for part in path.parts):
-                continue
-            yield path
+        for dirpath, dirnames, filenames in os.walk(self.repo_root):
+            # Prune ignored directories in place so os.walk never descends
+            # into them; sorted for deterministic traversal order (ADR-030).
+            dirnames[:] = sorted(
+                d for d in dirnames
+                if not d.startswith(".") and d not in DEFAULT_IGNORED_DIRS
+            )
+            for filename in sorted(filenames):
+                if filename.startswith("."):
+                    continue
+                path = Path(dirpath) / filename
+                if path.suffix not in SUPPORTED:
+                    continue
+                yield path
 
     def _select_extractor(self, file_path: Path):
         rel = file_path.relative_to(self.repo_root).as_posix()

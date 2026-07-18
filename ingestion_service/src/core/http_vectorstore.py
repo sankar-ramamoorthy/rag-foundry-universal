@@ -18,14 +18,14 @@ class HttpVectorStore:
         logger.debug("ttpVectorStore init")
 
     def persist(
-        self, 
-        chunks: List[Chunk], 
-        embeddings: List[Any], 
+        self,
+        chunks: List[Chunk],
+        embeddings: List[Any],
         ingestion_id: str,
         document_id: str = None,  # MS6-IS1: NEW - Link to DocumentNode
     ) -> None:
         """
-        Dual-write: legacy vectors + new vector_chunks (MS6).
+        Persist chunk embeddings to vector_store_service (vector_chunks table).
         """
         logger.debug("HttpVectorStore persist")
         records = []
@@ -51,10 +51,9 @@ class HttpVectorStore:
             if document_id:
                 logger.debug("HttpVectorStore persist document_id exists")
                 record["metadata"]["document_id"] = str(document_id)
-            
+
             records.append(record)
 
-        # Dual-write to vector_store_service (handles both tables internally)
         self.add_vectors(records)
         logger.info(f"Persisted {len(records)} vectors for ingestion {ingestion_id}  with document_id  {document_id}")
 
