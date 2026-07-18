@@ -51,25 +51,31 @@ class OllamaEmbedder(BaseEmbedder):
         )
 
         texts = [_truncate(chunk.content) for chunk in chunks]
+        if not texts:
+            return []
 
+        embeddings: List[List[float]] = []
         try:
-            payload = {"model": self.model, "input": texts}
+            for start in range(0, len(texts), self.batch_size):
+                batch = texts[start:start + self.batch_size]
+                payload = {"model": self.model, "input": batch}
 
-            response = requests.post(f"{self.base_url}/api/embed", json=payload)
+                response = requests.post(f"{self.base_url}/api/embed", json=payload)
 
-            if response.status_code != 200:
-                raise RuntimeError(
-                    f"Ollama embedding failed "
-                    f"(status={response.status_code}): {response.text}"
-                )
+                if response.status_code != 200:
+                    raise RuntimeError(
+                        f"Ollama embedding failed "
+                        f"(status={response.status_code}): {response.text}"
+                    )
 
-            result = response.json()
-
-            return (
-                result.get("embeddings", [result["embeddings"]])
-                if isinstance(texts, list)
-                else [result["embeddings"]]
-            )
+                embeddings.extend(response.json()["embeddings"])
 
         except Exception as e:
             raise RuntimeError(f"Ollama embedder error: {e}") from e
+
+        if len(embeddings) != len(texts):
+            raise RuntimeError(
+                f"Ollama returned {len(embeddings)} embeddings "
+                f"for {len(texts)} inputs"
+            )
+        return embeddings

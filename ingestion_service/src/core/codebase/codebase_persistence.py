@@ -232,6 +232,18 @@ class CodebaseGraphPersistence:
             .first()
         )
 
+    def get_canonical_id_map(self, repo_id: str) -> dict:
+        """
+        Return {canonical_id: document_id (str)} for every node in the repo,
+        in a single query (F-08: replaces per-node get_node_by_canonical_id).
+        """
+        rows = (
+            self._session.query(DocumentNode.canonical_id, DocumentNode.document_id)
+            .filter(DocumentNode.repo_id == repo_id)
+            .all()
+        )
+        return {canonical_id: str(document_id) for canonical_id, document_id in rows}
+
     def close(self):
         """Close the session if created internally."""
         if not self._external_session:

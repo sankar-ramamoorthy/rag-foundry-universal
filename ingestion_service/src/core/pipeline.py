@@ -160,6 +160,37 @@ class IngestionPipeline:
         logger.debug(f"📦 MS6 run_with_chunks() Persisting {len(chunks)} chunks with document_id={document_id}")
         self._persist(chunks, embeddings, ingestion_id, str(document_id))
 
+    def embed_and_persist_batch(
+        self,
+        *,
+        chunks: list[Chunk],
+        ingestion_id: str,
+        document_ids: list[str],
+    ) -> None:
+        """
+        Embed pre-chunked artifacts and bulk-persist them (F-08).
+
+        Unlike _persist(), every chunk carries its own document_id, so one
+        call covers a whole repo's artifacts: embeddings happen in embedder
+        batches and persistence goes through the vector store's batch path.
+        """
+        if len(chunks) != len(document_ids):
+            raise ValueError(
+                f"embed_and_persist_batch mismatch: {len(chunks)} chunks, "
+                f"{len(document_ids)} document_ids"
+            )
+        if not chunks:
+            logger.debug("embed_and_persist_batch: no chunks to persist")
+            return
+
+        embeddings = self._embed(chunks)
+        self._vector_store.persist_batch(
+            chunks=chunks,
+            embeddings=embeddings,
+            ingestion_id=ingestion_id,
+            document_ids=document_ids,
+        )
+
     def _validate(self, text: str) -> None:
         """Validate input text (currently no-op)."""
         logger.debug("✅ pipeline.py _validate() - No-op validator passed")
