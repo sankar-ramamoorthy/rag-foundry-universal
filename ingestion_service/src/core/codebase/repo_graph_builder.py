@@ -1,5 +1,6 @@
 # ingestion_service/src/core/codebase/repo_graph_builder.py
 
+from collections import deque
 from pathlib import Path
 from typing import Optional, Tuple
 import ast
@@ -144,6 +145,7 @@ class RepoGraphBuilder:
         symbol_table = build_symbol_table(graph)
         self._attach_defines(graph)
         self._resolve_imports(graph)          # F-02 (WP-G2) — before calls
+        self._resolve_inheritance(graph, symbol_table)  # WP-G5 — before calls
         self._resolve_calls(graph, symbol_table)
         self._link_docs_to_code(graph, symbol_table)   # IS8 — last step
 
@@ -343,6 +345,172 @@ class RepoGraphBuilder:
         return canonical_id
 
     # -----------------------------
+    # WP-G5: INHERITS / OVERRIDES Relationships
+    # -----------------------------
+
+    def _resolve_inheritance(self, graph: RepoGraph, symbol_table) -> None:
+        """WP-G5: materialize the class hierarchy.
+
+        For each CLASS, resolve its `metadata.bases` strings through the
+        same machinery as call resolution (same-file → imports →
+        unique-global → EXTERNAL_SYMBOL) and emit
+        CLASS --INHERITS--> CLASS|EXTERNAL_SYMBOL edges. Then, for each
+        METHOD redefining a name that exists on the nearest resolved
+        ancestor, emit METHOD --OVERRIDES--> base METHOD. Also records
+        graph.class_bases so `self.x()` resolution can fall back to
+        inherited methods (ADR-032 step 1 extension)."""
+        classes = sorted(
+            (
+                e for e in graph.all_entities()
+                if e.get("artifact_type") == "CLASS"
+            ),
+            key=lambda e: e["canonical_id"],
+        )
+
+        # (from_cid, to_cid) -> {"bases": [strings], "confidence": float}
+        edges: dict = {}
+        for cls in classes:
+            rel = cls.get("relative_path", "")
+            for base_str in cls.get("metadata", {}).get("bases", []):
+                target_id, confidence = self._resolve_base(
+                    graph, symbol_table, rel, base_str
+                )
+                target = graph.get_entity_by_id(target_id)
+                if not target or target["id"] == cls["id"]:
+                    continue
+
+                if target.get("artifact_type") == "CLASS":
+                    bases = graph.class_bases.setdefault(cls["id"], [])
+                    if target["id"] not in bases:
+                        bases.append(target["id"])
+
+                key = (cls["canonical_id"], target["canonical_id"])
+                record = edges.setdefault(
+                    key, {"bases": [], "confidence": confidence}
+                )
+                record["bases"].append(base_str)
+                record["confidence"] = max(record["confidence"], confidence)
+
+        for (from_cid, to_cid) in sorted(edges):
+            record = edges[(from_cid, to_cid)]
+            graph.add_relationship({
+                "from_canonical_id": from_cid,
+                "to_canonical_id": to_cid,
+                "relation_type": "INHERITS",
+                "relationship_metadata": {
+                    "bases": record["bases"],
+                    "confidence": record["confidence"],
+                },
+            })
+
+        self._emit_overrides(graph, classes)
+
+    def _emit_overrides(self, graph: RepoGraph, classes: list) -> None:
+        """METHOD --OVERRIDES--> base METHOD for each method whose name is
+        defined on the nearest resolved intra-repo ancestor class."""
+        methods_by_class: dict = {}
+        for entity in graph.all_entities():
+            if entity.get("artifact_type") == "METHOD":
+                methods_by_class.setdefault(
+                    entity.get("parent_id"), []
+                ).append(entity)
+
+        for cls in classes:
+            if cls["id"] not in graph.class_bases:
+                continue
+            methods = sorted(
+                methods_by_class.get(cls["id"], []),
+                key=lambda m: m["canonical_id"],
+            )
+            for method in methods:
+                base_method_id = self._lookup_method_in_hierarchy(
+                    graph, cls["id"], method["name"], include_self=False
+                )
+                if not base_method_id:
+                    continue
+                base_method = graph.get_entity_by_id(base_method_id)
+                if not base_method:
+                    continue
+                graph.add_relationship({
+                    "from_canonical_id": method["canonical_id"],
+                    "to_canonical_id": base_method["canonical_id"],
+                    "relation_type": "OVERRIDES",
+                    "relationship_metadata": {
+                        "method_name": method["name"],
+                    },
+                })
+
+    def _resolve_base(
+        self, graph: RepoGraph, symbol_table, rel: str, base_str: str
+    ) -> Tuple[str, float]:
+        """Resolve one base-class expression to an entity id.
+
+        Subscripts are stripped (`Generic[T]` → `Generic`) so typed bases
+        resolve to the generic class. Order mirrors ADR-032: same-file →
+        import binding → unique-global → EXTERNAL_SYMBOL."""
+        name = base_str.split("[", 1)[0].strip()
+
+        if not _DOTTED_NAME.match(name):
+            # dynamic bases (call results, subscript-only) fold into an
+            # external symbol carrying the raw expression
+            return self._external_symbol_node(graph, name or base_str), 0.0
+
+        if "." in name:
+            receiver, attr = name.rsplit(".", 1)
+            binding = graph.import_bindings.get(rel, {}).get(receiver)
+            if binding:
+                return self._resolve_via_binding(
+                    graph, symbol_table, binding, attr
+                )
+            local_receiver = symbol_table.lookup_in_file(rel, receiver)
+            if local_receiver:
+                candidate = f"{local_receiver}.{attr}"
+                if graph.get_entity_by_id(candidate):
+                    return candidate, 1.0
+            return self._external_symbol_node(graph, name), 0.0
+
+        local = symbol_table.lookup_in_file(rel, name)
+        if local:
+            return local, 1.0
+
+        binding = graph.import_bindings.get(rel, {}).get(name)
+        if binding:
+            return self._resolve_via_binding(graph, symbol_table, binding, None)
+
+        candidates = symbol_table.lookup_global(name)
+        if len(candidates) == 1:
+            return candidates[0], 0.5
+
+        return self._external_symbol_node(graph, name), 0.0
+
+    def _lookup_method_in_hierarchy(
+        self,
+        graph: RepoGraph,
+        class_id: str,
+        method_name: str,
+        include_self: bool = True,
+    ) -> Optional[str]:
+        """Find `method_name` on class_id or its resolved intra-repo
+        ancestors (BFS in base-declaration order, cycle-guarded). Returns
+        the method entity id of the nearest definition, or None."""
+        initial = (
+            [class_id] if include_self
+            else list(graph.class_bases.get(class_id, []))
+        )
+        queue = deque(initial)
+        seen = {class_id, *initial}
+        while queue:
+            current = queue.popleft()
+            candidate = f"{current}.{method_name}"
+            if graph.get_entity_by_id(candidate):
+                return candidate
+            for base_id in graph.class_bases.get(current, []):
+                if base_id not in seen:
+                    seen.add(base_id)
+                    queue.append(base_id)
+        return None
+
+    # -----------------------------
     # CALL Relationships
     # -----------------------------
 
@@ -419,8 +587,12 @@ class RepoGraphBuilder:
         if receiver in ("self", "cls"):
             class_id = self._enclosing_class_id(site, graph)
             if class_id:
-                candidate = f"{class_id}.{name}"
-                if graph.get_entity_by_id(candidate):
+                # WP-G5: fall back through resolved base classes so a
+                # method defined only on the base still resolves.
+                candidate = self._lookup_method_in_hierarchy(
+                    graph, class_id, name
+                )
+                if candidate:
                     return candidate, 1.0
             return (
                 self._external_symbol_node(graph, f"{receiver}.{name}"),

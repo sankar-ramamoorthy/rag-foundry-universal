@@ -42,6 +42,10 @@ class RepoGraph:
         # built by _resolve_imports. In-memory only; consumed by call
         # resolution (ADR-032 layer 2).
         self.import_bindings: Dict[str, dict] = {}
+        # WP-G5: class entity id -> resolved intra-repo base CLASS entity
+        # ids, in declaration order. Built by _resolve_inheritance;
+        # consumed by self/cls call resolution. In-memory only.
+        self.class_bases: Dict[str, List[str]] = {}
 
     def add_entity(self, relative_path: str, entity: dict):
         """
