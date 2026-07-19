@@ -50,7 +50,7 @@ def test_paragraph_chunking():
 def test_paragraph_chunking_merges_small_paragraphs():
     """
     Test paragraph strategy in TextChunker.
-    
+
     Current behavior:
     - Paragraphs are merged until the combined length exceeds chunk_size.
     - This test checks that small paragraphs are merged into fewer chunks.

@@ -23,7 +23,7 @@ def select_traversal_strategies(
 ) -> List[Callable[[CodebaseGraph, str], List[Node]]]:
     """
     Select traversal strategies based on query intent.
-    
+
     >>> strategies = select_traversal_strategies("methods in math_utils.py", ...)
     >>> len(strategies) > 0
     True

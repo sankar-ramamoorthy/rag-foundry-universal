@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import io
 import logging
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -157,7 +156,7 @@ class DoclingConverter:
         """Check if a filename's extension is supported by DoclingConverter."""
         suffix = f".{filename.rsplit('.', 1)[-1].lower()}" if "." in filename else ""
         return suffix in DOCLING_SUPPORTED
-    
+
 # At bottom of docling_converter.py
 
 def is_docling_supported(filename: str) -> bool:

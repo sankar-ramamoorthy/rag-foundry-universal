@@ -17,7 +17,7 @@ This object:
 """
 
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Set
+from typing import Dict, Set
 
 
 @dataclass

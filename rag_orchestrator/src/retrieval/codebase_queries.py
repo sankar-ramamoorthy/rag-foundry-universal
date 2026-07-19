@@ -1,8 +1,8 @@
 from collections import deque, defaultdict
 from typing import List, Set, Dict, Optional
 import requests  # New import to call the ingestion service API
-from src.core.config import get_settings 
-import logging 
+from src.core.config import get_settings
+import logging
 
 # Set up logging configuration
 logging.basicConfig(level=logging.WARNING)
@@ -148,7 +148,7 @@ def get_full_graph_from_api(repo_id: str) -> Dict:
         return response.json()  # returns both nodes and edges
     else:
         raise Exception(f"Error fetching full graph: {response.status_code} - {response.text}")
-    
+
 
 # --- Graph Loading ---
 

@@ -19,7 +19,7 @@ from src.core.ocr.ocr_factory import get_ocr_engine
 from src.core.extractors.pdf import PDFExtractor
 from src.core.document_graph.builder import DocumentGraphBuilder
 from src.core.chunk_assembly.pdf_chunk_assembler import PDFChunkAssembler
-from src.core.converters.docling_converter import DoclingConverter, is_docling_supported  # IS4
+from src.core.converters.docling_converter import DoclingConverter  # IS4
 
 SessionLocal = get_sessionmaker()
 router = APIRouter(tags=["ingestion"])
@@ -122,7 +122,7 @@ def _ingest_pdf_pymupdf(
 # -----------------------------
 # Background ingestion
 # -----------------------------
-def background_ingest_file(
+def background_ingest_file(  # noqa: C901 - refactor tracked by pipeline-factory tech debt
     *, ingestion_id: UUID, file_bytes: bytes,
     filename: str, content_type: str, metadata: dict
 ):
@@ -150,7 +150,7 @@ def background_ingest_file(
     elif is_rich_doc:
         doc_type = "markdown_module"   # becomes structured markdown after Docling
     elif is_tabular:
-        doc_type = "tabular"           # 
+        doc_type = "tabular"           #
     else:
         doc_type = "file"
 
@@ -161,7 +161,7 @@ def background_ingest_file(
 
     try:
         # ------------------------------------------------------------------
-        # PDF — Docling primary, PyMuPDF fallback  
+        # PDF — Docling primary, PyMuPDF fallback
         # ------------------------------------------------------------------
         if is_pdf:
             if settings.DOCLING_ENABLED:
@@ -208,7 +208,7 @@ def background_ingest_file(
                 )
 
         # ------------------------------------------------------------------
-        # Markdown — structured section extraction  
+        # Markdown — structured section extraction
         # ------------------------------------------------------------------
         elif is_markdown:
             text = extract_text_from_bytes(

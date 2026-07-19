@@ -100,7 +100,7 @@ def submit_codebase_ingest(source_type: str, git_url: str, local_path: str, prov
 
         data = response.json()
         return f"✅ **Ingestion Started**\nID: `{data['ingestion_id']}`\nStatus: {data['status']}\n\n*Check status below*"
-    
+
     except Exception as exc:
         return f"❌ Error: {exc}"
 
@@ -109,18 +109,18 @@ def check_codebase_status(ingestion_id: str):
     try:
         if not ingestion_id.strip():
             return "Please enter an Ingestion ID."
-        
+
         response = requests.get(
             f"{API_BASE_URL}/v1/ingest-repo/{ingestion_id}",
             timeout=10,
         )
-        
+
         if response.status_code == 200:
             data = response.json()
             return f"**Status**: {data['status']}"
         else:
             return f"❌ Error: {response.text}"
-    
+
     except Exception as exc:
         return f"❌ Error: {exc}"
 
@@ -133,18 +133,18 @@ def refresh_repos():
         response = requests.get(f"{API_BASE_URL}/v1/repos", timeout=10)
         response.raise_for_status()
         repos = response.json()
-        
+
         choices = [
-            (repo["display_name"], repo["id"]) 
-            for repo in repos 
+            (repo["display_name"], repo["id"])
+            for repo in repos
             if repo["status"] == "completed"
         ]
-        
+
         if choices:
             value = choices[0][1]  # Auto-select first complete repo
             #return gr.update(choices=choices, value=value)
             return gr.Dropdown(choices=choices, value=value)
-        
+
         else:
             gr.Warning("No complete repositories found. Ingest a codebase first.")
             #return gr.update(choices=[], value=None)
@@ -159,21 +159,21 @@ def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str 
     try:
         if not query.strip():
             return "Please enter a query."
-        
+
         if not repo_id:
             return "❌ Please select a repository (click Refresh Repos first)."
-        
+
         payload = {
             "query": query,
             "repo_id": repo_id,
             "top_k": top_k,
         }
-        
+
         if provider:
             payload["provider"] = provider
         if model:
             payload["model"] = model
-        
+
         response = requests.post(
             f"{RAG_API_BASE_URL}/v1/rag",
             json=payload,
@@ -181,25 +181,25 @@ def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str 
         )
         response.raise_for_status()
         data = response.json()
-        
+
         answer = data.get("answer", "")
         sources = data.get("sources", [])
         formatted_sources = "\n".join(f"• {s}" for s in sources)
-        
+
         return f"""🎯 **Repository:** {repo_id[:8]}...
-        
+
 **Answer:**
 {answer}
 
 **Sources:**
 {formatted_sources if formatted_sources else 'None found.'}"""
-    
+
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
             return "❌ Repository not found. Refresh repos and select a complete repository."
         try:
             return f"❌ RAG Error: {e.response.json().get('detail', e.response.text)}"
-        except:
+        except Exception:
             return f"❌ RAG Error: {e.response.text}"
     except Exception as exc:
         return f"❌ Error querying RAG: {exc}"
@@ -229,7 +229,7 @@ def submit_simple_rag_query(query: str, top_k: int, provider: str | None, model:
 
     except Exception as exc:
         return f"❌ Error: {exc}"
-    
+
 # ----------------------------
 # Build Gradio UI (COMPLETE)
 # ----------------------------
@@ -282,15 +282,15 @@ def build_ui():
                 label="Source Type",
             )
             git_url_input = gr.Textbox(  # type: ignore
-                label="Git URL", 
+                label="Git URL",
                 placeholder="https://github.com/sankar-ramamoorthy/rag-foundry-coderag.git"
             )
             local_path_input = gr.Textbox(  # type: ignore
-                label="Local Path", 
+                label="Local Path",
                 placeholder="/path/to/project"
             )
             provider_input = gr.Textbox(  # type: ignore
-                label="Embedding Provider", 
+                label="Embedding Provider",
                 placeholder="ollama"
             )
             codebase_submit_btn = gr.Button("💾 Ingest Codebase", variant="secondary")  # type: ignore
@@ -319,10 +319,10 @@ def build_ui():
         # ----------------------------
         gr.Markdown("## 🎯 Graph-Aware RAG Query")
         gr.Markdown("*Ask about code structure: 'methods in math_utils.py', 'what calls add()', etc.*")
-        
+
         with gr.Row():  # type: ignore
             repo_dropdown = gr.Dropdown(
-                choices=[], 
+                choices=[],
                 label="📂 Repository",
                 value=None,
                 info="Graph traversal only works on complete repos"
@@ -349,7 +349,7 @@ def build_ui():
                 scale=2
             )
             model = gr.Textbox(  # type: ignore
-                label="🧠 Model", 
+                label="🧠 Model",
                 placeholder="Qwen3:1.7b",
                 scale=2
             )

@@ -20,7 +20,7 @@ def test_document_relationship_crud(session: Session):
     - FK integrity
     - Directionality of relationships
     - Unique constraint on (from, to, relation_type)
-    
+
     Uses real Postgres (Docker) and ADR-023 session injection.
     """
 
@@ -37,7 +37,7 @@ def test_document_relationship_crud(session: Session):
     session.commit()  # persist nodes for FK constraints
 
     # --- Step 2: Create a relationship ---
-    rel = create_document_relationship(
+    create_document_relationship(
         session=session,
         from_document_id=node1.document_id,
         to_document_id=node2.document_id,

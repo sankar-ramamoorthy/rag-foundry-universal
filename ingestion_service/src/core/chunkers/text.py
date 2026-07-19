@@ -80,12 +80,12 @@ class TextChunker(BaseChunker):
     ) -> List[Chunk]:
         """
         Splits text into chunks by paragraphs, merging consecutive paragraphs until
-        the buffer exceeds `chunk_size`.  
+        the buffer exceeds `chunk_size`.
 
-        - Paragraphs are defined as blocks separated by two newlines (\n\n).  
-        - Paragraphs are merged together until the combined length exceeds `chunk_size`.  
-        - If a paragraph is larger than `chunk_size`, it will be a chunk by itself.  
-        - `overlap` is currently not used in paragraph strategy.  
+        - Paragraphs are defined as blocks separated by two newlines (\n\n).
+        - Paragraphs are merged together until the combined length exceeds `chunk_size`.
+        - If a paragraph is larger than `chunk_size`, it will be a chunk by itself.
+        - `overlap` is currently not used in paragraph strategy.
 
         Args:
             text (str): Text to chunk.

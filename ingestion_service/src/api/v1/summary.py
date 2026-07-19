@@ -22,7 +22,7 @@ class SummaryPayload(BaseModel):
 @router.post("/summary")
 def save_summary(payload: SummaryPayload):
     try:
-        uid = UUID(payload.ingestion_id)
+        UUID(payload.ingestion_id)  # validate format only
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid ingestion_id")
 

@@ -1,3 +1,8 @@
+# Isolated test stack. `name:` keeps it in its own compose project so
+# `docker compose -f docker-compose.test.yml up` cannot recreate the main
+# stack's containers (both files define a `postgres` service).
+name: rag-foundry-test
+
 services:
   postgres:
     image: pgvector/pgvector:pg15

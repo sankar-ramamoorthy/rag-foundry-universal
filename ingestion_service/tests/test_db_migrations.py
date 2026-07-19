@@ -11,7 +11,7 @@ def test_document_nodes_table_exists():
     engine = get_engine()
     inspector = inspect(engine)
     tables = inspector.get_table_names()
-    
+
     assert "document_nodes" in tables, (
         f"'document_nodes' table not found in database. Existing tables: {tables}"
     )

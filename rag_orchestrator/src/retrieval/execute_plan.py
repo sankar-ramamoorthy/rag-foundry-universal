@@ -4,7 +4,7 @@ from typing import Iterable, Dict, List
 import logging
 
 from .types import RetrievedContext, RetrievedChunk
-from shared.retrieval.retrieval_plan import RetrievalPlan, ExpansionMetadata
+from shared.retrieval.retrieval_plan import RetrievalPlan
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Default level, can be overridden externally

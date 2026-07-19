@@ -15,6 +15,10 @@ logging.basicConfig(level=logging.DEBUG)
 class PgVectorStore(VectorStore):
     SCHEMA = "ingestion_service"
 
+    # HNSW search-time candidate list size (audit F-10 / WP-S4): higher =
+    # better recall, slower query. 100 is comfortable for k <= 50.
+    HNSW_EF_SEARCH = 100
+
     def __init__(self, dsn: str, dimension: int, provider: str = "mock") -> None:
         self._dsn = dsn
         self._dimension = dimension
@@ -158,6 +162,12 @@ class PgVectorStore(VectorStore):
         results: List[VectorRecord] = []
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
+                # Transaction-scoped: applies only to this search.
+                cur.execute(
+                    sql.SQL("SET LOCAL hnsw.ef_search = {ef}").format(
+                        ef=sql.Literal(self.HNSW_EF_SEARCH)
+                    )
+                )
                 cur.execute(search_sql, params)
                 for row in cur.fetchall():
                     (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,

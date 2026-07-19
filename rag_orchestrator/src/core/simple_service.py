@@ -39,7 +39,7 @@ class SimpleRAGResult(BaseModel):
     sources: List[str]
 
 
-async def run_simple_rag(
+async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     query: str,
     top_k: int = 20,
     max_chunks_per_doc: int = 5,

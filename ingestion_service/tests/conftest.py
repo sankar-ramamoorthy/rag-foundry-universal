@@ -81,7 +81,13 @@ def session(engine) -> Session:
 # ---------------------------------------------------------------------
 
 def pytest_runtest_setup(item):
-    if "integration" in item.keywords and os.environ.get("CI") == "true":
+    # CI_HAS_DB is set by the CI integration job, which provides a real
+    # Postgres+pgvector service container (F-17 / WP-E2).
+    if (
+        "integration" in item.keywords
+        and os.environ.get("CI") == "true"
+        and not os.environ.get("CI_HAS_DB")
+    ):
         pytest.skip(
             "Skipping integration tests in CI "
             "(requires Docker + Postgres + pgvector + Ollama)"

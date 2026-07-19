@@ -2,7 +2,7 @@
 
 import logging
 
-from src.api.v1.models import RAGQuery, RAGResponse, SearchQuery, SimpleRAGQuery,SimpleRAGResponse
+from src.api.v1.models import RAGQuery, RAGResponse, SimpleRAGQuery,SimpleRAGResponse
 from src.core.service import run_rag#, search_documents
 from fastapi import APIRouter, HTTPException
 from src.core.simple_service import run_simple_rag  # new - no graph
@@ -56,7 +56,7 @@ async def rag_endpoint(rag_query: RAGQuery):
         )
 
 
-@router.post("/rag/simple", response_model=SimpleRAGResponse) 
+@router.post("/rag/simple", response_model=SimpleRAGResponse)
 async def simple_rag_endpoint(simple_rag_query: SimpleRAGQuery):
     """Simple RAG for regular documents - no graph traversal."""
     logger.debug(f"Received RAG query: {simple_rag_query}")

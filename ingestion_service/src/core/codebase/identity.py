@@ -8,7 +8,6 @@ Follows ADR-031: Canonical Identity Model.
 
 from __future__ import annotations
 
-from pathlib import Path
 import uuid
 def build_canonical_id(
     relative_path: str,

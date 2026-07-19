@@ -1,6 +1,5 @@
 # vector_store_service/src/core/config.py
 from functools import lru_cache
-import os
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

@@ -16,7 +16,7 @@ class VectorMetadata:
     provider: str = "ollama"
     document_id: Optional[str] = None
     score: float = 0.0  # cosine similarity score from pgvector (1 - cosine_distance)
-    
+
 
 
 @dataclass

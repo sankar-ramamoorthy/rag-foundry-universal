@@ -1,6 +1,6 @@
 # tests/core/test_llm_client_http.py
 # HTTP contract with Ollama (shape, not behavior)
-# This ensures: correct endpoint , correct payload , 
+# This ensures: correct endpoint , correct payload ,
 #  no accidental streaming, stable output shape
 #
 import pytest
@@ -32,6 +32,6 @@ async def test_ollama_http_call():
     assert result["response"] == "hello"
     #request_json = route.calls[0].request.json()
     request = route.calls[0].request
-    request_json = json.loads(request.content)    
+    request_json = json.loads(request.content)
     assert request_json["stream"] is False
     assert "prompt" in request_json
