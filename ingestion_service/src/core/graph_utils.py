@@ -27,12 +27,22 @@ class Node:
     """
     Represents a single artifact node in the graph.
     """
-    def __init__(self, canonical_id: str, file_path: Optional[str] = None, lineno: Optional[int] = None):
+
+    def __init__(
+        self,
+        canonical_id: str,
+        file_path: Optional[str] = None,
+        lineno: Optional[int] = None,
+    ):
         self.canonical_id = canonical_id
         self.file_path = file_path
         self.lineno = lineno
-        self.out_edges: Dict[str, Set['Node']] = defaultdict(set)  # relation_type -> set of target nodes
-        self.in_edges: Dict[str, Set['Node']] = defaultdict(set)   # relation_type -> set of source nodes
+        self.out_edges: Dict[str, Set["Node"]] = defaultdict(
+            set
+        )  # relation_type -> set of target nodes
+        self.in_edges: Dict[str, Set["Node"]] = defaultdict(
+            set
+        )  # relation_type -> set of source nodes
 
     def __repr__(self):
         return f"Node({self.canonical_id})"
@@ -72,7 +82,8 @@ _repo_graphs: Dict[str, CodebaseGraph] = {}
 
 def load_graph_for_repo(repo_id: str, db: Session) -> CodebaseGraph:
     """
-    Build an in-memory CodebaseGraph from persisted DocumentNode and DocumentRelationship entries.
+    Build an in-memory CodebaseGraph from persisted DocumentNode
+    and DocumentRelationship entries.
     """
     graph = CodebaseGraph()
 
@@ -106,7 +117,9 @@ def load_graph_for_repo(repo_id: str, db: Session) -> CodebaseGraph:
     return graph
 
 
-def canonical_ids_to_document_ids(repo_id: str, canonical_ids: Set[str], db: Session) -> Set[str]:
+def canonical_ids_to_document_ids(
+    repo_id: str, canonical_ids: Set[str], db: Session
+) -> Set[str]:
     """
     Convert canonical_ids → document_ids for a repo.
     """
@@ -121,11 +134,16 @@ def canonical_ids_to_document_ids(repo_id: str, canonical_ids: Set[str], db: Ses
         .all()
     }
 
-    logger.debug(f"Resolved {len(canonical_ids)} canonical_ids → {len(document_ids)} document_ids")
+    logger.debug(
+        f"Resolved {len(canonical_ids)} canonical_ids → "
+        f"{len(document_ids)} document_ids"
+    )
     return document_ids
 
 
-def get_cached_graph(repo_id: str, db: Session, force_reload: bool = False) -> CodebaseGraph:
+def get_cached_graph(
+    repo_id: str, db: Session, force_reload: bool = False
+) -> CodebaseGraph:
     """
     Return a CodebaseGraph for the given repo_id, using an in-memory cache.
     """

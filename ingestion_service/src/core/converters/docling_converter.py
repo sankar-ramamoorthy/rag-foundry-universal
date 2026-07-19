@@ -96,7 +96,8 @@ class DoclingConverter:
 
         Args:
             file_bytes: Raw bytes of the source file
-            filename:   Original filename including extension (used for format detection)
+            filename:   Original filename including extension
+                (used for format detection)
 
         Returns:
             Markdown string of the document content
@@ -113,7 +114,9 @@ class DoclingConverter:
                 f"Supported: {DOCLING_SUPPORTED}"
             )
 
-        logger.debug("IS3: Converting %s (%d bytes) via Docling", filename, len(file_bytes))
+        logger.debug(
+            "IS3: Converting %s (%d bytes) via Docling", filename, len(file_bytes)
+        )
 
         try:
             stream = DocumentStream(

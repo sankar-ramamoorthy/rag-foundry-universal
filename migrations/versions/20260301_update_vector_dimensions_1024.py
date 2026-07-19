@@ -14,7 +14,9 @@ def upgrade() -> None:
     # Drop existing vector indexes before altering column types
     op.execute("DROP INDEX IF EXISTS ingestion_service.vectors_vector_idx")
     op.execute("DROP INDEX IF EXISTS ingestion_service.vector_chunks_vector_idx")
-    op.execute("DROP INDEX IF EXISTS ingestion_service.document_nodes_summary_embedding_idx")
+    op.execute(
+        "DROP INDEX IF EXISTS ingestion_service.document_nodes_summary_embedding_idx"
+    )
 
     # Alter vector columns to 1024 dimensions (mxbai-embed-large)
     op.execute("""

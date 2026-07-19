@@ -19,8 +19,12 @@ class Node:
         self.canonical_id = canonical_id
         self.file_path = file_path
         self.lineno = lineno
-        self.out_edges: Dict[str, Set['Node']] = defaultdict(set)  # relation_type -> set of target nodes
-        self.in_edges: Dict[str, Set['Node']] = defaultdict(set)   # relation_type -> set of source nodes
+        self.out_edges: Dict[str, Set["Node"]] = defaultdict(
+            set
+        )  # relation_type -> set of target nodes
+        self.in_edges: Dict[str, Set["Node"]] = defaultdict(
+            set
+        )  # relation_type -> set of source nodes
 
     def __repr__(self):
         return f"Node({self.canonical_id})"
@@ -79,7 +83,9 @@ def bfs_traversal(
             continue
 
         # Choose edges based on direction
-        edges = current_node.out_edges if direction == "forward" else current_node.in_edges
+        edges = (
+            current_node.out_edges if direction == "forward" else current_node.in_edges
+        )
 
         for rel, neighbors in edges.items():
             if relation_types and rel not in relation_types:
@@ -96,55 +102,113 @@ def bfs_traversal(
 
 def traverse_calls(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
     """Traverse CALL edges forward (what does this node call?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"CALL"}, direction="forward", max_depth=depth)
+    return bfs_traversal(
+        graph, start_cid, relation_types={"CALL"}, direction="forward", max_depth=depth
+    )
 
 
-def traverse_defines(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_defines(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse DEFINES edges forward (what does this node define?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"DEFINES"}, direction="forward", max_depth=depth)
+    return bfs_traversal(
+        graph,
+        start_cid,
+        relation_types={"DEFINES"},
+        direction="forward",
+        max_depth=depth,
+    )
 
 
-def traverse_incoming_calls(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_incoming_calls(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse CALL edges in reverse (what calls this node?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"CALL"}, direction="reverse", max_depth=depth)
+    return bfs_traversal(
+        graph, start_cid, relation_types={"CALL"}, direction="reverse", max_depth=depth
+    )
 
 
-def traverse_incoming_imports(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_incoming_imports(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse IMPORTS edges in reverse (what imports this node?).
 
     F-02: ingestion now materializes MODULE --IMPORTS--> MODULE edges
     (relation_type "IMPORTS"); the old "IMPORT" type never existed as an
     edge, so this traversal used to return nothing.
     """
-    return bfs_traversal(graph, start_cid, relation_types={"IMPORTS"}, direction="reverse", max_depth=depth)
+    return bfs_traversal(
+        graph,
+        start_cid,
+        relation_types={"IMPORTS"},
+        direction="reverse",
+        max_depth=depth,
+    )
 
 
 # WP-G6: traversals over the WP-G5 inheritance edges.
 
-def traverse_superclasses(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_superclasses(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse INHERITS edges forward (what does this class inherit from?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"INHERITS"}, direction="forward", max_depth=depth)
+    return bfs_traversal(
+        graph,
+        start_cid,
+        relation_types={"INHERITS"},
+        direction="forward",
+        max_depth=depth,
+    )
 
 
-def traverse_subclasses(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_subclasses(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse INHERITS edges in reverse (what subclasses this class?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"INHERITS"}, direction="reverse", max_depth=depth)
+    return bfs_traversal(
+        graph,
+        start_cid,
+        relation_types={"INHERITS"},
+        direction="reverse",
+        max_depth=depth,
+    )
 
 
-def traverse_overrides(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_overrides(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse OVERRIDES edges forward (which base method does this override?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"OVERRIDES"}, direction="forward", max_depth=depth)
+    return bfs_traversal(
+        graph,
+        start_cid,
+        relation_types={"OVERRIDES"},
+        direction="forward",
+        max_depth=depth,
+    )
 
 
-def traverse_overridden_by(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+def traverse_overridden_by(
+    graph: CodebaseGraph, start_cid: str, depth: int = 3
+) -> List[Node]:
     """Traverse OVERRIDES edges in reverse (which methods override this one?)."""
-    return bfs_traversal(graph, start_cid, relation_types={"OVERRIDES"}, direction="reverse", max_depth=depth)
+    return bfs_traversal(
+        graph,
+        start_cid,
+        relation_types={"OVERRIDES"},
+        direction="reverse",
+        max_depth=depth,
+    )
+
 
 # --- API Calls ---
 
-def get_nodes_by_canonical_ids_from_api(repo_id: str, canonical_ids: List[str]) -> List[Dict]:
+def get_nodes_by_canonical_ids_from_api(
+    repo_id: str, canonical_ids: List[str]
+) -> List[Dict]:
     """
-    Fetch nodes by canonical_ids from the ingestion_service API (instead of directly querying DB).
+    Fetch nodes by canonical_ids from the ingestion_service API
+    (instead of directly querying DB).
     """
     #url = f"http://ingestion_service/v1/graph/repos/{repo_id}/nodes"
     url = f"{ingestion_service_url}/v1/graph/repos/{repo_id}/nodes"
@@ -154,7 +218,9 @@ def get_nodes_by_canonical_ids_from_api(repo_id: str, canonical_ids: List[str]) 
     if response.status_code == 200:
         return response.json().get('nodes', [])
     else:
-        raise Exception(f"Error fetching nodes: {response.status_code} - {response.text}")
+        raise Exception(
+            f"Error fetching nodes: {response.status_code} - {response.text}"
+        )
 
 
 def get_full_graph_from_api(repo_id: str) -> Dict:
@@ -169,7 +235,9 @@ def get_full_graph_from_api(repo_id: str) -> Dict:
     if response.status_code == 200:
         return response.json()  # returns both nodes and edges
     else:
-        raise Exception(f"Error fetching full graph: {response.status_code} - {response.text}")
+        raise Exception(
+            f"Error fetching full graph: {response.status_code} - {response.text}"
+        )
 
 
 # --- Graph Loading ---

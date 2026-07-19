@@ -106,7 +106,9 @@ def _run_hybrid(monkeypatch, backend):
         return real_async_client(*args, **kwargs)
 
     monkeypatch.setattr(httpx, "AsyncClient", patched_client)
-    monkeypatch.setattr(codebase_utils, "get_cached_graph", lambda repo_id: _build_graph())
+    monkeypatch.setattr(
+        codebase_utils, "get_cached_graph", lambda repo_id: _build_graph()
+    )
 
     return asyncio.run(
         hybrid_retrieve(

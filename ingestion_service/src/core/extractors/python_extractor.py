@@ -93,7 +93,9 @@ class PythonASTExtractor(ast.NodeVisitor):
             "metadata": {
                 "lineno": node.lineno,
                 "col_offset": node.col_offset,
-                "bases": [ast.unparse(base) for base in node.bases] if node.bases else [],
+                "bases": [ast.unparse(base) for base in node.bases]
+                if node.bases
+                else [],
             },
         }
 

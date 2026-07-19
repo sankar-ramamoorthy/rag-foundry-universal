@@ -131,7 +131,8 @@ async def search_by_document(
                     "chunk_id": r.metadata.chunk_id,
                     "text": r.metadata.chunk_text,
                     "document_id": r.metadata.document_id,
-                    "score": 1.0,   # no similarity computed for doc fetch, treat as full match
+                    # no similarity computed for doc fetch; treat as full match
+                    "score": 1.0,
                     "metadata": {
                         "ingestion_id": r.metadata.ingestion_id,
                         "chunk_index": r.metadata.chunk_index,

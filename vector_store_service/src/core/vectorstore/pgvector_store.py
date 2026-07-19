@@ -128,7 +128,8 @@ class PgVectorStore(VectorStore):
             where_clause = sql.SQL(" AND ").join(conditions)
             search_sql = sql.SQL("""
                 WITH query AS (SELECT {qvec}::vector AS qvec)
-                SELECT vc.vector, vc.ingestion_id, vc.chunk_id, vc.chunk_index, vc.chunk_strategy,
+                SELECT vc.vector, vc.ingestion_id, vc.chunk_id,
+                       vc.chunk_index, vc.chunk_strategy,
                        vc.chunk_text, vc.source_metadata, vc.provider, vc.document_id,
                        1 - (vc.vector <=> query.qvec) AS score
                 FROM {schema}.vector_chunks vc, query
@@ -146,7 +147,8 @@ class PgVectorStore(VectorStore):
         else:
             search_sql = sql.SQL("""
                 WITH query AS (SELECT {qvec}::vector AS qvec)
-                SELECT vc.vector, vc.ingestion_id, vc.chunk_id, vc.chunk_index, vc.chunk_strategy,
+                SELECT vc.vector, vc.ingestion_id, vc.chunk_id,
+                       vc.chunk_index, vc.chunk_strategy,
                        vc.chunk_text, vc.source_metadata, vc.provider, vc.document_id,
                        1 - (vc.vector <=> query.qvec) AS score
                 FROM {schema}.vector_chunks vc, query
@@ -201,7 +203,9 @@ class PgVectorStore(VectorStore):
                 with conn.cursor() as cur:
                     cur.execute(delete_sql, (ingestion_id,))
 
-    def get_chunks_by_document_id(self, document_id: str, k: int = 3) -> List[VectorRecord]:
+    def get_chunks_by_document_id(
+        self, document_id: str, k: int = 3
+    ) -> List[VectorRecord]:
         """Fetch chunks for a specific document_id — no vector similarity needed."""
         search_sql = sql.SQL("""
             SELECT vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,

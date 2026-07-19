@@ -74,7 +74,9 @@ async def generate_summary(
         # 1. Fetch chunks from ingestion_service (not vector store)
         chunk_texts = await fetch_chunks(ingestion_id)
         if not chunk_texts:
-            raise HTTPException(status_code=404, detail="No chunks found for ingestion_id")
+            raise HTTPException(
+                status_code=404, detail="No chunks found for ingestion_id"
+            )
 
         # 2. Join top 5 chunks, truncate if needed
         full_text = "\n\n".join(chunk_texts[:5])
@@ -84,7 +86,10 @@ async def generate_summary(
         # 3. Build prompt
         logger.info("Build prompt")
         context = f"Document chunks for summarization:\n\n{full_text}"
-        query = "Summarize this document in 2-3 sentences. Focus on main topics, key entities, and purpose."
+        query = (
+            "Summarize this document in 2-3 sentences. "
+            "Focus on main topics, key entities, and purpose."
+        )
 
         # 4. Call LLM
         logger.info("summarize.py call generate_completion")

@@ -30,7 +30,8 @@ def upgrade() -> None:
         summary TEXT NOT NULL,
         summary_embedding vector(768),
         source TEXT NOT NULL,
-        ingestion_id UUID NOT NULL REFERENCES ingestion_service.ingestion_requests(ingestion_id),
+        ingestion_id UUID NOT NULL
+            REFERENCES ingestion_service.ingestion_requests(ingestion_id),
         doc_type TEXT NOT NULL,
         text TEXT
     )
@@ -43,10 +44,17 @@ def upgrade() -> None:
     """)
 
     # Create indexes for performance
-    op.execute("CREATE INDEX ix_repo_canonical ON ingestion_service.document_nodes (repo_id, canonical_id)")
+    op.execute(
+        "CREATE INDEX ix_repo_canonical "
+        "ON ingestion_service.document_nodes (repo_id, canonical_id)"
+    )
 
     # Optional: Index on ingestion_id if we plan to query by this frequently
-    op.execute("CREATE INDEX ix_document_nodes_ingestion_id ON ingestion_service.document_nodes (ingestion_id)")
+    op.execute(
+        "CREATE INDEX ix_document_nodes_ingestion_id "
+        "ON ingestion_service.document_nodes (ingestion_id)"
+    )
+
 
 def downgrade() -> None:
     """Drop tables in reverse order to respect foreign key constraints."""

@@ -23,14 +23,18 @@ def fetch_summaries(document_ids: List[str]) -> Dict[str, str]:
 
     for doc_id in document_ids:
         try:
-            resp = requests.get(f"{INGESTION_API_BASE_URL}/v1/summary/{doc_id}", timeout=300)
+            resp = requests.get(
+                f"{INGESTION_API_BASE_URL}/v1/summary/{doc_id}", timeout=300
+            )
             if resp.status_code == 200:
                 data = resp.json()
                 summary_text = data.get("summary")
                 if summary_text:
                     summaries[doc_id] = summary_text
             else:
-                logger.debug(f"No summary for doc_id={doc_id} (status={resp.status_code})")
+                logger.debug(
+                    f"No summary for doc_id={doc_id} (status={resp.status_code})"
+                )
         except Exception as exc:
             logger.warning(f"Error fetching summary for doc_id={doc_id}: {exc}")
 

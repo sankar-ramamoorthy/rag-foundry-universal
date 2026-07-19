@@ -17,8 +17,10 @@ def build_canonical_id(
     Build a deterministic canonical ID for an artifact.
 
     Args:
-        relative_path: path relative to repository root (forward slashes, no leading slash)
-        symbol_path: optional dot-separated symbol path (for classes, functions, methods)
+        relative_path: path relative to repository root
+            (forward slashes, no leading slash)
+        symbol_path: optional dot-separated symbol path
+            (for classes, functions, methods)
 
     Returns:
         canonical_id: deterministic string
@@ -30,7 +32,9 @@ def build_canonical_id(
     return path_clean
 
 
-def build_global_id(repo_id: str, relative_path: str, symbol_path: str | None = None) -> tuple[str, str]:
+def build_global_id(
+    repo_id: str, relative_path: str, symbol_path: str | None = None
+) -> tuple[str, str]:
     """
     Returns a tuple (repo_id, canonical_id) suitable for storage in document_nodes.
 

@@ -50,7 +50,9 @@ class CodebaseGraphPersistence:
         """
         try:
             # Count before deletion
-            pre_count = self._session.query(DocumentNode).filter_by(repo_id=repo_id).count()
+            pre_count = (
+                self._session.query(DocumentNode).filter_by(repo_id=repo_id).count()
+            )
             if pre_count == 0:
                 logger.info(f"[MS12] Repo {repo_id}: no nodes to delete")
                 return 0
@@ -62,7 +64,9 @@ class CodebaseGraphPersistence:
                 .delete(synchronize_session=False)
             )
             self._session.commit()
-            logger.info(f"[MS12] Repo {repo_id}: deleted {deleted_count} old document nodes")
+            logger.info(
+                f"[MS12] Repo {repo_id}: deleted {deleted_count} old document nodes"
+            )
             return deleted_count
         except SQLAlchemyError as e:
             logger.error(f"[MS12] Error deleting nodes for repo {repo_id}: {e}")
@@ -199,7 +203,9 @@ class CodebaseGraphPersistence:
     # -----------------------------
     # Retrieval
     # -----------------------------
-    def get_node_by_canonical_id(self, repo_id: str, canonical_id: str) -> Optional[DocumentNode]:
+    def get_node_by_canonical_id(
+        self, repo_id: str, canonical_id: str
+    ) -> Optional[DocumentNode]:
         """
         Retrieve a document node by repo_id + canonical_id.
         """

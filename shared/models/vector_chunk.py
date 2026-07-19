@@ -25,7 +25,8 @@ class VectorChunk(Base):
         ingestion_id: The ingestion request that produced this chunk.
         chunk_id: Unique identifier for the chunk within the ingestion.
         chunk_index: Sequential index of the chunk.
-        chunk_strategy: Strategy used to create the chunk (e.g., 'sentence', 'paragraph').
+        chunk_strategy: Strategy used to create the chunk
+            (e.g., 'sentence', 'paragraph').
         chunk_text: The text content of the chunk.
         source_metadata: JSON metadata about the source.
         provider: The embedding provider or source system.
@@ -49,7 +50,9 @@ class VectorChunk(Base):
     chunk_index: int = Column(Integer, nullable=False)
     chunk_strategy: str = Column(String, nullable=False)
     chunk_text: str = Column(String, nullable=False)
-    source_metadata: dict = Column(JSON, nullable=False, default=dict)  # fixed mutable default
+    source_metadata: dict = Column(
+        JSON, nullable=False, default=dict
+    )  # fixed mutable default
     provider: str = Column(String, nullable=False, default="ollama")
 
     # -----------------------------

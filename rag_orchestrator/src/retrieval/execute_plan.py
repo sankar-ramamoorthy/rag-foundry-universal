@@ -40,7 +40,10 @@ def execute_retrieval_plan(
 
     total_seed = len(plan.seed_document_ids)
     total_expanded = len(plan.expanded_document_ids)
-    logger.info(f"Executing RetrievalPlan: {total_seed} seed docs, {total_expanded} expanded docs")
+    logger.info(
+        f"Executing RetrievalPlan: {total_seed} seed docs, "
+        f"{total_expanded} expanded docs"
+    )
 
     # 1️⃣ Compute allowed document IDs (hard boundary)
     allowed_document_ids: List[str] = _ordered_unique(
@@ -65,7 +68,8 @@ def execute_retrieval_plan(
         for chunk in chunks:
             if chunk.document_id != document_id:
                 raise ValueError(
-                    f"Retrieved chunk from document {chunk.document_id}, expected {document_id}"
+                    f"Retrieved chunk from document "
+                    f"{chunk.document_id}, expected {document_id}"
                 )
 
         chunks_by_document[document_id] = chunks
@@ -73,11 +77,17 @@ def execute_retrieval_plan(
         # 4️⃣ Detailed chunk logging
         for c in chunks:
             preview = (c.text[:50] + "...") if len(c.text) > 50 else c.text
-            logger.debug(f"Doc={document_id} | ChunkID={c.chunk_id} | Score={c.score:.4f} | TextPreview='{preview}'")
+            logger.debug(
+                f"Doc={document_id} | ChunkID={c.chunk_id} | "
+                f"Score={c.score:.4f} | TextPreview='{preview}'"
+            )
 
         logger.debug(f"Retrieved {len(chunks)} chunks for document_id={document_id}")
 
-    logger.info(f"Finished executing RetrievalPlan; total documents retrieved: {len(chunks_by_document)}")
+    logger.info(
+        f"Finished executing RetrievalPlan; "
+        f"total documents retrieved: {len(chunks_by_document)}"
+    )
     return RetrievedContext(chunks_by_document=chunks_by_document)
 
 

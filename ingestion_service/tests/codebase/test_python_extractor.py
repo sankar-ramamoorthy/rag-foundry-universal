@@ -36,8 +36,15 @@ def test_extractor_on_self_file(extractor):
     method_artifacts = [a for a in artifacts if a["artifact_type"] == "METHOD"]
     method_names = [m["name"] for m in method_artifacts]
     # Methods inside PythonASTExtractor
-    expected_methods = ["extract", "visit_ClassDef", "visit_FunctionDef", "visit_Import",
-                        "visit_ImportFrom", "visit_Call", "_get_parent_class"]
+    expected_methods = [
+        "extract",
+        "visit_ClassDef",
+        "visit_FunctionDef",
+        "visit_Import",
+        "visit_ImportFrom",
+        "visit_Call",
+        "_get_parent_class",
+    ]
     for method in expected_methods:
         assert method in method_names
 
@@ -54,7 +61,11 @@ def test_extractor_on_self_file(extractor):
     # -----------------------------
     import_artifacts = [a for a in artifacts if a["artifact_type"] == "IMPORT"]
     import_names = [i["name"] for i in import_artifacts]
-    import_modules = [i.get("metadata", {}).get("module") for i in import_artifacts if "module" in i.get("metadata", {})]
+    import_modules = [
+        i.get("metadata", {}).get("module")
+        for i in import_artifacts
+        if "module" in i.get("metadata", {})
+    ]
 
     # Check standard imports
     assert "ast" in import_names  # from 'import ast'
