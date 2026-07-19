@@ -36,18 +36,18 @@ async def rag_endpoint(rag_query: RAGQuery):
     logger.debug(f"Received RAG query: {rag_query}")
 
     try:
-        # Call the service layer to perform the full RAG process
-        #result = await run_rag(
-        #    rag_query.query, rag_query.top_k, rag_query.provider, rag_query.model
-        #)
         result = await run_rag(
         query=rag_query.query,
+        repo_id=rag_query.repo_id,
         top_k=rag_query.top_k,
         provider=rag_query.provider,
         model=rag_query.model
         )
         return result
 
+    except HTTPException:
+        # Preserve service-layer status codes (e.g. 404 unknown repo_id)
+        raise
     except Exception as e:
         logger.error(f"Error occurred during the RAG process: {e}")
         raise HTTPException(

@@ -24,7 +24,10 @@ from shared.embedders.query import embed_query
 from shared.embedders.factory import get_embedder
 from shared.retrieval.retrieval_plan import RetrievalPlan
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
-from rag_orchestrator.src.retrieval.agent_adapter import prepare_chunks_for_agent
+from rag_orchestrator.src.retrieval.agent_adapter import (
+    build_sources,
+    prepare_chunks_for_agent,
+)
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 from rag_orchestrator.src.retrieval.traversal_planner import (
     expand_retrieval_plan,
@@ -265,6 +268,7 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
 
     return SimpleRAGResult(
         answer=result.get("response", ""),
-        sources=list(dict.fromkeys(c["document_id"] for c in agent_chunks)),
-        # dict.fromkeys preserves order and deduplicates
+        # Issue #30 Part 4: uploaded-file chunks also carry canonical_id/
+        # relative_path metadata (pipeline.py), so labels beat raw UUIDs
+        sources=build_sources(agent_chunks),
     )

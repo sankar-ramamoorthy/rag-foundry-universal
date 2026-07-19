@@ -19,6 +19,7 @@ from src.core.config import get_settings
 from shared.embedders.factory import get_embedder
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.codebase.identity import build_repo_id
+from src.core.repo_naming import derive_repo_identity
 # -----------------------------
 # Session and router
 # -----------------------------
@@ -234,11 +235,18 @@ def ingest_repo(
         raise HTTPException(status_code=400, detail="Must provide either git_url or local_path")
 
     ingestion_id = uuid4()
+    metadata = {"git_url": git_url, "local_path": local_path, "provider": provider}
+    # Issue #30 Part 5: persist the derived display identity alongside the
+    # raw source so it stays queryable; derivation lives in repo_naming.
+    identity = derive_repo_identity(metadata)
+    metadata.update(
+        {k: identity[k] for k in ("source_type", "name", "display_name")}
+    )
     with SessionLocal() as session:
         StatusManager(session).create_request(
             ingestion_id=ingestion_id,
             source_type="repo",
-            metadata={"git_url": git_url, "local_path": local_path, "provider": provider},
+            metadata=metadata,
         )
 
     # Fire-and-forget background ingestion

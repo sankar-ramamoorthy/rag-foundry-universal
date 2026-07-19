@@ -112,6 +112,7 @@ def list_complete_repos() -> List[Dict]:
         created_at
         file_count
         node_count
+        ingestion_metadata
     """
     with SessionLocal() as session:
 
@@ -138,6 +139,19 @@ def list_complete_repos() -> List[Dict]:
 
         results: List[Dict] = []
 
+        # JSON columns can't be grouped in Postgres, so fetch the
+        # ingestion metadata (git_url/local_path/…) in a second query
+        # keyed by the already-grouped ingestion_ids (issue #30 Part 5).
+        ingestion_ids = [row[1] for row in repo_rows]
+        metadata_by_ingestion = dict(
+            session.query(
+                IngestionRequest.ingestion_id,
+                IngestionRequest.ingestion_metadata,
+            )
+            .filter(IngestionRequest.ingestion_id.in_(ingestion_ids))
+            .all()
+        ) if ingestion_ids else {}
+
         for repo_id, ingestion_id, status, created_at in repo_rows:
 
             node_count = (
@@ -160,6 +174,7 @@ def list_complete_repos() -> List[Dict]:
                     "created_at": created_at,
                     "file_count": int(file_count or 0),
                     "node_count": int(node_count or 0),
+                    "ingestion_metadata": metadata_by_ingestion.get(ingestion_id),
                 }
             )
 

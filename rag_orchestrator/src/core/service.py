@@ -1,6 +1,7 @@
 # rag_orchestrator/src/core/service.py
 # ADR-045 Hybrid Vector + Graph RAG (HTTP-only, clean boundaries)
 
+import asyncio
 import logging
 from typing import List, Optional, Callable, Dict, Any, Set, cast
 import httpx
@@ -14,7 +15,10 @@ from shared.embedders.factory import get_embedder
 
 from shared.retrieval.retrieval_plan import RetrievalPlan
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
-from rag_orchestrator.src.retrieval.agent_adapter import prepare_chunks_for_agent
+from rag_orchestrator.src.retrieval.agent_adapter import (
+    build_sources,
+    prepare_chunks_for_agent,
+)
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
 from rag_orchestrator.src.retrieval.codebase_utils import extract_canonical_ids_from_chunks
@@ -78,15 +82,18 @@ async def resolve_repo_id_http(repo_id: Optional[str]) -> str:
 # GRAPH API: canonical_ids → document_ids
 # ------------------------------------------------------------------
 
-async def canonical_ids_to_document_ids_http(
+async def canonical_to_document_map_http(
     repo_id: str,
     canonical_ids: Set[str],
-) -> Set[str]:
+) -> Dict[str, str]:
     """
-    Resolve canonical_ids to document_ids via ingestion_service graph API.
+    Resolve canonical_ids to a canonical_id → document_id map via the
+    ingestion_service graph API. The mapping (not just a set) lets the
+    caller apply the expansion ranking when capping fetched docs
+    (issue #30 Part 3).
     """
     if not canonical_ids:
-        return set()
+        return {}
 
     settings = get_settings()
     url = f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}/nodes"
@@ -99,21 +106,115 @@ async def canonical_ids_to_document_ids_http(
             resp.raise_for_status()
             data = resp.json()
 
-            document_ids = {node["document_id"] for node in data.get("nodes", [])}
+            mapping = {
+                node["canonical_id"]: node["document_id"]
+                for node in data.get("nodes", [])
+                if node.get("canonical_id") and node.get("document_id")
+            }
             logger.info(
                 f"Graph API: {len(canonical_ids)} canonical_ids → "
-                f"{len(document_ids)} document_ids"
+                f"{len(mapping)} document_ids"
             )
-            return document_ids
+            return mapping
 
         except Exception as e:
             logger.warning(f"Graph lookup failed: {e}")
-            return set()
+            return {}
 
 
 # ------------------------------------------------------------------
 # HYBRID RETRIEVAL (Vector → Canonical → Graph → Docs → Chunks)
 # ------------------------------------------------------------------
+
+def _rank_expanded_canonical_ids(
+    query: str,
+    repo_id: str,
+    seed_canonical_ids: Set[str],
+) -> List[str]:
+    """
+    Graph-expand from every seed and return expanded canonical_ids,
+    most seed-adjacent first, seeds excluded. The order drives the
+    MAX_EXPANDED_DOCS cap (issue #30 Part 3).
+    """
+    if not seed_canonical_ids:
+        return []
+
+    from rag_orchestrator.src.retrieval.codebase_utils import get_cached_graph
+
+    graph: CodebaseGraph = get_cached_graph(repo_id)
+    strategies = select_traversal_strategies(query, seed_canonical_ids)
+    # F-12: expand from every seed, not just the longest-named one
+    expanded_nodes: List[Node] = execute_traversals_from_seeds(
+        graph, seed_canonical_ids, strategies
+    )
+    return [
+        node.canonical_id
+        for node in expanded_nodes
+        if node.canonical_id not in seed_canonical_ids
+    ]
+
+
+async def _fetch_expanded_doc_chunks(
+    expanded_doc_ids: List[str],
+) -> List[tuple[str, List[Dict[str, Any]]]]:
+    """
+    Fetch chunks for the capped expanded docs concurrently (bounded by
+    MAX_CONCURRENT_DOC_FETCHES), k=EXPANDED_DOC_CHUNKS per doc. Results
+    come back in expanded_doc_ids order, so output stays deterministic.
+    """
+    settings = get_settings()
+    doc_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search-by-doc"
+    fetch_semaphore = asyncio.Semaphore(settings.MAX_CONCURRENT_DOC_FETCHES)
+
+    async with httpx.AsyncClient(timeout=200) as client:
+
+        async def fetch_one(doc_id: str) -> tuple[str, List[Dict[str, Any]]]:
+            async with fetch_semaphore:
+                try:
+                    resp = await client.post(
+                        doc_url,
+                        json={
+                            "document_id": doc_id,
+                            "k": settings.EXPANDED_DOC_CHUNKS,
+                        },
+                    )
+                    if resp.status_code == 200:
+                        return doc_id, resp.json().get("results", [])
+                    logger.warning(
+                        f"search-by-doc non-200 for {doc_id[:8]}: {resp.status_code}"
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed fetching expanded doc {doc_id[:8]}: {e}")
+                return doc_id, []
+
+        return list(
+            await asyncio.gather(*(fetch_one(doc_id) for doc_id in expanded_doc_ids))
+        )
+
+
+def _add_chunks(
+    doc_id: str,
+    results: List[Dict[str, Any]],
+    seen_chunk_ids: Set[str],
+    retrieved_chunks_by_document: Dict[str, List[RetrievedChunk]],
+) -> List[RetrievedChunk]:
+    """Append result rows as RetrievedChunks, skipping seen chunk_ids."""
+    added: List[RetrievedChunk] = []
+    for r in results:
+        if r["chunk_id"] in seen_chunk_ids:
+            continue
+        seen_chunk_ids.add(r["chunk_id"])
+        chunk = RetrievedChunk(
+            document_id=doc_id,
+            chunk_id=r["chunk_id"],
+            text=r["text"],
+            score=r.get("score"),
+            metadata=r.get("metadata", {}),
+        )
+        added.append(chunk)
+        retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
+    return added
+
 
 async def hybrid_retrieve(
     query: str,
@@ -133,79 +234,68 @@ async def hybrid_retrieve(
 
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
     payload = {"query_vector": query_embedding, "k": top_k,
-                "metadata_filter": {"doc_type": "code"}}
+                "metadata_filter": {"doc_type": "code", "repo_id": repo_id}}
 
     async with httpx.AsyncClient(timeout=200) as client:
         resp = await client.post(search_url, json=payload)
         if resp.status_code != 200 or not resp.json().get("results"):
-            logger.info("No code chunks found. Falling back to general search.")
-            payload.pop("metadata_filter", None)
+            logger.info("No code chunks found. Falling back to repo-scoped search.")
+            # Relax only doc_type — the fallback must never leave the repo,
+            # or queries against repos with no code chunks silently answer
+            # from other repos (issue #30 Part 1).
+            payload["metadata_filter"] = {"repo_id": repo_id}
             resp = await client.post(search_url, json=payload)
         resp.raise_for_status()
         raw_results = resp.json().get("results", [])
 
     retrieved_chunks_by_document: Dict[str, List[RetrievedChunk]] = {}
+    seen_chunk_ids: Set[str] = set()
     seed_chunks: List[RetrievedChunk] = []
-
     for r in raw_results:
         doc_id = r.get("document_id") or r.get("metadata", {}).get("document_id")
         if not doc_id:
             continue
-        chunk = RetrievedChunk(
-            document_id=doc_id,
-            chunk_id=r["chunk_id"],
-            text=r["text"],
-            score=r.get("score"),
-            metadata=r.get("metadata", {}),
+        seed_chunks.extend(
+            _add_chunks(doc_id, [r], seen_chunk_ids, retrieved_chunks_by_document)
         )
-        seed_chunks.append(chunk)
-        retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
 
     seed_canonical_ids = extract_canonical_ids_from_chunks(seed_chunks)
     logger.info(f"📊 {len(seed_chunks)} chunks → {len(seed_canonical_ids)} canonical_ids")
 
-    expanded_canonical_ids: Set[str] = set()
-    if seed_canonical_ids:
-        from rag_orchestrator.src.retrieval.codebase_utils import get_cached_graph
-
-        graph: CodebaseGraph = get_cached_graph(repo_id)
-        strategies = select_traversal_strategies(query, seed_canonical_ids)
-        # F-12: expand from every seed, not just the longest-named one
-        expanded_nodes: List[Node] = execute_traversals_from_seeds(
-            graph, seed_canonical_ids, strategies
-        )
-        expanded_canonical_ids = {node.canonical_id for node in expanded_nodes}
+    expanded_ranked = _rank_expanded_canonical_ids(query, repo_id, seed_canonical_ids)
+    expanded_canonical_ids = set(expanded_ranked)
 
     all_canonical_ids = seed_canonical_ids | expanded_canonical_ids
-    all_document_ids = await canonical_ids_to_document_ids_http(repo_id, all_canonical_ids)
+    canonical_to_doc = await canonical_to_document_map_http(repo_id, all_canonical_ids)
 
     seed_doc_ids = set(retrieved_chunks_by_document.keys())
-    missing_doc_ids = all_document_ids - seed_doc_ids
 
-    async with httpx.AsyncClient(timeout=200) as client:
-        for doc_id in missing_doc_ids:
-            try:
-                doc_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search-by-doc"
-                doc_payload = {"document_id": doc_id, "k": 10}
-                resp = await client.post(doc_url, json=doc_payload)
-                if resp.status_code == 200:
-                    for r in resp.json().get("results", []):
-                        chunk = RetrievedChunk(
-                            document_id=doc_id,
-                            chunk_id=r["chunk_id"],
-                            text=r["text"],
-                            score=r.get("score"),
-                            metadata=r.get("metadata", {}),
-                        )
-                        retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
-            except Exception as e:
-                logger.warning(f"Failed fetching expanded doc {doc_id[:8]}: {e}")
+    # Issue #30 Part 3: cap expansion breadth. Rank order is preserved
+    # from execute_traversals_from_seeds; docs beyond MAX_EXPANDED_DOCS
+    # are counted as considered but never fetched.
+    expanded_doc_ids: List[str] = []
+    expanded_doc_seen: Set[str] = set(seed_doc_ids)
+    for cid in expanded_ranked:
+        doc_id = canonical_to_doc.get(cid)
+        if not doc_id or doc_id in expanded_doc_seen:
+            continue
+        expanded_doc_seen.add(doc_id)
+        expanded_doc_ids.append(doc_id)
+
+    expanded_docs_considered = len(expanded_doc_ids)
+    expanded_doc_ids = expanded_doc_ids[: settings.MAX_EXPANDED_DOCS]
+
+    fetched = await _fetch_expanded_doc_chunks(expanded_doc_ids)
+    for doc_id, doc_results in fetched:
+        _add_chunks(doc_id, doc_results, seen_chunk_ids, retrieved_chunks_by_document)
 
     retrieval_plan_dict = {
         "seed_canonical_ids": sorted(seed_canonical_ids),
         "expanded_canonical_ids": sorted(expanded_canonical_ids),
         "seed_docs": len(seed_doc_ids),
-        "expanded_docs": len(missing_doc_ids),
+        "expanded_docs_considered": expanded_docs_considered,
+        "expanded_docs_used": len(expanded_doc_ids),
+        "expanded_docs": len(expanded_doc_ids),
         "total_docs": len(retrieved_chunks_by_document),
     }
 
@@ -260,7 +350,10 @@ async def run_rag(
         retrieved_context,
         document_order=seed_document_ids,
         max_chunks_per_doc=max_chunks_per_doc,
-        max_total_chunks=9999,
+        # Issue #30 Part 3: real cap (was 9999). document_order lists
+        # seed docs before expanded ones, so truncation drops expansion
+        # first.
+        max_total_chunks=settings.MAX_TOTAL_CHUNKS,
         filter_chunk=chunk_filter_fn,
         debug=True,
     )
@@ -292,7 +385,8 @@ async def run_rag(
         resp.raise_for_status()
         result = resp.json()
 
-    sources = [c["document_id"] for c in agent_chunks]
+    # Issue #30 Part 4: canonical IDs / paths, deduplicated, seeds first
+    sources = build_sources(agent_chunks)
 
     return RAGResult(
         answer=result.get("response", ""),
