@@ -1,0 +1,24 @@
+# llm_service model registry (WP-M1).
+#
+# Friendly aliases -> LiteLLM model strings. The `default` alias is
+# optional here: when absent it is derived from the OLLAMA_MODEL env var
+# (ollama/<OLLAMA_MODEL>), preserving the pre-LiteLLM default behavior.
+# Raw LiteLLM strings (containing "/") always pass through verbatim, so
+# power users are not limited to this menu.
+#
+# API keys are env-only (OPENAI_API_KEY, ANTHROPIC_API_KEY, ...) —
+# LiteLLM reads them natively. Never put keys in this file.
+
+models:
+  fast: anthropic/claude-haiku-4-5
+  smart: anthropic/claude-sonnet-5
+  gpt: openai/gpt-5.1
+
+# WP-M2 (resilience) consumes this map: alias -> ordered fallback aliases.
+fallbacks:
+  smart: [gpt, default]
+
+# Per-alias request timeout in seconds; `default` applies to everything
+# without an explicit entry (falls back to LLM_TIMEOUT env, 120 s).
+timeouts:
+  default: 120

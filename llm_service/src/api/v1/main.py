@@ -10,6 +10,7 @@ from src.core.config import (
     OLLAMA_MODEL,
 )
 from src.core.llm_client import generate_completion
+from src.core.model_registry import UnknownModelAliasError
 
 app = FastAPI(title="LLM Service")
 
@@ -29,6 +30,14 @@ async def generate(
             provider=provider,
             model=model,
         )
+    except UnknownModelAliasError as e:
+        # WP-M1: unknown alias is a client error, with the valid menu
+        return JSONResponse(
+            status_code=400,
+            content={"error": str(e), "valid_aliases": e.valid_aliases},
+        )
+    except ValueError as e:
+        return JSONResponse(status_code=400, content={"error": str(e)})
     except Exception as e:
         logging.exception("Error in /generate")
         return JSONResponse(status_code=500, content={"error": str(e)})

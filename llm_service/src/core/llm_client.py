@@ -1,10 +1,16 @@
-import httpx
+# llm_service/src/core/llm_client.py
+# WP-M1: LiteLLM core swap. Any LiteLLM-supported model works via the
+# provider/model params; Ollama remains the default; llm_service stays
+# the seam owning prompts and model policy — other services never call
+# vendors directly.
+import logging
 
-from src.core.config import (
-    DEFAULT_LLM_PROVIDER,
-    OLLAMA_BASE_URL,
-    OLLAMA_MODEL,
-)
+import litellm
+
+from src.core.model_registry import ResolvedModel, get_registry
+from src.core.prompts import PROMPT_TEMPLATE_VERSION, build_messages
+
+logger = logging.getLogger(__name__)
 
 
 async def generate_completion(
@@ -14,27 +20,41 @@ async def generate_completion(
     provider: str | None = None,
     model: str | None = None,
 ) -> dict:
-    active_provider = provider or DEFAULT_LLM_PROVIDER
+    resolved = get_registry().resolve(provider, model)
+    return await _complete(resolved, context=context, query=query)
 
-    if active_provider == "ollama":
-        active_model = model or OLLAMA_MODEL
-    else:
-        raise ValueError(f"Unsupported LLM provider: {active_provider}")
 
-    prompt = f"Context:\n{context}\n\nQuestion:\n{query}"
-    return_dict = {"provider": active_provider, "model": active_model, "response": ""}
+async def _complete(
+    resolved: ResolvedModel, *, context: str, query: str
+) -> dict:
+    kwargs: dict = {
+        "model": resolved.model,
+        "messages": build_messages(context, query),
+        "timeout": resolved.timeout,
+    }
+    if resolved.api_base:
+        kwargs["api_base"] = resolved.api_base
 
-    if active_provider == "ollama":
-        async with httpx.AsyncClient( timeout=600) as client:
-            response = await client.post(
-                f"{OLLAMA_BASE_URL}/api/generate",
-                json={"model": active_model, "prompt": prompt, "stream": False},
-            )
-            response.raise_for_status()
-            answer = response.json().get("response", "").strip()
-            return_dict = {
-                "provider": active_provider,
-                "model": active_model,
-                "response": answer,
-            }
-    return return_dict
+    response = await litellm.acompletion(**kwargs)
+
+    content = response.choices[0].message.content or ""
+    usage = getattr(response, "usage", None)
+    usage_dict = (
+        {
+            "prompt_tokens": getattr(usage, "prompt_tokens", None),
+            "completion_tokens": getattr(usage, "completion_tokens", None),
+            "total_tokens": getattr(usage, "total_tokens", None),
+        }
+        if usage is not None
+        else None
+    )
+
+    return {
+        # kept for backward compatibility with the pre-LiteLLM shape
+        "provider": resolved.model.split("/", 1)[0],
+        "model": resolved.model,
+        "model_alias": resolved.alias,
+        "response": content.strip(),
+        "usage": usage_dict,
+        "prompt_template": PROMPT_TEMPLATE_VERSION,
+    }

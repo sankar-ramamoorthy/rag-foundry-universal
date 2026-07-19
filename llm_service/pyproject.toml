@@ -9,8 +9,8 @@ dependencies = [
   "httpx",
   "python-dotenv",
   "pydantic",
-  "openai",         # for OpenAI LLMs
-  "ollama"  ,        # optional, for local LLMs
+  "litellm",        # WP-M1: provider-agnostic LLM routing
+  "pyyaml",         # WP-M1: models.yaml registry
   "python-multipart" # add this line
 ]
 
