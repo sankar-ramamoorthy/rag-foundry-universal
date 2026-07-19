@@ -138,7 +138,7 @@ async def get_full_graph(
 
 
 # GET /graph/docs/{document_id}/relationships
-@router.get("/docs/{document_id}/relationships", 
+@router.get("/docs/{document_id}/relationships",
             response_model=DocumentRelationshipsResponse)
 async def get_document_relationships(
     document_id: str,

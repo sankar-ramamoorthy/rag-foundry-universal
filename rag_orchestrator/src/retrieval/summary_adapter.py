@@ -1,7 +1,7 @@
 # rag_orchestrator/src/retrieval/summary_adapter.py
 
 import logging
-from typing import List, Dict, Optional
+from typing import List, Dict
 import requests
 
 logger = logging.getLogger(__name__)

@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Column, String, JSON, Integer, ForeignKey
 from sqlalchemy.orm import relationship
 from shared.models.base import Base
-import uuid
 
 from pgvector.sqlalchemy import Vector  # pgvector type for SQLAlchemy
 

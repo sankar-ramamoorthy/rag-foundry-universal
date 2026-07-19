@@ -5,8 +5,8 @@ from typing import Set, Dict, List
 import logging
 import requests
 from .codebase_queries import CodebaseGraph, load_graph_for_repo
-from src.core.config import get_settings    
-        
+from src.core.config import get_settings
+
 
 
 

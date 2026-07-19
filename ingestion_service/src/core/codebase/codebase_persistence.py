@@ -45,7 +45,7 @@ class CodebaseGraphPersistence:
         """
         Safely delete all document nodes for a given repo_id.
         Cascade deletes related vector chunks and relationships.
-        
+
         Returns the number of nodes deleted.
         """
         try:

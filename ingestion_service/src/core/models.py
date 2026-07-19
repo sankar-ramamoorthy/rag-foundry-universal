@@ -1,6 +1,6 @@
 # ingestion_service/src/core/models.py (classic style - Pyright perfect)
 import uuid
-from sqlalchemy import Column, String, JSON, TIMESTAMP 
+from sqlalchemy import Column, String, JSON, TIMESTAMP
 from sqlalchemy.dialects.postgresql import UUID
 
 from sqlalchemy.sql import text

@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Any, Optional
 import logging
-from uuid import uuid4, uuid5, UUID, NAMESPACE_DNS
+from uuid import uuid4, uuid5, UUID
 
 from shared.chunks import Chunk
 from shared.chunkers.base import BaseChunker
@@ -54,7 +54,7 @@ class IngestionPipeline:
         Use this for simple text ingestion (TXT files).
         """
         logger.debug("🔄 pipeline.py run() - TEXT PATH - Full MS6 pipeline: validate → chunk → DocumentNode → embed → persist")
-        
+
         # MS6: Create DocumentNode FIRST (before any vectors)
         sessionmaker = get_sessionmaker()
         with sessionmaker() as session:
@@ -62,14 +62,14 @@ class IngestionPipeline:
             # 🔥 MS7 FIX: Use exact source format that summary.py expects
             source = f"file_document_{ingestion_id}"  # Full UUID to match summary.py
             title = f"{source_type}_document_{ingestion_id[:8]}"  # Keep title human-readable
-            
-            logger.debug(f"📝 MS6 run() Creating DocumentNode:")
+
+            logger.debug("📝 MS6 run() Creating DocumentNode:")
             logger.debug(f"   ingestion_id: {ingestion_id}")
             logger.debug(f"   document_id: {document_id}")
             logger.debug(f"   title: '{title}'")
             logger.debug(f"   source: '{source}'")  # 🔥 MS7: This MUST match summary.py query
             relative_path = filename or "uploaded_file"
-            canonical_id = f"{source_type}_document_{ingestion_id}"            
+            canonical_id = f"{source_type}_document_{ingestion_id}"
             create_document_node(
                 session,
                 document_id=document_id,
@@ -80,7 +80,7 @@ class IngestionPipeline:
                 doc_type=source_type,  # "file", "image", etc.
                 canonical_id=canonical_id,
                 relative_path=relative_path,
-                repo_id=str(ingestion_id), 
+                repo_id=str(ingestion_id),
             )
             session.commit()  #  CRITICAL: Commit BEFORE vectors
             logger.debug(f"✅ MS6 run() DocumentNode COMMITTED {document_id} for {ingestion_id}")
@@ -113,7 +113,7 @@ class IngestionPipeline:
         Use this for PDFs or other content where chunking happened upstream.
         """
         logger.debug(f"🔄 pipeline.py run_with_chunks() - PDF PATH - {len(chunks)} pre-chunked items")
-        
+
         # MS6: Create DocumentNode FIRST
         sessionmaker = get_sessionmaker()
         with sessionmaker() as session:
@@ -121,14 +121,14 @@ class IngestionPipeline:
             # 🔥 MS7 FIX: Use exact source format that summary.py expects
             source = f"file_document_{ingestion_id}"  # Full UUID to match summary.py
             title = chunks[0].metadata.get("filename", "untitled") if chunks else "untitled"
-            
-            logger.debug(f"📝 MS6 run_with_chunks() Creating DocumentNode:")
+
+            logger.debug("📝 MS6 run_with_chunks() Creating DocumentNode:")
             logger.debug(f"   ingestion_id: {ingestion_id}")
             logger.debug(f"   document_id: {document_id}")
             logger.debug(f"   title: '{title}'")
             logger.debug(f"   source: '{source}'")  # 🔥 MS7: This MUST match summary.py query
             relative_path = filename or "uploaded_file"
-            canonical_id = f"pdf_document_{ingestion_id}"            
+            canonical_id = f"pdf_document_{ingestion_id}"
             create_document_node(
                 session,
                 document_id=document_id,
@@ -138,8 +138,8 @@ class IngestionPipeline:
                 ingestion_id=UUID(ingestion_id),
                 doc_type="file",
                 canonical_id=canonical_id,
-                relative_path=relative_path,            
-                repo_id=str(ingestion_id), 
+                relative_path=relative_path,
+                repo_id=str(ingestion_id),
                 )
             session.commit()  # 🔥 CRITICAL: Commit BEFORE vectors
             logger.debug(f"✅ MS6 run_with_chunks() DocumentNode COMMITTED {document_id} for {ingestion_id}")
@@ -152,9 +152,9 @@ class IngestionPipeline:
             chunk.metadata.setdefault("provider", "unknown")
             chunk.metadata.setdefault("relative_path", relative_path)      # ADD
             chunk.metadata.setdefault("canonical_id", canonical_id)        # ADD
-            chunk.metadata.setdefault("chunk_strategy", 
+            chunk.metadata.setdefault("chunk_strategy",
             chunk.metadata.get("chunk_strategy", "unknown"))
-        
+
         # Continue pipeline
         embeddings = self._embed(chunks)
         logger.debug(f"📦 MS6 run_with_chunks() Persisting {len(chunks)} chunks with document_id={document_id}")
@@ -209,7 +209,7 @@ class IngestionPipeline:
         Adds provenance metadata to each chunk for provenance.
         """
         logger.debug(f"🔪 pipeline.py _chunk() text_len={len(text)} source_type={source_type}")
-        
+
         if self._chunker is None:
             selected_chunker, chunker_params = ChunkerFactory.choose_strategy(text)
         else:
@@ -381,7 +381,7 @@ class IngestionPipeline:
                 continue
 
             chunk = Chunk(
-                chunk_id=str(uuid5(UUID(ingestion_id), artifact["id"])), 
+                chunk_id=str(uuid5(UUID(ingestion_id), artifact["id"])),
                 content=text,
                 metadata={
                     "source_type": "file",

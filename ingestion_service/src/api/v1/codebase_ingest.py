@@ -1,5 +1,4 @@
-import uuid
-from uuid import uuid4, UUID, uuid5
+from uuid import uuid4, UUID
 import threading
 import logging
 from pathlib import Path
@@ -8,7 +7,6 @@ import shutil
 
 from fastapi import APIRouter, HTTPException, Form, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 
 from src.core.database_session import get_sessionmaker
 from src.core.models import IngestionRequest

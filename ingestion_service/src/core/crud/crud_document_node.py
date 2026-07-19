@@ -23,7 +23,7 @@ def create_document_node(
     doc_type: str,
     canonical_id: str,           # ← ADD THIS
     relative_path: str,          # ← ADD THIS
-    repo_id: Optional[str] = None,  
+    repo_id: Optional[str] = None,
 ) -> DocumentNode:
     """
     Create and persist a new DocumentNode.
@@ -34,12 +34,12 @@ def create_document_node(
     if not title:
         logger.warning("Title is empty or None. Defaulting to 'Untitled Document'.")
         title = "Untitled Document"  # Default title if not provided
-    
+
     # Validate summary before creating the document node
     if not summary:
         logger.warning("Summary is empty or None. Defaulting to 'Summary pending'.")
         summary = "Summary pending"  # Default summary if not provided
-    
+
     # Log the data to check before insertion
     logger.debug(f"Creating DocumentNode with data: "
                  f"document_id={document_id}, title={title}, summary={summary}, "
@@ -99,11 +99,11 @@ def update_document_node_summary(
     session, ingestion_id: UUID, summary: str
 ) -> bool:
     """MS7-IS3: Update document_node.summary by ingestion_id."""
-    
+
     doc = (session.query(DocumentNode)
            .filter_by(ingestion_id=ingestion_id)
            .first())
-    
+
     if doc:
         doc.summary = summary
         session.commit()

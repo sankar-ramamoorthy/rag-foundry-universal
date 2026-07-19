@@ -6,7 +6,6 @@ Create Date: 2026-01-31
 """
 
 from alembic import op
-import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "20260131_docnodes"
@@ -33,7 +32,7 @@ def upgrade() -> None:
         source TEXT NOT NULL,
         ingestion_id UUID NOT NULL REFERENCES ingestion_service.ingestion_requests(ingestion_id),
         doc_type TEXT NOT NULL,
-        text TEXT        
+        text TEXT
     )
     """)
 

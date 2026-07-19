@@ -34,5 +34,7 @@ dev = [
     "httpx>=0.28.1",
     "pre-commit>=4.5.1",
     "pyright>=1.1.407",
+    "pytest-asyncio>=1.4.0",
+    "respx>=0.23.1",
     "ruff>=0.14.10",
 ]

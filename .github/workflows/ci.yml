@@ -1,0 +1,92 @@
+# CI for rag-foundry-universal (audit F-17 / WP-E2 CI slice).
+#
+# Mirrors the local workflow: one root uv environment (uv.lock) drives
+# lint and every service's tests. Known-broken test files are excluded
+# with a tracking issue each; remove the exclusion when the issue closes.
+name: CI
+
+on:
+  push:
+    branches: [main, post-audit-branch]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Ruff
+        run: uv run ruff check .
+
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: ingestion_service unit tests
+        working-directory: ingestion_service
+        # --ignore'd files fail collection on a missing module (issue #25)
+        run: >
+          ../.venv/bin/python -m pytest -m unit -q
+          --ignore=tests/integration/test_relationship_expansion.py
+          --ignore=tests/integration/test_relationship_expansion_integration.py
+          --ignore=tests/test_retrieval_planner.py
+
+      - name: vector_store_service unit tests
+        working-directory: vector_store_service
+        run: ../.venv/bin/python -m pytest -m unit -q
+
+      - name: llm_service tests
+        working-directory: llm_service
+        run: ../.venv/bin/python -m pytest tests/ -q
+
+      - name: rag_orchestrator tests
+        working-directory: rag_orchestrator
+        # Explicit files: tests/__init__.py is a directory that breaks
+        # collection of the files inside it (issue #24)
+        run: >
+          ../.venv/bin/python -m pytest -q
+          tests/test_multi_seed_traversal.py
+          tests/test_imports_traversal.py
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: ingestion_user
+          POSTGRES_PASSWORD: ingestion_pass
+          POSTGRES_DB: ingestion_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U ingestion_user -d ingestion_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@localhost:5433/ingestion_test
+      CI_HAS_DB: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+
+      - name: ingestion_service integration tests (atomic graph persistence)
+        working-directory: ingestion_service
+        run: ../.venv/bin/python -m pytest tests/codebase/test_atomic_graph_persistence.py -q
+
+      - name: vector_store_service integration tests (ANN index usage)
+        working-directory: vector_store_service
+        run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_ann_index_usage.py -q

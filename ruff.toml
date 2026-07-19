@@ -6,6 +6,17 @@ exclude = [
     "dist",
     "__pycache__",
     ".git",
+    # Known-broken test files, excluded from pytest runs too:
+    # issue #25 (import a nonexistent src.core.retrieval module / stale APIs)
+    "ingestion_service/tests/integration/test_relationship_expansion.py",
+    "ingestion_service/tests/integration/test_relationship_expansion_integration.py",
+    "ingestion_service/tests/test_retrieval_planner.py",
+    "ingestion_service/tests/test_document_node_crud_integration.py",
+    # issue #24 (tests/__init__.py is a directory; files inside never collect)
+    "rag_orchestrator/tests/__init__.py",
 ]
 [lint]
 select = ["E", "F", "W", "C"]
+# E501: ~150 pre-existing long lines; enforcing now would mean a repo-wide
+# cosmetic reformat. Temporarily ignored — re-enable via issue #28.
+ignore = ["E501"]

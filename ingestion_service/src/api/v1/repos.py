@@ -32,7 +32,7 @@ async def list_repos():
     result: List[RepoSummary] = []
 
     for row in repo_rows:
-        repo_id = str(row["repo_id"]) 
+        repo_id = str(row["repo_id"])
         ingestion_id = row["ingestion_id"]
         status = row["status"]
         created_at = row["created_at"]

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import List, Dict, Set, Optional, Callable
 
-from shared.retrieval.retrieval_plan import RetrievalPlan, ExpansionMetadata, RetrievalConstraints
+from shared.retrieval.retrieval_plan import RetrievalPlan, ExpansionMetadata
 
 
 @dataclass(frozen=True)

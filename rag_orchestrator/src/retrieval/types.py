@@ -1,7 +1,7 @@
 # rag_orchestrator/src/retrieval/types.py
 
 from dataclasses import dataclass
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Optional
 
 
 @dataclass(frozen=True)
