@@ -49,6 +49,7 @@ def test_document_node_crud(session):
     """
 
     document_id = str(uuid.uuid4())
+    repo_url = "https://example.com/crud-test-repo.git"
 
     node = create_document_node(
         session=session,
@@ -57,7 +58,7 @@ def test_document_node_crud(session):
         title="CRUD Test",
         text="Lorem Ipsum",
         metadata={},
-        repo_id = build_repo_id(repo_url), 
+        repo_id=build_repo_id(repo_url),
     )
 
     assert node.document_id == document_id

@@ -96,10 +96,12 @@ class DocumentNode(Base):
     title: str = Column(String, nullable=False)
     summary: str = Column(Text, nullable=False)
 
+    # F-14: must match the active embedder (mxbai-embed-large, 1024-dim)
+    # and migration 20260301_update_vector_dimensions_1024.
     summary_embedding: list[float] = Column(
-        Vector(768),
+        Vector(1024),
         nullable=True,
-        doc="768-dim embedding vector (pgvector)",
+        doc="1024-dim embedding vector (pgvector)",
     )
 
     source: str = Column(

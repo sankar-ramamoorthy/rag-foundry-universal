@@ -1,7 +1,12 @@
 # rag_orchestrator/tests/test_community_detector.py
+# Issue #24: recovered from the tests/__init__.py directory that broke
+# collection; import path updated.
 
 import pytest
-from rag_orchestrator.src.retrieval.community_detector import cluster_documents
+
+from src.retrieval.community_detector import cluster_documents
+
+pytestmark = pytest.mark.unit
 
 
 @pytest.mark.parametrize(
@@ -22,14 +27,14 @@ from rag_orchestrator.src.retrieval.community_detector import cluster_documents
             [["D2", "D4"], ["D1", "D3"]],  # sorted clusters by key, docs sorted
         ),
 
-        # Missing cluster key → UNKNOWN
+        # Missing cluster key → UNKNOWN ("UNKNOWN" sorts before lowercase keys)
         (
             ["D1", "D2", "D3"],
             {
                 "D1": {"project_phase": "planning"},
                 "D3": {"some_other_key": "x"},
             },
-            [["D1"], ["D2", "D3"]],
+            [["D2", "D3"], ["D1"]],
         ),
 
         # Empty document list
