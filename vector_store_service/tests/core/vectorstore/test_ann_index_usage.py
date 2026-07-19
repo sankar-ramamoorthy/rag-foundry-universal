@@ -1,11 +1,13 @@
 # tests/core/vectorstore/test_ann_index_usage.py
 """
-F-10 (WP-S4): vector search must be index-backed, not a sequential scan.
+F-10 (WP-S4) + WP-S4B: vector search must be index-backed, not a
+sequential scan.
 
 Asserts via EXPLAIN against the docker-compose.test.yml Postgres
-(migration 20260718_vc_idx applied) that:
+(migrations 20260718_vc_idx + 20260719_typed_cols applied) that:
 - ANN ordering uses the HNSW index (ix_vector_chunks_hnsw);
-- doc_type / repo_id JSONB filters can use their expression indexes;
+- doc_type / repo_id filters use the typed-column indexes (WP-S4B
+  replaced the JSONB expression indexes);
 - document_id lookups use their btree index.
 
 The test dataset is tiny, so the planner would prefer a seq scan on
@@ -88,26 +90,50 @@ def test_similarity_search_uses_hnsw_index(store):
     assert "Seq Scan" not in plan, plan
 
 
-def test_doc_type_filter_uses_expression_index(store):
+def test_doc_type_filter_uses_typed_column_index(store):
     plan = _explain(
         """
         SELECT chunk_id FROM ingestion_service.vector_chunks
-        WHERE source_metadata->>'doc_type' = %s
+        WHERE doc_type = %s
         """,
         ("code",),
     )
-    assert "ix_vector_chunks_doc_type" in plan, plan
+    assert "ix_vector_chunks_doc_type_col" in plan, plan
 
 
-def test_repo_id_filter_uses_expression_index(store):
+def test_repo_filter_uses_typed_column_indexes(store):
+    """WP-S4B: the hybrid query's exact filter shape (repo_id + doc_type)
+    is served by typed-column indexes — the planner may pick the
+    composite or a single-column index depending on stats, but it must
+    not fall back to a seq scan or JSONB evaluation."""
     plan = _explain(
         """
         SELECT chunk_id FROM ingestion_service.vector_chunks
-        WHERE source_metadata->>'repo_id' = %s
+        WHERE repo_id = %s AND doc_type = %s
         """,
-        ("repo-1",),
+        ("repo-1", "code"),
     )
-    assert "ix_vector_chunks_repo_id" in plan, plan
+    assert (
+        "ix_vector_chunks_repo_doc" in plan
+        or "ix_vector_chunks_doc_type_col" in plan
+    ), plan
+    assert "Seq Scan" not in plan, plan
+    assert "source_metadata" not in plan, plan
+
+
+def test_typed_columns_backfilled_on_write(store):
+    """store.add() populates the typed columns from source_metadata."""
+    with psycopg.connect(_dsn()) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT count(*) FROM ingestion_service.vector_chunks
+                WHERE source_metadata->>'repo_id' IS NOT NULL
+                  AND (repo_id IS NULL
+                       OR repo_id != source_metadata->>'repo_id')
+                """
+            )
+            assert cur.fetchone()[0] == 0
 
 
 def test_document_id_lookup_uses_index(store):

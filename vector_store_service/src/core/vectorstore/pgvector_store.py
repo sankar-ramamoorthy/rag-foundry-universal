@@ -19,6 +19,11 @@ class PgVectorStore(VectorStore):
     # better recall, slower query. 100 is comfortable for k <= 50.
     HNSW_EF_SEARCH = 100
 
+    # WP-S4B: filter keys promoted from JSONB to real indexed columns.
+    # The write path copies them out of source_metadata, so filtering on
+    # the column and on the JSONB key are equivalent for every row.
+    TYPED_FILTER_COLUMNS = frozenset({"repo_id", "doc_type"})
+
     def __init__(self, dsn: str, dimension: int, provider: str = "mock") -> None:
         self._dsn = dsn
         self._dimension = dimension
@@ -44,24 +49,83 @@ class PgVectorStore(VectorStore):
         chunks_sql = sql.SQL("""
             INSERT INTO {schema}.vector_chunks
             (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
-             chunk_text, source_metadata, provider, document_id)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+             chunk_text, source_metadata, provider, document_id,
+             repo_id, doc_type)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """).format(schema=sql.Identifier(self.SCHEMA))
 
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
                 for record in records:
+                    source_metadata = record.metadata.source_metadata or {}
                     cur.execute(chunks_sql, (
                         record.vector, record.metadata.ingestion_id,
                         record.metadata.chunk_id, record.metadata.chunk_index,
                         record.metadata.chunk_strategy, record.metadata.chunk_text,
-                        Jsonb(record.metadata.source_metadata or {}),
+                        Jsonb(source_metadata),
                         record.metadata.provider or self._provider,
                         record.metadata.document_id or None,
+                        # WP-S4B: typed copies of the filter-critical keys
+                        source_metadata.get("repo_id"),
+                        source_metadata.get("doc_type"),
                     ))
         logging.info(
             "PgVectorStore.add: %d records written to vector_chunks", len(records)
         )
+
+    @classmethod
+    def _filter_target(cls, key: str) -> sql.Composable:
+        """SQL expression a filter key applies to: the typed column for
+        promoted keys (WP-S4B), else the JSONB lookup."""
+        if key in cls.TYPED_FILTER_COLUMNS:
+            return sql.SQL("vc.{col}").format(col=sql.Identifier(key))
+        return sql.SQL("vc.source_metadata->>{key}").format(
+            key=sql.Literal(key)
+        )
+
+    @classmethod
+    def _build_filter_conditions(
+        cls, metadata_filter: Dict[str, Any]
+    ) -> tuple[List[sql.Composable], List[Any]]:
+        conditions: List[sql.Composable] = []
+        filter_values: List[Any] = []
+
+        for key, value in metadata_filter.items():
+            target = cls._filter_target(key)
+
+            if isinstance(value, dict):
+                operator = list(value.keys())[0]
+                operand = list(value.values())[0]
+
+                if operator == "ne":
+                    conditions.append(
+                        sql.SQL(
+                            "({target} IS NULL OR {target} != {val})"
+                        ).format(target=target, val=sql.Placeholder())
+                    )
+                    filter_values.append(operand)
+
+                elif operator == "in":
+                    placeholders = sql.SQL(", ").join(
+                        sql.Placeholder() for _ in operand
+                    )
+                    conditions.append(
+                        sql.SQL("{target} IN ({vals})").format(
+                            target=target, vals=placeholders
+                        )
+                    )
+                    filter_values.extend(operand)
+
+            else:
+                # Simple equality
+                conditions.append(
+                    sql.SQL("{target} = {val}").format(
+                        target=target, val=sql.Placeholder()
+                    )
+                )
+                filter_values.append(value)
+
+        return conditions, filter_values
 
     def similarity_search(
         self,
@@ -79,52 +143,14 @@ class PgVectorStore(VectorStore):
             {"source_type": "code"}              → equality
             {"source_type": {"ne": "code"}}      → not equal (also matches NULL)
             {"doc_type": {"in": ["file","pdf"]}} → IN list
+
+        repo_id / doc_type filter on their typed columns (WP-S4B); every
+        other key filters on the source_metadata JSONB as before.
         """
         if metadata_filter:
-            conditions = []
-            filter_values = []
-
-            for key, value in metadata_filter.items():
-                if isinstance(value, dict):
-                    operator = list(value.keys())[0]
-                    operand = list(value.values())[0]
-
-                    if operator == "ne":
-                        conditions.append(
-                            sql.SQL(
-                                "(source_metadata->>{key} IS NULL "
-                                "OR source_metadata->>{key} != {val})"
-                            ).format(
-                                key=sql.Literal(key),
-                                val=sql.Placeholder(),
-                            )
-                        )
-                        filter_values.append(operand)
-
-                    elif operator == "in":
-                        placeholders = sql.SQL(", ").join(
-                            sql.Placeholder() for _ in operand
-                        )
-                        conditions.append(
-                            sql.SQL(
-                                "source_metadata->>{key} IN ({vals})"
-                            ).format(
-                                key=sql.Literal(key),
-                                vals=placeholders,
-                            )
-                        )
-                        filter_values.extend(operand)
-
-                else:
-                    # Simple equality
-                    conditions.append(
-                        sql.SQL("source_metadata->>{key} = {val}").format(
-                            key=sql.Literal(key),
-                            val=sql.Placeholder(),
-                        )
-                    )
-                    filter_values.append(value)
-
+            conditions, filter_values = self._build_filter_conditions(
+                metadata_filter
+            )
             where_clause = sql.SQL(" AND ").join(conditions)
             search_sql = sql.SQL("""
                 WITH query AS (SELECT {qvec}::vector AS qvec)
