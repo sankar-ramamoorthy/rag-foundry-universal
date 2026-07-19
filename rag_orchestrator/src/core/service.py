@@ -14,7 +14,10 @@ from shared.embedders.factory import get_embedder
 
 from shared.retrieval.retrieval_plan import RetrievalPlan
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
-from rag_orchestrator.src.retrieval.agent_adapter import prepare_chunks_for_agent
+from rag_orchestrator.src.retrieval.agent_adapter import (
+    build_sources,
+    prepare_chunks_for_agent,
+)
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
 from rag_orchestrator.src.retrieval.codebase_utils import extract_canonical_ids_from_chunks
@@ -295,7 +298,8 @@ async def run_rag(
         resp.raise_for_status()
         result = resp.json()
 
-    sources = [c["document_id"] for c in agent_chunks]
+    # Issue #30 Part 4: canonical IDs / paths, deduplicated, seeds first
+    sources = build_sources(agent_chunks)
 
     return RAGResult(
         answer=result.get("response", ""),

@@ -9,6 +9,33 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Can be overridden externally
 
 
+def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
+    """
+    Human-readable, deduplicated source labels (issue #30 Part 4).
+
+    Prefers canonical_id from chunk metadata (`path` or
+    `path#Class.method` per ADR-031), then relative_path, then the raw
+    document_id. Labels keep first-seen order, so with seeds ordered
+    before expanded documents the seed sources come first.
+    """
+    sources: List[str] = []
+    seen: set = set()
+    for c in agent_chunks:
+        raw_metadata = c.get("metadata")
+        metadata: Dict[str, object] = (
+            raw_metadata if isinstance(raw_metadata, dict) else {}
+        )
+        label = (
+            metadata.get("canonical_id")
+            or metadata.get("relative_path")
+            or c.get("document_id")
+        )
+        if label and label not in seen:
+            seen.add(label)
+            sources.append(str(label))
+    return sources
+
+
 def prepare_chunks_for_agent(
     retrieved: RetrievedContext,
     *,
