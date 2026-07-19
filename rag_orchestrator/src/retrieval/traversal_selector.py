@@ -5,6 +5,7 @@ Keyword-driven traversal strategy selection.
 from typing import List, Callable, Set
 from functools import partial
 import logging
+import re
 
 from .codebase_queries import (
     traverse_defines,
@@ -16,6 +17,42 @@ from .codebase_queries import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Issue #30 Part 2: intent matching uses whole-word/phrase regexes, most
+# specific first. The old substring `if "in" in query` hijacked nearly
+# every query (ingest, print, main, find, …) into traverse_defines, so
+# caller queries never reached traverse_incoming_calls.
+
+_CALLER_PATTERNS = [
+    r"\bwho\s+calls\b",
+    r"\bwhat\s+calls\b",
+    r"\bcallers?\s+of\b",
+    r"\bcalled\s+by\b",
+    r"\bcallers\b",
+    r"\bwhat\s+(?:functions?|methods?|classes?)\s+calls?\b",
+    r"\bwhich\s+(?:functions?|methods?|classes?)\s+calls?\b",
+]
+
+_STRUCTURE_PATTERNS = [
+    r"\b(?:methods?|functions?|classes?)\s+(?:defined\s+)?in\b",
+    r"\b(?:methods?|functions?|classes?)\s+of\b",
+    r"\bdefined\s+in\b",
+]
+
+_CALLEE_PATTERNS = [
+    r"\bwhat\s+does\s+\S+\s+call\b",
+    r"\bcalls?\b",
+]
+
+_IMPORT_PATTERNS = [
+    r"\bimported\s+by\b",
+    r"\bimports?\b",
+]
+
+
+def _matches_any(query_lower: str, patterns: List[str]) -> bool:
+    return any(re.search(p, query_lower) for p in patterns)
+
 
 def select_traversal_strategies(
     query: str,
@@ -31,23 +68,24 @@ def select_traversal_strategies(
     query_lower = query.lower()
     strategies = []
 
-    # PRIORITY 1: "methods/functions/classes in X"
-    if any(term in query_lower for term in ["method", "methods", "function", "functions", "class", "classes", "in"]):
-        logger.debug("Selected: traverse_defines (methods/functions in X)")
-        strategies.append(partial(traverse_defines, depth=1))
-
-    # PRIORITY 2: "what calls X", "callers of X", "called by X"
-    elif any(term in query_lower for term in ["callers", "calls", "called by", "who calls"]):
+    # PRIORITY 1: caller intent — "who calls X", "callers of X",
+    # "what functions call X"
+    if _matches_any(query_lower, _CALLER_PATTERNS):
         logger.debug("Selected: traverse_incoming_calls (callers)")
         strategies.append(partial(traverse_incoming_calls, depth=1))
 
-    # PRIORITY 3: "what does X call"
-    elif any(term in query_lower for term in ["calls", "call"]):
+    # PRIORITY 2: structure intent — "methods in X", "defined in X"
+    elif _matches_any(query_lower, _STRUCTURE_PATTERNS):
+        logger.debug("Selected: traverse_defines (methods/functions in X)")
+        strategies.append(partial(traverse_defines, depth=1))
+
+    # PRIORITY 3: callee intent — "what does X call", "X calls Y"
+    elif _matches_any(query_lower, _CALLEE_PATTERNS):
         logger.debug("Selected: traverse_calls (outgoing calls)")
         strategies.append(partial(traverse_calls, depth=1))
 
-    # PRIORITY 4: "imports X"
-    elif "import" in query_lower:
+    # PRIORITY 4: import intent — "imports X", "imported by X"
+    elif _matches_any(query_lower, _IMPORT_PATTERNS):
         logger.debug("Selected: traverse_incoming_imports (imports)")
         strategies.append(partial(traverse_incoming_imports, depth=1))
 
