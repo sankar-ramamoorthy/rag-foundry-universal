@@ -109,7 +109,7 @@
 │               → expanded_canonical_ids                                                    │
 │                                                                                           │
 │  STEP 6: RESOLVE ALL CANONICAL IDS → DOCUMENT IDS                                        │
-│  canonical_ids_to_document_ids_http(repo_id, seed_cids ∪ expanded_cids) [service.py]    │
+│  canonical_to_document_map_http(repo_id, seed_cids ∪ expanded_cids) [service.py]        │
 │       └── GET ingestion_service:8001/v1/graph/repos/{repo_id}/nodes                      │
 │               params: canonical_ids=cid1,cid2,...                                         │
 │               │                                                                            │

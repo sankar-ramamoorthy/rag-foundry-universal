@@ -2,7 +2,7 @@
 """
 Keyword-driven traversal strategy selection.
 """
-from typing import List, Callable, Set
+from typing import Dict, List, Callable, Set
 from functools import partial
 import logging
 import re
@@ -137,13 +137,23 @@ def execute_traversals_from_seeds(
     bounded by vector-search top_k, so this stays cheap. Iteration is
     sorted for deterministic results; nodes are deduplicated across seeds.
     """
-    all_nodes: List[Node] = []
+    # Issue #30 Part 3: rank expanded nodes so downstream caps keep the
+    # most seed-adjacent ones. All strategies currently traverse at
+    # depth=1, so "reached from more seeds" is the adjacency signal;
+    # canonical_id breaks ties deterministically.
+    seed_hits: Dict[str, int] = {}
+    node_by_cid: Dict[str, Node] = {}
     for start_cid in sorted(seed_canonical_ids):
-        all_nodes.extend(execute_traversals(graph, start_cid, strategies))
+        for node in execute_traversals(graph, start_cid, strategies):
+            seed_hits[node.canonical_id] = seed_hits.get(node.canonical_id, 0) + 1
+            node_by_cid.setdefault(node.canonical_id, node)
 
-    unique_nodes = {node.canonical_id: node for node in all_nodes}.values()
+    ranked = sorted(
+        node_by_cid.values(),
+        key=lambda n: (-seed_hits[n.canonical_id], n.canonical_id),
+    )
     logger.info(
         f"Multi-seed expansion: {len(seed_canonical_ids)} seeds → "
-        f"{len(unique_nodes)} unique nodes"
+        f"{len(ranked)} unique nodes"
     )
-    return list(unique_nodes)
+    return ranked

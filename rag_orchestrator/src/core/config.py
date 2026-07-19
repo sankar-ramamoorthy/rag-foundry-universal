@@ -17,6 +17,20 @@ class Settings(BaseSettings):
     OLLAMA_BATCH_SIZE: int = 50
 
     # -------------------------------------------------
+    # Retrieval expansion limits (issue #30 Part 3)
+    # -------------------------------------------------
+    # Cap on graph-expanded documents fetched per query; ranked expanded
+    # docs beyond this are reported as considered-but-unused.
+    MAX_EXPANDED_DOCS: int = 20
+    # Chunks fetched per expanded doc — expansion is context, not the
+    # primary hit, so this stays well below the seed top_k.
+    EXPANDED_DOC_CHUNKS: int = 3
+    # Overall chunk cap handed to the agent adapter (was 9999).
+    MAX_TOTAL_CHUNKS: int = 50
+    # Concurrency of search-by-doc fetches for expanded docs.
+    MAX_CONCURRENT_DOC_FETCHES: int = 8
+
+    # -------------------------------------------------
     # Service URLs (Docker service names)
     # -------------------------------------------------
     VECTOR_STORE_URL: str = "http://vector_store_service:8002"
