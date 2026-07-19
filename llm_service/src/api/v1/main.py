@@ -10,7 +10,11 @@ from src.core.config import (
     OLLAMA_MODEL,
 )
 from src.core.llm_client import AllProvidersFailedError, generate_completion
-from src.core.model_registry import UnknownModelAliasError
+from src.core.model_registry import (
+    DEFAULT_ALIAS,
+    UnknownModelAliasError,
+    get_registry,
+)
 
 app = FastAPI(title="LLM Service")
 
@@ -48,6 +52,12 @@ async def generate(
     except Exception as e:
         logging.exception("Error in /generate")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/v1/models")
+def list_models() -> dict:
+    """WP-M5: the model menu — aliases from models.yaml + the default."""
+    return {"models": get_registry().describe(), "default": DEFAULT_ALIAS}
+
 
 @app.get("/health")
 def health_check() -> dict:

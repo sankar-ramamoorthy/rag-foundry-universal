@@ -2,7 +2,10 @@
 
 import logging
 
+import httpx
+
 from src.api.v1.models import RAGQuery, RAGResponse, SimpleRAGQuery,SimpleRAGResponse
+from src.core.config import get_settings
 from src.core.service import run_rag#, search_documents
 from fastapi import APIRouter, HTTPException
 from src.core.simple_service import run_simple_rag  # new - no graph
@@ -54,6 +57,21 @@ async def rag_endpoint(rag_query: RAGQuery):
             status_code=500,
             detail="An error occurred while processing the RAG request.",
         )
+
+
+@router.get("/models")
+async def list_models():
+    """WP-M5: pass through the llm_service model menu so the UI can
+    build its dropdown without reaching llm_service directly."""
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(f"{settings.LLM_SERVICE_URL}/v1/models")
+            resp.raise_for_status()
+            return resp.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch model menu: {e}")
+        raise HTTPException(502, "llm_service model menu unavailable")
 
 
 @router.post("/rag/simple", response_model=SimpleRAGResponse)
