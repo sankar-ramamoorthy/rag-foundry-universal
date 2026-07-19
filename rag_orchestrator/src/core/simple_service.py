@@ -40,6 +40,10 @@ logger = logging.getLogger(__name__)
 class SimpleRAGResult(BaseModel):
     answer: str
     sources: List[str]
+    # WP-M5: model actually used by llm_service (incl. WP-M2 fallbacks)
+    model_used: Optional[str] = None
+    model_alias: Optional[str] = None
+    fallback_from: Optional[str] = None
 
 
 async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
@@ -271,4 +275,7 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
         # Issue #30 Part 4: uploaded-file chunks also carry canonical_id/
         # relative_path metadata (pipeline.py), so labels beat raw UUIDs
         sources=build_sources(agent_chunks),
+        model_used=result.get("model"),
+        model_alias=result.get("model_alias"),
+        fallback_from=result.get("fallback_from"),
     )

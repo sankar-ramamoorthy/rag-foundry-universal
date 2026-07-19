@@ -15,6 +15,10 @@ class RAGResponse(BaseModel):  # Updated name
     sources: List[str]
     repo_id: str  # NEW
     retrieval_plan: Dict[str, Any]  # NEW: Graph expansion details
+    # WP-M5: which model actually answered (incl. WP-M2 fallbacks)
+    model_used: Optional[str] = None
+    model_alias: Optional[str] = None
+    fallback_from: Optional[str] = None
 
 class SearchQuery(BaseModel):
     question: str
@@ -30,3 +34,7 @@ class SimpleRAGQuery(BaseModel):
 class SimpleRAGResponse(BaseModel):  # Updated name
     answer: str
     sources: List[str]
+    # WP-M5: which model actually answered (incl. WP-M2 fallbacks)
+    model_used: Optional[str] = None
+    model_alias: Optional[str] = None
+    fallback_from: Optional[str] = None

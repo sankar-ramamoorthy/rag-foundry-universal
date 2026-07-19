@@ -41,6 +41,10 @@ class RAGResult(BaseModel):
     sources: List[str]
     repo_id: str
     retrieval_plan: Dict[str, Any]
+    # WP-M5: model actually used by llm_service (incl. WP-M2 fallbacks)
+    model_used: Optional[str] = None
+    model_alias: Optional[str] = None
+    fallback_from: Optional[str] = None
 
 
 # ------------------------------------------------------------------
@@ -393,4 +397,7 @@ async def run_rag(
         sources=sources,
         repo_id=resolved_repo_id,
         retrieval_plan=retrieval_plan_dict,
+        model_used=result.get("model"),
+        model_alias=result.get("model_alias"),
+        fallback_from=result.get("fallback_from"),
     )

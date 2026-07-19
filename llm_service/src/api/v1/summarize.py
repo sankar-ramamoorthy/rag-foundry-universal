@@ -3,11 +3,8 @@ import logging
 from uuid import UUID
 from typing import List
 import httpx
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
-from src.core.config import (
-    DEFAULT_LLM_PROVIDER,
-)
 from src.core.llm_client import generate_completion
 
 router = APIRouter(prefix="/v1/summarize", tags=["summaries"])
@@ -60,8 +57,15 @@ async def update_document_summary(ingestion_id: str, summary: str):
 
 
 @router.post("/{ingestion_id}")
-async def generate_summary(ingestion_id: str):
-    """MS7-IS2: Generate LLM summary for document ingestion."""
+async def generate_summary(
+    ingestion_id: str,
+    provider: str | None = Query(None),
+    model: str | None = Query(None),
+):
+    """MS7-IS2: Generate LLM summary for document ingestion.
+
+    WP-M5: honors the model alias/provider params like /generate does;
+    omitted → the registry's default model (previously hardcoded)."""
     try:
         logger.info(f"summarize.py generate_summary: {ingestion_id}")
         UUID(ingestion_id)  # validate format
@@ -87,8 +91,8 @@ async def generate_summary(ingestion_id: str):
         result = await generate_completion(
             context=context,
             query=query,
-            provider=DEFAULT_LLM_PROVIDER,
-            model="phi4-mini:latest",
+            provider=provider,
+            model=model,
         )
 
         summary = result.get("response", "Summary generation failed")

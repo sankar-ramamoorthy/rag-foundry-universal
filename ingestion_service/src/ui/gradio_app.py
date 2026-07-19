@@ -154,6 +154,37 @@ def refresh_repos():
         #return gr.update(choices=[], value=None)
         return gr.Dropdown(choices=[], value=None)
 
+def refresh_models():
+    """WP-M5: fetch the model-alias menu via the orchestrator passthrough."""
+    try:
+        response = requests.get(f"{RAG_API_BASE_URL}/v1/models", timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        choices = [
+            (f"{m['alias']} — {m['model']}", m["alias"])
+            for m in data.get("models", [])
+        ]
+        return gr.Dropdown(
+            choices=choices,
+            value=data.get("default"),
+            allow_custom_value=True,
+        )
+    except Exception as exc:
+        print(f"Failed to fetch model menu: {exc}")
+        return gr.Dropdown(choices=[], value=None, allow_custom_value=True)
+
+
+def _model_line(data: dict) -> str:
+    """WP-M5: show which model actually answered (incl. fallbacks)."""
+    model_used = data.get("model_used")
+    if not model_used:
+        return ""
+    line = f"\n**Model:** {model_used}"
+    if data.get("fallback_from"):
+        line += f" *(fell back from {data['fallback_from']})*"
+    return line
+
+
 def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str | None, model: str | None):
     """Submit RAG query with repo_id."""
     try:
@@ -186,7 +217,7 @@ def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str 
         sources = data.get("sources", [])
         formatted_sources = "\n".join(f"• {s}" for s in sources)
 
-        return f"""🎯 **Repository:** {repo_id[:8]}...
+        return f"""🎯 **Repository:** {repo_id[:8]}...{_model_line(data)}
 
 **Answer:**
 {answer}
@@ -225,7 +256,11 @@ def submit_simple_rag_query(query: str, top_k: int, provider: str | None, model:
         answer = data.get("answer", "")
         sources = data.get("sources", [])
         formatted_sources = "\n".join(f"• {s}" for s in sources)
-        return f"**Answer:**\n{answer}\n\n**Sources:**\n{formatted_sources or 'None found.'}"
+        return (
+            f"**Answer:**\n{answer}\n\n"
+            f"**Sources:**\n{formatted_sources or 'None found.'}"
+            f"{_model_line(data)}"
+        )
 
     except Exception as exc:
         return f"❌ Error: {exc}"
@@ -348,9 +383,12 @@ def build_ui():
                 placeholder="ollama",
                 scale=2
             )
-            model = gr.Textbox(  # type: ignore
+            model = gr.Dropdown(  # type: ignore
                 label="🧠 Model",
-                placeholder="Qwen3:1.7b",
+                choices=[],
+                value=None,
+                allow_custom_value=True,
+                info="Alias from llm_service, or a raw provider/model string",
                 scale=2
             )
 
@@ -374,7 +412,13 @@ def build_ui():
         with gr.Row():
             doc_top_k = gr.Number(label="📊 Top K", value=5, precision=0, minimum=1, maximum=50)
             doc_provider = gr.Textbox(label="🤖 LLM Provider", placeholder="ollama")
-            doc_model = gr.Textbox(label="🧠 Model", placeholder="Qwen3:1.7b")
+            doc_model = gr.Dropdown(
+                label="🧠 Model",
+                choices=[],
+                value=None,
+                allow_custom_value=True,
+                info="Alias from llm_service, or a raw provider/model string",
+            )
 
         doc_btn = gr.Button("🔍 Ask Document RAG", variant="secondary", size="lg")
         doc_output = gr.Textbox(label="📄 Response", lines=15, max_lines=20)
@@ -399,8 +443,10 @@ def build_ui():
             outputs=rag_output,
         )
 
-        # Auto-refresh repos when UI loads
+        # Auto-refresh repos and the model menu when UI loads
         demo.load(refresh_repos, outputs=repo_dropdown)
+        demo.load(refresh_models, outputs=model)
+        demo.load(refresh_models, outputs=doc_model)
 
     return demo
 
