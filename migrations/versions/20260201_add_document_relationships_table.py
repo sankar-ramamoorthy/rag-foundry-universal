@@ -18,12 +18,17 @@ def upgrade() -> None:
     op.execute("""
     CREATE TABLE IF NOT EXISTS ingestion_service.document_relationships (
         id SERIAL PRIMARY KEY,
-        from_document_id UUID NOT NULL REFERENCES ingestion_service.document_nodes(document_id) ON DELETE CASCADE,
-        to_document_id UUID NOT NULL REFERENCES ingestion_service.document_nodes(document_id) ON DELETE CASCADE,
+        from_document_id UUID NOT NULL
+            REFERENCES ingestion_service.document_nodes(document_id)
+            ON DELETE CASCADE,
+        to_document_id UUID NOT NULL
+            REFERENCES ingestion_service.document_nodes(document_id)
+            ON DELETE CASCADE,
         relation_type TEXT NOT NULL,
         relationship_metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ DEFAULT now(),
-        CONSTRAINT uq_document_relationship UNIQUE (from_document_id, to_document_id, relation_type)
+        CONSTRAINT uq_document_relationship
+            UNIQUE (from_document_id, to_document_id, relation_type)
     )
     """)
 

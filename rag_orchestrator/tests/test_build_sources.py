@@ -16,7 +16,12 @@ def chunk(document_id, canonical_id=None, relative_path=None):
         metadata["canonical_id"] = canonical_id
     if relative_path:
         metadata["relative_path"] = relative_path
-    return {"text": "x", "document_id": document_id, "chunk_id": "c", "metadata": metadata}
+    return {
+        "text": "x",
+        "document_id": document_id,
+        "chunk_id": "c",
+        "metadata": metadata,
+    }
 
 
 def test_canonical_id_preferred_over_path_and_uuid():

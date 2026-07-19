@@ -91,21 +91,31 @@ def test_list_relationships(session, sample_document):
     session.flush()
 
     # Create two relationships
-    rel1 = crud.create_document_relationship(session, doc1.document_id, doc2.document_id, "supports")
-    rel2 = crud.create_document_relationship(session, doc2.document_id, doc1.document_id, "refutes")
+    rel1 = crud.create_document_relationship(
+        session, doc1.document_id, doc2.document_id, "supports"
+    )
+    rel2 = crud.create_document_relationship(
+        session, doc2.document_id, doc1.document_id, "refutes"
+    )
 
     # Test outgoing
-    outgoing = crud.list_relationships_for_document(session, doc1.document_id, outgoing=True, incoming=False)
+    outgoing = crud.list_relationships_for_document(
+        session, doc1.document_id, outgoing=True, incoming=False
+    )
     assert rel1 in outgoing
     assert rel2 not in outgoing
 
     # Test incoming
-    incoming = crud.list_relationships_for_document(session, doc1.document_id, outgoing=False, incoming=True)
+    incoming = crud.list_relationships_for_document(
+        session, doc1.document_id, outgoing=False, incoming=True
+    )
     assert rel2 in incoming
     assert rel1 not in incoming
 
     # Test all
-    all_rels = crud.list_relationships_for_document(session, doc1.document_id, outgoing=True, incoming=True)
+    all_rels = crud.list_relationships_for_document(
+        session, doc1.document_id, outgoing=True, incoming=True
+    )
     assert set(all_rels) == {rel1, rel2}
 
 
@@ -121,7 +131,9 @@ def test_delete_relationship(session, sample_document):
     session.add(doc2)
     session.flush()
 
-    rel = crud.create_document_relationship(session, doc1.document_id, doc2.document_id, "supports")
+    rel = crud.create_document_relationship(
+        session, doc1.document_id, doc2.document_id, "supports"
+    )
     rel_id = rel.id
 
     crud.delete_document_relationship(session, rel_id)

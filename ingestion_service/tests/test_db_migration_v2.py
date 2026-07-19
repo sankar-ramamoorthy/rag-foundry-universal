@@ -13,4 +13,6 @@ def test_document_nodes_table_exists_sql():
             """
         )
         tables = [row[0] for row in result]
-    assert "document_nodes" in tables, f"'document_nodes' table not found. Found: {tables}"
+    assert "document_nodes" in tables, (
+        f"'document_nodes' table not found. Found: {tables}"
+    )

@@ -79,7 +79,14 @@ def extract_text_from_bytes(
         return ocr_engine.extract_text(file_bytes) or ""
 
     # Text files → robust multi-encoding decoder
-    encodings = ["utf-8", "utf-8-sig", "windows-1252", "latin-1", "cp1252", "iso-8859-1"]
+    encodings = [
+        "utf-8",
+        "utf-8-sig",
+        "windows-1252",
+        "latin-1",
+        "cp1252",
+        "iso-8859-1",
+    ]
     for encoding in encodings:
         try:
             text = file_bytes.decode(encoding)
@@ -218,7 +225,9 @@ def background_ingest_file(  # noqa: C901 - refactor tracked by pipeline-factory
                 ocr_provider=None,
             )
             if not text.strip():
-                raise RuntimeError("No extractable text found in uploaded Markdown file")
+                raise RuntimeError(
+                    "No extractable text found in uploaded Markdown file"
+                )
             pipeline.run_with_sections(
                 source=text,
                 ingestion_id=str(ingestion_id),

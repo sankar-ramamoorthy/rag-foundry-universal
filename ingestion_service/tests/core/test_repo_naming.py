@@ -48,10 +48,15 @@ def test_same_repo_name_different_owners_stay_distinguishable():
 
 
 def test_windows_local_path():
-    identity = derive_repo_identity({"local_path": "C:\\Users\\bosto\\repos\\my_test_repo"})
+    identity = derive_repo_identity(
+        {"local_path": "C:\\Users\\bosto\\repos\\my_test_repo"}
+    )
     assert identity["source_type"] == "local"
     assert identity["name"] == "my_test_repo"
-    assert identity["display_name"] == "my_test_repo — C:\\Users\\bosto\\repos\\my_test_repo"
+    assert (
+        identity["display_name"]
+        == "my_test_repo — C:\\Users\\bosto\\repos\\my_test_repo"
+    )
     assert identity["git_url"] is None
 
 

@@ -16,7 +16,9 @@ class TraversalConstraints:
 def expand_retrieval_plan(
     *,
     plan: RetrievalPlan,
-    list_outgoing_relationships: Callable[[str], List[Dict]],  # document_id -> List[dict]
+    list_outgoing_relationships: Callable[
+        [str], List[Dict]
+    ],  # document_id -> List[dict]
     constraints: TraversalConstraints,
 ) -> RetrievalPlan:
     """
@@ -50,7 +52,10 @@ def expand_retrieval_plan(
             relation_type = rel.get('relation_type')
 
             # Skip disallowed types
-            if constraints.allowed_relation_types and relation_type not in constraints.allowed_relation_types:
+            if (
+                constraints.allowed_relation_types
+                and relation_type not in constraints.allowed_relation_types
+            ):
                 continue
 
             if target_id not in visited:

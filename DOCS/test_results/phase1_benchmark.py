@@ -17,7 +17,7 @@ docker-compose.test.yml Postgres, plus real-Ollama embedding throughput
                                           synthetic rows, filtered query)
 
 Usage (from ingestion_service/, root venv, test DB up + migrated):
-  DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5433/ingestion_test \
+DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5433/ingestion_test \
     ../.venv/Scripts/python.exe ../DOCS/test_results/phase1_benchmark.py
 """
 import json

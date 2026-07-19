@@ -29,7 +29,8 @@ logger = logging.getLogger(__name__)
 class MarkdownSectionExtractor:
     """
     Extracts MARKDOWN_MODULE and MARKDOWN_SECTION artifacts from a .md file.
-    Returns same List[Dict] shape as PythonASTExtractor for RepoGraphBuilder compatibility.
+    Returns same List[Dict] shape as PythonASTExtractor for
+    RepoGraphBuilder compatibility.
     """
 
     def __init__(self, relative_path: str):
@@ -120,7 +121,8 @@ class MarkdownSectionExtractor:
                     heading_stack.pop()
                 heading_stack.append((level, canonical_id, slug))
 
-                # Find section text: from this heading line to next same-or-higher heading
+                # Find section text: from this heading line to the
+                # next same-or-higher heading
                 section_text = self._slice_section_text(
                     lines, lineno, level, tokens, i
                 )

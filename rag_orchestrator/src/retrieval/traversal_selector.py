@@ -141,7 +141,9 @@ def select_traversal_strategies(
         logger.debug("Selected: default (defines + calls)")
         strategies = [factory() for factory in _DEFAULT_STRATEGIES]
 
-    logger.info(f"Selected {len(strategies)} traversal strategies for query: '{query[:50]}...'")
+    logger.info(
+        f"Selected {len(strategies)} traversal strategies for query: '{query[:50]}...'"
+    )
     return strategies
 
 def execute_traversals(
@@ -158,7 +160,9 @@ def execute_traversals(
         try:
             nodes = strategy(graph, start_canonical_id)
             all_expanded_nodes.extend(nodes)
-            logger.debug(f"Strategy returned {len(nodes)} nodes from {start_canonical_id}")
+            logger.debug(
+                f"Strategy returned {len(nodes)} nodes from {start_canonical_id}"
+            )
         except Exception as e:
             logger.warning(f"Traversal strategy failed: {e}")
             continue

@@ -144,7 +144,8 @@ def _background_ingest_repo(
     provider: str | None,
 ):
     """
-    Clone or use local repo, build graph, persist nodes & relationships, and embed code artifacts.
+    Clone or use local repo, build graph, persist nodes &
+    relationships, and embed code artifacts.
     """
     session = SessionLocal()
     StatusManager(session).mark_running(ingestion_id)
@@ -152,7 +153,10 @@ def _background_ingest_repo(
     temp_dir = None
     try:
         logger.debug(f"[{ingestion_id}] Starting background ingestion")
-        logger.debug(f"[{ingestion_id}] git_url={git_url}, local_path={local_path}, provider={provider}")
+        logger.debug(
+            f"[{ingestion_id}] git_url={git_url}, "
+            f"local_path={local_path}, provider={provider}"
+        )
 
         if git_url:
             import git  # GitPython
@@ -167,20 +171,30 @@ def _background_ingest_repo(
             repo_id_url = repo_path
         else:
             raise ValueError("Either git_url or local_path must be provided")
-        logger.debug(f"build_repo_id({repo_id_url}) calculates repo_id = {build_repo_id(repo_id_url)}")
+        logger.debug(
+            f"build_repo_id({repo_id_url}) calculates "
+            f"repo_id = {build_repo_id(repo_id_url)}"
+        )
         repo_id = build_repo_id(repo_id_url)
 
         # --- Build Repo Graph ---
         logger.debug(f"[{ingestion_id}] Building RepoGraph...")
-        builder = RepoGraphBuilder(repo_root=Path(repo_path), ingestion_id=str(ingestion_id))
+        builder = RepoGraphBuilder(
+            repo_root=Path(repo_path), ingestion_id=str(ingestion_id)
+        )
         repo_graph = builder.build()
         logger.debug(f"[{ingestion_id}] RepoGraph built successfully")
 
-        logger.debug(f"[{ingestion_id}] Total entities: {len(repo_graph.all_entities())}")
+        logger.debug(
+            f"[{ingestion_id}] Total entities: {len(repo_graph.all_entities())}"
+        )
         # --- Persist Nodes & Relationships ---
         persistence = CodebaseGraphPersistence(session=session)
         nodes = repo_graph.all_entities()  # ✅ CORRECT method
-        logger.debug(f"[{ingestion_id}] Sample node keys: {nodes[0].keys() if nodes else 'NO NODES'}")
+        logger.debug(
+            f"[{ingestion_id}] Sample node keys: "
+            f"{nodes[0].keys() if nodes else 'NO NODES'}"
+        )
         # F-09/F-06: delete + nodes + relationships in one transaction,
         # serialized per repo by an advisory lock.
         stats = persistence.persist_graph(
@@ -225,14 +239,20 @@ def _background_ingest_repo(
 # -----------------------------
 # POST /v1/codebase/ingest-repo
 # -----------------------------
-@router.post("/ingest-repo", response_model=RepoIngestResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/ingest-repo",
+    response_model=RepoIngestResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 def ingest_repo(
     git_url: str | None = Form(default=None),
     local_path: str | None = Form(default=None),
     provider: str | None = Form(default=None),
 ) -> RepoIngestResponse:
     if not git_url and not local_path:
-        raise HTTPException(status_code=400, detail="Must provide either git_url or local_path")
+        raise HTTPException(
+            status_code=400, detail="Must provide either git_url or local_path"
+        )
 
     ingestion_id = uuid4()
     metadata = {"git_url": git_url, "local_path": local_path, "provider": provider}
@@ -275,9 +295,14 @@ def get_repo_ingest_status(ingestion_id: str) -> RepoIngestResponse:
         raise HTTPException(status_code=400, detail="Invalid ingestion ID format")
 
     with SessionLocal() as session:
-        request = session.query(IngestionRequest).filter_by(ingestion_id=ingestion_uuid).first()
+        request = (
+            session.query(IngestionRequest)
+            .filter_by(ingestion_id=ingestion_uuid)
+            .first()
+        )
         if not request:
             raise HTTPException(status_code=404, detail="Ingestion ID not found")
 
-        return RepoIngestResponse(ingestion_id=request.ingestion_id, status=request.status)
-
+        return RepoIngestResponse(
+            ingestion_id=request.ingestion_id, status=request.status
+        )

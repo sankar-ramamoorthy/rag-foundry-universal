@@ -73,10 +73,14 @@ def test_document_relationship_crud(session: Session):
     session.commit()
 
     # Add a relationship
-    create_document_relationship(session, node1.document_id, node2.document_id, "supports")
+    create_document_relationship(
+        session, node1.document_id, node2.document_id, "supports"
+    )
     session.commit()
 
     # Attempt to insert duplicate
     with pytest.raises(IntegrityError):
-        create_document_relationship(session, node1.document_id, node2.document_id, "supports")
+        create_document_relationship(
+            session, node1.document_id, node2.document_id, "supports"
+        )
         session.commit()

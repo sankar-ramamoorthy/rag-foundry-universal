@@ -34,7 +34,9 @@ class DocumentRelationship(Base):
 
     __tablename__ = "document_relationships"
     __table_args__ = {"schema": "ingestion_service"}
-    logger.debug("DocumentRelationship Represents a relationship between two DocumentNodes.")
+    logger.debug(
+        "DocumentRelationship Represents a relationship between two DocumentNodes."
+    )
 
     # -----------------------------
     # Primary Key

@@ -41,9 +41,12 @@ def create_document_node(
         summary = "Summary pending"  # Default summary if not provided
 
     # Log the data to check before insertion
-    logger.debug(f"Creating DocumentNode with data: "
-                 f"document_id={document_id}, title={title}, summary={summary}, "
-                 f"source={source}, ingestion_id={ingestion_id}, doc_type={doc_type}, repo_id={repo_id}")
+    logger.debug(
+        f"Creating DocumentNode with data: "
+        f"document_id={document_id}, title={title}, summary={summary}, "
+        f"source={source}, ingestion_id={ingestion_id}, "
+        f"doc_type={doc_type}, repo_id={repo_id}"
+    )
 
     # Create and persist the DocumentNode
     node = DocumentNode(

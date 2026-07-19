@@ -37,7 +37,10 @@ def submit_ingest(source_type: str, file_obj):
             return f"Error submitting ingestion: {response.text}"
 
         data = response.json()
-        return f"Ingestion accepted.\nID: {data['ingestion_id']}\nStatus: {data.get('status', '-')}"
+        return (
+            f"Ingestion accepted.\nID: {data['ingestion_id']}\n"
+            f"Status: {data.get('status', '-')}"
+        )
     except Exception as exc:
         return f"Error submitting ingestion: {exc}"
 
@@ -72,7 +75,9 @@ def check_status(ingestion_id: str):
 # ----------------------------
 # Codebase Ingestion Functions (unchanged)
 # ----------------------------
-def submit_codebase_ingest(source_type: str, git_url: str, local_path: str, provider: str):
+def submit_codebase_ingest(
+    source_type: str, git_url: str, local_path: str, provider: str
+):
     """Submit codebase ingestion request."""
     print(f"🔍 Gradio calling: {API_BASE_URL}/v1/ingest-repo")
     try:
@@ -99,7 +104,10 @@ def submit_codebase_ingest(source_type: str, git_url: str, local_path: str, prov
             return f"Error: {response.text}"
 
         data = response.json()
-        return f"✅ **Ingestion Started**\nID: `{data['ingestion_id']}`\nStatus: {data['status']}\n\n*Check status below*"
+        return (
+            f"✅ **Ingestion Started**\nID: `{data['ingestion_id']}`\n"
+            f"Status: {data['status']}\n\n*Check status below*"
+        )
 
     except Exception as exc:
         return f"❌ Error: {exc}"
@@ -185,7 +193,9 @@ def _model_line(data: dict) -> str:
     return line
 
 
-def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str | None, model: str | None):
+def submit_rag_query(
+    query: str, repo_id: str | None, top_k: int, provider: str | None, model: str | None
+):
     """Submit RAG query with repo_id."""
     try:
         if not query.strip():
@@ -227,7 +237,10 @@ def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str 
 
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 404:
-            return "❌ Repository not found. Refresh repos and select a complete repository."
+            return (
+                "❌ Repository not found. "
+                "Refresh repos and select a complete repository."
+            )
         try:
             return f"❌ RAG Error: {e.response.json().get('detail', e.response.text)}"
         except Exception:
@@ -235,7 +248,9 @@ def submit_rag_query(query: str, repo_id: str | None, top_k: int, provider: str 
     except Exception as exc:
         return f"❌ Error querying RAG: {exc}"
 
-def submit_simple_rag_query(query: str, top_k: int, provider: str | None, model: str | None):
+def submit_simple_rag_query(
+    query: str, top_k: int, provider: str | None, model: str | None
+):
     """Submit a simple (non-graph) RAG query for regular documents."""
     try:
         if not query.strip():
@@ -330,11 +345,18 @@ def build_ui():
             )
             codebase_submit_btn = gr.Button("💾 Ingest Codebase", variant="secondary")  # type: ignore
 
-        codebase_submission_output = gr.Textbox(label="Codebase Submission Result", lines=2)  # type: ignore
+        codebase_submission_output = gr.Textbox(
+            label="Codebase Submission Result", lines=2
+        )  # type: ignore
 
         codebase_submit_btn.click(
             fn=submit_codebase_ingest,
-            inputs=[codebase_source_type, git_url_input, local_path_input, provider_input],
+            inputs=[
+                codebase_source_type,
+                git_url_input,
+                local_path_input,
+                provider_input,
+            ],
             outputs=codebase_submission_output,
         )
 
@@ -353,7 +375,10 @@ def build_ui():
         # 3. REPO-AWARE RAG (NEW SECTION)
         # ----------------------------
         gr.Markdown("## 🎯 Graph-Aware RAG Query")
-        gr.Markdown("*Ask about code structure: 'methods in math_utils.py', 'what calls add()', etc.*")
+        gr.Markdown(
+            "*Ask about code structure: 'methods in math_utils.py', "
+            "'what calls add()', etc.*"
+        )
 
         with gr.Row():  # type: ignore
             repo_dropdown = gr.Dropdown(
@@ -366,7 +391,8 @@ def build_ui():
 
         rag_query = gr.Textbox(  # type: ignore
             label="❓ Question",
-            placeholder="e.g. 'methods in math_utils.py', 'what calls add()', or general questions...",
+            placeholder="e.g. 'methods in math_utils.py', "
+            "'what calls add()', or general questions...",
             lines=3,
         )
 
@@ -410,7 +436,9 @@ def build_ui():
         )
 
         with gr.Row():
-            doc_top_k = gr.Number(label="📊 Top K", value=5, precision=0, minimum=1, maximum=50)
+            doc_top_k = gr.Number(
+                label="📊 Top K", value=5, precision=0, minimum=1, maximum=50
+            )
             doc_provider = gr.Textbox(label="🤖 LLM Provider", placeholder="ollama")
             doc_model = gr.Dropdown(
                 label="🧠 Model",

@@ -21,7 +21,9 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
 )
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
-from rag_orchestrator.src.retrieval.codebase_utils import extract_canonical_ids_from_chunks
+from rag_orchestrator.src.retrieval.codebase_utils import (
+    extract_canonical_ids_from_chunks,
+)
 from rag_orchestrator.src.retrieval.traversal_selector import (
     select_traversal_strategies,
     execute_traversals_from_seeds,
@@ -264,7 +266,9 @@ async def hybrid_retrieve(
         )
 
     seed_canonical_ids = extract_canonical_ids_from_chunks(seed_chunks)
-    logger.info(f"📊 {len(seed_chunks)} chunks → {len(seed_canonical_ids)} canonical_ids")
+    logger.info(
+        f"📊 {len(seed_chunks)} chunks → {len(seed_canonical_ids)} canonical_ids"
+    )
 
     expanded_ranked = _rank_expanded_canonical_ids(query, repo_id, seed_canonical_ids)
     expanded_canonical_ids = set(expanded_ranked)

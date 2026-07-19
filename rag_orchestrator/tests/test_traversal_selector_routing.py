@@ -56,7 +56,10 @@ CASES = [
     ("superclasses of HttpVectorStore", [traverse_superclasses]),
     # WP-G6: override intent runs both directions
     ("what overrides speak", [traverse_overrides, traverse_overridden_by]),
-    ("which methods are overridden in Dog", [traverse_overrides, traverse_overridden_by]),
+    (
+        "which methods are overridden in Dog",
+        [traverse_overrides, traverse_overridden_by],
+    ),
     # substring words no longer hijack routing → default (defines+calls)
     ("explain ingest_repo", [traverse_defines, traverse_calls]),
     ("how does print_summary work", [traverse_defines, traverse_calls]),

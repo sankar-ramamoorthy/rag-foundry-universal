@@ -43,12 +43,17 @@ def prepare_chunks_for_agent(
     max_chunks_per_doc: int = 5,
     max_total_chunks: int = 50,
     max_tokens: Optional[int] = None,  # optional token budget
-    chunk_token_count: Optional[Callable[[RetrievedChunk], int]] = None,  # token counting func
-    filter_chunk: Optional[Callable[[RetrievedChunk], bool]] = None,  # optional chunk filter
+    chunk_token_count: Optional[
+        Callable[[RetrievedChunk], int]
+    ] = None,  # token counting func
+    filter_chunk: Optional[
+        Callable[[RetrievedChunk], bool]
+    ] = None,  # optional chunk filter
     debug: bool = False,
 ) -> List[Dict[str, object]]:
     """
-    Convert RetrievedContext into a deterministic list of chunk dicts for agent consumption,
+    Convert RetrievedContext into a deterministic list of chunk
+    dicts for agent consumption,
     preserving provenance, enforcing optional token budget, scoring, and filtering.
 
     Args:
@@ -78,7 +83,8 @@ def prepare_chunks_for_agent(
 
     logger.info(
         f"Preparing agent-ready chunks for {len(document_order)} documents "
-        f"(max_chunks_per_doc={max_chunks_per_doc}, max_total_chunks={max_total_chunks}, max_tokens={max_tokens})"
+        f"(max_chunks_per_doc={max_chunks_per_doc}, "
+        f"max_total_chunks={max_total_chunks}, max_tokens={max_tokens})"
     )
 
     final_chunks: List[Dict[str, object]] = []
@@ -111,7 +117,8 @@ def prepare_chunks_for_agent(
             chunk_tokens = chunk_token_count(c) if chunk_token_count else 0
             if max_tokens is not None and total_tokens + chunk_tokens > max_tokens:
                 logger.debug(
-                    f"Reached max_tokens={max_tokens} after {total_tokens} tokens, stopping"
+                    f"Reached max_tokens={max_tokens} "
+                    f"after {total_tokens} tokens, stopping"
                 )
                 return final_chunks  # stop adding more chunks
 
@@ -127,5 +134,8 @@ def prepare_chunks_for_agent(
             f"(total so far={len(final_chunks)}, tokens={total_tokens})"
         )
 
-    logger.info(f"Prepared {len(final_chunks)} chunks for agent consumption with provenance, total tokens={total_tokens}")
+    logger.info(
+        f"Prepared {len(final_chunks)} chunks for agent consumption "
+        f"with provenance, total tokens={total_tokens}"
+    )
     return final_chunks

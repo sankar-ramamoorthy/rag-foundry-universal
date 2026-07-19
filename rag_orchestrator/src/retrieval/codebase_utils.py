@@ -29,7 +29,9 @@ def extract_canonical_ids_from_chunks(chunks: List) -> Set[str]:
         )
         if cid:
             canonical_ids.add(cid)
-    logger.debug(f"Extracted {len(canonical_ids)} canonical_ids from {len(chunks)} chunks")
+    logger.debug(
+        f"Extracted {len(canonical_ids)} canonical_ids from {len(chunks)} chunks"
+    )
     return canonical_ids
 
 
@@ -45,11 +47,18 @@ def canonical_ids_to_document_ids(
     url = f"{ingestion_service_url}/v1/graph/repos/{repo_id}/nodes"
     response = requests.get(url, params={"canonical_ids": ",".join(canonical_ids)})
     if response.status_code == 200:
-        document_ids = {node['document_id'] for node in response.json().get("nodes", [])}
-        logger.debug(f"Resolved {len(canonical_ids)} canonical_ids → {len(document_ids)} document_ids")
+        document_ids = {
+            node["document_id"] for node in response.json().get("nodes", [])
+        }
+        logger.debug(
+            f"Resolved {len(canonical_ids)} canonical_ids → "
+            f"{len(document_ids)} document_ids"
+        )
         return document_ids
     else:
-        logger.error(f"Error resolving canonical_ids: {response.status_code} - {response.text}")
+        logger.error(
+            f"Error resolving canonical_ids: {response.status_code} - {response.text}"
+        )
         return set()
 
 

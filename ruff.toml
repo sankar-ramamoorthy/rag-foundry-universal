@@ -9,6 +9,8 @@ exclude = [
 ]
 [lint]
 select = ["E", "F", "W", "C"]
-# E501: ~150 pre-existing long lines; enforcing now would mean a repo-wide
-# cosmetic reformat. Temporarily ignored — re-enable via issue #28.
-ignore = ["E501"]
+
+[lint.per-file-ignores]
+# Long-line prose fixture: the chunker input is a single continued string
+# literal whose line lengths are part of the test data (issue #28).
+"ingestion_service/tests/core/chunkers/test_text_chunker.py" = ["E501"]
