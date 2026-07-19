@@ -90,6 +90,25 @@ class ModelRegistry:
             for alias in self.aliases()
         ]
 
+    def fallback_chain(self, primary: ResolvedModel) -> List[ResolvedModel]:
+        """WP-M2: the ordered attempt chain for a resolved model —
+        the primary first, then its configured fallback aliases.
+        Unknown fallback aliases are skipped; duplicates collapse.
+        Non-alias resolutions (raw strings, legacy pairs) have no
+        fallbacks."""
+        chain = [primary]
+        seen = {primary.model}
+        if primary.alias:
+            for fallback_alias in self.fallbacks.get(primary.alias, []):
+                if fallback_alias not in self._aliases:
+                    continue
+                candidate = self._from_alias(fallback_alias)
+                if candidate.model in seen:
+                    continue
+                seen.add(candidate.model)
+                chain.append(candidate)
+        return chain
+
     def resolve(
         self, provider: Optional[str], model: Optional[str]
     ) -> ResolvedModel:

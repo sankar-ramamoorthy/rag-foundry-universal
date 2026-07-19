@@ -9,7 +9,7 @@ from src.core.config import (
     DEFAULT_LLM_PROVIDER,
     OLLAMA_MODEL,
 )
-from src.core.llm_client import generate_completion
+from src.core.llm_client import AllProvidersFailedError, generate_completion
 from src.core.model_registry import UnknownModelAliasError
 
 app = FastAPI(title="LLM Service")
@@ -38,6 +38,13 @@ async def generate(
         )
     except ValueError as e:
         return JSONResponse(status_code=400, content={"error": str(e)})
+    except AllProvidersFailedError as e:
+        # WP-M2: actionable outage message, not a stack trace
+        logging.error("All LLM providers failed: %s", e)
+        return JSONResponse(
+            status_code=503,
+            content={"error": str(e), "attempted_models": e.attempted},
+        )
     except Exception as e:
         logging.exception("Error in /generate")
         return JSONResponse(status_code=500, content={"error": str(e)})
