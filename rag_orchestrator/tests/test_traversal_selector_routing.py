@@ -14,6 +14,10 @@ from src.retrieval.codebase_queries import (
     traverse_defines,
     traverse_incoming_calls,
     traverse_incoming_imports,
+    traverse_overridden_by,
+    traverse_overrides,
+    traverse_subclasses,
+    traverse_superclasses,
 )
 
 pytestmark = pytest.mark.unit
@@ -42,6 +46,17 @@ CASES = [
     # import intent
     ("what imports repo_naming", [traverse_incoming_imports]),
     ("modules imported by service.py", [traverse_incoming_imports]),
+    # WP-G6: inheritance intents
+    ("what subclasses Calculator", [traverse_subclasses]),
+    ("which classes extend BaseModel", [traverse_subclasses]),
+    ("what inherits from Animal", [traverse_subclasses]),
+    ("derived classes of Shape", [traverse_subclasses]),
+    ("what is the base class of Dog", [traverse_superclasses]),
+    ("what does Dog inherit from", [traverse_superclasses]),
+    ("superclasses of HttpVectorStore", [traverse_superclasses]),
+    # WP-G6: override intent runs both directions
+    ("what overrides speak", [traverse_overrides, traverse_overridden_by]),
+    ("which methods are overridden in Dog", [traverse_overrides, traverse_overridden_by]),
     # substring words no longer hijack routing → default (defines+calls)
     ("explain ingest_repo", [traverse_defines, traverse_calls]),
     ("how does print_summary work", [traverse_defines, traverse_calls]),
