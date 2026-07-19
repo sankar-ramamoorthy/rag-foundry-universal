@@ -12,6 +12,10 @@ from .codebase_queries import (
     traverse_calls,
     traverse_incoming_calls,
     traverse_incoming_imports,
+    traverse_superclasses,
+    traverse_subclasses,
+    traverse_overrides,
+    traverse_overridden_by,
     CodebaseGraph,
     Node
 )
@@ -22,31 +26,91 @@ logger = logging.getLogger(__name__)
 # specific first. The old substring `if "in" in query` hijacked nearly
 # every query (ingest, print, main, find, …) into traverse_defines, so
 # caller queries never reached traverse_incoming_calls.
+#
+# WP-G6: the if/elif chain is now an ordered rule table — data, not
+# code — so adding a strategy is one row. First matching row wins;
+# matching stays deterministic (no LLM router, per ADR-045).
 
-_CALLER_PATTERNS = [
-    r"\bwho\s+calls\b",
-    r"\bwhat\s+calls\b",
-    r"\bcallers?\s+of\b",
-    r"\bcalled\s+by\b",
-    r"\bcallers\b",
-    r"\bwhat\s+(?:functions?|methods?|classes?)\s+calls?\b",
-    r"\bwhich\s+(?:functions?|methods?|classes?)\s+calls?\b",
+def _s(traversal) -> Callable[[CodebaseGraph, str], List[Node]]:
+    return partial(traversal, depth=1)
+
+
+# (intent, patterns, strategy factories) — evaluated top to bottom.
+_RULE_TABLE: List[tuple] = [
+    (
+        "callers",
+        [
+            r"\bwho\s+calls\b",
+            r"\bwhat\s+calls\b",
+            r"\bcallers?\s+of\b",
+            r"\bcalled\s+by\b",
+            r"\bcallers\b",
+            r"\bwhat\s+(?:functions?|methods?|classes?)\s+calls?\b",
+            r"\bwhich\s+(?:functions?|methods?|classes?)\s+calls?\b",
+        ],
+        [lambda: _s(traverse_incoming_calls)],
+    ),
+    (
+        # WP-G6: "what subclasses Calculator", "which classes extend X"
+        "subclasses",
+        [
+            r"\bsubclass(?:es|ed)?\b",
+            r"\bextends\b",
+            r"\b(?:what|which|classes?)\s+extend\b",
+            r"\bwhat\s+inherits\s+from\b",
+            r"\bderived\s+(?:classes?\s+)?(?:of|from)\b",
+            r"\bchild(?:ren)?\s+class(?:es)?\b",
+        ],
+        [lambda: _s(traverse_subclasses)],
+    ),
+    (
+        # WP-G6: "base class of X", "what does X inherit from"
+        "superclasses",
+        [
+            r"\bsuperclass(?:es)?\b",
+            r"\bbase\s+class(?:es)?\b",
+            r"\bparent\s+class(?:es)?\b",
+            r"\binherits?\s+from\b",
+        ],
+        [lambda: _s(traverse_superclasses)],
+    ),
+    (
+        # WP-G6: overrides run both directions — "what overrides X" and
+        # "what does X override" share vocabulary too often to split.
+        "overrides",
+        [r"\boverrid(?:e|es|den|ing)\b"],
+        [lambda: _s(traverse_overrides), lambda: _s(traverse_overridden_by)],
+    ),
+    (
+        "structure",
+        [
+            r"\b(?:methods?|functions?|classes?)\s+(?:defined\s+)?in\b",
+            r"\b(?:methods?|functions?|classes?)\s+of\b",
+            r"\bdefined\s+in\b",
+        ],
+        [lambda: _s(traverse_defines)],
+    ),
+    (
+        "callees",
+        [
+            r"\bwhat\s+does\s+\S+\s+call\b",
+            r"\bcalls?\b",
+        ],
+        [lambda: _s(traverse_calls)],
+    ),
+    (
+        "imports",
+        [
+            r"\bimported\s+by\b",
+            r"\bimports?\b",
+        ],
+        [lambda: _s(traverse_incoming_imports)],
+    ),
 ]
 
-_STRUCTURE_PATTERNS = [
-    r"\b(?:methods?|functions?|classes?)\s+(?:defined\s+)?in\b",
-    r"\b(?:methods?|functions?|classes?)\s+of\b",
-    r"\bdefined\s+in\b",
-]
-
-_CALLEE_PATTERNS = [
-    r"\bwhat\s+does\s+\S+\s+call\b",
-    r"\bcalls?\b",
-]
-
-_IMPORT_PATTERNS = [
-    r"\bimported\s+by\b",
-    r"\bimports?\b",
+_DEFAULT_STRATEGIES = [
+    lambda: _s(traverse_defines),
+    lambda: _s(traverse_calls),
 ]
 
 
@@ -59,43 +123,23 @@ def select_traversal_strategies(
     seed_canonical_ids: Set[str]
 ) -> List[Callable[[CodebaseGraph, str], List[Node]]]:
     """
-    Select traversal strategies based on query intent.
+    Select traversal strategies based on query intent via the ordered
+    rule table; first matching row wins, else default (defines + calls).
 
     >>> strategies = select_traversal_strategies("methods in math_utils.py", ...)
     >>> len(strategies) > 0
     True
     """
     query_lower = query.lower()
-    strategies = []
 
-    # PRIORITY 1: caller intent — "who calls X", "callers of X",
-    # "what functions call X"
-    if _matches_any(query_lower, _CALLER_PATTERNS):
-        logger.debug("Selected: traverse_incoming_calls (callers)")
-        strategies.append(partial(traverse_incoming_calls, depth=1))
-
-    # PRIORITY 2: structure intent — "methods in X", "defined in X"
-    elif _matches_any(query_lower, _STRUCTURE_PATTERNS):
-        logger.debug("Selected: traverse_defines (methods/functions in X)")
-        strategies.append(partial(traverse_defines, depth=1))
-
-    # PRIORITY 3: callee intent — "what does X call", "X calls Y"
-    elif _matches_any(query_lower, _CALLEE_PATTERNS):
-        logger.debug("Selected: traverse_calls (outgoing calls)")
-        strategies.append(partial(traverse_calls, depth=1))
-
-    # PRIORITY 4: import intent — "imports X", "imported by X"
-    elif _matches_any(query_lower, _IMPORT_PATTERNS):
-        logger.debug("Selected: traverse_incoming_imports (imports)")
-        strategies.append(partial(traverse_incoming_imports, depth=1))
-
-    # DEFAULT: Comprehensive exploration
+    for intent, patterns, factories in _RULE_TABLE:
+        if _matches_any(query_lower, patterns):
+            logger.debug(f"Selected intent: {intent}")
+            strategies = [factory() for factory in factories]
+            break
     else:
         logger.debug("Selected: default (defines + calls)")
-        strategies.extend([
-            partial(traverse_defines, depth=1),
-            partial(traverse_calls, depth=1)
-        ])
+        strategies = [factory() for factory in _DEFAULT_STRATEGIES]
 
     logger.info(f"Selected {len(strategies)} traversal strategies for query: '{query[:50]}...'")
     return strategies

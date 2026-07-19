@@ -118,6 +118,28 @@ def traverse_incoming_imports(graph: CodebaseGraph, start_cid: str, depth: int =
     """
     return bfs_traversal(graph, start_cid, relation_types={"IMPORTS"}, direction="reverse", max_depth=depth)
 
+
+# WP-G6: traversals over the WP-G5 inheritance edges.
+
+def traverse_superclasses(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+    """Traverse INHERITS edges forward (what does this class inherit from?)."""
+    return bfs_traversal(graph, start_cid, relation_types={"INHERITS"}, direction="forward", max_depth=depth)
+
+
+def traverse_subclasses(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+    """Traverse INHERITS edges in reverse (what subclasses this class?)."""
+    return bfs_traversal(graph, start_cid, relation_types={"INHERITS"}, direction="reverse", max_depth=depth)
+
+
+def traverse_overrides(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+    """Traverse OVERRIDES edges forward (which base method does this override?)."""
+    return bfs_traversal(graph, start_cid, relation_types={"OVERRIDES"}, direction="forward", max_depth=depth)
+
+
+def traverse_overridden_by(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
+    """Traverse OVERRIDES edges in reverse (which methods override this one?)."""
+    return bfs_traversal(graph, start_cid, relation_types={"OVERRIDES"}, direction="reverse", max_depth=depth)
+
 # --- API Calls ---
 
 def get_nodes_by_canonical_ids_from_api(repo_id: str, canonical_ids: List[str]) -> List[Dict]:
