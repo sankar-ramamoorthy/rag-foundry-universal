@@ -41,7 +41,6 @@ services:
       - ./.env
     environment:
       DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_db
-      VECTOR_STORE_API: http://vector_store_service:8002
       PYTHONPATH: /app:/app/src
     healthcheck:
       test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8002/health').status_code==200 else exit(1)"]

@@ -28,7 +28,7 @@ docker compose up --build
 alembic upgrade head
 ```
 
-Requires Ollama running on the host at `http://host.docker.internal:11434` with the embedder and LLM models pre-pulled (embedder: `mxbai-embed-large:latest`, 1024-dim vectors *at the API layer* — note `DocumentNode.summary_embedding` is declared as `Vector(768)` in the ORM while the active embedder is 1024-dim; check `migrations/versions/20260301_update_vector_dimensions_1024.py` if you touch vector dimensions).
+Requires Ollama running on the host at `http://host.docker.internal:11434` with the embedder and LLM models pre-pulled (embedder: `mxbai-embed-large:latest`, 1024-dim vectors; check `migrations/versions/20260301_update_vector_dimensions_1024.py` if you touch vector dimensions).
 
 `docker-compose.test.yml` spins up an isolated Postgres (`ingestion_test` db, port 5433) plus `vector_store_service`/`ingestion_service` for integration testing; `.env.test` holds the corresponding env vars.
 

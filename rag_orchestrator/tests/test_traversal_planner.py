@@ -1,12 +1,17 @@
 # rag_orchestrator/tests/test_traversal_planner.py
+# Issue #24: recovered from the tests/__init__.py directory that broke
+# collection; imports and RetrievalPlan construction updated to the
+# current API (set/dict fields, shared.retrieval.retrieval_plan path).
 
 import pytest
 
-from shared.retrieval_plan import RetrievalPlan
-from rag_orchestrator.src.retrieval.traversal_planner import (
+from shared.retrieval.retrieval_plan import RetrievalPlan
+from src.retrieval.traversal_planner import (
     expand_retrieval_plan,
     TraversalConstraints,
 )
+
+pytestmark = pytest.mark.unit
 
 
 # -----------------------
@@ -31,9 +36,9 @@ def test_no_relationships():
     If there are no outgoing relationships, plan should be unchanged.
     """
     plan = RetrievalPlan(
-        seed_document_ids=["A"],
-        expanded_document_ids=[],
-        expansion_metadata=[],
+        seed_document_ids={"A"},
+        expanded_document_ids=set(),
+        expansion_metadata={},
         constraints=None,
     )
 
@@ -45,8 +50,8 @@ def test_no_relationships():
         constraints=TraversalConstraints(max_depth=2),
     )
 
-    assert new_plan.seed_document_ids == ["A"]
-    assert new_plan.expanded_document_ids == []
+    assert new_plan.seed_document_ids == {"A"}
+    assert new_plan.expanded_document_ids == set()
     assert len(new_plan.expansion_metadata) == 0
 
 
@@ -55,10 +60,10 @@ def test_single_hop_expansion():
     Single outgoing relationship should be included in expanded_document_ids.
     """
     plan = RetrievalPlan(
-        seed_document_ids=["A"],
-        expanded_document_ids=[],
-        expansion_metadata=[],
-        constraints=TraversalConstraints(max_depth=1),
+        seed_document_ids={"A"},
+        expanded_document_ids=set(),
+        expansion_metadata={},
+        constraints=None,
     )
 
     rel_map = {
@@ -74,7 +79,7 @@ def test_single_hop_expansion():
 
     assert "B" in new_plan.expanded_document_ids
     # Seed should remain
-    assert new_plan.seed_document_ids == ["A"]
+    assert new_plan.seed_document_ids == {"A"}
 
 
 def test_multi_hop_respects_max_depth():
@@ -82,9 +87,9 @@ def test_multi_hop_respects_max_depth():
     Should not traverse beyond max_depth
     """
     plan = RetrievalPlan(
-        seed_document_ids=["A"],
-        expanded_document_ids=[],
-        expansion_metadata=[],
+        seed_document_ids={"A"},
+        expanded_document_ids=set(),
+        expansion_metadata={},
         constraints=None,
     )
 
@@ -112,9 +117,9 @@ def test_allowed_relation_types_filtering():
     Only relationships of allowed types should be followed
     """
     plan = RetrievalPlan(
-        seed_document_ids=["A"],
-        expanded_document_ids=[],
-        expansion_metadata=[],
+        seed_document_ids={"A"},
+        expanded_document_ids=set(),
+        expansion_metadata={},
         constraints=None,
     )
 
@@ -129,22 +134,50 @@ def test_allowed_relation_types_filtering():
     new_plan = expand_retrieval_plan(
         plan=plan,
         list_outgoing_relationships=list_outgoing,
-        constraints=TraversalConstraints(max_depth=1, allowed_relation_types={"allowed"}),
+        constraints=TraversalConstraints(
+            max_depth=1, allowed_relation_types={"allowed"}
+        ),
     )
 
     assert "B" in new_plan.expanded_document_ids
     assert "C" not in new_plan.expanded_document_ids
 
 
-def test_deterministic_ordering():
+def test_expansion_metadata_records_edge():
     """
-    Traversal should always return the same order of expansions
+    Each expanded document records which edge caused its inclusion.
     """
     plan = RetrievalPlan(
-        seed_document_ids=["A", "X"],
-        expanded_document_ids=[],
-        expansion_metadata=[],
+        seed_document_ids={"A"},
+        expanded_document_ids=set(),
+        expansion_metadata={},
+        constraints=None,
+    )
+
+    rel_map = {
+        "A": [{"target_document_id": "B", "relation_type": "DEFINES"}]
+    }
+
+    new_plan = expand_retrieval_plan(
+        plan=plan,
+        list_outgoing_relationships=make_mock_relationships(rel_map),
         constraints=TraversalConstraints(max_depth=1),
+    )
+
+    meta = new_plan.expansion_metadata["B"]
+    assert meta.source_document_id == "A"
+    assert meta.relation_type == "DEFINES"
+
+
+def test_deterministic_ordering():
+    """
+    Traversal should always return the same expansions
+    """
+    plan = RetrievalPlan(
+        seed_document_ids={"A", "X"},
+        expanded_document_ids=set(),
+        expansion_metadata={},
+        constraints=None,
     )
 
     rel_map = {
@@ -153,7 +186,15 @@ def test_deterministic_ordering():
     }
     list_outgoing = make_mock_relationships(rel_map)
 
-    first_run = expand_retrieval_plan(plan=plan, list_outgoing_relationships=list_outgoing, constraints=TraversalConstraints(max_depth=1))
-    second_run = expand_retrieval_plan(plan=plan, list_outgoing_relationships=list_outgoing, constraints=TraversalConstraints(max_depth=1))
+    first_run = expand_retrieval_plan(
+        plan=plan,
+        list_outgoing_relationships=list_outgoing,
+        constraints=TraversalConstraints(max_depth=1),
+    )
+    second_run = expand_retrieval_plan(
+        plan=plan,
+        list_outgoing_relationships=list_outgoing,
+        constraints=TraversalConstraints(max_depth=1),
+    )
 
     assert first_run.expanded_document_ids == second_run.expanded_document_ids

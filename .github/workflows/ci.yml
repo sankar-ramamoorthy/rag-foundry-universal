@@ -31,12 +31,7 @@ jobs:
 
       - name: ingestion_service unit tests
         working-directory: ingestion_service
-        # --ignore'd files fail collection on a missing module (issue #25)
-        run: >
-          ../.venv/bin/python -m pytest -m unit -q
-          --ignore=tests/integration/test_relationship_expansion.py
-          --ignore=tests/integration/test_relationship_expansion_integration.py
-          --ignore=tests/test_retrieval_planner.py
+        run: ../.venv/bin/python -m pytest -m unit -q
 
       - name: vector_store_service unit tests
         working-directory: vector_store_service
@@ -48,12 +43,7 @@ jobs:
 
       - name: rag_orchestrator tests
         working-directory: rag_orchestrator
-        # tests/__init__.py is a directory that breaks collection of the
-        # files inside it (issue #24); --ignore it so new test files are
-        # still collected automatically
-        run: >
-          ../.venv/bin/python -m pytest -q
-          --ignore=tests/__init__.py
+        run: ../.venv/bin/python -m pytest -q
 
   integration-tests:
     runs-on: ubuntu-latest
