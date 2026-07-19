@@ -3,6 +3,9 @@
 # provider/model params; Ollama remains the default; llm_service stays
 # the seam owning prompts and model policy — other services never call
 # vendors directly.
+# WP-M2: provider outages degrade gracefully — per-attempt LiteLLM
+# retries with backoff, then the registry's fallback chain; only when
+# every candidate fails does the request error (503 at the API layer).
 import logging
 
 import litellm
@@ -12,6 +15,24 @@ from src.core.prompts import PROMPT_TEMPLATE_VERSION, build_messages
 
 logger = logging.getLogger(__name__)
 
+# WP-M2: retries within one candidate model before falling back.
+# LiteLLM applies exponential backoff between attempts.
+NUM_RETRIES = 2
+
+
+class AllProvidersFailedError(RuntimeError):
+    """Every model in the fallback chain failed (WP-M2 → 503)."""
+
+    def __init__(self, attempted: list[str], last_error: Exception):
+        self.attempted = attempted
+        self.last_error = last_error
+        super().__init__(
+            "All configured LLM providers failed. "
+            f"Tried, in order: {', '.join(attempted)}. "
+            f"Last error: {last_error}. "
+            "Check provider availability, API keys, and models.yaml."
+        )
+
 
 async def generate_completion(
     *,
@@ -20,8 +41,37 @@ async def generate_completion(
     provider: str | None = None,
     model: str | None = None,
 ) -> dict:
-    resolved = get_registry().resolve(provider, model)
-    return await _complete(resolved, context=context, query=query)
+    registry = get_registry()
+    primary = registry.resolve(provider, model)
+    chain = registry.fallback_chain(primary)
+
+    last_error: Exception | None = None
+    for position, candidate in enumerate(chain):
+        try:
+            result = await _complete(candidate, context=context, query=query)
+        except Exception as e:  # noqa: BLE001 - any provider error → next
+            last_error = e
+            logger.warning(
+                "LLM candidate failed, %s remaining",
+                len(chain) - position - 1,
+                extra={"failed_model": candidate.model, "error": str(e)},
+            )
+            continue
+
+        if position > 0:
+            # structured circuit-note: a fallback fired
+            logger.warning(
+                "LLM fallback fired",
+                extra={
+                    "fallback_from": primary.model,
+                    "fallback_to": candidate.model,
+                },
+            )
+            result["fallback_from"] = primary.model
+        return result
+
+    assert last_error is not None
+    raise AllProvidersFailedError([c.model for c in chain], last_error)
 
 
 async def _complete(
@@ -31,6 +81,7 @@ async def _complete(
         "model": resolved.model,
         "messages": build_messages(context, query),
         "timeout": resolved.timeout,
+        "num_retries": NUM_RETRIES,
     }
     if resolved.api_base:
         kwargs["api_base"] = resolved.api_base
