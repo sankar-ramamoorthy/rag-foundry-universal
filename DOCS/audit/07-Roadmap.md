@@ -56,13 +56,13 @@ related:
 - [x] PR #40: sources resolving to UUIDs instead of names (nested `metadata.source_metadata` bug)
 - [x] PR #42: fallback-chain timeout regression from the LiteLLM swap (503s on CPU Ollama)
 - [x] PR #47: multi-endpoint LiteLLM routing (Tailscale remote Ollama default + fallback)
-- [ ] Finish the remaining live-smoke-test acceptance items before starting Phase 3/4 work (tracked as issue #48):
-  - [ ] Subclass/override graph expansion firing correctly at low `top_k`
-  - [ ] Two-repository source isolation (no cross-repo leakage)
-  - [ ] Model-alias switching (default vs. explicit `ollama/...`, forced fallback via `model=smart`)
-  - [ ] Gradio UI visual pass (labels, model dropdown, model-used line)
+- [x] Finish the remaining live-smoke-test acceptance items before starting Phase 3/4 work (issue #48, closed 2026-07-20):
+  - [x] Subclass/override graph expansion firing correctly at low `top_k` — found and fixed a real bug (module/class-level seed mismatch broke `INHERITS`/`OVERRIDES` traversal), PR #51
+  - [x] Two-repository source isolation (no cross-repo leakage) — verified clean
+  - [x] Model-alias switching (default vs. explicit `ollama/...`, forced fallback via `model=smart`) — verified correct
+  - [x] Gradio UI visual pass (labels, model dropdown, model-used line) — confirmed via screenshot
 
-**Exit criteria:** the four remaining smoke-test items pass, closing out the acceptance pass for everything merged so far — this is a prerequisite for treating Phase 1/2 as done in practice, not just in code.
+**Exit criteria met.** Also surfaced and filed issue #52 (Dockerfile `CMD` ignores the dev bind-mount, so `restart` never picks up code edits — only a rebuild does; likely compounds issue #41's runtime torch re-download).
 
 ## Phase 2.75 — RAG quality baseline (empirical, precedes any Phase 4 reranker work)
 *Theme: prove the system retrieves the right evidence and answers well before changing anything else.*
@@ -130,7 +130,8 @@ graph LR
 > 3. **Phase 4's reranker sub-task (`WP-S8`) does not start until Phase 2.75 proves it's the actual bottleneck** — see [[08-RAG-Quality-Evaluation-Methodology]].
 
 > [!note] Current next steps (2026-07-20)
-> 1. Finish the four remaining Phase 2.5 smoke-test items (tracked in the issue register).
+> 1. ~~Finish the four remaining Phase 2.5 smoke-test items~~ — done, issue #48 closed.
 > 2. Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision.
 > 3. Only then resume Phase 3/4 work.
+> 4. Optional, unblocked but not gating: issue #52 (dev bind-mount ignored by `CMD`) is worth fixing soon since it slows down any further iteration on this codebase.
 
