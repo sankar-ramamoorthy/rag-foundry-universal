@@ -20,5 +20,9 @@ fallbacks:
 
 # Per-alias request timeout in seconds; `default` applies to everything
 # without an explicit entry (falls back to LLM_TIMEOUT env, 120 s).
+# 600 matches the pre-LiteLLM behavior: CPU-only Ollama regularly needs
+# >120 s to generate over a full RAG context (verified live — 120 s made
+# /generate time out on the smoke test's second query). Tighten per
+# alias for fast cloud models instead of lowering the default.
 timeouts:
-  default: 120
+  default: 600
