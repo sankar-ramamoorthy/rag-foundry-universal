@@ -44,15 +44,40 @@ def capture(monkeypatch):
     return calls
 
 
-async def test_no_params_uses_ollama_default_as_before(capture):
-    """Regression: /generate with no params answers via Ollama exactly
-    as before the LiteLLM swap."""
+async def test_no_params_uses_local_ollama_default(capture):
+    """Universal default for a fresh clone: with no remote env vars set,
+    /generate answers via the host-local Ollama exactly as before."""
     result = await llm_client.generate_completion(context="c", query="q")
 
     assert capture["model"] == f"ollama/{OLLAMA_MODEL}"
     assert capture["api_base"] == OLLAMA_BASE_URL
     assert result["provider"] == "ollama"
     assert result["response"] == "the answer"
+
+
+async def test_remote_env_promotes_remote_default(capture, monkeypatch):
+    """issue #43: setting REMOTE_OLLAMA_BASE_URL + LLM_DEFAULT_ALIAS in
+    the (gitignored) .env makes the remote box the default route —
+    machine-specific config, never committed."""
+    from src.core.model_registry import reset_registry
+
+    monkeypatch.setenv("REMOTE_OLLAMA_BASE_URL", "http://100.105.24.12:11434")
+    monkeypatch.setenv("LLM_DEFAULT_ALIAS", "remote")
+    reset_registry()
+    try:
+        result = await llm_client.generate_completion(context="c", query="q")
+        assert capture["model"] == "ollama/Qwen3:4b"
+        assert capture["api_base"] == "http://100.105.24.12:11434"
+        assert result["model_alias"] == "default"
+    finally:
+        reset_registry()
+
+
+async def test_local_alias_targets_host_ollama(capture):
+    await llm_client.generate_completion(context="c", query="q", model="local")
+
+    assert capture["model"] == f"ollama/{OLLAMA_MODEL}"
+    assert capture["api_base"] == OLLAMA_BASE_URL
 
 
 async def test_messages_carry_system_and_user_roles(capture):
