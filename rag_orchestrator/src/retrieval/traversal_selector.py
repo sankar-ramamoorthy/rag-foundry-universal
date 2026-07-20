@@ -146,28 +146,46 @@ def select_traversal_strategies(
     )
     return strategies
 
+def _seed_and_defines_descendants(graph: CodebaseGraph, start_cid: str) -> List[str]:
+    """INHERITS/OVERRIDES/CALL edges live on CLASS/METHOD nodes, never on
+    the enclosing MODULE. Vector search often seeds the coarser MODULE
+    (or CLASS, for a method-level edge) artifact instead of the exact
+    symbol, which otherwise makes those traversal strategies silently
+    return nothing even though the edge exists one DEFINES hop away.
+    Expand the anchor set to the seed plus everything it (transitively)
+    defines, so class/method-scoped strategies still find it."""
+    if graph is None:
+        return [start_cid]
+    descendants = traverse_defines(graph, start_cid, depth=2)
+    return [start_cid] + [n.canonical_id for n in descendants]
+
+
 def execute_traversals(
     graph: CodebaseGraph,
     start_canonical_id: str,
     strategies: List[Callable[[CodebaseGraph, str], List[Node]]]
 ) -> List[Node]:
     """
-    Execute all selected traversal strategies.
+    Execute all selected traversal strategies from the seed and its
+    DEFINES descendants (see `_seed_and_defines_descendants`).
     """
     all_expanded_nodes = []
+    anchors = _seed_and_defines_descendants(graph, start_canonical_id)
 
     for strategy in strategies:
-        try:
-            nodes = strategy(graph, start_canonical_id)
-            all_expanded_nodes.extend(nodes)
-            logger.debug(
-                f"Strategy returned {len(nodes)} nodes from {start_canonical_id}"
-            )
-        except Exception as e:
-            logger.warning(f"Traversal strategy failed: {e}")
-            continue
+        for anchor in anchors:
+            try:
+                nodes = strategy(graph, anchor)
+                all_expanded_nodes.extend(nodes)
+                logger.debug(f"Strategy returned {len(nodes)} nodes from {anchor}")
+            except Exception as e:
+                logger.warning(f"Traversal strategy failed: {e}")
+                continue
 
-    # Deduplicate by canonical_id
+    # Deduplicate by canonical_id. A DEFINES descendant used purely as an
+    # extra anchor (e.g. Dog.speak when the seed was Dog) can legitimately
+    # also be the answer itself for a "structure" query, so anchors are
+    # not excluded here — only the true seed is, by the caller.
     unique_nodes = {node.canonical_id: node for node in all_expanded_nodes}.values()
     logger.info(f"Total unique expanded nodes: {len(unique_nodes)}")
     return list(unique_nodes)
