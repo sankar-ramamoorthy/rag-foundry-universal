@@ -15,8 +15,12 @@ def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
 
     Prefers canonical_id from chunk metadata (`path` or
     `path#Class.method` per ADR-031), then relative_path, then the raw
-    document_id. Labels keep first-seen order, so with seeds ordered
-    before expanded documents the seed sources come first.
+    document_id. The vector store's search response nests the ingestion
+    metadata under `metadata.source_metadata` (vectors.py), so both the
+    flat and nested shapes are checked — same duality
+    extract_canonical_ids_from_chunks handles. Labels keep first-seen
+    order, so with seeds ordered before expanded documents the seed
+    sources come first.
     """
     sources: List[str] = []
     seen: set = set()
@@ -25,9 +29,15 @@ def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
         metadata: Dict[str, object] = (
             raw_metadata if isinstance(raw_metadata, dict) else {}
         )
+        raw_nested = metadata.get("source_metadata")
+        nested: Dict[str, object] = (
+            raw_nested if isinstance(raw_nested, dict) else {}
+        )
         label = (
             metadata.get("canonical_id")
+            or nested.get("canonical_id")
             or metadata.get("relative_path")
+            or nested.get("relative_path")
             or c.get("document_id")
         )
         if label and label not in seen:

@@ -58,6 +58,37 @@ def test_seed_chunks_stay_ahead_of_expanded():
     assert build_sources(chunks) == ["seed.py#hit", "expanded.py#neighbor"]
 
 
+def test_nested_source_metadata_shape_from_vector_store():
+    """The real /v1/vectors/search response nests canonical_id under
+    metadata.source_metadata (caught by the live smoke test — the flat
+    shape below never occurs in production for repo chunks)."""
+    chunks = [{
+        "text": "x",
+        "document_id": "uuid-1",
+        "chunk_id": "c",
+        "metadata": {
+            "ingestion_id": "ing-1",
+            "chunk_index": 0,
+            "chunk_strategy": "sentence",
+            "provider": "ollama",
+            "source_metadata": {
+                "canonical_id": "dogs.py#Dog.speak",
+                "relative_path": "dogs.py",
+                "repo_id": "repo-x",
+            },
+        },
+    }]
+    assert build_sources(chunks) == ["dogs.py#Dog.speak"]
+
+
+def test_nested_relative_path_fallback():
+    chunks = [{
+        "document_id": "uuid-2",
+        "metadata": {"source_metadata": {"relative_path": "docs/readme.md"}},
+    }]
+    assert build_sources(chunks) == ["docs/readme.md"]
+
+
 def test_missing_metadata_dict_is_tolerated():
     assert build_sources([{"document_id": "uuid-9", "metadata": None}]) == ["uuid-9"]
 
