@@ -100,16 +100,33 @@ class ModelRegistry:
         self._aliases: Dict[str, Dict[str, Any]] = {}
         for alias, value in raw_models.items():
             if isinstance(value, str):
-                self._aliases[alias] = {"model": value}
+                entry: Dict[str, Any] = {"model": value}
             elif isinstance(value, dict) and "model" in value:
-                self._aliases[alias] = dict(value)
+                entry = dict(value)
+            else:
+                continue
+            # Machine-specific entries declare api_base via env
+            # interpolation with an empty default; when the env var is
+            # unset the entry vanishes, keeping the committed yaml
+            # universal (issue #43 — the Tailscale box is one user's
+            # setup, not the repo's).
+            if entry.get("api_base") == "":
+                continue
+            self._aliases[alias] = entry
+
+        # LLM_DEFAULT_ALIAS promotes an existing alias to the default
+        # route (e.g. remote on the machine that has the tailnet box);
+        # unset or unknown -> the plain default below.
+        promoted = os.getenv("LLM_DEFAULT_ALIAS")
+        if promoted and promoted in self._aliases:
+            self._aliases[DEFAULT_ALIAS] = dict(self._aliases[promoted])
         if DEFAULT_ALIAS not in self._aliases:
             self._aliases[DEFAULT_ALIAS] = {"model": f"ollama/{OLLAMA_MODEL}"}
 
         # issue #43: named inference endpoints for arbitrary-model routing
         self._endpoints: Dict[str, Dict[str, Any]] = {}
         for name, value in (config.get("endpoints") or {}).items():
-            if isinstance(value, dict) and "api_base" in value:
+            if isinstance(value, dict) and value.get("api_base"):
                 self._endpoints[name] = dict(value)
 
         self.fallbacks: Dict[str, List[str]] = config.get("fallbacks") or {}

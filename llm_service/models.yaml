@@ -1,32 +1,44 @@
 # llm_service model registry (WP-M1, endpoints per issue #43).
 #
 # Friendly aliases -> LiteLLM model strings. Every string value supports
-# ${VAR} / ${VAR:default} environment interpolation, so machine-specific
-# endpoints and model choices are overridable via .env without editing
-# this file. Raw LiteLLM strings (containing "/") always pass through
-# verbatim, and `<endpoint>/<model>` routes any model the user believes
-# exists to that named endpoint.
+# ${VAR} / ${VAR:default} environment interpolation. This committed file
+# is UNIVERSAL: it must work for anyone who clones the repo. Machine-
+# specific inference endpoints (e.g. a Tailscale-reachable GPU box)
+# declare their api_base as ${SOME_VAR:} — with the env var unset the
+# entry simply doesn't exist; setting the var in your gitignored .env
+# activates it. LLM_DEFAULT_ALIAS promotes any alias to the default
+# route for this machine.
+#
+# Example personal .env for a remote Ollama default:
+#   REMOTE_OLLAMA_BASE_URL=http://<tailscale-ip>:11434
+#   REMOTE_OLLAMA_MODEL=Qwen3:4b
+#   LLM_DEFAULT_ALIAS=remote
+#
+# Raw LiteLLM strings (containing "/") always pass through verbatim, and
+# `<endpoint>/<model>` routes any model the user believes exists to that
+# named endpoint.
 #
 # API keys are env-only (OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY,
-# ...) — LiteLLM reads them natively. Never put keys in this file.
+# ...) — LiteLLM reads them natively. Never put keys or machine-specific
+# addresses in this file.
 
 models:
-  # Default route: the Tailscale-reachable Linux Ollama box (GTX 1080 Ti)
-  # — larger GPU-run models; falls back to the Windows-local Ollama when
-  # the tailnet is unreachable (see fallbacks).
-  default:
-    model: ollama/${REMOTE_OLLAMA_MODEL:Qwen3:4b}
-    api_base: ${REMOTE_OLLAMA_BASE_URL:http://100.105.24.12:11434}
-    timeout: 300
-  # Windows-host Ollama — the fallback and the offline route.
+  # Windows/host-local Ollama — works out of the box for every clone.
   local:
     model: ollama/${OLLAMA_MODEL:phi4-mini:latest}
     # api_base omitted -> OLLAMA_BASE_URL (host.docker.internal)
-  # Per-step model: /v1/summarize uses this alias when the request
-  # doesn't specify one — a small fast model is plenty for summaries.
+  # Remote Ollama box — exists only when REMOTE_OLLAMA_BASE_URL is set.
+  # Promote it to the default route with LLM_DEFAULT_ALIAS=remote.
+  remote:
+    model: ollama/${REMOTE_OLLAMA_MODEL:Qwen3:4b}
+    api_base: ${REMOTE_OLLAMA_BASE_URL:}
+    timeout: 300
+  # Per-step model for /v1/summarize (small + fast is plenty). Exists
+  # only alongside the remote endpoint; without it, summaries use the
+  # default route.
   summarize:
     model: ollama/${SUMMARIZE_MODEL:granite4:350m}
-    api_base: ${REMOTE_OLLAMA_BASE_URL:http://100.105.24.12:11434}
+    api_base: ${REMOTE_OLLAMA_BASE_URL:}
     timeout: 180
   fast: anthropic/claude-haiku-4-5
   smart: anthropic/claude-sonnet-5
@@ -35,10 +47,11 @@ models:
 # Named inference endpoints: `model=<name>/<anything>` routes that model
 # string to the endpoint's api_base with its LiteLLM provider prefix.
 # GET /v1/models lists these with a live model inventory when reachable.
+# Entries with an unset api_base env var don't exist.
 endpoints:
   tailscaleollamalinux:
     provider: ollama
-    api_base: ${REMOTE_OLLAMA_BASE_URL:http://100.105.24.12:11434}
+    api_base: ${REMOTE_OLLAMA_BASE_URL:}
     timeout: 300
   windowsollamalocal:
     provider: ollama
@@ -47,8 +60,11 @@ endpoints:
 
 # WP-M2 fallback chains. Keys may be aliases or endpoint names; targets
 # are aliases, tried in order after the primary fails (2 retries each).
+# `default: [local]` is harmless when default IS local (duplicates
+# collapse) and gives remote-default machines automatic local fallback.
 fallbacks:
   default: [local]
+  remote: [local]
   summarize: [local]
   tailscaleollamalinux: [local]
   smart: [gpt, default]
@@ -56,6 +72,6 @@ fallbacks:
 # Per-alias request timeout in seconds; `default` applies to everything
 # without an explicit entry (falls back to LLM_TIMEOUT env, 120 s).
 # 600 matches CPU-only local Ollama needs (verified live — 120 s made
-# /generate time out); the remote GPU box uses tighter per-alias values.
+# /generate time out); remote GPU entries use tighter per-alias values.
 timeouts:
   default: 600

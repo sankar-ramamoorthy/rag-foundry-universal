@@ -192,3 +192,51 @@ def test_describe_endpoints_shape():
         "http://100.105.24.12:11434"
     )
     assert "windowsollamalocal" in endpoints
+
+
+def test_empty_api_base_entries_are_pruned():
+    """Machine-specific entries with an unset env var (empty api_base)
+    must not exist — the committed yaml stays universal."""
+    registry = ModelRegistry({
+        "models": {
+            "local": "ollama/phi4-mini:latest",
+            "remote": {"model": "ollama/big", "api_base": "${UNSET_XYZ_VAR:}"},
+        },
+        "endpoints": {
+            "tail": {"provider": "ollama", "api_base": "${UNSET_XYZ_VAR:}"},
+        },
+    })
+    assert not registry.has_alias("remote")
+    assert registry.describe_endpoints() == []
+    # default falls back to the built-in local derivation
+    assert registry.resolve(None, None).model == f"ollama/{OLLAMA_MODEL}"
+
+
+def test_llm_default_alias_promotes_remote(monkeypatch):
+    monkeypatch.setenv("PROMO_BASE_XYZ", "http://gpu-box:11434")
+    monkeypatch.setenv("LLM_DEFAULT_ALIAS", "remote")
+    registry = ModelRegistry({
+        "models": {
+            "local": "ollama/phi4-mini:latest",
+            "remote": {"model": "ollama/big", "api_base": "${PROMO_BASE_XYZ:}"},
+        },
+        "fallbacks": {"default": ["local"]},
+    })
+    resolved = registry.resolve(None, None)
+    assert resolved.model == "ollama/big"
+    assert resolved.api_base == "http://gpu-box:11434"
+    chain = registry.fallback_chain(resolved)
+    assert [c.model for c in chain] == ["ollama/big", "ollama/phi4-mini:latest"]
+
+
+def test_llm_default_alias_ignored_when_target_pruned(monkeypatch):
+    """LLM_DEFAULT_ALIAS=remote without the remote base URL set must not
+    break the default route."""
+    monkeypatch.setenv("LLM_DEFAULT_ALIAS", "remote")
+    registry = ModelRegistry({
+        "models": {
+            "local": "ollama/phi4-mini:latest",
+            "remote": {"model": "ollama/big", "api_base": "${UNSET_XYZ_VAR:}"},
+        },
+    })
+    assert registry.resolve(None, None).model == f"ollama/{OLLAMA_MODEL}"

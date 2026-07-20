@@ -33,7 +33,21 @@ def fake_endpoints(monkeypatch):
     monkeypatch.setattr(httpx, "AsyncClient", patched_client)
 
 
-def test_models_endpoint_lists_aliases_with_default(fake_endpoints):
+@pytest.fixture()
+def remote_env(monkeypatch):
+    """Machine-specific remote endpoint activated via env (the way the
+    gitignored .env does it); registry reloaded around the test."""
+    from src.core.model_registry import reset_registry
+
+    monkeypatch.setenv("REMOTE_OLLAMA_BASE_URL", "http://100.105.24.12:11434")
+    reset_registry()
+    yield
+    reset_registry()
+
+
+def test_models_endpoint_universal_without_remote_env(fake_endpoints):
+    """A fresh clone (no remote env vars) sees only universal entries —
+    no machine-specific aliases or endpoints."""
     response = client.get("/v1/models")
 
     assert response.status_code == 200
@@ -42,18 +56,24 @@ def test_models_endpoint_lists_aliases_with_default(fake_endpoints):
 
     by_alias = {m["alias"]: m for m in body["models"]}
     assert by_alias["default"]["is_default"] is True
-    assert by_alias["default"]["model"] == "ollama/Qwen3:4b"
     assert "local" in by_alias
-    assert "summarize" in by_alias
     assert "smart" in by_alias
-    assert by_alias["smart"]["model"] == "anthropic/claude-sonnet-5"
-    assert by_alias["smart"]["is_default"] is False
+    assert "remote" not in by_alias
+    assert "summarize" not in by_alias
+
+    endpoint_names = {e["name"] for e in body["endpoints"]}
+    assert "tailscaleollamalinux" not in endpoint_names
+    assert "windowsollamalocal" in endpoint_names
 
 
-def test_models_endpoint_reports_live_endpoint_inventory(fake_endpoints):
+def test_models_endpoint_with_remote_env(remote_env, fake_endpoints):
     body = client.get("/v1/models").json()
-    endpoints = {e["name"]: e for e in body["endpoints"]}
 
+    by_alias = {m["alias"]: m for m in body["models"]}
+    assert "remote" in by_alias
+    assert "summarize" in by_alias
+
+    endpoints = {e["name"]: e for e in body["endpoints"]}
     # reachable endpoint lists its models, sorted
     assert endpoints["tailscaleollamalinux"]["available_models"] == [
         "Qwen3:4b", "deepseek-r1:7b",
@@ -62,9 +82,9 @@ def test_models_endpoint_reports_live_endpoint_inventory(fake_endpoints):
     assert endpoints["windowsollamalocal"]["available_models"] is None
 
 
-def test_summarize_defaults_to_step_alias(monkeypatch):
+def test_summarize_defaults_to_step_alias(remote_env, monkeypatch):
     """issue #43 per-step models: /v1/summarize without params uses the
-    `summarize` alias from models.yaml."""
+    `summarize` alias when the remote env activates it."""
     captured = {}
 
     async def fake_fetch_chunks(ingestion_id):
