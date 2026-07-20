@@ -29,8 +29,19 @@ aliases:
 | [[05-Enterprise-Platform-Plan]] | Laptop → enterprise web product? | Auth, multi-tenancy, real frontend, K8s, observability — phased plan |
 | [[06-LLM-Provider-LiteLLM-Plan]] | LiteLLM + model switching? | Replace `llm_service` internals with LiteLLM Router; 2–3 day work package |
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
+| [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 
-## 🎯 Executive Summary
+## 📍 Current status (2026-07-20 — supersedes the maturity claim below)
+
+> [!tip] Phases 1–2 are implementation-complete and operationally hardened. RAG retrieval and answer quality have not yet been formally validated.
+
+- **Phase 1 (foundation) and Phase 2 (graph depth + LLM freedom) are done** — see [[07-Roadmap]], now checked off against actual merged PRs rather than aspirational checkboxes. O(N) graph build, batch/atomic persistence, HNSW indexing, full call/inheritance resolution, LiteLLM routing with a live remote-Ollama endpoint and fallback chain.
+- **Beyond the original plan**, reactive hardening from live Docker testing caught and fixed real defects: repo_id being dropped in the query path, source labels resolving to UUIDs instead of names, a fallback-chain timeout regression, and (ongoing) two-repo isolation / model-alias switching checks. This is evidence the infrastructure works, not evidence the RAG answers are good.
+- **What is not yet proven:** whether retrieval consistently surfaces the correct evidence, and whether generation produces grounded, complete answers from it. [[08-RAG-Quality-Evaluation-Methodology]] is the gate for this — Phase 4's reranker (`WP-S8` in [[04-Scalability-Plan]]) stays unstarted until that evaluation says it's the actual bottleneck.
+- **Phase 3 (multi-language) and the rest of Phase 4/5 are not started.**
+- A precise one-line status: *the platform works; whether it works well is not yet validated.*
+
+## 🎯 Executive Summary (as audited 2026-07-09 — historical; see status above for what has since shipped)
 
 The project has a **sound architectural thesis** — read-only, graph-aware code intelligence with deterministic canonical identity ([[../adr/ADR-031-canonical-identity-model|ADR-031]]) — and a clean service decomposition. The thesis is worth scaling. The implementation, however, is at **prototype maturity**:
 
@@ -43,17 +54,19 @@ The project has a **sound architectural thesis** — read-only, graph-aware code
 > [!tip] The single most important strategic decision
 > Introduce a **language-agnostic intermediate representation (IR)** for extraction (see [[03-Multi-Language-Graph-Plan]]) *before* deepening the Python graph. Deepen the graph **through** the IR, not through more Python-only code. Otherwise every Python-specific improvement becomes rework when Rust/TS/Java land.
 
-## 🧭 Priority Matrix
+## 🧭 Priority Matrix (as audited 2026-07-09 — historical; current priority is the RAG-quality baseline below)
 
-| Priority | Theme | Why now |
-|---|---|---|
-| 🔴 P0 | Correctness bugs in graph build ([[01-Codebase-Audit-Findings#P0 — Graph correctness]]) | Everything downstream reasons over wrong data |
-| 🔴 P0 | O(N²) ingestion hot loops | Blocks any repo beyond toy size |
-| 🟠 P1 | ANN index + batch embedding | Query latency and ingest throughput |
-| 🟠 P1 | LiteLLM provider abstraction | Unblocks enterprise LLM requirements; small effort |
-| 🟡 P2 | Tree-sitter IR + multi-language | The headline feature ask |
-| 🟡 P2 | Job queue + incremental ingestion | Massive-repo readiness |
-| 🟢 P3 | Auth / multi-tenancy / web frontend | Enterprise productization |
+| Priority | Theme | Why now | Status (2026-07-20) |
+|---|---|---|---|
+| 🔴 P0 | Correctness bugs in graph build ([[01-Codebase-Audit-Findings#P0 — Graph correctness]]) | Everything downstream reasons over wrong data | ✅ Done (Phase 1/2) |
+| 🔴 P0 | O(N²) ingestion hot loops | Blocks any repo beyond toy size | ✅ Done (WP-S1) |
+| 🟠 P1 | ANN index + batch embedding | Query latency and ingest throughput | ✅ Done (WP-S2/S4/S4B) |
+| 🟠 P1 | LiteLLM provider abstraction | Unblocks enterprise LLM requirements; small effort | ✅ Done + extended (PR #47); Groq/NIM tracked as issue #46 |
+| 🟡 P2 | Tree-sitter IR + multi-language | The headline feature ask | Not started (Phase 3) |
+| 🟡 P2 | Job queue + incremental ingestion | Massive-repo readiness | Not started (Phase 4) |
+| 🟢 P3 | Auth / multi-tenancy / web frontend | Enterprise productization | Not started (Phase 5) |
+
+**Current top priority (2026-07-20):** finish the outstanding live-smoke-test acceptance checks, then execute [[08-RAG-Quality-Evaluation-Methodology]] end to end — this now gates whether any further quality work (reranker, embedding swap, chunking rework) is justified, and gates whether Phase 3/4 work proceeds on top of a system with proven answer quality.
 
 ## 📐 How the work packages are written
 

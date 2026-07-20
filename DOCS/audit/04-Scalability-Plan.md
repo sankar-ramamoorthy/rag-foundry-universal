@@ -125,7 +125,7 @@ related:
 **Directions:**
 - Parallelize the per-doc `search-by-doc` loop (`service.py:183-200`) with `asyncio.gather` + semaphore(10).
 - Real tokenizer for the context budget (tiktoken or provider count) instead of `len(text.split())` (`service.py:271`).
-- Add a reranker stage (flag-gated): cross-encoder over top-50 → top-10 (runs in `rag_orchestrator`; model via [[06-LLM-Provider-LiteLLM-Plan|LiteLLM]] or local `bge-reranker`).
+- Add a reranker stage (flag-gated): cross-encoder over top-50 → top-10 (runs in `rag_orchestrator`; model via [[06-LLM-Provider-LiteLLM-Plan|LiteLLM]] or local `bge-reranker`). **Gate:** only build this after [[08-RAG-Quality-Evaluation-Methodology]] shows correct chunks landing at rank 8–20, not absent or already top-3.
 - Cap and dedupe expanded context (today `max_total_chunks=9999`, `service.py:262`).
 **Acceptance criteria:**
 - [ ] Expanded-doc fetch is concurrent (test: 20 docs fetched in ~1 RTT, not 20)
