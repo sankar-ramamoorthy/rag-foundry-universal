@@ -21,32 +21,56 @@ related:
 ## Phase 1 — Fix the foundation (1–2 weeks)
 *Theme: the graph tells the truth, and ingestion doesn't melt.*
 
-- [ ] [[02-Graph-Depth-Analysis#WP-G1 — Async functions + richer metadata|WP-G1]] Async functions + metadata + rstrip bug (fixes F-01, F-05)
-- [ ] [[01-Codebase-Audit-Findings#F-12 · Graph traversal starts from ONE arbitrary seed|F-12]] Multi-seed traversal (one-liner class of fix, big quality win)
-- [ ] [[04-Scalability-Plan#WP-S1 — Make graph build O(N)|WP-S1]] O(N) graph build + ignore semantics + benchmark harness
-- [ ] [[04-Scalability-Plan#WP-S2 — Batch embedding + persistence|WP-S2]] Batch embedding/persistence, kill dual-write
-- [ ] [[04-Scalability-Plan#WP-S3 — Transactional, bulk graph persistence|WP-S3]] Atomic bulk persistence + per-repo lock
-- [ ] [[04-Scalability-Plan#WP-S4 — ANN index + query-path hygiene|WP-S4]] HNSW index + real filter columns
-- [ ] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (CI part)]] Working CI (F-17) — do early so all later WPs land gated
+- [x] [[02-Graph-Depth-Analysis#WP-G1 — Async functions + richer metadata|WP-G1]] Async functions + metadata + rstrip bug (fixes F-01, F-05)
+- [x] [[01-Codebase-Audit-Findings#F-12 · Graph traversal starts from ONE arbitrary seed|F-12]] Multi-seed traversal (one-liner class of fix, big quality win)
+- [x] [[04-Scalability-Plan#WP-S1 — Make graph build O(N)|WP-S1]] O(N) graph build + ignore semantics + benchmark harness
+- [x] [[04-Scalability-Plan#WP-S2 — Batch embedding + persistence|WP-S2]] Batch embedding/persistence, kill dual-write
+- [x] [[04-Scalability-Plan#WP-S3 — Transactional, bulk graph persistence|WP-S3]] Atomic bulk persistence + per-repo lock
+- [x] [[04-Scalability-Plan#WP-S4 — ANN index + query-path hygiene|WP-S4]] HNSW index + real filter columns (typed filter columns landed later as WP-S4B)
+- [x] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (CI part)]] Working CI (F-17) — do early so all later WPs land gated
 
-**Exit criteria:** benchmark repo (2k files) ingests < 2 min; vector search uses index; CI green on every PR.
+**Exit criteria:** benchmark repo (2k files) ingests < 2 min; vector search uses index; CI green on every PR. **Met** — see `DOCS/test_results/Phase-1-Exit-Report.md`.
 
 ## Phase 2 — Graph depth + LLM freedom (2–3 weeks, two parallel tracks)
 *Theme: answers get materially better.*
 
 **Track A — graph (sequential):**
-- [ ] [[02-Graph-Depth-Analysis#WP-G3 — Remove CALL nodes from identity space; keep call sites as evidence|WP-G3]] Call-site model fix (F-03)
-- [ ] [[02-Graph-Depth-Analysis#WP-G2 — Materialize `IMPORTS` edges|WP-G2]] IMPORTS edges (F-02)
-- [ ] [[02-Graph-Depth-Analysis#WP-G4 — Scope- and import-aware call resolution (implement ADR-032 fully)|WP-G4]] Real call resolution (F-04)
-- [ ] [[02-Graph-Depth-Analysis#WP-G5 — `INHERITS` and `OVERRIDES` edges|WP-G5]] Inheritance edges
-- [ ] [[02-Graph-Depth-Analysis#WP-G6 — Traversal layer catches up with the deeper graph|WP-G6]] Traversal strategies catch up
+- [x] [[02-Graph-Depth-Analysis#WP-G3 — Remove CALL nodes from identity space; keep call sites as evidence|WP-G3]] Call-site model fix (F-03)
+- [x] [[02-Graph-Depth-Analysis#WP-G2 — Materialize `IMPORTS` edges|WP-G2]] IMPORTS edges (F-02)
+- [x] [[02-Graph-Depth-Analysis#WP-G4 — Scope- and import-aware call resolution (implement ADR-032 fully)|WP-G4]] Real call resolution (F-04)
+- [x] [[02-Graph-Depth-Analysis#WP-G5 — `INHERITS` and `OVERRIDES` edges|WP-G5]] Inheritance edges
+- [x] [[02-Graph-Depth-Analysis#WP-G6 — Traversal layer catches up with the deeper graph|WP-G6]] Traversal strategies catch up
 
 **Track B — LLM (independent, small):**
-- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M1 — LiteLLM core swap|WP-M1]] LiteLLM swap
-- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M2 — Resilience fallbacks, retries, timeouts|WP-M2]] Fallbacks/retries
-- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M5 — Model switching in the product surface|WP-M5]] Model picker
+- [x] [[06-LLM-Provider-LiteLLM-Plan#WP-M1 — LiteLLM core swap|WP-M1]] LiteLLM swap
+- [x] [[06-LLM-Provider-LiteLLM-Plan#WP-M2 — Resilience fallbacks, retries, timeouts|WP-M2]] Fallbacks/retries
+- [x] [[06-LLM-Provider-LiteLLM-Plan#WP-M5 — Model switching in the product surface|WP-M5]] Model picker
+- [x] *(beyond original scope)* Multi-endpoint routing shipped in PR #47 — env-activated Tailscale Ollama default with fallback chain; Groq/NVIDIA NIM first-class support tracked separately as issue #46
 
-**Exit criteria:** "what calls X" correct on eval fixtures incl. methods & cross-file; any cloud model usable by alias.
+**Exit criteria:** "what calls X" correct on eval fixtures incl. methods & cross-file; any cloud model usable by alias. **Met.**
+
+## Phase 2.5 — Live hardening (unplanned, reactive; shipped 2026-07-19/20)
+*Theme: bugs that only surfaced once the merged stack ran end-to-end in Docker.*
+
+- [x] Issue #30 (5 parts): repo_id dropped in the query path, caller routing, context caps, source labels, repo metadata
+- [x] PR #40: sources resolving to UUIDs instead of names (nested `metadata.source_metadata` bug)
+- [x] PR #42: fallback-chain timeout regression from the LiteLLM swap (503s on CPU Ollama)
+- [x] PR #47: multi-endpoint LiteLLM routing (Tailscale remote Ollama default + fallback)
+- [ ] Finish the remaining live-smoke-test acceptance items before starting Phase 3/4 work (tracked as issue #48):
+  - [ ] Subclass/override graph expansion firing correctly at low `top_k`
+  - [ ] Two-repository source isolation (no cross-repo leakage)
+  - [ ] Model-alias switching (default vs. explicit `ollama/...`, forced fallback via `model=smart`)
+  - [ ] Gradio UI visual pass (labels, model dropdown, model-used line)
+
+**Exit criteria:** the four remaining smoke-test items pass, closing out the acceptance pass for everything merged so far — this is a prerequisite for treating Phase 1/2 as done in practice, not just in code.
+
+## Phase 2.75 — RAG quality baseline (empirical, precedes any Phase 4 reranker work)
+*Theme: prove the system retrieves the right evidence and answers well before changing anything else.*
+
+- [ ] [[08-RAG-Quality-Evaluation-Methodology#0 · Recommended execution order (WP-Q0)|WP-Q0]] Build curated eval corpus + run the unified chunking/retrieval/generation pass, classify every failure (tracked as issue #49)
+- [ ] Reranker go/no-go decision recorded per [[08-RAG-Quality-Evaluation-Methodology#4 · Reranker decision gate|the decision gate]]
+
+**Exit criteria:** every eval-corpus failure is classified (chunking/retrieval/filtering/ranking/generation); `WP-S8`'s reranker sub-task in Phase 4 either proceeds with evidence or is explicitly deferred with a recorded reason.
 
 ## Phase 3 — Multi-language (4–6 weeks)
 *Theme: the headline feature.*
@@ -66,7 +90,7 @@ related:
 - [ ] [[04-Scalability-Plan#WP-S5 — Job queue for ingestion|WP-S5]] Job queue (arq + Redis)
 - [ ] [[04-Scalability-Plan#WP-S6 — Incremental ingestion (the massive-repo unlock)|WP-S6]] Incremental ingestion + snapshot lineage
 - [ ] [[04-Scalability-Plan#WP-S7 — Bounded graph service instead of whole-graph-in-RAM|WP-S7]] Traverse endpoint, kill whole-graph RAM cache
-- [ ] [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]] Concurrent fetch, real tokenizer, reranker flag
+- [ ] [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]] Concurrent fetch, real tokenizer, reranker flag (reranker sub-task gated on Phase 2.75's eval — see above)
 - [ ] [[05-Enterprise-Platform-Plan#WP-E1 — Security baseline (do first, small)|WP-E1]] Security baseline *(can and should be pulled earlier if anything is network-exposed)*
 - [ ] [[05-Enterprise-Platform-Plan#WP-E5 — Observability|WP-E5]] Observability
 - [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M3 — Streaming|WP-M3]] / [[06-LLM-Provider-LiteLLM-Plan#WP-M4 — Cost & usage telemetry|WP-M4]] Streaming + cost telemetry
@@ -89,11 +113,13 @@ related:
 
 ```mermaid
 graph LR
-  P1[Phase 1<br/>Foundation] --> P2A[Phase 2A<br/>Graph depth]
-  P1 --> P2B[Phase 2B<br/>LiteLLM]
-  P2A --> P3[Phase 3<br/>Multi-language]
-  P1 --> P4[Phase 4<br/>Scale + Ops]
-  P2B --> P4
+  P1[Phase 1<br/>Foundation ✅] --> P2A[Phase 2A<br/>Graph depth ✅]
+  P1 --> P2B[Phase 2B<br/>LiteLLM ✅]
+  P2A --> P25[Phase 2.5<br/>Live hardening]
+  P2B --> P25
+  P25 --> P275[Phase 2.75<br/>RAG quality baseline]
+  P275 --> P3[Phase 3<br/>Multi-language]
+  P275 --> P4[Phase 4<br/>Scale + Ops]
   P3 --> P5[Phase 5<br/>Enterprise]
   P4 --> P5
 ```
@@ -101,8 +127,10 @@ graph LR
 > [!warning] Two rules that keep this roadmap honest
 > 1. **Nothing ships without its benchmark/eval delta recorded** (`DOCS/test_results/`). Phase 1 builds the harness; every later WP reports against it.
 > 2. **Graph-depth work after Phase 2 goes through the IR** ([[03-Multi-Language-Graph-Plan]]) — no more Python-only resolution code once WP-L1 lands.
+> 3. **Phase 4's reranker sub-task (`WP-S8`) does not start until Phase 2.75 proves it's the actual bottleneck** — see [[08-RAG-Quality-Evaluation-Methodology]].
 
-> [!note] Suggested first three agent tasks (this week)
-> 1. WP-G1 + F-05 + F-12 in one PR (small, high-value, builds trust in the loop)
-> 2. WP-S1 with the benchmark fixture generator
-> 3. CI rewrite (WP-E2 CI part) so tasks 1–2 land gated
+> [!note] Current next steps (2026-07-20)
+> 1. Finish the four remaining Phase 2.5 smoke-test items (tracked in the issue register).
+> 2. Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision.
+> 3. Only then resume Phase 3/4 work.
+
