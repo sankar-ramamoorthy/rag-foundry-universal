@@ -6,6 +6,7 @@ import httpx
 from fastapi import APIRouter, HTTPException, Query
 
 from src.core.llm_client import generate_completion
+from src.core.model_registry import get_registry
 
 router = APIRouter(prefix="/v1/summarize", tags=["summaries"])
 logging.basicConfig(level=logging.DEBUG)
@@ -64,8 +65,13 @@ async def generate_summary(
 ):
     """MS7-IS2: Generate LLM summary for document ingestion.
 
-    WP-M5: honors the model alias/provider params like /generate does;
-    omitted → the registry's default model (previously hardcoded)."""
+    WP-M5: honors the model alias/provider params like /generate does.
+    Omitted → the `summarize` step alias when models.yaml defines one
+    (per-step model selection, issue #43), else the registry default."""
+    if model is None and provider is None and get_registry().has_alias(
+        "summarize"
+    ):
+        model = "summarize"
     try:
         logger.info(f"summarize.py generate_summary: {ingestion_id}")
         UUID(ingestion_id)  # validate format

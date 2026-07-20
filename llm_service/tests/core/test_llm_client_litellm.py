@@ -44,15 +44,24 @@ def capture(monkeypatch):
     return calls
 
 
-async def test_no_params_uses_ollama_default_as_before(capture):
-    """Regression: /generate with no params answers via Ollama exactly
-    as before the LiteLLM swap."""
+async def test_no_params_routes_to_remote_default(capture):
+    """issue #43: /generate with no params targets the remote Tailscale
+    Ollama box (models.yaml default alias, env-overridable); the
+    Windows-local Ollama is the configured fallback, not the default."""
     result = await llm_client.generate_completion(context="c", query="q")
+
+    assert capture["model"] == "ollama/Qwen3:4b"
+    assert capture["api_base"] == "http://100.105.24.12:11434"
+    assert result["provider"] == "ollama"
+    assert result["model_alias"] == "default"
+    assert result["response"] == "the answer"
+
+
+async def test_local_alias_targets_windows_ollama(capture):
+    await llm_client.generate_completion(context="c", query="q", model="local")
 
     assert capture["model"] == f"ollama/{OLLAMA_MODEL}"
     assert capture["api_base"] == OLLAMA_BASE_URL
-    assert result["provider"] == "ollama"
-    assert result["response"] == "the answer"
 
 
 async def test_messages_carry_system_and_user_roles(capture):

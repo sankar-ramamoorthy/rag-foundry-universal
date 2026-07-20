@@ -1,5 +1,8 @@
 # llm-service/src/api/v1/main.py - MS7-IS2 FIXED
+import asyncio
 import logging
+
+import httpx
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
@@ -53,10 +56,40 @@ async def generate(
         logging.exception("Error in /generate")
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+async def _endpoint_inventory(endpoint: dict) -> dict:
+    """issue #43: enrich a named endpoint with its live model list so
+    the UI can offer `<endpoint>/<model>` choices. Best-effort — an
+    unreachable endpoint reports available_models: null and the menu
+    still renders."""
+    entry = dict(endpoint)
+    entry["available_models"] = None
+    if entry.get("provider") != "ollama":
+        return entry
+    try:
+        async with httpx.AsyncClient(timeout=3) as client:
+            resp = await client.get(f"{entry['api_base']}/api/tags")
+            resp.raise_for_status()
+            entry["available_models"] = sorted(
+                m["name"] for m in resp.json().get("models", [])
+            )
+    except Exception as e:
+        logging.debug("Endpoint %s inventory failed: %s", entry["name"], e)
+    return entry
+
+
 @app.get("/v1/models")
-def list_models() -> dict:
-    """WP-M5: the model menu — aliases from models.yaml + the default."""
-    return {"models": get_registry().describe(), "default": DEFAULT_ALIAS}
+async def list_models() -> dict:
+    """WP-M5 + issue #43: aliases from models.yaml, the default, and
+    named endpoints with live model inventories."""
+    registry = get_registry()
+    endpoints = await asyncio.gather(
+        *(_endpoint_inventory(e) for e in registry.describe_endpoints())
+    )
+    return {
+        "models": registry.describe(),
+        "default": DEFAULT_ALIAS,
+        "endpoints": list(endpoints),
+    }
 
 
 @app.get("/health")

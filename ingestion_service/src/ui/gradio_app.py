@@ -172,6 +172,12 @@ def refresh_models():
             (f"{m['alias']} — {m['model']}", m["alias"])
             for m in data.get("models", [])
         ]
+        # issue #43: named endpoints expose their live model inventory so
+        # any remote model is directly pickable as <endpoint>/<model>
+        for endpoint in data.get("endpoints", []):
+            for model_name in endpoint.get("available_models") or []:
+                combo = f"{endpoint['name']}/{model_name}"
+                choices.append((combo, combo))
         return gr.Dropdown(
             choices=choices,
             value=data.get("default"),

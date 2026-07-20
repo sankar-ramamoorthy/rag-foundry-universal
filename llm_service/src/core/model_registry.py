@@ -16,15 +16,34 @@ or a mapping for endpoint-specific routing:
       api_base: http://gpu-box.tailnet:11434
       timeout: 300
 
+Named endpoints (issue #43) let a user route an arbitrary model to a
+specific inference host — "pick tailscaleollamalinux and whatever model
+is available there" — without pre-registering every model:
+
+    endpoints:
+      tailscaleollamalinux:
+        provider: ollama
+        api_base: http://100.105.24.12:11434
+        timeout: 300
+
+makes `model=tailscaleollamalinux/Qwen3:8b` resolve to
+`ollama/Qwen3:8b` at that api_base. Endpoint names also work as keys in
+`fallbacks`, so an endpoint can degrade to an alias when unreachable.
+
+Every string value in models.yaml supports `${VAR}` / `${VAR:default}`
+environment interpolation, so machine-specific addresses stay
+overridable without editing committed config.
+
 Resolution order for an incoming request:
-alias -> raw LiteLLM string (contains "/") -> legacy (provider, model)
-pair -> error listing valid aliases. The `default` alias, when absent
-from the yaml, derives from OLLAMA_MODEL to preserve pre-LiteLLM
-behavior.
+alias -> endpoint-prefixed (`<endpoint>/<model>`) -> raw LiteLLM string
+(contains "/") -> legacy (provider, model) pair -> error listing valid
+aliases. The `default` alias, when absent from the yaml, derives from
+OLLAMA_MODEL to preserve pre-LiteLLM behavior.
 """
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -34,6 +53,23 @@ import yaml
 from src.core.config import LLM_TIMEOUT, OLLAMA_BASE_URL, OLLAMA_MODEL
 
 DEFAULT_ALIAS = "default"
+
+# ${VAR} or ${VAR:default} — the default may itself contain colons
+# (model tags like phi4-mini:latest, URLs like http://host:11434).
+_ENV_PATTERN = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)(?::([^}]*))?\}")
+
+
+def _interpolate_env(value: Any) -> Any:
+    """Recursively substitute ${VAR}/${VAR:default} in string values."""
+    if isinstance(value, str):
+        return _ENV_PATTERN.sub(
+            lambda m: os.getenv(m.group(1), m.group(2) or ""), value
+        )
+    if isinstance(value, dict):
+        return {k: _interpolate_env(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_interpolate_env(v) for v in value]
+    return value
 
 
 class UnknownModelAliasError(ValueError):
@@ -59,6 +95,7 @@ class ResolvedModel:
 
 class ModelRegistry:
     def __init__(self, config: Dict[str, Any]):
+        config = _interpolate_env(config)
         raw_models = config.get("models") or {}
         self._aliases: Dict[str, Dict[str, Any]] = {}
         for alias, value in raw_models.items():
@@ -68,6 +105,12 @@ class ModelRegistry:
                 self._aliases[alias] = dict(value)
         if DEFAULT_ALIAS not in self._aliases:
             self._aliases[DEFAULT_ALIAS] = {"model": f"ollama/{OLLAMA_MODEL}"}
+
+        # issue #43: named inference endpoints for arbitrary-model routing
+        self._endpoints: Dict[str, Dict[str, Any]] = {}
+        for name, value in (config.get("endpoints") or {}).items():
+            if isinstance(value, dict) and "api_base" in value:
+                self._endpoints[name] = dict(value)
 
         self.fallbacks: Dict[str, List[str]] = config.get("fallbacks") or {}
         self._timeouts: Dict[str, Any] = config.get("timeouts") or {}
@@ -79,6 +122,9 @@ class ModelRegistry:
     def aliases(self) -> List[str]:
         return sorted(self._aliases)
 
+    def has_alias(self, name: str) -> bool:
+        return name in self._aliases
+
     def describe(self) -> List[Dict[str, Any]]:
         """Alias menu for GET /v1/models (WP-M5)."""
         return [
@@ -88,6 +134,18 @@ class ModelRegistry:
                 "is_default": alias == DEFAULT_ALIAS,
             }
             for alias in self.aliases()
+        ]
+
+    def describe_endpoints(self) -> List[Dict[str, Any]]:
+        """Named endpoints for GET /v1/models (issue #43). The caller
+        may enrich each entry with live model listings."""
+        return [
+            {
+                "name": name,
+                "provider": entry.get("provider", "ollama"),
+                "api_base": entry["api_base"],
+            }
+            for name, entry in sorted(self._endpoints.items())
         ]
 
     def fallback_chain(self, primary: ResolvedModel) -> List[ResolvedModel]:
@@ -126,6 +184,17 @@ class ModelRegistry:
             return self._from_alias(model)
 
         if "/" in model:
+            prefix, remainder = model.split("/", 1)
+            if prefix in self._endpoints and remainder:
+                # issue #43: `<endpoint>/<any model>` routes the model to
+                # that endpoint's api_base — the user picks whatever they
+                # believe is available there. The endpoint name doubles
+                # as the alias so fallbacks/timeouts keyed by it apply.
+                entry = self._endpoints[prefix]
+                litellm_provider = entry.get("provider", "ollama")
+                return self._finalize(
+                    prefix, f"{litellm_provider}/{remainder}", entry
+                )
             # raw LiteLLM string passes through verbatim
             return self._finalize(None, model, {})
 
