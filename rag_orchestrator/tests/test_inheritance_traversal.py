@@ -75,3 +75,65 @@ def test_what_subclasses_calculator_end_to_end(graph):
     strategies = select_traversal_strategies("what subclasses Calculator", seeds)
     nodes = execute_traversals_from_seeds(graph, seeds, strategies)
     assert "sci.py#Scientific" in cids(nodes)
+
+
+@pytest.fixture()
+def graph_with_modules():
+    """Same hierarchy as `graph`, but with MODULE nodes DEFINES-linked to
+    their classes/methods — mirrors the real ingested graph shape, where
+    INHERITS/OVERRIDES edges live on CLASS/METHOD nodes while vector
+    search often seeds the coarser MODULE artifact instead (issue #48)."""
+    g = CodebaseGraph()
+    for cid, path in [
+        ("calc.py", "calc.py"),
+        ("calc.py#Calculator", "calc.py"),
+        ("calc.py#Calculator.compute", "calc.py"),
+        ("sci.py", "sci.py"),
+        ("sci.py#Scientific", "sci.py"),
+        ("sci.py#Scientific.compute", "sci.py"),
+    ]:
+        g.add_node(Node(cid, path))
+
+    g.add_edge("calc.py", "calc.py#Calculator", "DEFINES")
+    g.add_edge("calc.py#Calculator", "calc.py#Calculator.compute", "DEFINES")
+    g.add_edge("sci.py", "sci.py#Scientific", "DEFINES")
+    g.add_edge("sci.py#Scientific", "sci.py#Scientific.compute", "DEFINES")
+    g.add_edge("sci.py#Scientific", "calc.py#Calculator", "INHERITS")
+    g.add_edge(
+        "sci.py#Scientific.compute", "calc.py#Calculator.compute", "OVERRIDES"
+    )
+    return g
+
+
+def test_module_level_seed_still_finds_subclasses(graph_with_modules):
+    """issue #48 regression: at low top_k, vector search can seed the
+    MODULE (calc.py) rather than the CLASS (calc.py#Calculator). Before
+    the fix, traversal ran BFS from calc.py itself, which has no INHERITS
+    edge, so 'what subclasses Calculator' silently returned nothing even
+    though sci.py#Scientific inherits from it."""
+    seeds = {"calc.py"}
+    strategies = select_traversal_strategies("what subclasses Calculator", seeds)
+    nodes = execute_traversals_from_seeds(graph_with_modules, seeds, strategies)
+    assert "sci.py#Scientific" in cids(nodes)
+
+
+def test_class_level_seed_still_finds_method_overrides(graph_with_modules):
+    """Same gap one level down: seeding the CLASS (sci.py#Scientific)
+    rather than the METHOD (sci.py#Scientific.compute) must still surface
+    the OVERRIDES edge that lives on the method."""
+    seeds = {"sci.py#Scientific"}
+    strategies = select_traversal_strategies(
+        "which methods are overridden in Scientific", seeds
+    )
+    nodes = execute_traversals_from_seeds(graph_with_modules, seeds, strategies)
+    assert "calc.py#Calculator.compute" in cids(nodes)
+
+
+def test_module_seed_structure_query_unaffected(graph_with_modules):
+    """The anchor expansion must not make a seed's own DEFINES children
+    disappear from a 'structure' query's results — those children ARE
+    the expected answer for 'what does calc.py define'."""
+    seeds = {"calc.py"}
+    strategies = select_traversal_strategies("what classes are defined in calc.py", seeds)
+    nodes = execute_traversals_from_seeds(graph_with_modules, seeds, strategies)
+    assert "calc.py#Calculator" in cids(nodes)
