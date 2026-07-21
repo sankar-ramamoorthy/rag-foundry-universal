@@ -100,7 +100,7 @@ related:
 ## Phase 5 — Enterprise product (5–8 weeks)
 *Theme: something a team can buy and log into.*
 
-- [ ] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (deploy part)]] Helm/K8s deployment
+- [ ] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (deploy part)]] Helm/K8s deployment + reproducible builds (issue #41: bake each service's own `uv` env into the image at build time instead of re-resolving at container start; fix the malformed compose healthchecks)
 - [ ] [[05-Enterprise-Platform-Plan#WP-E3 — Identity & multi-tenancy|WP-E3]] OIDC + teams + repo grants + audit log
 - [ ] [[05-Enterprise-Platform-Plan#WP-E4 — Private git-host integration|WP-E4]] Private repos, then GitHub App + PR comments *(the vision-doc killer feature)*
 - [ ] [[05-Enterprise-Platform-Plan#WP-E6 — Product web UI (replace Gradio)|WP-E6]] React web UI with streaming + graph explorer
@@ -133,5 +133,5 @@ graph LR
 > 1. ~~Finish the four remaining Phase 2.5 smoke-test items~~ — done, issue #48 closed.
 > 2. Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision.
 > 3. Only then resume Phase 3/4 work.
-> 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start) remains open — optional, unblocked but not gating.
+> 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start, plus the malformed compose healthchecks) stays open but is **deliberately deferred to Phase 5's `WP-E2` deploy part** (see below) — it's the "reproducible builds" work the WP already scopes, not urgent now that #55/#57 removed the multi-GB CUDA cost from every recreate.
 
