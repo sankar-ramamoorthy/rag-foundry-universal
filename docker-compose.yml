@@ -86,12 +86,12 @@ services:
     ports:
       - "8003:8000"
     volumes:
-      - ./llm_service:/app/src
+      - ./llm_service/src:/app/llm_service/src
       - ./shared:/app/shared
     env_file:
       - ./.env
     environment:
-      PYTHONPATH: /app:/app/src
+      PYTHONPATH: /app:/app/llm_service
     healthcheck:
       test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8003/health').status_code==200 else exit(1)"]
       interval: 5s
@@ -111,12 +111,12 @@ services:
     ports:
       - "8004:8000"
     volumes:
-      - ./rag_orchestrator:/app/src
+      - ./rag_orchestrator/src:/app/rag_orchestrator/src
       - ./shared:/app/shared
     env_file:
       - ./.env
     environment:
-      PYTHONPATH: /app:/app/src
+      PYTHONPATH: /app:/app/rag_orchestrator
     networks:
       - ragnet
     depends_on:
