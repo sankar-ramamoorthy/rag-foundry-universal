@@ -12,4 +12,16 @@ dependencies = [
   "openai",
   "pydantic-settings>=2.12.0",
   "requests>=2.32.5",
+  "torch",
 ]
+
+# sentence-transformers pulls in torch transitively; without this override uv
+# resolves the default CUDA-enabled wheel (~2GB of nvidia-* packages) even
+# though nothing here runs on a GPU host. See issue #55.
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
