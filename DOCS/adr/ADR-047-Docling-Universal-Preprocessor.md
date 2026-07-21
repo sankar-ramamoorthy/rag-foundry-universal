@@ -59,14 +59,23 @@ Docling → Markdown text
 
 ### CPU-only operation
 
-Docling is installed with CPU-only PyTorch to avoid CUDA dependencies:
+Docling is installed with CPU-only PyTorch to avoid CUDA dependencies. This is
+suitable for development laptops and CPU-only Docker environments — GPU
+acceleration is not required and not configured.
 
-```
-pip install docling --extra-index-url https://download.pytorch.org/whl/cpu
-```
-
-This is suitable for development laptops and CPU-only Docker environments.
-GPU acceleration is not required and not configured.
+> [!warning] Historical gap (fixed in issue #57)
+> The `--extra-index-url https://download.pytorch.org/whl/cpu` flag on the
+> Dockerfile's build-time `RUN uv sync` only ever applied to the **root**
+> project's venv — which `ingestion_service`'s `CMD` (`uv run --directory
+> /app/ingestion_service ...`) never uses. The service's own
+> `pyproject.toml`/`uv.lock` had no CPU-only constraint at all, so the
+> *actual* running container was silently resolving the CUDA-enabled `torch`
+> wheel (~2GB of `nvidia-*`/`triton` packages) on every container recreate,
+> contradicting this section. Fixed by declaring an explicit
+> `[tool.uv.sources]`/`[[tool.uv.index]]` override for `torch` directly in
+> `ingestion_service/pyproject.toml` (scoped to non-macOS platforms, since
+> the existing darwin-specific torch pins there are unaffected either way) — see issue #57
+> and its sibling fix for `rag_orchestrator`, issue #55.
 
 ---
 

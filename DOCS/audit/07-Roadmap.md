@@ -62,7 +62,7 @@ related:
   - [x] Model-alias switching (default vs. explicit `ollama/...`, forced fallback via `model=smart`) — verified correct
   - [x] Gradio UI visual pass (labels, model dropdown, model-used line) — confirmed via screenshot
 
-**Exit criteria met.** Also surfaced and filed issue #52 (Dockerfile `CMD` ignores the dev bind-mount, so `restart` never picks up code edits — only a rebuild does; likely compounds issue #41's runtime torch re-download).
+**Exit criteria met.** Also surfaced and filed issue #52 (Dockerfile `CMD` ignores the dev bind-mount, so `restart` never picks up code edits — only a rebuild does; closed 2026-07-20, PR #54) and, while verifying that fix live, issue #41 (each of `ingestion_service`/`llm_service`/`rag_orchestrator` resolves its own uv environment fresh at every container start instead of baking it into the image — still open). Investigating #41 surfaced two further, independently-closable bugs: issue #55 (`rag_orchestrator` resolving the CUDA-enabled `torch` build instead of CPU-only — closed 2026-07-21, PR #56) and issue #57 (the same latent gap in `ingestion_service`, plus a `torchvision` ABI mismatch found while fixing it — closed 2026-07-21).
 
 ## Phase 2.75 — RAG quality baseline (empirical, precedes any Phase 4 reranker work)
 *Theme: prove the system retrieves the right evidence and answers well before changing anything else.*
@@ -133,5 +133,5 @@ graph LR
 > 1. ~~Finish the four remaining Phase 2.5 smoke-test items~~ — done, issue #48 closed.
 > 2. Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision.
 > 3. Only then resume Phase 3/4 work.
-> 4. Optional, unblocked but not gating: issue #52 (dev bind-mount ignored by `CMD`) is worth fixing soon since it slows down any further iteration on this codebase.
+> 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start) remains open — optional, unblocked but not gating.
 

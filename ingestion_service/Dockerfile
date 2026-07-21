@@ -27,12 +27,17 @@ RUN apt-get update && \
         libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
-# IS2: Install Python dependencies with CPU-only PyTorch
+# IS2: Install Python dependencies
 # --no-dev excludes ruff/pre-commit/pyright (dev tools, not needed in image)
-# --extra-index-url ensures torch installs CPU variant
+# Note: this syncs the *root* project (repo-root pyproject.toml/uv.lock) into
+# /app/.venv, which the actual server (see CMD below) never uses — it runs
+# via `uv run --directory /app/ingestion_service`, resolving that service's
+# own pyproject.toml/uv.lock into a separate env at container start. The
+# CPU-only torch pin lives there now (see issue #57); this step is otherwise
+# unrelated to what actually ships/runs. Left as-is here (see issue #41).
 ENV UV_HTTP_TIMEOUT=120
 ENV PATH="/app/.venv/bin:$PATH"
-RUN uv sync --no-dev --extra-index-url https://download.pytorch.org/whl/cpu
+RUN uv sync --no-dev
 
 # Pre-download Docling models at build time
 # Avoids slow first-run download when a document is first ingested
