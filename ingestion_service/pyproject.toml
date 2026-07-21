@@ -34,6 +34,7 @@ dependencies = [
     "torch>=2.0.0; sys_platform != 'darwin'",
     "torch>=2.0.0; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "torch==2.2.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "torchvision; sys_platform != 'darwin'",
     "torchvision==0.17.2; sys_platform == 'darwin' and platform_machine == 'x86_64'",
 
     "markitdown[all]>=0.1.0",
@@ -52,3 +53,23 @@ dev = [
     "pyright>=1.1.407",
     "ruff>=0.14.10",
 ]
+
+# Without this, uv resolves the default CUDA-enabled torch wheel on Linux
+# (~2GB of nvidia-*/triton packages) even though the container never runs on
+# a GPU host. torchvision must be pinned to the same index — mixing a
+# CPU-only torch with a PyPI-default torchvision breaks at import time
+# (ABI mismatch: "operator torchvision::nms does not exist"). Scoped to
+# non-darwin only so the existing macOS pins above are untouched.
+# See issue #57 (mirrors the rag_orchestrator fix from #55).
+[tool.uv.sources]
+torch = [
+    { index = "pytorch-cpu", marker = "sys_platform != 'darwin'" },
+]
+torchvision = [
+    { index = "pytorch-cpu", marker = "sys_platform != 'darwin'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
