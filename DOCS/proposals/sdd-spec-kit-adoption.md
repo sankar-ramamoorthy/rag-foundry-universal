@@ -202,6 +202,7 @@ The three open questions above are resolved as follows:
 
 > [!note] Status
 > Conceptually approved (2026-08-26): install Spec Kit, draft the constitution,
-> stop before generating SPEC 001/Plan/Tasks pending explicit go-ahead. As of
-> this writing nothing has been executed yet — no Spec Kit files exist, no
-> constitution has been written, and WP-Q0/issue #49 has not been started.
+> stop before generating SPEC 001/Plan/Tasks pending explicit go-ahead. Tracked
+> as issue [#60](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/60).
+> WP-Q0/issue #49 itself has not been started — SPEC 001 for it is follow-up
+> work after the constitution lands, not part of issue #60's scope.
