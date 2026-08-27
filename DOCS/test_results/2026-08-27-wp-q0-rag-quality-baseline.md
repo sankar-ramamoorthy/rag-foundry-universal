@@ -538,8 +538,24 @@ condition (T004/T005 note, relevant to Q8) was assessed and deliberately
 **Checkpoint:** every failure (all one of it) is classified, the aggregate
 metrics are computed, an explicit go/no-go verdict is recorded with its
 supporting breakdown (spec.md SC-005, SC-006), and every correctness bug
-found has a filed issue (spec.md FR-008). Remaining: Phase 7 polish
-(T025-T028 — review against Success Criteria, commit, post the verdict to
-issue #49, update the roadmap). Stopping here for review before closing out.
+found has a filed issue (spec.md FR-008).
+
+---
+
+## Phase 7: Success Criteria Review (T025)
+
+| Criterion | Status | Where |
+|---|---|---|
+| **SC-001** — curated corpus (repo + 2-3 docs) exists, referenced in evidence | ✅ | "Evaluation Corpus (T004-T005)" — `repo_id` + 3 document `ingestion_id`s |
+| **SC-002** — 8-12 known-answer questions, exact expected sources, code + document mix | ✅ | "Known-Answer Question Set (T006)" — 10 questions (5 code / 5 document), each with `expected_canonical_id` or `expected_passage` |
+| **SC-003** — 100% of questions have a complete diagnostic record (all six FR-003 fields) | ✅ | "Scenario 2 Full Pass (T008-T013)" Diagnostic Record — 10/10 rows, all six fields (`source_present_in_index`, `seed_rank`, `expanded_rank`, `duplicate_count`, `repo_leakage`, `end_to_end_answer_quality`) |
+| **SC-004** — 100% of failed questions have a clean-context score | ✅ | "Scenario 3" — Q7 (the only failure) has a complete Clean-Context Score; explicitly confirmed no clean-context call was made for the 9 passing questions (T017) |
+| **SC-005** — 100% of failures classified before any chunking/retrieval/generation change is proposed | ✅ | "Scenario 4" T019 — Q7 classified `top-3-but-poor-answer`; no chunking/retrieval/generation change was proposed or made anywhere in this evaluation |
+| **SC-006** — explicit go/no-go verdict with failure-count breakdown, before Phase 3/4 resumes | ✅ | T023 — **NO-GO** verdict with 1/10 failure breakdown and next-lever identification |
+
+All six Success Criteria are met. **No production code, configuration, or
+architecture was changed anywhere in this evaluation** (plan.md's Required
+Non-Regressions) — every finding that pointed at a real defect was filed as
+a separate GitHub issue instead (#64, #65) rather than fixed in-line.
 
 ---
