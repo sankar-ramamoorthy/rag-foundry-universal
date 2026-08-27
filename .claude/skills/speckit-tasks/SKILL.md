@@ -142,7 +142,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+**Tests are REQUIRED by this project's constitution** (`.specify/memory/constitution.md` Principle VIII, if present): generate at least skeletal test tasks for each user story, before or immediately alongside its first implementation task — not written-first/red-green by default, and not conditional on the spec explicitly requesting them. Quality-sensitive retrieval/ranking/generation work additionally needs evaluation-evidence tasks per Principles III/VIII. If no constitution is present, fall back to: only generate test tasks if explicitly requested in the feature specification or if the user requests a TDD approach.
 
 ### Checklist Format (REQUIRED)
 
