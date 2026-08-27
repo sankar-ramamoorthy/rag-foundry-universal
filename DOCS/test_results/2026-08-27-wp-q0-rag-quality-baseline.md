@@ -348,3 +348,71 @@ superficially similar "p95 latency" phrasing but different values for
 different things. Queued for Scenario 3's clean-context test (T014-T017).
 
 ---
+
+## Scenario 3: Clean-Context Test (T014-T017, combined)
+
+Only one question failed end-to-end (Q7), so T014's dry run and the full
+T015-T017 pass are the same single case, recorded together below rather
+than as two separate passes.
+
+**Procedure (research.md Decision 4):** hand-picked the 2 known-correct
+chunks — `README.md#rag_foundry_universal.key_features` and
+`README.md#rag_foundry_universal.performance_phase_1_baseline`, the exact
+`vector_chunks.chunk_text` for each, verbatim, no retrieval involved — joined
+as `context`, and called the existing `llm_service` `POST /generate` with
+`{context, query}`: the same endpoint and shape production uses, so its
+response provenance (`model`, `model_alias`, `provider`, `prompt_template`)
+is the real one, not bypassed. Called twice (cold, then warm with the
+identical payload) to get both latency figures.
+
+### Clean-Context Score — Q7
+
+| Field | Value |
+|---|---|
+| `grounding` | **pass** — both runs assert only what's in the supplied context, no fabrication |
+| `citation` | **pass** — both runs explicitly quote and attribute to "Key Features" and "Performance (Phase 1 baseline)", by name |
+| `omission` | **pass** — both runs report both the index type (HNSW) and the exact figure (61.7 ms), and correctly note the Key Features section's "≈62 ms" is a rounding of the Performance table's precise 61.7 ms rather than treating them as two different numbers |
+| `latency_cold` | 33.29 s |
+| `latency_warm` | 12.88 s |
+| `model` / `model_alias` / `provider` | `ollama/Qwen3:4b` / `default` / `ollama` |
+| `prompt_template` | `rag_answer.v1` |
+
+**Answer (warm run):** *"The vector store uses an HNSW (cosine) ANN index for
+similarity search... The measured p95 latency in the Phase 1 benchmark is
+61.7 ms, as confirmed by the performance table..."* — fully correct on both
+the index type and the latency figure, in both runs.
+
+### What this confirms
+
+With the distractor chunk (04-Scalability-Plan.md's WP-S4 capacity-table row,
+a *different* p95 figure describing a different, hypothetical scaling
+scenario) removed and only the two correct chunks supplied, the same model
+answers **completely correctly, twice**. This confirms the Scenario 2
+classification precisely: Q7 is **not** a fundamental generation-capability
+problem (the model can ground and cite correctly when given clean evidence)
+and **not** a retrieval-rank problem (the correct chunks were already top-3
+in production). It's specifically a **multi-document context-composition /
+distractor problem** — production's context assembly presented two chunks
+with superficially similar "p95 latency" phrasing but different referents
+(actual measured baseline vs. a scaling-plan's before/after projection table)
+side by side, and the model conflated them. Confirms the methodology's
+`top-3-but-poor-answer` bucket's guidance: the next lever is prompting or
+context assembly (e.g., surfacing which document/section each chunk came
+from more saliently, or a stricter same-topic filter), not a reranker —
+reranking cannot fix distractor confusion when the correct chunk is already
+top-3.
+
+**T017 completeness check:** confirmed — the clean-context test above was
+run for exactly one question (Q7). No `POST /generate` clean-context call
+was made for any of Q1, Q2, Q3, Q4, Q5, Q6, Q8, Q9, or Q10 — all nine passed
+`end_to_end_answer_quality` in Scenario 2, so per spec.md FR-004 there is
+nothing to isolate for them. No production code or configuration was
+changed to run this test — `/generate` was called exactly as production
+calls it, with only the `context` argument substituted.
+
+**Checkpoint:** Scenario 3 complete — the corpus's one failure has a
+recorded Clean-Context Score (spec.md SC-004); no passing question was
+tested (there were none to skip here, only the one failure). Stopping here
+per plan, before Scenario 4's classification pass and verdict.
+
+---
