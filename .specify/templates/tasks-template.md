@@ -7,11 +7,34 @@ description: "Task list template for feature implementation"
 
 **Input**: Design documents from `/specs/[###-feature-name]/`
 
+**Tracking Issue**: #[ISSUE_NUMBER]
+**Spec**: `specs/[###-feature-name]/spec.md`
+**Plan**: `specs/[###-feature-name]/plan.md`
+
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: Tests are REQUIRED by Constitution Principle VIII. Each implementation
+slice MUST include at least skeletal behavioral coverage before or immediately
+alongside the first implementation spike. Quality-sensitive retrieval, ranking,
+or generation work MUST additionally include the evaluation evidence required
+by Principles III and VIII.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+
+## Constitution Compliance
+
+Before generating implementation tasks, verify that the plan has passed its
+Constitution Check.
+
+If any task would:
+- violate a governing ADR,
+- cross a service/database ownership boundary,
+- alter canonical identity semantics,
+- change embedding-model/index compatibility,
+- change retrieval/generation architecture without required evidence, or
+- bypass issue/PR/test requirements,
+
+STOP and surface the conflict rather than generating that task.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -21,10 +44,11 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+Use the actual repository structure identified in `plan.md`'s Source Code
+section. Do not invent generic `src/`, `backend/`, or `frontend/` layouts —
+this is a multi-service repository (`ingestion_service`, `vector_store_service`,
+`llm_service`, `rag_orchestrator`, `shared/`, `gradio`); preserve established
+service boundaries and paths per Constitution Principle II.
 
 <!--
   ============================================================================
@@ -35,6 +59,11 @@ description: "Task list template for feature implementation"
   - Feature requirements from plan.md
   - Entities from data-model.md
   - Endpoints from contracts/
+  - Constitution requirements applicable to the feature
+  - Explicit acceptance criteria from spec.md
+  - Evaluation evidence requirements where applicable (spec.md's Evaluation
+    Evidence section, plan.md's Evaluation Plan)
+  - ADR references from spec.md/plan.md without duplicating ADR content
 
   Tasks MUST be organized by user story so each story can be:
   - Implemented independently
@@ -80,9 +109,10 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 1 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 1
 
-> **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
+> **NOTE:** Create at least skeletal behavioral tests before or immediately
+> alongside the first implementation spike, per Constitution Principle VIII.
 
 - [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
@@ -106,7 +136,7 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 2 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 2
 
 - [ ] T018 [P] [US2] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T019 [P] [US2] Integration test for [user journey] in tests/integration/test_[name].py
@@ -128,7 +158,7 @@ Examples of foundational tasks (adjust based on your project):
 
 **Independent Test**: [How to verify this story works on its own]
 
-### Tests for User Story 3 (OPTIONAL - only if tests requested) ⚠️
+### Tests for User Story 3
 
 - [ ] T024 [P] [US3] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T025 [P] [US3] Integration test for [user journey] in tests/integration/test_[name].py
@@ -144,6 +174,24 @@ Examples of foundational tasks (adjust based on your project):
 ---
 
 [Add more user story phases as needed, following the same pattern]
+
+---
+
+## Evaluation & Evidence
+
+**Required when**: The feature affects retrieval, ranking, generation,
+chunking, embeddings, prompting, or context assembly (Constitution
+Principles III and VIII). Omit this phase entirely if the feature doesn't
+touch any of those.
+
+- [ ] TXXX Run the defined baseline evaluation
+- [ ] TXXX Run the changed-system evaluation
+- [ ] TXXX Record measurements in [specified evidence location]
+- [ ] TXXX Compare results against spec.md's decision criteria
+- [ ] TXXX Record the resulting go/no-go/follow-up decision
+
+**Checkpoint**: No quality-sensitive architecture change is considered
+justified until the required evaluation evidence is recorded.
 
 ---
 
@@ -179,7 +227,8 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Within Each User Story
 
-- Tests (if included) MUST be written and FAIL before implementation
+- Tests MUST exist before or immediately alongside the first implementation
+  spike (Constitution Principle VIII) — not necessarily written-first/red-green
 - Models before services
 - Services before endpoints
 - Core implementation before integration
@@ -199,7 +248,7 @@ Examples of foundational tasks (adjust based on your project):
 ## Parallel Example: User Story 1
 
 ```bash
-# Launch all tests for User Story 1 together (if tests requested):
+# Launch all tests for User Story 1 together:
 Task: "Contract test for [endpoint] in tests/contract/test_[name].py"
 Task: "Integration test for [user journey] in tests/integration/test_[name].py"
 
@@ -246,7 +295,7 @@ With multiple developers:
 - [P] tasks = different files, no dependencies
 - [Story] label maps task to specific user story for traceability
 - Each user story should be independently completable and testable
-- Verify tests fail before implementing
-- Commit after each task or logical group
+- Commit coherent, reviewable logical units; all changes ultimately land
+  through a pull request per the constitution
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence

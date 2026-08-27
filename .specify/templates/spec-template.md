@@ -6,21 +6,33 @@
 
 **Status**: Draft
 
+**Tracking Issue**: #[ISSUE_NUMBER]
+
+**Roadmap Context**: [Phase / WP if applicable]
+
 **Input**: User description: "$ARGUMENTS"
 
-## User Scenarios & Testing *(mandatory)*
+## Scenarios & Testing *(mandatory)*
 
 <!--
-  IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
+  IMPORTANT: Scenarios should be PRIORITIZED and ordered by importance.
+  Each scenario must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
   you should still have a viable MVP (Minimum Viable Product) that delivers value.
 
-  Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
-  Think of each story as a standalone slice of functionality that can be:
+  Not every feature has a conventional end user. A scenario may be:
+  - a user journey, for product-facing functionality
+  - an operator/developer scenario, for infrastructure or tooling work
+  - an evaluation scenario, for quality/evaluation work (e.g. "establish a
+    baseline," "distinguish failure classes," "produce an evidence-backed
+    decision") — do NOT force a fake "As a user, I want..." framing onto work
+    that has no end user; describe what is being measured or decided instead.
+
+  Assign priorities (P1, P2, P3, etc.) to each scenario, where P1 is the most critical.
+  Think of each scenario as a standalone slice of functionality that can be:
   - Developed independently
   - Tested independently
   - Deployed independently
-  - Demonstrated to users independently
+  - Demonstrated (to users, or via evaluation evidence) independently
 -->
 
 ### User Story 1 - [Brief Title] (Priority: P1)
@@ -78,6 +90,33 @@
 - What happens when [boundary condition]?
 - How does system handle [error scenario]?
 
+## Non-Goals
+
+<!--
+  ACTION REQUIRED: Explicitly list what this feature does NOT do or decide.
+  This matters most for investigative/evaluation work, where it's tempting to
+  presuppose an outcome (e.g. "add a reranker") that the feature is actually
+  meant to determine. Remove only if genuinely nothing is worth excluding.
+-->
+
+- [Explicitly excluded behavior or work]
+
+## Governing References
+
+<!--
+  List only documents that constrain this feature.
+  Reference them; do not restate their rules here (Constitution Principle VII).
+  If this spec appears to conflict with an ADR, surface the conflict explicitly
+  rather than resolving it silently in either direction.
+-->
+
+- Constitution: `.specify/memory/constitution.md`
+- ADRs: [applicable ADR references]
+- Audit/roadmap: [applicable references]
+- Tracking issue: #[ISSUE_NUMBER]
+
+**Known conflicts**: None / [describe explicitly]
+
 ## Requirements *(mandatory)*
 
 <!--
@@ -116,6 +155,28 @@
 - **SC-002**: [Measurable metric, e.g., "System handles 1000 concurrent users without degradation"]
 - **SC-003**: [User satisfaction metric, e.g., "90% of users successfully complete primary task on first attempt"]
 - **SC-004**: [Business metric, e.g., "Reduce support tickets related to [X] by 50%"]
+
+## Evaluation Evidence
+
+<!--
+  MANDATORY for quality-sensitive retrieval, ranking, generation, chunking,
+  embedding, or prompt/context-assembly work under Constitution Principles III
+  and VIII. Remove only when genuinely not applicable and state why.
+-->
+
+**Evaluation Required**: Yes / No
+
+**Baseline**:
+- [Existing behavior or metric being compared]
+
+**Metrics**:
+- [Metric and how it is measured]
+
+**Decision Criteria**:
+- [What result justifies or rejects a proposed follow-up]
+
+**Evidence Artifact**:
+- [Where results will be recorded]
 
 ## Assumptions
 
