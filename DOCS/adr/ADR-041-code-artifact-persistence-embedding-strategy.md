@@ -1,3 +1,11 @@
+---
+title: "ADR-041: Code Artifact Persistence Strategy — Embedding Text and Handling Relationships"
+date: 2026-02-16
+type: adr
+status: accepted
+tags: [adr, persistence, embedding]
+---
+
 ## ADR-041-code-artifact-persistence-embedding-strategy.md
 
 ### ADR-041: **Document Node and Relationship Persistence - Embedding Text and Managing Code Artifacts**

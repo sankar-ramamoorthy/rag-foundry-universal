@@ -1,3 +1,17 @@
+---
+title: "ADR-048: Cross-Artifact Linking — Markdown Documentation to Code Symbols"
+date: 2026-02-28
+type: adr
+status: accepted
+tags: [adr, cross-linking, documents]
+related:
+  - "[[ADR-030-unified-artifact-graph]]"
+  - "[[ADR-031-canonical-identity-model]]"
+  - "[[ADR-043-MarkdownExtractor]]"
+  - "[[ADR-046-Document Graph Retrieval for Uploaded Files]]"
+  - "[[ADR-047-Docling-Universal-Preprocessor]]"
+---
+
 # ADR-048: Cross-Artifact Linking — Markdown Documentation to Code Symbols
 
 **Status:** Accepted

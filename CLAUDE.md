@@ -59,21 +59,21 @@ Integration tests assume migrations are already applied against the test DB (`do
 
 ## Core data model — read before touching ingestion or the graph
 
-Everything (code entities, Markdown sections, documents) lives in **two tables** — do not add per-artifact-type tables:
-- `DocumentNode` (`shared/models/document_node.py`) — one row per artifact, keyed by `document_id` (internal UUID PK) but identified globally by the unique pair **`(repo_id, canonical_id)`**.
-- `DocumentRelationship` — edges between nodes (`from_document_id`, `to_document_id`, `relation_type`, `relationship_metadata`).
+Everything (code entities, Markdown sections, documents) lives in **two tables** — do not add per-artifact-type tables: `DocumentNode` (`shared/models/document_node.py`, keyed by `(repo_id, canonical_id)`) and `DocumentRelationship` (typed edges).
 
-Key invariants (see `DOCS/adr/` for full ADRs — consult the relevant ADR before changing any of these):
+Before changing ingestion/identity/embedding/persistence behavior, read the relevant ADR — do not assume the list below is complete or a substitute:
 
-- **Canonical IDs (ADR-031):** file artifacts = `<relative_path>`; symbol artifacts = `<relative_path>#<Class.method>` (dot-separated symbol path). Never fold params, line numbers, AST node IDs, hashes, timestamps, or import-resolution results into `canonical_id`. Renaming a symbol is *expected* to change its ID — there is no lineage tracking.
-- **Repo scoping (ADR-030):** every artifact/query/rebuild is scoped by `repo_id`. Re-ingesting a repo deletes all its rows and fully reprocesses; the resulting IDs/relationships must be byte-identical across runs, or ingestion is broken. No LLM calls anywhere in the ingestion path.
-- **Call resolution (ADR-032):** `CALL` artifacts carry a `parent_id` (enclosing function/method). Resolution order is local symbol table → file imports → global symbol index → else `EXTERNAL`. `DEFINES` edges are explicit (`MODULE→CLASS`, `MODULE→FUNCTION`, `CLASS→METHOD`). Symbol tables are in-memory only, not persisted.
-- **Pipeline construction (ADR-038):** all ingestion entrypoints must build the pipeline via `ingestion_service/src/core/pipeline_factory.py::build_pipeline(...)` — never construct `IngestionPipeline`/embedder/vector_store directly inside API modules. Keep the `API → Core → Infrastructure` layering.
-- **Embedding scope (ADR-039/040):** the artifact *is* the embedding unit (1:1 graph-node-to-embedding) — MODULE embeds the full file, CLASS/FUNCTION/METHOD embed the full def block; never embed CALL nodes or synthetic/empty-text artifacts. Don't introduce sub-artifact chunking for code without revisiting ADR-040. Every embeddable artifact needs a populated `"text"` field from `RepoGraphBuilder` (via `ast.get_source_segment`/lineno slicing).
-- **Persistence shape (ADR-041):** full artifact text lives directly on `DocumentNode.text` — not a separate text table. Don't refactor to normalized per-snippet storage without a new ADR.
-- **Codebase vs. document ingestion are not symmetric (ADR-042):** `codebase_ingest.py` creates `DocumentNode`s via `CodebaseGraphPersistence.upsert_nodes()` using the canonical ID as `document_id` — the ingestion pipeline must reuse that same `document_id` for chunk/embed/persist and must never let `pipeline._persist()` mint a second `DocumentNode` for the same artifact (this duplicated nodes 1:2 for a while; the fix is the invariant). `ingest.py` (file upload) is a different flow: one `DocumentNode` per uploaded file.
-- **Hybrid retrieval flow (ADR-045):** vector search filtered to `doc_type="code"` → seed `canonical_id`s → deterministic keyword-based `select_traversal_strategies(query)` (no LLM router) → graph expansion via an **in-memory per-repo graph cache** (`get_cached_graph(repo_id)` — dropped on service restart, no Redis/persistence) → map back to `document_id`s → existing chunk/`RetrievalPlan` pipeline.
-- **Docs-to-code linking (ADR-048):** `DOCUMENTS` relation type links `MARKDOWN_SECTION → CLASS|FUNCTION|METHOD|MODULE`, direction is doc→code only, matched by exact normalized (lowercased/stripped) name via the symbol table — no fuzzy/LLM matching, silent skip on no match, ambiguous names resolve to first match by design. Runs as `_link_docs_to_code()`, last step inside `RepoGraphBuilder.build()`. This only happens for repo ingestion — uploaded documents (`ingest.py`) never get `DOCUMENTS` edges; that's by design, not a gap.
+- **Canonical IDs** — `DOCS/adr/ADR-031-canonical-identity-model.md`
+- **Repo scoping & rebuild determinism** — `DOCS/adr/ADR-030-unified-artifact-graph.md`
+- **Call resolution & DEFINES edges** — `DOCS/adr/ADR-032-symbol-resolution-call-graph.md`
+- **Pipeline construction (must go through `pipeline_factory.py`)** — `DOCS/adr/ADR-038-pipeline-construction-ownership.md`
+- **Embedding unit = artifact, not sub-chunk** — `DOCS/adr/ADR-039-artifact-level-embedding-strategy.md`, `ADR-040-code-intelligence-embedding-strategy.md`
+- **Text persisted on `DocumentNode.text` directly** — `DOCS/adr/ADR-041-code-artifact-persistence-embedding-strategy.md`
+- **Codebase vs. document ingestion `document_id` ownership (not symmetric)** — `DOCS/adr/ADR-042-double-creation-of-documentnodes-in-codebase-ingestion.md`
+- **Hybrid retrieval flow (vector seed → graph expansion, no LLM router)** — `DOCS/adr/ADR-045-hybrid-vector-graph-rag.md`
+- **Docs→code linking (`DOCUMENTS` edges, doc→code only)** — `DOCS/adr/ADR-048-Cross-Artifact-Linking.md`
+
+See `DOCS/index.md` for the full documentation map.
 
 ## Coding workflow expectations
 
@@ -81,7 +81,13 @@ Per `docs-archive/Rules-to-help-me-coding.md`: this repo follows **Test-Guided D
 
 ## Documentation map
 
-- `DOCS/adr/` — architecture decision records (ADR-030 onward are current; read the relevant one before changing graph/identity/embedding/persistence behavior).
+Start at `DOCS/index.md` for the full map. Summary:
+
+- `DOCS/adr/` — architecture decision records; check each ADR's status before relying on it, and read the relevant one before changing graph/identity/embedding/persistence behavior.
+- `DOCS/audit/` — codebase audit findings, scalability/platform/LLM-provider plans, and the roadmap; start at `DOCS/audit/00-Audit-Overview.md`.
 - `DOCS/architecture/` — diagrams and deep-dives (e.g. codebase ingestion flow, repo query ASCII flow, extraction hierarchy model).
+- `DOCS/proposals/` — process/tooling proposals under discussion (not yet binding).
+- `DOCS/test_results/` — benchmark/verification evidence tied to specific audit findings.
+- `DOCS/notes/` — ad hoc working notes.
 - `docs-archive/` — superseded design docs from earlier project phases (`rag-foundry`, `docgraph`) — historical context only, not current source of truth.
 - `status/` — dated snapshots of project status; useful for recent history but not authoritative for current behavior (check code/ADRs first).

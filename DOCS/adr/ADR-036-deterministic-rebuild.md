@@ -1,3 +1,10 @@
+---
+title: "ADR-036: Deterministic Rebuild Logic"
+type: adr
+status: "Proposed / Accepted"
+tags: [adr, ingestion, determinism]
+---
+
 # ADR-036: Deterministic Rebuild Logic
 
 ## Status

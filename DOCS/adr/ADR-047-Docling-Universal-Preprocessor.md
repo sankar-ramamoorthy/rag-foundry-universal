@@ -1,3 +1,15 @@
+---
+title: "ADR-047: Docling as Universal Document Pre-processor"
+date: 2026-02-27
+type: adr
+status: accepted
+tags: [adr, docling, ingestion]
+related:
+  - "[[ADR-030-unified-artifact-graph]]"
+  - "[[ADR-043-MarkdownExtractor]]"
+  - "[[ADR-046-Document Graph Retrieval for Uploaded Files]]"
+---
+
 # ADR-047: Docling as Universal Document Pre-processor
 
 **Status:** Accepted

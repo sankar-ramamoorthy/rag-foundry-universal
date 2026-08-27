@@ -1,3 +1,13 @@
+---
+title: "ADR-031: Canonical Identity Model for Artifacts"
+date: 2026-02-12
+type: adr
+status: accepted
+tags: [adr, identity, graph]
+related:
+  - "[[ADR-030-unified-artifact-graph]]"
+---
+
 ## docs/adr/ADR-031-canonical-identity-model.md
 
 

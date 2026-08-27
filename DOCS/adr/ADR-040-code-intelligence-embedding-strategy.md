@@ -1,3 +1,14 @@
+---
+title: "ADR-040: Phased Code Intelligence Architecture — Artifact-Level Embedding with Deferred Hybrid Chunk Layer"
+date: 2026-02-15
+type: adr
+status: "Accepted (Phase 1), Hybrid Architecture Deferred"
+tags: [adr, embedding, architecture]
+related:
+  - "[[ADR-038-pipeline-construction-ownership]]"
+  - "[[ADR-039-artifact-level-embedding-strategy]]"
+---
+
 * **ADR-038** – Pipeline construction ownership
 * **ADR-039** – Artifact-level embedding strategy
 

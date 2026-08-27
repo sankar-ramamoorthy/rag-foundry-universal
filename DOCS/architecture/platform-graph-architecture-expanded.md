@@ -5,7 +5,7 @@
 ## Overview
 
 This document outlines the architectural changes for the **shared graph model** that will be promoted from the `ingestion_service` to the `shared/` layer. The primary goal of this change is to establish **graph schema ownership** within the shared platform layer, ensuring all services interact with a common data model, and laying the groundwork for advanced graph traversal, reasoning, and query features across multiple services.
-# DOCS\adr\ADR-044-graph-models-in-shared
+# DOCS/adr/ADR-044-graph-models-in-shared.md
 
 ---
 

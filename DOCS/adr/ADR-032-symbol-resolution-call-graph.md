@@ -1,3 +1,14 @@
+---
+title: "ADR-032: Layered Symbol Resolution & Deterministic Call Graph Model"
+date: 2026-02-13
+type: adr
+status: proposed
+tags: [adr, call-graph, symbol-resolution]
+related:
+  - "[[ADR-030-unified-artifact-graph]]"
+  - "[[ADR-031-canonical-identity-model]]"
+---
+
 ## DOCS\adr\ADR-032-symbol-resolution-call-graph.md
 
 # ADR-032 — Layered Symbol Resolution & Deterministic Call Graph Model

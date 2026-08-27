@@ -1,3 +1,10 @@
+---
+title: "ADR-034: Repository Ingestion Input Strategy"
+type: adr
+status: "Proposed / Accepted"
+tags: [adr, ingestion, input]
+---
+
 # ADR-034: Repository Ingestion Input Strategy
 
 ## Status

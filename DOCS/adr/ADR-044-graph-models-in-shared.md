@@ -1,9 +1,14 @@
 ---
+title: "ADR-044: Promote Document Graph ORM Models to Shared Platform Layer"
+date: 2026-02-17
+type: adr
+status: proposed
+tags: [adr, shared-layer, architecture]
+---
 
 # 📘 ADR-044 — Promote Graph ORM Models to Shared Platform Layer
-#  DOCS\architecture\platform-graph-architecture-expanded.md
-#  DOCS\adr\ADR-044-graph-models-in-shared
----
+#  DOCS/architecture/platform-graph-architecture-expanded.md
+#  DOCS/adr/ADR-044-graph-models-in-shared.md
 
 # ADR-044: Promote Document Graph ORM Models to Shared Platform Layer
 

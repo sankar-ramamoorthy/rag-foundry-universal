@@ -1,3 +1,13 @@
+---
+title: "ADR-039: Code Artifact Embedding Strategy for Repository Ingestion"
+date: 2026-02-15
+type: adr
+status: proposed
+tags: [adr, embedding, code]
+related:
+  - "[[ADR-038-pipeline-construction-ownership]]"
+---
+
 # 📘 ADR-039
 
 ## **ADR-039: Code Artifact Embedding Strategy for Repository Ingestion**

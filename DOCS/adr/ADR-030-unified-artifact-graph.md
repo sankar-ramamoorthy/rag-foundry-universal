@@ -1,3 +1,11 @@
+---
+title: "ADR-030: Adopt Unified Artifact Graph with Repository Isolation"
+date: 2026-02-12
+type: adr
+status: accepted
+tags: [adr, graph, architecture]
+---
+
 ## rag-foundry-coderag\DOCS\adr\ADR-030-unified-artifact-graph.md
 ---
 
