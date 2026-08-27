@@ -68,7 +68,11 @@ project (spec.md FR-005 — this is a hard gate, not a suggestion).
 
 ## 6. Produce the verdict
 
-Tally the Failure Classification categories. Apply the decision gate
+Tally the Failure Classification categories and compute Recall@5/Recall@20
+from the recorded ranks — by hand, or via a scratch aggregation script under
+`specs/001-rag-quality-baseline/scripts/` per plan.md's scratch-script
+allowance (deterministic arithmetic over already-recorded evidence only; no
+new eval framework). Apply the decision gate
 (plan.md's Evaluation Plan / spec.md's Evaluation Evidence):
 
 - Rank 8-20 dominant, not explained by chunking/generation defects →

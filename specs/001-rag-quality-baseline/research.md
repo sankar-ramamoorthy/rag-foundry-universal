@@ -50,18 +50,28 @@ step, rather than requiring cross-referencing multiple files.
 **Decision**: Ranks, leakage checks, and duplicate counts are recorded
 directly from `/v1/vectors/search` (or the orchestrator's retrieval path)
 responses per question, by manual inspection, per the methodology §2 "How to
-check" procedure. A short ad hoc script may be used to tally Recall@5/20
-percentages from the recorded per-question ranks, but it is not committed as
-part of any service package — it's a throwaway aid, not new eval
-infrastructure.
+check" procedure. A short scratch script MAY be used for deterministic
+aggregation/arithmetic over that already-recorded evidence — e.g. tallying
+Recall@5/20 percentages from the recorded per-question ranks — since manual
+percentage arithmetic carries real transcription/math-error risk and
+reproducibility matters more here than manual-only purity. If it materially
+improves reproducibility, commit it under
+`specs/001-rag-quality-baseline/scripts/`; if it's trivial and genuinely
+one-shot, leaving it uncommitted is also fine. What remains excluded is a
+reusable evaluation *framework* — a new service, database, API, or
+abstraction layer — not the act of automating arithmetic.
 
-**Rationale**: matches spec.md's Assumptions (manual/semi-manual evaluation,
-no new automated eval harness) and spec.md's Non-Goals (no new automated
-tooling beyond what the methodology already calls for).
+**Rationale**: matches spec.md's Assumptions (manual/semi-manual evaluation)
+and spec.md's Non-Goals (no new automated eval *tooling/harness*), while
+recognizing that a five-line aggregation script is not the same thing as
+building an evaluation subsystem.
 
 **Alternatives considered**:
 - Build an automated evaluation harness now — rejected; spec.md Non-Goals
   explicitly excludes this until evidence shows a recurring need for one.
+- Require all aggregation to be done by hand — rejected; this increases
+  transcription/math-error risk without protecting anything the constitution
+  actually cares about (no production dependency, no pipeline change).
 
 ## Decision 4: How the clean-context generation test is invoked
 

@@ -227,14 +227,26 @@ DOCS/test_results/       # new: this feature's evidence artifact (diagnostic
                           # table, clean-context scores, failure classification,
                           # final verdict) — the only durable output
 specs/001-rag-quality-baseline/   # this spec/plan/tasks tree
+specs/001-rag-quality-baseline/scripts/   # optional: scratch aggregation script (see below)
 ```
 
 No file under `ingestion_service/`, `vector_store_service/`, `rag_orchestrator/`,
 `llm_service/`, `shared/`, or `gradio/` is created or modified by this plan.
-Any ad hoc scratch script used to tally Recall@5/20 or duplicate counts from
-the recorded diagnostic rows is throwaway and is not committed as part of any
-service package (spec.md Assumptions: manual/semi-manual procedure, no new
-automated eval harness).
+
+**Scratch-script allowance**: Scratch scripts MAY be used for deterministic
+aggregation or arithmetic over already-recorded evaluation evidence (e.g.
+tallying Recall@5/20 percentages or duplicate counts from the Diagnostic
+Record rows). They MUST NOT become production dependencies, alter the RAG
+pipeline, or expand this spec into a reusable evaluation subsystem — no new
+service, framework, database, API, or abstraction layer. Manual arithmetic
+over recorded evidence carries real transcription/math-error risk, so
+automating the aggregation step itself is preferred over doing it by hand;
+what's excluded is building eval *infrastructure*, not automating arithmetic.
+If a script is used and materially improves reproducibility, commit it under
+`specs/001-rag-quality-baseline/scripts/` (colocated with this spec's
+artifacts, not any service's package) rather than leaving it disposable and
+unversioned; if it's trivial (a handful of lines) and genuinely one-shot,
+leaving it uncommitted is also acceptable.
 
 **Structure Decision**: Because spec.md's Non-Goals excludes any
 implementation change, the only durable repository artifact this feature
