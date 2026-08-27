@@ -1,6 +1,10 @@
 
 ms12_repo_delete.patch
 
+# Claude Code local machine state (never shared across clones)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
