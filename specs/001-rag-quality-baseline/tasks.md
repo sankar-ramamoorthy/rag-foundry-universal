@@ -86,7 +86,7 @@ drift; skipped deliberately, not by oversight.
 
 > **NOTE:** Skeletal verification before the full pass, per Constitution Principle VIII.
 
-- [ ] T003 [S1] Verify each corpus artifact is present in the index via `GET /v1/graph/repos/{repo_id}` / `GET /v1/graph/docs` (`ingestion_service`) before any question is drafted against it (spec.md Scenario 1, Acceptance Scenario 1)
+- [ ] T003 [S1] Verify each corpus artifact is present before any question is drafted against it (spec.md Scenario 1, Acceptance Scenario 1) — in two steps, since a metadata record is not proof a searchable vector exists: (a) metadata presence via `GET /v1/graph/repos/{repo_id}` / `GET /v1/graph/docs` (`ingestion_service`); (b) **vector/index presence** via `POST /v1/vectors/search-by-doc` (`vector_store_service`) with the artifact's `document_id`, confirming at least one chunk is returned — an empty result here is an ingestion defect even if (a) passed
 
 ### Implementation for Scenario 1
 
@@ -129,12 +129,12 @@ drift; skipped deliberately, not by oversight.
 
 ### Tests for Scenario 3
 
-- [ ] T014 [S3] Dry-run the clean-context procedure (research.md Decision 4: direct Ollama call, bypassing `/generate`) against one failed question before running it across all failures
+- [ ] T014 [S3] Dry-run the clean-context procedure (research.md Decision 4, revised: call the existing `llm_service` `POST /generate` endpoint, substituting hand-picked chunks for retrieved context — same generation path as production, not a direct Ollama call) against one failed question before running it across all failures
 
 ### Implementation for Scenario 3
 
-- [ ] T015 [P] [S3] For each question where `end_to_end_answer_quality = fail` (from T013), hand-pick the correct 2-4 chunks and call Ollama directly with only those chunks as context (research.md Decision 4) — parallelizable across different failed questions
-- [ ] T016 [S3] Record `grounding`, `citation`, `omission`, `latency_cold`, `latency_warm` per failed question in the evidence file (depends on T015)
+- [ ] T015 [P] [S3] For each question where `end_to_end_answer_quality = fail` (from T013), hand-pick the correct 2-4 chunks, join them as `context`, and call `llm_service`'s existing `POST /generate` with `{context, query}` — the same endpoint and shape production uses (research.md Decision 4). **Do not call Ollama directly** — that would change the generation path (prompt template, model routing, fallback) in addition to the context, confounding the retrieval-vs-generation isolation this scenario exists to do. Parallelizable across different failed questions.
+- [ ] T016 [S3] Record `grounding`, `citation`, `omission`, `latency_cold`, `latency_warm`, and the `model`/`model_alias`/`provider` fields from `/generate`'s response (data-model.md's Clean-Context Score) per failed question in the evidence file (depends on T015)
 - [ ] T017 [S3] Confirm no clean-context test was run for any question that already passed end-to-end (spec.md FR-004 — a completeness check on T015/T016, not new work)
 
 **Checkpoint**: 100% of failed questions have a Clean-Context Score (spec.md SC-004); passing questions are untouched.
@@ -154,9 +154,11 @@ drift; skipped deliberately, not by oversight.
 ### Implementation for Scenario 4
 
 - [ ] T019 [S4] Classify every recorded failure (from T009-T013) against the decision table — `ingestion-defect` / `absent-from-top-20` / `rank-8-to-20` / `top-3-but-poor-answer` / `cross-repo-leakage` / `duplicate-crowding` — **before** any chunking, retrieval, or generation change is proposed anywhere in the project (spec.md FR-005 — hard gate, depends on T009-T013 and T016)
-- [ ] T020 [P] [S4] Compute Recall@5, Recall@20, and other aggregate rates from the recorded evidence — by hand, or via an optional scratch script at `specs/001-rag-quality-baseline/scripts/` (plan.md's scratch-script allowance: deterministic aggregation only, no new eval framework)
-- [ ] T021 [S4] Apply the reranker decision gate (`DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4) and record an explicit go/no-go verdict in the evidence file, with the failure-count breakdown, or the identified next lever (chunking / filtering / dedup / traversal / prompting) if reranking isn't justified, or the explicit negative result if no pattern dominates (spec.md FR-006, depends on T019, T020)
-- [ ] T022 [S4] File separate GitHub issues for every correctness bug discovered during evaluation (cross-repo leakage, double-chunking, ingestion defects, etc.) — none are fixed as part of this spec (spec.md Non-Goals / FR-008)
+- [ ] T020 [P] [S4] Compute retrieval-only aggregate metrics — Recall@5, Recall@20, duplicate rate — directly from the recorded ranks (T008-T013). Does **not** depend on T019: these come straight from ranks, not from classifications.
+- [ ] T021 [S4] Compute the classification-derived aggregate summary — failure-class distribution counts/percentages — from T019's output. Depends on T019 (unlike T020, this genuinely needs the classifications, not just the raw ranks).
+- [ ] T022 [P] [S4] Optionally use a scratch script at `specs/001-rag-quality-baseline/scripts/` for T020/T021's arithmetic instead of doing it by hand (plan.md's scratch-script allowance: deterministic aggregation only, no new eval framework)
+- [ ] T023 [S4] Apply the reranker decision gate (`DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4) and record an explicit go/no-go verdict in the evidence file, with the failure-count breakdown, or the identified next lever (chunking / filtering / dedup / traversal / prompting) if reranking isn't justified, or the explicit negative result if no pattern dominates (spec.md FR-006, depends on T020, T021)
+- [ ] T024 [S4] File separate GitHub issues for every correctness bug discovered during evaluation (cross-repo leakage, double-chunking, ingestion defects, etc.) — none are fixed as part of this spec (spec.md Non-Goals / FR-008)
 
 **Checkpoint**: evidence file complete with a recorded verdict (spec.md SC-006). No reranker, hybrid retrieval, embedding, chunking, or prompt/model work has been implemented anywhere in the repo as part of this spec.
 
@@ -166,10 +168,10 @@ drift; skipped deliberately, not by oversight.
 
 **Purpose**: Close out the spec without expanding its scope.
 
-- [ ] T023 Review the evidence file against spec.md's Success Criteria (SC-001 through SC-006) for completeness
-- [ ] T024 Commit the evidence file (and any scratch script) via the standard branch + PR flow (Constitution Governance — no direct commits to main)
-- [ ] T025 Post the verdict summary as a comment on issue #49, linking the evidence file — closing the issue (or opening a follow-up issue for whichever lever the evidence points to) is a judgment call for review, not automatic
-- [ ] T026 Update `DOCS/audit/07-Roadmap.md` to mark Phase 2.75 / WP-Q0 complete, linking the evidence file (documentation only — no code change)
+- [ ] T025 Review the evidence file against spec.md's Success Criteria (SC-001 through SC-006) for completeness
+- [ ] T026 Commit the evidence file (and any scratch script) via the standard branch + PR flow (Constitution Governance — no direct commits to main)
+- [ ] T027 Post the verdict summary as a comment on issue #49, linking the evidence file — closing the issue (or opening a follow-up issue for whichever lever the evidence points to) is a judgment call for review, not automatic
+- [ ] T028 Update `DOCS/audit/07-Roadmap.md` to mark Phase 2.75 / WP-Q0 complete, linking the evidence file (documentation only — no code change)
 
 ---
 
@@ -195,7 +197,10 @@ drift; skipped deliberately, not by oversight.
 - T004/T005 (ingesting the repo vs. the documents) can run in parallel
 - Within Scenario 2, per-question diagnostic recording (T008-T013) should be done as one pass per question (methodology's "single pass per question" rule), but different *questions* can be worked in parallel
 - T015 (clean-context calls) can run in parallel across different failed questions
-- T020 (aggregate metric computation) can run in parallel with T019 only in the sense that they read the same completed data; T021's verdict depends on both
+- T020 (retrieval-only metrics) can run in parallel with T019 (classification) — it only needs the raw ranks from T008-T013, not T019's output
+- T021 (classification-derived summary) depends on T019, unlike T020
+- T022 (optional scratch script) can run in parallel with T020/T021 if it's being written concurrently, but its *output* feeds T023 same as T020/T021's manual equivalent would
+- T023 (the verdict) depends on both T020 and T021 — it needs the raw rates and the classification summary together
 
 ---
 

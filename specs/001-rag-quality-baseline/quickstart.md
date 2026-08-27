@@ -21,8 +21,17 @@ implementation code. Detailed task breakdown belongs in `tasks.md`
 2. Ingest the 2-3 documents chosen per research.md Decision 1 via
    `POST /v1/ingest/file`. Record the returned document IDs.
 3. Confirm every artifact referenced by a planned question is actually
-   present via `GET /v1/graph/repos/{repo_id}` or `GET /v1/graph/docs` before
-   drafting questions against it (spec.md Scenario 1, Acceptance Scenario 1).
+   present before drafting questions against it (spec.md Scenario 1,
+   Acceptance Scenario 1) — in two steps, since a graph/metadata record is
+   not proof a searchable vector exists:
+   - Metadata presence: `GET /v1/graph/repos/{repo_id}` or
+     `GET /v1/graph/docs` (`ingestion_service`)
+   - **Vector/index presence** (the one that actually matters for
+     retrieval): `POST /v1/vectors/search-by-doc` (`vector_store_service`)
+     with the artifact's `document_id`, confirming it returns at least one
+     chunk. An empty result here means the artifact has a metadata record
+     but no searchable vector — record that as an ingestion defect, not
+     assume presence from the graph check alone.
 
 ## 2. Define the known-answer question set
 
@@ -51,9 +60,15 @@ For each question:
 For every question where `end_to_end_answer_quality = fail`:
 
 1. Hand-pick the correct 2-4 chunks (skip retrieval).
-2. Call Ollama directly per research.md Decision 4.
+2. Call the existing `llm_service` `POST /generate` endpoint with those
+   chunks joined as `context` and the original question as `query` — the
+   same shape and generation path production uses (research.md Decision 4,
+   revised after review). Do not call Ollama directly; that would change
+   the generation path as well as the context, confounding the isolation
+   this scenario exists to do.
 3. Record a Clean-Context Score row (data-model.md): grounding, citation,
-   omission, cold/warm latency.
+   omission, cold/warm latency, and the `model`/`model_alias`/`provider`
+   `/generate` actually returned.
 
 Skip this step entirely for questions that already passed end-to-end
 (spec.md FR-004).

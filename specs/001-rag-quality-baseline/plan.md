@@ -97,9 +97,11 @@ Complexity Tracking below is intentionally empty.
 **No production architecture change. Evaluation harness/artifacts only.**
 
 **Services touched**:
-- None (read-only HTTP client calls to `ingestion_service`, `vector_store_service`,
-  `rag_orchestrator`, and directly to Ollama for the clean-context step; no
-  service code is modified)
+- None (read-only HTTP client calls to `ingestion_service`,
+  `vector_store_service`, `rag_orchestrator`, and `llm_service`'s existing
+  `POST /generate` endpoint for the clean-context step — using the same
+  generation path production uses, with only the context substituted, per
+  research.md Decision 4; no service code is modified)
 
 **Database ownership impact**:
 - None

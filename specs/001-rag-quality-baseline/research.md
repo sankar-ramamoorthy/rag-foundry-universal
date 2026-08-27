@@ -75,20 +75,44 @@ building an evaluation subsystem.
 
 ## Decision 4: How the clean-context generation test is invoked
 
-**Decision**: Call Ollama directly for the clean-context step (bypassing the
-LiteLLM-routed `/generate` service), using the model currently in
-production per `LLM_DEFAULT_ALIAS`, so latency and quality numbers reflect
-the actually-deployed model.
+**Decision (revised after review)**: Call the existing `llm_service`
+`POST /generate` endpoint — the same endpoint production uses — substituting
+the hand-picked 2-4 known-correct chunks for the retrieved context. Verified
+in code (`rag_orchestrator/src/core/service.py`,
+`llm_service/src/api/v1/models.py`, `llm_service/src/api/v1/main.py`) that
+`/generate` already accepts exactly `{context: str, query: str}`, the same
+shape production sends, and returns `provider`, `model`, `model_alias`, and
+`prompt_template` in its response — so no new endpoint is needed, and the
+actual model/routing/prompt-template provenance is recorded for free. Record
+those returned fields in the Clean-Context Score (data-model.md).
 
-**Rationale**: this is the exact choice the methodology (§3) already
-specifies as acceptable for this diagnostic — recorded here as the concrete
-decision made for this evaluation run, not restated as methodology.
+**Rationale**: the methodology doc (§3) suggests calling Ollama directly and
+says bypassing `/generate` "is fine for this diagnostic" — but review caught
+that doing so changes two variables at once relative to the failed
+production run: the context *and* the generation path (prompt template,
+LiteLLM routing, model aliasing, fallback handling, provenance). If Scenario
+3's results differ from production, that difference can't be cleanly
+attributed to retrieval vs. generation when the generation path itself also
+changed. Using the existing `/generate` endpoint with only the context
+substituted holds the generation path constant — the cleaner controlled
+experiment — while still isolating retrieval by using known-correct chunks.
+This also means Constitution Principle IV's model-routing provenance is
+naturally preserved rather than bypassed, since `/generate`'s existing
+response already returns which model actually served the request.
 
 **Alternatives considered**:
-- Route through the `/generate` service as normal — rejected for this
-  specific isolation step; the point of Scenario 3 is to isolate generation
-  from retrieval *and* from routing plumbing, so a direct model call keeps
-  the measurement focused on grounding/citation/omission alone.
+- Call Ollama directly, per the methodology doc's literal suggestion —
+  rejected on review: confounds context quality with generation-path
+  changes, and bypasses the already-implemented model provenance/fallback
+  behavior instead of exercising it.
+- Build a new endpoint or internal helper specifically for this diagnostic —
+  rejected as unnecessary; `/generate` already accepts arbitrary context in
+  the right shape, so adding a new endpoint would be exactly the kind of
+  scope creep this spec's Non-Goals rule out. (Had `/generate` *not*
+  supported this shape, the fallback would have been the closest existing
+  internal invocation that preserves the real prompt template and routing,
+  or an explicitly documented limitation in the evidence — not a new
+  production endpoint.)
 
 ## Output
 
