@@ -67,8 +67,24 @@ related:
 ## Phase 2.75 — RAG quality baseline (empirical, precedes any Phase 4 reranker work)
 *Theme: prove the system retrieves the right evidence and answers well before changing anything else.*
 
-- [ ] [[08-RAG-Quality-Evaluation-Methodology#0 · Recommended execution order (WP-Q0)|WP-Q0]] Build curated eval corpus + run the unified chunking/retrieval/generation pass, classify every failure (tracked as issue #49)
-- [ ] Reranker go/no-go decision recorded per [[08-RAG-Quality-Evaluation-Methodology#4 · Reranker decision gate|the decision gate]]
+- [x] [[08-RAG-Quality-Evaluation-Methodology#0 · Recommended execution order (WP-Q0)|WP-Q0]] Build curated eval corpus + run the unified chunking/retrieval/generation pass, classify every failure (tracked as issue #49)
+- [x] Reranker go/no-go decision recorded per [[08-RAG-Quality-Evaluation-Methodology#4 · Reranker decision gate|the decision gate]]
+
+**Exit criteria met — verdict: NO-GO on the reranker.** 9/10 known-answer
+questions passed end-to-end against `shared/smoke_repo` + 3 docs; the one
+failure classified `top-3-but-poor-answer` (confirmed via clean-context test
+as a context-composition/distractor problem, not retrieval or generation
+capability) — zero questions landed in the rank-8-20 bucket a reranker could
+address. Next lever: prompting/context assembly, not `WP-S8`'s reranker.
+Recall@5 measured at 70% via raw vector similarity alone vs. 90% via
+production's actual path (graph expansion recovers two of the three misses)
+— direct empirical evidence for the graph-aware architecture. Full evidence:
+`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`. Also surfaced
+and filed issue #64 (code-query seed search's `doc_type` filter never
+matches its intended value, silently falling back on every code query) and
+issue #65 (near-duplicate chunk crowding from module/sole-child artifact
+embedding — a retrieval-quality/indexing finding, not a correctness bug).
+Neither fixed as part of WP-Q0, per its evaluation-only scope.
 
 **Exit criteria:** every eval-corpus failure is classified (chunking/retrieval/filtering/ranking/generation); `WP-S8`'s reranker sub-task in Phase 4 either proceeds with evidence or is explicitly deferred with a recorded reason.
 
@@ -129,9 +145,9 @@ graph LR
 > 2. **Graph-depth work after Phase 2 goes through the IR** ([[03-Multi-Language-Graph-Plan]]) — no more Python-only resolution code once WP-L1 lands.
 > 3. **Phase 4's reranker sub-task (`WP-S8`) does not start until Phase 2.75 proves it's the actual bottleneck** — see [[08-RAG-Quality-Evaluation-Methodology]].
 
-> [!note] Current next steps (2026-07-20)
+> [!note] Current next steps (2026-08-27)
 > 1. ~~Finish the four remaining Phase 2.5 smoke-test items~~ — done, issue #48 closed.
-> 2. Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision.
-> 3. Only then resume Phase 3/4 work.
+> 2. ~~Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision~~ — done: **NO-GO on the reranker**, see Phase 2.75 above (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`).
+> 3. Phase 3/4 work may resume — but `WP-S8`'s reranker sub-task specifically stays deferred per the NO-GO verdict; the identified next lever is prompting/context assembly, tracked via issues #64 and #65.
 > 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start, plus the malformed compose healthchecks) stays open but is **deliberately deferred to Phase 5's `WP-E2` deploy part** (see below) — it's the "reproducible builds" work the WP already scopes, not urgent now that #55/#57 removed the multi-GB CUDA cost from every recreate.
 
