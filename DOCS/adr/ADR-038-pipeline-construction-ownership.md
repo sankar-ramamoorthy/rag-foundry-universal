@@ -1,3 +1,10 @@
+---
+title: "ADR-038: Centralized IngestionPipeline Construction via Core Factory"
+date: 2026-02-15
+type: adr
+status: accepted
+tags: [adr, pipeline, architecture]
+---
 
 # 📘 ADR-038
 

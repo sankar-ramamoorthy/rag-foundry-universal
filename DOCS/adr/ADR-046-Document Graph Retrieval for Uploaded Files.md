@@ -1,3 +1,16 @@
+---
+title: "ADR-046: Document Graph Retrieval for Uploaded Files"
+date: 2026-02-26
+type: adr
+status: accepted
+tags: [adr, retrieval, documents]
+related:
+  - "[[ADR-030-unified-artifact-graph]]"
+  - "[[ADR-031-canonical-identity-model]]"
+  - "[[ADR-043-MarkdownExtractor]]"
+  - "[[ADR-045-hybrid-vector-graph-rag]]"
+---
+
 # ADR-046: Document Graph Retrieval for Uploaded Files
 
 **Status:** Accepted

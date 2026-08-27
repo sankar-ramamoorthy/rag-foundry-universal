@@ -1,3 +1,11 @@
+---
+title: "ADR-042: Codebase Ingestion - Double Creation of DocumentNodes"
+date: 2026-02-16
+type: adr
+status: accepted
+tags: [adr, bugfix, ingestion]
+---
+
 ## DOCS\adr\ADR-042-double-creation-of-documentnodes-in-codebase-ingestion.md
 
 A detailed **ADR** for the **double-creation bug** in the codebase ingestion pipeline. This ADR documents the issue, provides proposed solutions, reasons for rejecting some of them, and outlines future considerations for handling similar issues.

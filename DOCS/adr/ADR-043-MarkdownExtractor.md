@@ -1,3 +1,10 @@
+---
+title: "ADR-043: Markdown Section Extraction into Unified Artifact Graph"
+type: adr
+status: proposed
+tags: [adr, markdown, extraction]
+---
+
 ## DOCS\adr\ADR-043-MarkdownExtractor.md
 
 # 📍 1. **Markdown Section Extractor ADR**

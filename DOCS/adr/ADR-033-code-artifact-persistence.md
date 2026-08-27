@@ -1,3 +1,10 @@
+---
+title: "ADR-033: Code Artifact Persistence in Postgres"
+type: adr
+status: "Proposed / Accepted"
+tags: [adr, persistence, postgres]
+---
+
 # ADR-033: Code Artifact Persistence in Postgres
 
 ## Status

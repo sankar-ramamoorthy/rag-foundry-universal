@@ -1,3 +1,14 @@
+---
+title: "ADR-045: Hybrid Vector+Graph RAG Pipeline with Repo Selection"
+date: 2026-02-20
+type: adr
+status: proposed
+tags: [adr, retrieval, graph]
+related:
+  - "[[ADR-030-unified-artifact-graph]]"
+  - "[[ADR-044-graph-models-in-shared]]"
+---
+
 ## **DOCS\adr\ADR-045-hybrid-vector-graph-rag.md*
 
 ***

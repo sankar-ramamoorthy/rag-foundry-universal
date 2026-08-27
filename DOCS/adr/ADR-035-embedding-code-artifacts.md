@@ -1,3 +1,10 @@
+---
+title: "ADR-035: Embedding Code Artifacts"
+type: adr
+status: "Proposed / Accepted"
+tags: [adr, embedding, code]
+---
+
 # ADR-035: Embedding Code Artifacts
 
 ## Status

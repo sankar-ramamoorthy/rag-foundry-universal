@@ -1,3 +1,10 @@
+---
+title: "ADR-037: Logging & Observability for MS4"
+type: adr
+status: "Proposed / Accepted"
+tags: [adr, logging, observability]
+---
+
 # ADR-037: Logging & Observability for MS4
 
 ## Status
