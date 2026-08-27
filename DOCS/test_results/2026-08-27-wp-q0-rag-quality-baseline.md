@@ -416,3 +416,130 @@ tested (there were none to skip here, only the one failure). Stopping here
 per plan, before Scenario 4's classification pass and verdict.
 
 ---
+
+## Scenario 4: Classification, Aggregate Metrics, Verdict (T018-T023)
+
+### T018 — dry run
+
+As with T014, the dry run and the full classification pass are the same
+single case: Q7 is the corpus's only failure. Classifying it against the
+decision table (methodology §2/§4) before treating the classification as
+final: source present → not `ingestion-defect`. Seed rank 3, well inside
+top-3 → not `absent-from-top-20`, not `rank-8-to-20`. No cross-repo hits →
+not `cross-repo-leakage`. `duplicate_count = 0` for this question → not
+`duplicate-crowding`. By elimination: **`top-3-but-poor-answer`** — and
+Scenario 3's clean-context result (fully correct answer once the distractor
+chunk was removed) independently corroborates this rather than just
+falling out of elimination. Procedure confirmed ready; this pilot case *is*
+the full T019 classification since there is nothing else to classify.
+
+### T019 — Failure Classification (full set)
+
+| `question_id` | `category` |
+|---|---|
+| Q7 | `top-3-but-poor-answer` |
+
+All other 9 questions passed `end_to_end_answer_quality` in Scenario 2 and
+are therefore not classified at all, per data-model.md's state transition
+rule (classification only follows a recorded failure).
+
+### T020 — Retrieval-only aggregate metrics
+
+Computed directly from the recorded per-question ranks (T008-T013), **not**
+dependent on T019's classification:
+
+| Metric | Value | Basis |
+|---|---|---|
+| Recall@5 (raw vector seed rank) | **70%** (7/10) | direct `/v1/vectors/search`, expected `canonical_id` at rank ≤5 |
+| Recall@20 (raw vector rank) | **100%** (10/10) | every expected artifact appeared somewhere in the top-20 candidate set |
+| Recall@5, production-effective (incl. graph expansion) | **90%** (9/10) | production `/v1/rag`/`/v1/rag/simple` at `top_k=5`; counts Q3/Q5 as hits because graph expansion recovered them even though raw vector search alone did not |
+| Duplicate rate — code questions (Q1-Q5) | mean 4.0 duplicate chunk-slots per ~17-20-candidate window | structural: `animals.py` module/class + `README.md` (smoke_repo) module/section near-duplication (T007 Finding 2, generalized in the T008-T013 notes) |
+| Duplicate rate — document questions (Q6-Q10) | mean 0.0 | none of the three ingested docs has a single-heading duplication pattern |
+
+**The 70%→90% Recall@5 gap is the single most informative number in this
+pass**: it's exactly the 20-point contribution graph expansion made over raw
+vector similarity on this corpus (Q3, Q5) — the system's core value
+proposition (deterministic graph traversal recovering what vector search
+alone misses) is directly measurable here, not just architecturally implied.
+
+### T021 — Classification-derived aggregate summary
+
+Depends on T019 (unlike T020):
+
+| Failure class | Count | % of failures | % of corpus |
+|---|---|---|---|
+| `top-3-but-poor-answer` | 1 | 100% | 10% |
+| `ingestion-defect` | 0 | 0% | 0% |
+| `absent-from-top-20` | 0 | 0% | 0% |
+| `rank-8-to-20` | 0 | 0% | 0% |
+| `cross-repo-leakage` | 0 | 0% | 0% |
+| `duplicate-crowding` | 0 | 0% | 0% |
+
+Overall corpus failure rate: **10%** (1/10).
+
+### T023 — Reranker decision gate
+
+Per `DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4, reranker work
+requires **both**: (a) a non-trivial fraction of failures landing at rank
+8-20, not absent and not already top-3, and (b) those failures not already
+explained by a chunking or generation defect confirmed via clean-context.
+
+**This corpus shows neither.** Zero questions (0/10) fall in the rank-8-20
+failure bucket — the one failure that did occur was already top-3, and
+Scenario 3's clean-context test confirmed it as a context-composition/
+distractor problem, not a ranking problem.
+
+> ## Verdict: **NO-GO on the reranker** (`WP-S8`, `04-Scalability-Plan.md`)
+>
+> **Failure-count breakdown:** 1/10 questions failed end-to-end (10%). 0/10
+> classify as `rank-8-to-20` (the only pattern a reranker could address).
+> 1/10 classifies as `top-3-but-poor-answer`, independently confirmed via
+> clean-context generation to be a context-composition/distractor problem,
+> not a ranking problem — a reranker cannot fix this, since the correct
+> chunk was already top-3 before any reranking would occur.
+>
+> **Next lever:** prompting / context assembly — specifically, reducing
+> confusion between multiple retrieved chunks that share similar surface
+> phrasing (e.g. "p95 latency") but describe different referents (an actual
+> measured benchmark vs. a scaling-plan's before/after projection table).
+> Candidate directions (not scoped or implemented here): more salient
+> per-chunk source/section labeling in the assembled prompt, a stricter
+> same-topic/provenance filter before context assembly, or explicit
+> "distinguish figures from different documents" prompt guidance.
+>
+> **Secondary findings for future work**, neither of which caused a
+> question to fail in this corpus but both measurably degrade the margin
+> before failure occurs, so they're worth carrying into whichever lever is
+> picked up next:
+> - **Issue #64** (filed) — the code-query seed filter never actually
+>   restricts to code content, measurably costing Q3 two rank positions
+>   (would-be rank 4 → actual rank 6).
+> - **Near-duplicate chunk crowding** (T007 Finding 2, generalized in
+>   T008-T013) — module-root/sole-child duplication inflates candidate-set
+>   redundancy for every code question in this corpus (mean 4 duplicate
+>   slots per question) without having caused a failure yet. **Filed as
+>   [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65).**
+
+### T024 — correctness bugs filed
+
+Every correctness bug/defect discovered during this evaluation has a filed
+GitHub issue, per spec.md Non-Goals / FR-008 — none fixed as part of this
+spec:
+
+- [Issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64) — code-query seed search `doc_type` filter never matches (T007 Finding 1)
+- [Issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65) — module/sole-child near-duplicate chunk embedding (T007 Finding 2, generalized)
+
+No `ingestion-defect` or `cross-repo-leakage` cases occurred in this corpus,
+so there is nothing else to file. The README.md unclosed-code-fence
+condition (T004/T005 note, relevant to Q8) was assessed and deliberately
+**not** filed — it's a documentation-content nit with no functional impact
+(Q8 passed despite it), not a service-code defect.
+
+**Checkpoint:** every failure (all one of it) is classified, the aggregate
+metrics are computed, an explicit go/no-go verdict is recorded with its
+supporting breakdown (spec.md SC-005, SC-006), and every correctness bug
+found has a filed issue (spec.md FR-008). Remaining: Phase 7 polish
+(T025-T028 — review against Success Criteria, commit, post the verdict to
+issue #49, update the roadmap). Stopping here for review before closing out.
+
+---
