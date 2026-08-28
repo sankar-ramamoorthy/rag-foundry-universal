@@ -27,14 +27,14 @@ It enables you to:
 ## 🧩 Key Features
 
 * **Dual Ingestion Paths**: Git repositories (graph-aware) and uploaded files (Docling + chunking)
-* **Deterministic Artifact Graph**: AST-based extraction for code (modules, classes, functions, calls, imports)
+* **Deterministic Artifact Graph**: AST-based extraction for code (modules, classes, functions, calls, imports, inheritance) — five edge types: `CALL`, `DEFINES`, `IMPORT`, `INHERITS`, `OVERRIDES`
 * **Cross-linking of Markdown to Code**: DOCUMENTS relationships connect Markdown headings to the code they describe (ADR-048)
 * **Vector Embeddings**: Ollama embedder, 1024 dimensions (mxbai-embed-large:latest), batched end-to-end (embedder batches + bulk vector writes)
-* **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — search latency independent of corpus size (p95 ≈ 62 ms in the Phase 1 benchmark)
+* **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — p95 ≈ 62 ms measured at Phase 1 benchmark scale (56k artifacts, see below). The "latency independent of corpus size" goal is a target for `DOCS/audit/04-Scalability-Plan.md`'s WP-S4 (<100 ms p95 at 1M+ chunk rows) — not yet measured at that scale.
 * **Atomic Repo Rebuilds**: re-ingesting a repo replaces its whole graph in one transaction under a per-repo advisory lock — a failed or concurrent ingest can never corrupt or lose the previous graph
-* **RAG Query Paths**: Separate endpoints for code repo queries and document queries
+* **RAG Query Paths**: Separate endpoints for code repo queries and document queries, combining vector similarity seeding with deterministic BFS graph expansion (empirically shown to matter — see RAG Quality below)
 * **OCR Support**: Tesseract for scanned PDFs/images
-* **Windows & CPU-friendly**: Tested on laptops without GPU; external LLM support possible
+* **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default; a Tailscale-reachable remote Ollama box or a cloud provider (Anthropic, OpenAI) can be made the default per-machine via a gitignored `.env` — no code changes (see `llm_service/models.yaml`). Groq/NVIDIA NIM first-class support is tracked separately (issue #46). Windows & CPU-friendly: tested on laptops without a GPU.
 
 ---
 
@@ -119,7 +119,7 @@ It enables you to:
 
 | Content Type             | Path                        | Embeddings | Graph                   | Query           |
 | ------------------------ | --------------------------- | ---------- | ----------------------- | --------------- |
-| Python code              | AST + canonical graph       | ✅          | ✅ CALL, DEFINES, IMPORT | Graph-aware RAG |
+| Python code              | AST + canonical graph       | ✅          | ✅ CALL, DEFINES, IMPORT, INHERITS, OVERRIDES | Graph-aware RAG |
 | Markdown (repo)          | Section extraction          | ✅          | ✅ DEFINES               | Graph-aware RAG |
 | Markdown (upload)        | Section extraction          | ✅          | ✅ DEFINES               | Document RAG    |
 | PDFs                     | Docling → Markdown → chunks | ✅          | — flat                  | Document RAG    |
@@ -137,6 +137,7 @@ It enables you to:
 * Ensure **Ollama** is installed on the host
 * The containers expect Ollama served at `http://host.docker.internal:11434`
 * Required embedder and at least the `granite4:350m` LLM should be pre-downloaded
+* Optional: route generation through a different endpoint (a Tailscale-reachable remote Ollama box, or a cloud provider like Anthropic/OpenAI) by setting `LLM_DEFAULT_ALIAS` and the matching env vars in a gitignored `.env` — see `llm_service/models.yaml`. The committed default stays local-Ollama-only so a fresh clone works without any provider account.
 
 **Steps**
 
@@ -208,12 +209,44 @@ in `DOCS/audit/`.
 
 ---
 
+## 🎯 RAG Quality (WP-Q0 baseline — 2026-08-27)
+
+Retrieval and answer quality were empirically evaluated before any further
+retrieval work (issue #49; full evidence in
+`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`): 10
+known-answer questions (5 code, 5 document) run end-to-end through
+production `/v1/rag` and `/v1/rag/simple`.
+
+| Metric | Result |
+| --- | --- |
+| End-to-end pass rate | 9/10 (90%) |
+| Recall@5 — raw vector search only | 70% |
+| Recall@5 — production path (incl. graph expansion) | 90% |
+| Reranker decision | **NO-GO** — no failures fell in the rank 8–20 band a reranker could address |
+
+The 70%→90% gap is graph expansion recovering questions raw vector search
+alone missed — direct measured evidence for the graph-aware architecture,
+not just an architectural claim. The one failure had its correct evidence
+already ranked in the top 3; a clean-context test confirmed it as a
+prompting/context-assembly issue (the model conflated two similarly-worded
+latency figures from different documents), not a retrieval or generation
+capability problem. Two related findings were filed without being fixed,
+per the evaluation's scope: [issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64)
+(the code-query seed filter's `doc_type` match never fires, silently
+falling back to repo-scoped search on every code query) and
+[issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)
+(near-duplicate chunk crowding from module/sole-child artifacts). See
+`DOCS/audit/00-Audit-Overview.md` and `DOCS/audit/04-Scalability-Plan.md`
+for how this gates further retrieval work.
+
+---
+
 ## 🤖 Future Vision
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
-* Reranking of vectors to improve relevance
+* Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. The current identified lever is prompting/context assembly (issues #64, #65)
 * Enhanced observability across ingestion and query pipelines
-* External cloud LLM support (currently tested with Ollama on host, CPU-only)
+* First-class Groq/NVIDIA NIM cloud endpoints (issue #46) — LiteLLM routing to a remote Ollama box and cloud-provider aliases (Anthropic, OpenAI) already ships today
 
 ---
 
@@ -228,4 +261,3 @@ in `DOCS/audit/`.
 MIT License
 
 ---
-

@@ -16,6 +16,9 @@ related:
 
 # 🚀 Scalability Plan — Massive Codebases
 
+> [!tip] Status (2026-08-27) — Phase A (WP-S1–S4) is done
+> `WP-S1`–`WP-S4` below shipped in Phase 1 (see `DOCS/test_results/Phase-1-Exit-Report.md` and `DOCS/audit/00-Audit-Overview.md`'s current-status overlay). The rest of this document (Phase B/C: `WP-S5`–`WP-S8`) is unstarted except where noted. `WP-S8`'s reranker sub-task specifically has a recorded **NO-GO** verdict as of the WP-Q0 RAG-quality baseline (issue #49, 2026-08-27) — see the annotation on that work package below before picking it up.
+
 > [!abstract] Thesis
 > Nothing about the architecture *prevents* scale — but four implementation layers currently cap it at toy-repo size: **(1)** O(N²) graph build, **(2)** per-artifact serial persistence/embedding, **(3)** un-indexed vector search, **(4)** in-process fire-and-forget ingestion with whole-graph-in-RAM query. Fix in that order; measure between steps.
 
@@ -34,7 +37,7 @@ related:
 
 ## 1 · Phase A — Algorithmic fixes (no new infrastructure)
 
-### WP-S1 — Make graph build O(N)
+### WP-S1 — Make graph build O(N) ✅ Done (Phase 1)
 **Goal:** ingestion CPU time linear in repo size.
 **Files:** `repo_graph.py`, `repo_graph_builder.py`, `python_extractor.py`.
 **Directions:**
@@ -47,7 +50,7 @@ related:
 - [ ] `node_modules` contents produce zero artifacts
 - [ ] Ingestion summary logs: files parsed / skipped / failed counts
 
-### WP-S2 — Batch embedding + persistence
+### WP-S2 — Batch embedding + persistence ✅ Done (Phase 1)
 **Goal:** ingestion I/O round-trips proportional to *batches*, not artifacts.
 **Files:** `codebase_ingest.py`, `pipeline.py`, `http_vectorstore.py`, `shared/embedders/ollama.py`, `vector_store_service/src/api/v1/vectors.py`.
 **Directions:**
@@ -60,7 +63,7 @@ related:
 - [ ] Zero rows written to `ingestion_service.vectors` on new ingests
 - [ ] End-to-end ingest of benchmark repo ≥10× faster than baseline (record both numbers in the PR description)
 
-### WP-S3 — Transactional, bulk graph persistence
+### WP-S3 — Transactional, bulk graph persistence ✅ Done (Phase 1)
 **Goal:** rebuild is atomic (all-or-nothing) and fast.
 **Files:** `codebase_persistence.py`.
 **Directions:**
@@ -72,15 +75,15 @@ related:
 - [ ] Second concurrent ingest of same repo blocks or fails fast with clear status, never interleaves
 - [ ] 50k nodes + 100k edges persist < 30 s
 
-### WP-S4 — ANN index + query-path hygiene
+### WP-S4 — ANN index + query-path hygiene ✅ Done (Phase 1; typed filter columns landed later as WP-S4B)
 **Goal:** vector search latency independent of corpus size.
 **Files:** new Alembic migration; `pgvector_store.py`.
 **Directions:**
 - Migration: `CREATE INDEX CONCURRENTLY ix_vector_chunks_hnsw ON ingestion_service.vector_chunks USING hnsw (vector vector_cosine_ops)` (+ analyze). Note: filtered queries (`source_metadata->>…`) partially bypass HNSW — add btree expression indexes on `(source_metadata->>'doc_type')` and `(source_metadata->>'repo_id')`, and put `repo_id`/`doc_type`/`language` into **real columns** on `vector_chunks` in a follow-up migration (JSONB-only filtering won't scale).
 - `similarity_search`: set `SET LOCAL hnsw.ef_search = 100` per query; expose `k` and filter as today.
 **Acceptance criteria:**
-- [ ] `EXPLAIN ANALYZE` on a filtered search shows index scan, not seq scan (add as an integration test asserting plan node type)
-- [ ] p95 search latency < 100 ms at 1M chunk rows (synthetic-load test script included under `tests/scripts/`)
+- [x] `EXPLAIN ANALYZE` on a filtered search shows index scan, not seq scan
+- [ ] p95 search latency < 100 ms at 1M chunk rows — **not yet measured at this scale**. The HNSW index and typed filter columns are live and p95 ≈ 62 ms was measured at Phase 1 benchmark scale (56k artifacts, `DOCS/test_results/Phase-1-Exit-Report.md`); the 1M-row target itself remains an unverified projection, not a measured result (see README.md's softened wording).
 
 ## 2 · Phase B — Ingestion as real jobs
 
@@ -122,15 +125,19 @@ related:
 - [ ] `/v1/graph/repos/{id}` full-graph endpoint paginates (`limit/offset`) — breaking change coordinated with UI
 
 ### WP-S8 — Retrieval quality/perf at scale
+> [!warning] Reranker sub-task: NO-GO, deferred (2026-08-27)
+> The WP-Q0 RAG-quality baseline (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) ran the reranker decision gate below against a 10-question corpus and returned an explicit **NO-GO**: 0/10 failures classified `rank-8-to-20` (the only pattern a reranker addresses); the one failure was already top-3 and was independently confirmed via a clean-context test to be a prompting/context-assembly problem. **Do not pick up the reranker bullet below without a new evaluation showing rank-8–20 failures.** The "cap and dedupe expanded context" bullet, however, is now directly motivated by evidence: [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65) (near-duplicate chunk crowding from module/sole-child artifact embedding) measured a mean of 4 duplicate candidate slots per ~17–20-item window in the same eval, none of which yet caused a failure but all of which erode the margin before one does — that bullet is the concrete next step this finding motivates, ahead of and independent of the reranker question.
+
 **Directions:**
 - Parallelize the per-doc `search-by-doc` loop (`service.py:183-200`) with `asyncio.gather` + semaphore(10).
 - Real tokenizer for the context budget (tiktoken or provider count) instead of `len(text.split())` (`service.py:271`).
-- Add a reranker stage (flag-gated): cross-encoder over top-50 → top-10 (runs in `rag_orchestrator`; model via [[06-LLM-Provider-LiteLLM-Plan|LiteLLM]] or local `bge-reranker`). **Gate:** only build this after [[08-RAG-Quality-Evaluation-Methodology]] shows correct chunks landing at rank 8–20, not absent or already top-3.
-- Cap and dedupe expanded context (today `max_total_chunks=9999`, `service.py:262`).
+- Add a reranker stage (flag-gated): cross-encoder over top-50 → top-10 (runs in `rag_orchestrator`; model via [[06-LLM-Provider-LiteLLM-Plan|LiteLLM]] or local `bge-reranker`). **Gate:** only build this after [[08-RAG-Quality-Evaluation-Methodology]] shows correct chunks landing at rank 8–20, not absent or already top-3. **As of 2026-08-27 this gate has been checked once and failed (NO-GO) — see callout above.**
+- Cap and dedupe expanded context (today `max_total_chunks=9999`, `service.py:262`). **Motivated by [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)** (near-duplicate module/sole-child chunk crowding, measured in WP-Q0) — this is the recommended near-term lever, not the reranker.
 **Acceptance criteria:**
 - [ ] Expanded-doc fetch is concurrent (test: 20 docs fetched in ~1 RTT, not 20)
 - [ ] Context never exceeds configured token budget measured by the real tokenizer
-- [ ] Reranker flag on/off compared on a small eval set; results recorded in `DOCS/test_results/`
+- [ ] Reranker flag on/off compared on a small eval set; results recorded in `DOCS/test_results/` — **superseded for now**: the eval already ran and the recorded result is NO-GO (`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`); re-open only alongside new evidence
+- [ ] Dedup pass resolves issue #65: `EXPLAIN`/candidate-window inspection shows near-identical module/sole-child chunk pairs collapsed before reaching the top-k context
 
 ## 4 · Capacity targets after all phases
 
