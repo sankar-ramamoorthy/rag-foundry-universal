@@ -31,6 +31,16 @@ aliases:
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 
+## 📍 Current status (2026-08-27 — supersedes the 2026-07-20 status below)
+
+> [!tip] Phases 1, 2, 2.5, and 2.75 are complete. RAG retrieval and answer quality have now been **empirically measured**, not just operationally hardened — and the reranker question has an evidence-based answer: **NO-GO, for now.**
+
+- **Phase 2.75 (RAG quality baseline, issue #49, `WP-Q0`) is done.** Full evidence: `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`; summarized in [[07-Roadmap#Phase 2.75 — RAG quality baseline (empirical, precedes any Phase 4 reranker work)|the roadmap]]. 10 known-answer questions (5 code, 5 document) ran end-to-end against production `/v1/rag` and `/v1/rag/simple`: **9/10 pass.** Recall@5 was 70% via raw vector search alone vs. **90% via the production path** — graph expansion recovering 2 of the 3 raw-vector misses is the graph-aware architecture's value proposition measured directly, not just architecturally implied.
+- **Reranker verdict: NO-GO.** [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]]'s reranker sub-task stays deferred per [[08-RAG-Quality-Evaluation-Methodology#4 · Reranker decision gate|the decision gate]] — zero of the corpus's failures classified `rank-8-to-20` (the only pattern a reranker could fix). The single failure (`top-3-but-poor-answer`) was independently confirmed via a clean-context test to be a prompting/context-assembly problem, not a retrieval-rank or generation-capability problem. **Next lever: prompting/context assembly**, not a reranker.
+- **Two related findings surfaced and filed, deliberately not fixed** (out of scope for an evaluation-only work package): [issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64) (the code-query seed filter's `doc_type` match never fires; every code query silently falls back to repo-scoped search, measurably costing rank positions) and [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65) (near-duplicate chunk crowding from module/sole-child artifact embedding — a retrieval-quality/indexing finding, not a correctness bug).
+- **What is newly proven, that the 2026-07-20 status below could not yet claim:** retrieval surfaces the correct evidence in the large majority of cases, and generation grounds correctly when given clean context. **What is still open:** context assembly/prompting when multiple retrieved chunks share surface phrasing (e.g. "p95 latency") but describe different referents — that failure mode, not reranking, is the next quality lever.
+- **Phase 3 (multi-language) and the rest of Phase 4/5 have not started.** Per the roadmap's 2026-08-27 note, this work may now resume — with `WP-S8`'s reranker sub-task specifically excluded pending a future re-evaluation that finds rank-8–20 failures.
+
 ## 📍 Current status (2026-07-20 — supersedes the maturity claim below)
 
 > [!tip] Phases 1–2 are implementation-complete and operationally hardened. RAG retrieval and answer quality have not yet been formally validated.

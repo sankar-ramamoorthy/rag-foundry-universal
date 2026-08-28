@@ -1,6 +1,24 @@
+---
+title: "rag-foundry-universal — Vision & Context"
+date: 2026-03-21
+type: vision
+status: historical
+tags: [vision, historical, rag-foundry]
+related:
+  - "[[../README|README]]"
+  - "[[audit/00-Audit-Overview]]"
+---
+
 # rag-foundry-universal — Vision & Context
 
 > **A note to the reader:** This document was written by Claude (Anthropic's AI assistant) at the request of the repository author. It is based on a close reading of the repository README, architecture documentation, and an extended conversation with the author about design intent, architectural decisions, and the broader landscape of AI coding tools. It is an honest external assessment, not marketing copy.
+
+> [!warning] Historical / vision document — not a current-state reference (annotated 2026-08-27)
+> Written March 2026, before Phase 1/2/2.5/2.75 shipped. Read it for **design intent and rationale**, not for what the system does today — start at `README.md` and `DOCS/audit/00-Audit-Overview.md` for current state. Specifically:
+> - **Envisioned here, still not built as of 2026-08-27:** nightly scheduled ingestion, snapshot/version diffing across ingestion runs ("what changed since last week"), GitHub App/PR webhook integration, and proactive diff comments. Every claim below under "The intended use case" and "workflow it is designed to support" describes this envisioned future, not shipped behavior — none of it exists in code yet.
+> - **Shipped since this was written, contradicting specific claims below:** the "Where this fits" / "Current limitations" sections call cloud-LLM switching and a richer call graph forward-looking gaps. LiteLLM multi-provider routing (local Ollama, a Tailscale-reachable remote Ollama box, and Anthropic/OpenAI cloud aliases) shipped in PR #47; the call graph now includes `INHERITS`/`OVERRIDES` edges beyond the `CALL`/`DEFINES`/`IMPORT` set described here. See README.md for current specifics.
+> - **Reranker framing is now stale in a specific way:** the tables below list reranker integration as simply "not implemented yet," reading as an ordinary backlog gap. As of the WP-Q0 empirical evaluation (issue #49, 2026-08-27, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`), it is a **deliberate NO-GO pending evidence** — see `DOCS/audit/04-Scalability-Plan.md` WP-S8 — not a task waiting to be scheduled.
+> - **Still accurate:** the architecture diagram, the ingestion capability matrix, the read-only design thesis, and the AI-coding-tools comparison table remain a fair description of what's built.
 
 ---
 

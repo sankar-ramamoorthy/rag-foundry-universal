@@ -22,13 +22,16 @@ related:
 
 ## 1 · Strategic assessment
 
+> [!tip] Evidence for the "retrieval is already language-ready" row (2026-08-27)
+> The WP-Q0 RAG-quality baseline (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) empirically confirms the retrieval-layer claim below, not just architecturally: on the eval corpus, raw vector search alone hit Recall@5 = 70%, while the production path (vector seed + deterministic BFS graph expansion) hit 90% — graph expansion recovered questions vector similarity missed on its own. Because that expansion is entirely language-agnostic (typed-edge BFS over `document_relationships`, never inspecting Python syntax), this result should carry forward unchanged as new language extractors land through the IR in §2 below — the retrieval/expansion layer is not something Rust/TS/Java support needs to touch.
+
 The architecture is **already language-ready** in the places that matter:
 
 | Layer | Language-coupled? | Evidence |
 |---|---|---|
 | Storage (`document_nodes` / `document_relationships`) | ❌ No | `artifact_type` and `relation_type` are strings; ADR-030 |
 | Identity (`path#Symbol.path`) | ❌ No | ADR-031 format is language-neutral |
-| Retrieval (BFS over typed edges) | ❌ No | `codebase_queries.py` never mentions Python |
+| Retrieval (BFS over typed edges) | ❌ No | `codebase_queries.py` never mentions Python; empirically measured in WP-Q0 (see callout above) |
 | Extraction | ✅ **Hard-coupled** | `PythonASTExtractor` uses stdlib `ast`; `_select_extractor` switches on `.py`/`.md` only (`repo_graph_builder.py:273`) |
 | Builder resolution passes | ⚠️ Semi-coupled | `_resolve_calls`/symbol table assume Python naming; logic is generic in shape |
 
