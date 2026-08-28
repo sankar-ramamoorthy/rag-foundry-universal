@@ -134,6 +134,8 @@ def test_module_seed_structure_query_unaffected(graph_with_modules):
     disappear from a 'structure' query's results — those children ARE
     the expected answer for 'what does calc.py define'."""
     seeds = {"calc.py"}
-    strategies = select_traversal_strategies("what classes are defined in calc.py", seeds)
+    strategies = select_traversal_strategies(
+        "what classes are defined in calc.py", seeds
+    )
     nodes = execute_traversals_from_seeds(graph_with_modules, seeds, strategies)
     assert "calc.py#Calculator" in cids(nodes)
