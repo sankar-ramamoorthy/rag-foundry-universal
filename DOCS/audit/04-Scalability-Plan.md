@@ -126,18 +126,21 @@ related:
 
 ### WP-S8 — Retrieval quality/perf at scale
 > [!warning] Reranker sub-task: NO-GO, deferred (2026-08-27)
-> The WP-Q0 RAG-quality baseline (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) ran the reranker decision gate below against a 10-question corpus and returned an explicit **NO-GO**: 0/10 failures classified `rank-8-to-20` (the only pattern a reranker addresses); the one failure was already top-3 and was independently confirmed via a clean-context test to be a prompting/context-assembly problem. **Do not pick up the reranker bullet below without a new evaluation showing rank-8–20 failures.** The "cap and dedupe expanded context" bullet, however, is now directly motivated by evidence: [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65) (near-duplicate chunk crowding from module/sole-child artifact embedding) measured a mean of 4 duplicate candidate slots per ~17–20-item window in the same eval, none of which yet caused a failure but all of which erode the margin before one does — that bullet is the concrete next step this finding motivates, ahead of and independent of the reranker question.
+> The WP-Q0 RAG-quality baseline (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) ran the reranker decision gate below against a 10-question corpus and returned an explicit **NO-GO**: 0/10 failures classified `rank-8-to-20` (the only pattern a reranker addresses); the one failure was already top-3 and was independently confirmed via a clean-context test to be a prompting/context-assembly problem. **Do not pick up the reranker bullet below without a new evaluation showing rank-8–20 failures.**
+
+> [!tip] Dedup bullet: done (2026-08-29)
+> [Issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65) (near-duplicate chunk crowding from module/sole-child artifact embedding, measured at a mean of 4 duplicate candidate slots per ~17–20-item window in WP-Q0) is fixed in [#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73) — a retrieval-time dedup pass in `hybrid_retrieve()`, not an ingestion-time change (see [[00-Audit-Overview]]'s 2026-08-29 status for why). See [[09-Retrieval-Technique-Decision-Gates]]'s "Context deduplication" row.
 
 **Directions:**
 - Parallelize the per-doc `search-by-doc` loop (`service.py:183-200`) with `asyncio.gather` + semaphore(10).
 - Real tokenizer for the context budget (tiktoken or provider count) instead of `len(text.split())` (`service.py:271`).
 - Add a reranker stage (flag-gated): cross-encoder over top-50 → top-10 (runs in `rag_orchestrator`; model via [[06-LLM-Provider-LiteLLM-Plan|LiteLLM]] or local `bge-reranker`). **Gate:** only build this after [[08-RAG-Quality-Evaluation-Methodology]] shows correct chunks landing at rank 8–20, not absent or already top-3. **As of 2026-08-27 this gate has been checked once and failed (NO-GO) — see callout above.**
-- Cap and dedupe expanded context (today `max_total_chunks=9999`, `service.py:262`). **Motivated by [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)** (near-duplicate module/sole-child chunk crowding, measured in WP-Q0) — this is the recommended near-term lever, not the reranker.
+- ~~Cap and dedupe expanded context (today `max_total_chunks=9999`, `service.py:262`).~~ Dedup done (see callout above); the cap itself was already resolved separately (issue #30 Part 3 — `MAX_TOTAL_CHUNKS` default is 50, not 9999, per `rag_orchestrator/src/core/config.py`).
 **Acceptance criteria:**
 - [ ] Expanded-doc fetch is concurrent (test: 20 docs fetched in ~1 RTT, not 20)
 - [ ] Context never exceeds configured token budget measured by the real tokenizer
 - [ ] Reranker flag on/off compared on a small eval set; results recorded in `DOCS/test_results/` — **superseded for now**: the eval already ran and the recorded result is NO-GO (`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`); re-open only alongside new evidence
-- [ ] Dedup pass resolves issue #65: `EXPLAIN`/candidate-window inspection shows near-identical module/sole-child chunk pairs collapsed before reaching the top-k context
+- [x] Dedup pass resolves issue #65: fixed in [#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73) — `dedupe_near_identical_chunks()` in `codebase_utils.py`, wired into `hybrid_retrieve()`; verified live that near-identical module/sole-child chunk pairs collapse to a single seed candidate before reaching the top-k context
 
 ## 4 · Capacity targets after all phases
 

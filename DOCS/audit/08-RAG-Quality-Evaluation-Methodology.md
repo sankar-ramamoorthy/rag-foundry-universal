@@ -12,6 +12,7 @@ tags:
 related:
   - "[[00-Audit-Overview]]"
   - "[[04-Scalability-Plan]]"
+  - "[[09-Retrieval-Technique-Decision-Gates]]"
   - "[[../adr/ADR-039-artifact-level-embedding-strategy]]"
   - "[[../adr/ADR-040-code-intelligence-embedding-strategy]]"
   - "[[../adr/ADR-045-hybrid-vector-graph-rag]]"
@@ -205,8 +206,67 @@ If the eval set instead shows "correct chunk absent from top 20" as the dominant
 
 ---
 
+## 5 · Future direction: self-evaluating, evidence-driven improvement loop (not scheduled)
+
+> [!note] Planning note only (added 2026-08-29) — not roadmap work
+> Recorded per the user's request as a future direction to preserve, not an
+> instruction to build. No implementation, issue, or work package exists
+> for this yet. Likely timing: after Phase 3, or as a late-Phase-3/Phase-4
+> evaluation initiative — multi-language support and a more mature graph
+> make the dogfooding case (below) more interesting, not less.
+
+WP-Q0 (§0 above) was a one-time, hand-curated baseline: a small
+known-answer corpus, run once against the real dev stack, with findings
+classified and either fixed or filed. The future direction is to extend
+that same shape into a recurring, ongoing loop rather than a one-off
+evaluation:
+
+```
+ingest real repository
+  → ask known-answer questions
+  → inspect retrieval/graph evidence
+  → classify failures
+  → make only evidence-supported changes
+  → rerun the same evaluations
+```
+
+Run against real repositories in the normal development instance — not
+only the isolated test stack — the same way WP-Q0 ran against the live
+dev stack rather than a mock.
+
+**Why this project itself is a useful first corpus:** `rag-foundry-universal`
+ingesting and querying itself is unusually good dogfood, because the
+architecture and the expected answers are both already well understood
+here — there's no need to hand-build a separate known-answer corpus from
+scratch the way WP-Q0 had to for `shared/smoke_repo`. That said, self-ingestion
+alone risks overfitting the system to its own structure and conventions, so
+the intended sequence is: this repo first, then at least one unrelated
+repository to check the findings generalize, then a polyglot repository once
+Phase 3 (multi-language) lands.
+
+**Toward a durable corpus, not a one-off:** over time, real questions and
+real observed failures — not just synthetic ones — could be promoted into
+a standing regression/evaluation corpus that later changes are checked
+against, the way `DOCS/test_results/` already accumulates evidence per
+finding. That would turn WP-Q0 from a single baseline into an ongoing,
+evidence-driven improvement loop feeding [[09-Retrieval-Technique-Decision-Gates]] —
+supporting future decisions about context assembly, duplicate handling,
+embeddings, hybrid retrieval, reranking, graph traversal, and other
+retrieval techniques with the project's own measured evidence, the same
+way WP-Q0's findings already moved the "Context deduplication" row there
+from `investigate` to `validated`.
+
+**What this explicitly is not:** not autonomous self-modification. The
+loop's job is to generate evidence — retrieval traces, graph state,
+classified failures — not to apply changes on its own. Every change this
+evidence motivates still goes through the normal issue → evaluation → PR →
+human-approved-merge workflow already used for issues #64/#65 above. Human
+approval stays the control point throughout; the system evaluates itself,
+it does not modify itself.
+
 ## Related
 
+- [[09-Retrieval-Technique-Decision-Gates]] — where this doc's findings feed decisions about retrieval/generation techniques; §5 above is the future direction for keeping that table fed with ongoing evidence
 - [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]] — where the reranker itself would land, flag-gated, once this doc's gate is satisfied
 - [[../adr/ADR-045-hybrid-vector-graph-rag|ADR-045]] — the retrieval flow being evaluated
 - [[../adr/ADR-039-artifact-level-embedding-strategy|ADR-039]] / [[../adr/ADR-040-code-intelligence-embedding-strategy|ADR-040]] — why code has no chunk-boundary question today

@@ -37,8 +37,9 @@ frontmatter-linked — planned follow-up.
 
 ## Proposals
 
-[[proposals/sdd-spec-kit-adoption]] — process/tooling proposals under
-discussion, not yet binding.
+`DOCS/proposals/` — process/tooling proposals under discussion, not yet
+binding: [[proposals/sdd-spec-kit-adoption]],
+[[proposals/lean-instruction-routing-layer]] (before Phase 3).
 
 ## Evidence / Test Results
 

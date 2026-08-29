@@ -31,6 +31,14 @@ aliases:
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 
+## 📍 Current status (2026-08-29 — supersedes the 2026-08-27 status below)
+
+> [!tip] Both WP-Q0 follow-on findings are fixed. The reranker NO-GO verdict and the "next lever is prompting/context assembly" conclusion below still stand.
+
+- **[Issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64) fixed** ([#72](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/72), merged): `hybrid_retrieve()`'s seed filter matched `doc_type="code"`, a value ingestion never wrote (codebase ingestion writes `doc_type="python source"`), so every code-repo query silently fell back to an unfiltered repo-scoped search. Fixed by filtering on `source_type` instead — the language-neutral marker `simple_service.py`'s document-RAG path already used correctly — promoted to a typed/indexed `vector_chunks` column (extending WP-S4B). Verified live: the fallback no longer fires.
+- **[Issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65) fixed** ([#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73), merged): a module/root artifact with exactly one child covering ~the same text (a README's sole H1 section, a single-class file with no imports) produced near-duplicate seed candidates. Fixed with a retrieval-time dedup pass in `hybrid_retrieve()` — deliberately not an ingestion-time change, since ADR-039 §4 / ADR-040 §6.2 require embedding every MODULE artifact and changing that would need amending an accepted ADR plus re-ingesting every existing repo. [[09-Retrieval-Technique-Decision-Gates]]'s "Context deduplication" row is updated accordingly.
+- **What is still open, per the 2026-08-27 status below:** context assembly/prompting when multiple retrieved chunks share surface phrasing but describe different referents. Not yet filed as its own issue.
+
 ## 📍 Current status (2026-08-27 — supersedes the 2026-07-20 status below)
 
 > [!tip] Phases 1, 2, 2.5, and 2.75 are complete. RAG retrieval and answer quality have now been **empirically measured**, not just operationally hardened — and the reranker question has an evidence-based answer: **NO-GO, for now.**
