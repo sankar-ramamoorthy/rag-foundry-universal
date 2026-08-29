@@ -117,16 +117,16 @@ def test_seed_search_is_repo_scoped(monkeypatch):
     payloads = _run_hybrid_with_empty_store(monkeypatch)
 
     assert payloads[0]["metadata_filter"] == {
-        "doc_type": "code",
+        "source_type": "code",
         "repo_id": "repo-x",
     }
 
 
-def test_fallback_relaxes_doc_type_but_keeps_repo_scope(monkeypatch):
+def test_fallback_relaxes_source_type_but_keeps_repo_scope(monkeypatch):
     payloads = _run_hybrid_with_empty_store(monkeypatch)
 
     # empty first response triggers the fallback retry
     assert len(payloads) == 2
     fallback_filter = payloads[1]["metadata_filter"]
     assert fallback_filter == {"repo_id": "repo-x"}
-    assert "doc_type" not in fallback_filter
+    assert "source_type" not in fallback_filter

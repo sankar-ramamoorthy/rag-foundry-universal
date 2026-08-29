@@ -4,10 +4,11 @@ F-10 (WP-S4) + WP-S4B: vector search must be index-backed, not a
 sequential scan.
 
 Asserts via EXPLAIN against the docker-compose.test.yml Postgres
-(migrations 20260718_vc_idx + 20260719_typed_cols applied) that:
+(migrations 20260718_vc_idx + 20260719_typed_cols + 20260829_src_type
+applied) that:
 - ANN ordering uses the HNSW index (ix_vector_chunks_hnsw);
-- doc_type / repo_id filters use the typed-column indexes (WP-S4B
-  replaced the JSONB expression indexes);
+- doc_type / repo_id / source_type filters use the typed-column indexes
+  (WP-S4B, extended by issue #64 — replaced the JSONB expression indexes);
 - document_id lookups use their btree index.
 
 The test dataset is tiny, so the planner would prefer a seq scan on
@@ -57,6 +58,7 @@ def store():
                 chunk_text=f"text {i}",
                 source_metadata={
                     "doc_type": "code" if i % 2 == 0 else "file",
+                    "source_type": "code" if i % 2 == 0 else "file",
                     "repo_id": f"repo-{i % 3}",
                 },
                 provider="mock",
@@ -102,10 +104,12 @@ def test_doc_type_filter_uses_typed_column_index(store):
 
 
 def test_repo_filter_uses_typed_column_indexes(store):
-    """WP-S4B: the hybrid query's exact filter shape (repo_id + doc_type)
-    is served by typed-column indexes — the planner may pick the
-    composite or a single-column index depending on stats, but it must
-    not fall back to a seq scan or JSONB evaluation."""
+    """WP-S4B: the hybrid query's original filter shape (repo_id + doc_type)
+    is served by typed-column indexes — the planner may pick any index
+    with repo_id or doc_type as a column (composite or single-column,
+    including issue #64's (repo_id, source_type) index, which also serves
+    repo_id-only lookups) depending on stats, but it must not fall back
+    to a seq scan or JSONB evaluation."""
     plan = _explain(
         """
         SELECT chunk_id FROM ingestion_service.vector_chunks
@@ -116,6 +120,45 @@ def test_repo_filter_uses_typed_column_indexes(store):
     assert (
         "ix_vector_chunks_repo_doc" in plan
         or "ix_vector_chunks_doc_type_col" in plan
+        or "ix_vector_chunks_repo_source_type" in plan
+    ), plan
+    assert "Seq Scan" not in plan, plan
+    assert "source_metadata" not in plan, plan
+
+
+def test_source_type_filter_uses_typed_column_index(store):
+    """Issue #64: source_type is the marker hybrid_retrieve() actually
+    filters on — must be index-backed, not a JSONB scan."""
+    plan = _explain(
+        """
+        SELECT chunk_id FROM ingestion_service.vector_chunks
+        WHERE source_type = %s
+        """,
+        ("code",),
+    )
+    assert "ix_vector_chunks_source_type_col" in plan, plan
+
+
+def test_repo_source_type_filter_uses_typed_column_indexes(store):
+    """Issue #64: hybrid_retrieve()'s actual filter shape (repo_id +
+    source_type) is index-backed — this is the query that used to
+    silently fall back to an unfiltered repo-scoped search because the
+    old repo_id + doc_type="code" shape never matched any row. The
+    planner may pick any index with repo_id or source_type as a column
+    (including the pre-existing (repo_id, doc_type) index, which also
+    serves repo_id-only lookups) — the point is no seq scan / JSONB
+    evaluation, not a specific index name."""
+    plan = _explain(
+        """
+        SELECT chunk_id FROM ingestion_service.vector_chunks
+        WHERE repo_id = %s AND source_type = %s
+        """,
+        ("repo-1", "code"),
+    )
+    assert (
+        "ix_vector_chunks_repo_source_type" in plan
+        or "ix_vector_chunks_source_type_col" in plan
+        or "ix_vector_chunks_repo_doc" in plan
     ), plan
     assert "Seq Scan" not in plan, plan
     assert "source_metadata" not in plan, plan
@@ -131,6 +174,15 @@ def test_typed_columns_backfilled_on_write(store):
                 WHERE source_metadata->>'repo_id' IS NOT NULL
                   AND (repo_id IS NULL
                        OR repo_id != source_metadata->>'repo_id')
+                """
+            )
+            assert cur.fetchone()[0] == 0
+            cur.execute(
+                """
+                SELECT count(*) FROM ingestion_service.vector_chunks
+                WHERE source_metadata->>'source_type' IS NOT NULL
+                  AND (source_type IS NULL
+                       OR source_type != source_metadata->>'source_type')
                 """
             )
             assert cur.fetchone()[0] == 0
@@ -161,4 +213,23 @@ def test_similarity_search_end_to_end_with_ef_search(store):
     assert scores == sorted(scores, reverse=True)
     assert all(
         r.metadata.source_metadata["doc_type"] == "code" for r in results
+    )
+
+
+def test_hybrid_retrieve_filter_shape_returns_results(store):
+    """Issue #64: hybrid_retrieve()'s actual filter shape (repo_id +
+    source_type="code") must return results, not silently fall back to
+    an unfiltered search the way the old repo_id + doc_type="code"
+    shape did (that value was never written by ingestion)."""
+    rng = random.Random(11)
+    results = store.similarity_search(
+        [rng.uniform(-1, 1) for _ in range(DIM)],
+        k=5,
+        metadata_filter={"source_type": "code", "repo_id": "repo-1"},
+    )
+    assert len(results) > 0
+    assert all(
+        r.metadata.source_metadata["source_type"] == "code"
+        and r.metadata.source_metadata["repo_id"] == "repo-1"
+        for r in results
     )
