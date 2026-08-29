@@ -84,7 +84,10 @@ and filed issue #64 (code-query seed search's `doc_type` filter never
 matches its intended value, silently falling back on every code query) and
 issue #65 (near-duplicate chunk crowding from module/sole-child artifact
 embedding — a retrieval-quality/indexing finding, not a correctness bug).
-Neither fixed as part of WP-Q0, per its evaluation-only scope.
+Neither fixed as part of WP-Q0, per its evaluation-only scope — **both since
+fixed** (2026-08-29): issue #64 in [#72](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/72),
+issue #65 in [#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73).
+See [[00-Audit-Overview]]'s 2026-08-29 status.
 
 **Exit criteria:** every eval-corpus failure is classified (chunking/retrieval/filtering/ranking/generation); `WP-S8`'s reranker sub-task in Phase 4 either proceeds with evidence or is explicitly deferred with a recorded reason.
 
@@ -148,6 +151,6 @@ graph LR
 > [!note] Current next steps (2026-08-27)
 > 1. ~~Finish the four remaining Phase 2.5 smoke-test items~~ — done, issue #48 closed.
 > 2. ~~Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision~~ — done: **NO-GO on the reranker**, see Phase 2.75 above (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`).
-> 3. Phase 3/4 work may resume — but `WP-S8`'s reranker sub-task specifically stays deferred per the NO-GO verdict; the identified next lever is prompting/context assembly, tracked via issues #64 and #65.
+> 3. Phase 3/4 work may resume — but `WP-S8`'s reranker sub-task specifically stays deferred per the NO-GO verdict. ~~The identified next lever is prompting/context assembly, tracked via issues #64 and #65~~ — #64 and #65 are done (2026-08-29, PRs #72/#73); the remaining next lever is prompting/context assembly for chunks that share surface phrasing but describe different referents, not yet filed as its own issue.
 > 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start, plus the malformed compose healthchecks) stays open but is **deliberately deferred to Phase 5's `WP-E2` deploy part** (see below) — it's the "reproducible builds" work the WP already scopes, not urgent now that #55/#57 removed the multi-GB CUDA cost from every recreate.
 

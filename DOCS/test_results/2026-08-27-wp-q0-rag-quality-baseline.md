@@ -8,6 +8,18 @@ This file accumulates evidence across Scenarios 1-4 (spec.md) as tasks
 T001-T024 execute. Sections are appended in task order; nothing here is
 retroactively edited except to correct a recording error.
 
+> [!tip] Resolution update (2026-08-29) — added, not a retroactive edit
+> Both correctness/quality findings this evaluation filed (T024, below) are
+> fixed: [issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64)
+> in [PR #72](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/72)
+> (seed filter switched from the dead `doc_type` value to `source_type`),
+> [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)
+> in [PR #73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73)
+> (near-duplicate seed chunks deduplicated at retrieval time in
+> `hybrid_retrieve()`). See `DOCS/audit/00-Audit-Overview.md`'s 2026-08-29
+> status entry. The findings and measurements below are left exactly as
+> recorded on 2026-08-27, per this file's own rule above.
+
 ---
 
 ## Environment Verification (T001-T002)

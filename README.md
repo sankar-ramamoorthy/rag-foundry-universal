@@ -230,21 +230,26 @@ not just an architectural claim. The one failure had its correct evidence
 already ranked in the top 3; a clean-context test confirmed it as a
 prompting/context-assembly issue (the model conflated two similarly-worded
 latency figures from different documents), not a retrieval or generation
-capability problem. Two related findings were filed without being fixed,
-per the evaluation's scope: [issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64)
-(the code-query seed filter's `doc_type` match never fires, silently
-falling back to repo-scoped search on every code query) and
+capability problem. Two related findings were filed during the
+evaluation, out of scope to fix as part of it, and have since been fixed:
+[issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64)
+(the code-query seed filter's `doc_type` match never fired, silently
+falling back to repo-scoped search on every code query — fixed in
+[#72](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/72)
+by filtering on `source_type` instead) and
 [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)
-(near-duplicate chunk crowding from module/sole-child artifacts). See
+(near-duplicate chunk crowding from module/sole-child artifacts — fixed in
+[#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73)
+by deduplicating near-identical seed chunks at retrieval time). See
 `DOCS/audit/00-Audit-Overview.md` and `DOCS/audit/04-Scalability-Plan.md`
-for how this gates further retrieval work.
+for how this gated further retrieval work.
 
 ---
 
 ## 🤖 Future Vision
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
-* Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. The current identified lever is prompting/context assembly (issues #64, #65)
+* Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64 and #65 (the code-query filter bug and near-duplicate chunk crowding WP-Q0 surfaced) are fixed; the remaining identified lever is prompting/context assembly for chunks that share surface phrasing but describe different referents — not yet filed as its own issue, see `DOCS/audit/00-Audit-Overview.md`
 * Enhanced observability across ingestion and query pipelines
 * First-class Groq/NVIDIA NIM cloud endpoints (issue #46) — LiteLLM routing to a remote Ollama box and cloud-provider aliases (Anthropic, OpenAI) already ships today
 
