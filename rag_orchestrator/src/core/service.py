@@ -23,6 +23,7 @@ from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
 from rag_orchestrator.src.retrieval.codebase_utils import (
     extract_canonical_ids_from_chunks,
+    dedupe_near_identical_chunks,
 )
 from rag_orchestrator.src.retrieval.traversal_selector import (
     select_traversal_strategies,
@@ -264,6 +265,19 @@ async def hybrid_retrieve(
         seed_chunks.extend(
             _add_chunks(doc_id, [r], seen_chunk_ids, retrieved_chunks_by_document)
         )
+
+    # Issue #65: drop near-duplicate seed chunks (a module/root artifact
+    # whose sole child covers ~the same text) before they consume top-k
+    # candidate slots. Only seed chunks are populated in
+    # retrieved_chunks_by_document at this point — expansion below adds
+    # more, untouched by this filter.
+    seed_chunks = dedupe_near_identical_chunks(seed_chunks)
+    kept_chunk_ids = {c.chunk_id for c in seed_chunks}
+    retrieved_chunks_by_document = {
+        doc_id: kept
+        for doc_id, doc_chunks in retrieved_chunks_by_document.items()
+        if (kept := [c for c in doc_chunks if c.chunk_id in kept_chunk_ids])
+    }
 
     seed_canonical_ids = extract_canonical_ids_from_chunks(seed_chunks)
     logger.info(
