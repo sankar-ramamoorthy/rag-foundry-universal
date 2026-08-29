@@ -240,13 +240,13 @@ async def hybrid_retrieve(
 
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
     payload = {"query_vector": query_embedding, "k": top_k,
-                "metadata_filter": {"doc_type": "code", "repo_id": repo_id}}
+                "metadata_filter": {"source_type": "code", "repo_id": repo_id}}
 
     async with httpx.AsyncClient(timeout=200) as client:
         resp = await client.post(search_url, json=payload)
         if resp.status_code != 200 or not resp.json().get("results"):
             logger.info("No code chunks found. Falling back to repo-scoped search.")
-            # Relax only doc_type — the fallback must never leave the repo,
+            # Relax only source_type — the fallback must never leave the repo,
             # or queries against repos with no code chunks silently answer
             # from other repos (issue #30 Part 1).
             payload["metadata_filter"] = {"repo_id": repo_id}
