@@ -146,7 +146,7 @@ git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
 cd rag-foundry-universal
 
 docker compose up --build
-DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5432/ingestion_db \
+DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5434/ingestion_db \
     uv run alembic upgrade head
 
 # File ingestion
