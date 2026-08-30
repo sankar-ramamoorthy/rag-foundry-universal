@@ -81,7 +81,10 @@ Per `docs-archive/Rules-to-help-me-coding.md`: this repo follows **Test-Guided D
 
 ## Documentation map
 
-Start at `DOCS/index.md` for the full map. Summary:
+Start at `DOCS/index.md` for the full map. **Documentation standard:**
+new or substantially-edited knowledge-bearing docs under `DOCS/` follow
+`DOCS/standards/okf-documentation.md` (OKF v0.2-based frontmatter +
+linking). Summary:
 
 - `DOCS/adr/` — architecture decision records; check each ADR's status before relying on it, and read the relevant one before changing graph/identity/embedding/persistence behavior.
 - `DOCS/audit/` — codebase audit findings, scalability/platform/LLM-provider plans, and the roadmap; start at `DOCS/audit/00-Audit-Overview.md`.

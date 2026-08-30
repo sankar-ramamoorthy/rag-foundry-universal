@@ -12,6 +12,12 @@ aliases: [Docs Index, DOCS MOC]
 This routes to where the knowledge lives — it doesn't restate it. If a fact
 here goes stale, fix the routing, not by copying content into this file.
 
+## Documentation Standard
+
+New or substantially-edited docs follow
+[the OKF documentation standard](/DOCS/standards/okf-documentation.md)
+(frontmatter + linking conventions).
+
 ## Decisions
 
 `DOCS/adr/` — check each ADR's own `status` field before relying on it;
