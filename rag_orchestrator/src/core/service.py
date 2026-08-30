@@ -16,6 +16,7 @@ from shared.embedders.factory import get_embedder
 from shared.retrieval.retrieval_plan import RetrievalPlan
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
 from rag_orchestrator.src.retrieval.agent_adapter import (
+    build_labeled_context,
     build_sources,
     prepare_chunks_for_agent,
 )
@@ -382,15 +383,7 @@ async def run_rag(
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
 
     # Token budget
-    context_parts: List[str] = []
-    token_count = 0
-    for c in agent_chunks:
-        tokens = len(str(c["text"]).split())
-        if token_count + tokens > max_total_tokens:
-            break
-        context_parts.append(str(c["text"]))
-        token_count += tokens
-    context_str = "\n\n".join(context_parts)
+    context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)
     logger.info(f"Final context: ~{token_count} tokens from {len(agent_chunks)} chunks")
 
     # LLM call

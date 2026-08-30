@@ -25,6 +25,7 @@ from shared.embedders.factory import get_embedder
 from shared.retrieval.retrieval_plan import RetrievalPlan
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
 from rag_orchestrator.src.retrieval.agent_adapter import (
+    build_labeled_context,
     build_sources,
     prepare_chunks_for_agent,
 )
@@ -235,16 +236,7 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     # ------------------------------------------------------------------
     # Step 9: Token budget enforcement
     # ------------------------------------------------------------------
-    context_parts: List[str] = []
-    token_count = 0
-    for c in agent_chunks:
-        tokens = len(str(c["text"]).split())
-        if token_count + tokens > max_total_tokens:
-            break
-        context_parts.append(str(c["text"]))
-        token_count += tokens
-
-    context_str = "\n\n".join(context_parts)
+    context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)
     logger.info("Simple RAG: final context ~%d tokens", token_count)
 
     # ------------------------------------------------------------------

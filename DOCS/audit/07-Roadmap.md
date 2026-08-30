@@ -75,7 +75,8 @@ questions passed end-to-end against `shared/smoke_repo` + 3 docs; the one
 failure classified `top-3-but-poor-answer` (confirmed via clean-context test
 as a context-composition/distractor problem, not retrieval or generation
 capability) — zero questions landed in the rank-8-20 bucket a reranker could
-address. Next lever: prompting/context assembly, not `WP-S8`'s reranker.
+address. Next lever: prompting/context assembly, not `WP-S8`'s reranker
+(implemented 2026-08-30 as issue #79 — see below).
 Recall@5 measured at 70% via raw vector similarity alone vs. 90% via
 production's actual path (graph expansion recovers two of the three misses)
 — direct empirical evidence for the graph-aware architecture. Full evidence:
@@ -87,7 +88,10 @@ embedding — a retrieval-quality/indexing finding, not a correctness bug).
 Neither fixed as part of WP-Q0, per its evaluation-only scope — **both since
 fixed** (2026-08-29): issue #64 in [#72](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/72),
 issue #65 in [#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73).
-See [[00-Audit-Overview]]'s 2026-08-29 status.
+The Q7 next-lever finding itself (context-assembly conflation) is also
+since fixed (2026-08-30): [issue #79](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/79),
+per-chunk source labeling in the assembled prompt.
+See [[00-Audit-Overview]]'s 2026-08-30 status.
 
 **Exit criteria:** every eval-corpus failure is classified (chunking/retrieval/filtering/ranking/generation); `WP-S8`'s reranker sub-task in Phase 4 either proceeds with evidence or is explicitly deferred with a recorded reason.
 
@@ -151,6 +155,6 @@ graph LR
 > [!note] Current next steps (2026-08-27)
 > 1. ~~Finish the four remaining Phase 2.5 smoke-test items~~ — done, issue #48 closed.
 > 2. ~~Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision~~ — done: **NO-GO on the reranker**, see Phase 2.75 above (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`).
-> 3. Phase 3/4 work may resume — but `WP-S8`'s reranker sub-task specifically stays deferred per the NO-GO verdict. ~~The identified next lever is prompting/context assembly, tracked via issues #64 and #65~~ — #64 and #65 are done (2026-08-29, PRs #72/#73); the remaining next lever is prompting/context assembly for chunks that share surface phrasing but describe different referents, not yet filed as its own issue.
+> 3. Phase 3/4 work may resume — but `WP-S8`'s reranker sub-task specifically stays deferred per the NO-GO verdict. ~~The identified next lever is prompting/context assembly, tracked via issues #64 and #65~~ — #64 and #65 are done (2026-08-29, PRs #72/#73); ~~the remaining next lever is prompting/context assembly for chunks that share surface phrasing but describe different referents, not yet filed as its own issue~~ — done (2026-08-30, issue #79): chunks are now labeled by source in the assembled prompt.
 > 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start, plus the malformed compose healthchecks) stays open but is **deliberately deferred to Phase 5's `WP-E2` deploy part** (see below) — it's the "reproducible builds" work the WP already scopes, not urgent now that #55/#57 removed the multi-GB CUDA cost from every recreate.
 
