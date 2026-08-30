@@ -71,9 +71,11 @@ The spec reserves two filenames at any level of the hierarchy, which
 
 - **`index.md`** — directory listing / map-of-content. Already in use
   (`DOCS/index.md`, `DOCS/audit/00-Audit-Overview.md`).
-- **`log.md`** — chronological history of updates. Not currently used
-  anywhere in this repo; reserved here only so a future concept
-  document doesn't collide with it, not a requirement to create one.
+- **`log.md`** — chronological history of updates. In use at
+  [`DOCS/log.md`](/DOCS/log.md): a reverse-chronological record of
+  documentation-standard-relevant changes (new ADRs, policy adoptions,
+  structural migrations) — not a substitute for `git log`, and not
+  meant to capture routine content edits.
 
 ## Scope
 
