@@ -1,24 +1,34 @@
 # ingestion_service/src/core/codebase/repo_graph_builder.py
+"""
+RepoGraphBuilder (WP-L1: thin orchestration only — DOCS/audit/
+03-Multi-Language-Graph-Plan.md §3 WP-L1). Walks the repo, runs each
+file through the registered extractor for its suffix, and hands the
+accumulated IR to GraphAssembler. Adding a new language extractor means
+adding one registry entry and one extractor file — nothing here or in
+GraphAssembler changes.
+"""
 
-from collections import deque
 from pathlib import Path
-from typing import Optional, Tuple
-import ast
 import logging
 import os
-import re
 
-from src.core.codebase.identity import build_global_id
-from src.core.extractors.python_extractor import PythonASTExtractor
+from src.core.codebase.graph_assembler import GraphAssembler
+from src.core.codebase.ir import ExtractionResult
+from src.core.codebase.module_conventions import PythonModuleConvention
 from src.core.codebase.repo_graph import RepoGraph
-from src.core.codebase.symbol_table import build_symbol_table
+from src.core.extractors.python_extractor import PythonASTExtractor
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-# IS8: code artifact types eligible for DOCUMENTS relationships
-DOCUMENTABLE_TYPES = {"CLASS", "FUNCTION", "METHOD", "MODULE"}
+# Registry pattern (WP-L1 acceptance criterion): a new language extractor
+# is added here, by suffix — nothing else in this file or in
+# GraphAssembler needs to change.
+EXTRACTORS = {
+    ".py": PythonASTExtractor,
+    ".md": MarkdownSectionExtractor,
+}
 
 # F-16: directories that never contain first-party code worth ingesting.
 # Dot-directories (.git, .venv, .tox, …) are excluded by a separate rule.
@@ -37,53 +47,18 @@ DEFAULT_IGNORED_DIRS = {
 }
 
 
-# F-07: single-parse text extraction. These two helpers replicate
-# ast.get_source_segment(padded=False) over pre-split lines, so each file's
-# source is split once instead of once per artifact. Behavioral contract
-# (verified by tests against ast.get_source_segment): lines split on
-# \n / \r / \r\n only — NOT on form feed or other unicode breaks — and
-# col_offset/end_col_offset are byte offsets into the UTF-8 encoded line.
-_LINE_SPLIT = re.compile(r"[^\r\n]*(?:\r\n|[\r\n])?")
-
-# F-04: receivers that are plain dotted names keep their context in
-# EXTERNAL_SYMBOL ids; anything else (subscripts, call results) doesn't.
-_DOTTED_NAME = re.compile(r"^[A-Za-z_]\w*(\.[A-Za-z_]\w*)*$")
-
-
-def _splitlines_no_ff(source: str) -> list[str]:
-    lines = _LINE_SPLIT.findall(source)
-    if lines and lines[-1] == "":
-        lines.pop()
-    return lines
-
-
-def _source_segment(lines: list[str], node) -> Optional[str]:
-    try:
-        if node.end_lineno is None or node.end_col_offset is None:
-            return None
-        lineno = node.lineno - 1
-        end_lineno = node.end_lineno - 1
-        col_offset = node.col_offset
-        end_col_offset = node.end_col_offset
-    except AttributeError:
-        return None
-
-    if end_lineno == lineno:
-        return lines[lineno].encode()[col_offset:end_col_offset].decode()
-
-    first = lines[lineno].encode()[col_offset:].decode()
-    last = lines[end_lineno].encode()[:end_col_offset].decode()
-    return "".join([first, *lines[lineno + 1:end_lineno], last])
-
-
 class RepoGraphBuilder:
 
     def __init__(self, repo_root: Path, ingestion_id: str):
         self.repo_root = repo_root
         self.ingestion_id = ingestion_id
+        # Python is the only language today; the assembler takes a
+        # per-language convention once suffix-based dispatch to more
+        # than one convention is needed (WP-L2+).
+        self.assembler = GraphAssembler(module_convention=PythonModuleConvention())
 
     def build(self) -> RepoGraph:
-        graph = RepoGraph(self.repo_root, self.ingestion_id)
+        extracted_files: list[tuple[str, ExtractionResult]] = []
 
         for file_path in self._walk_repo():
             try:
@@ -97,731 +72,22 @@ class RepoGraphBuilder:
 
             try:
                 source = file_path.read_text(encoding="utf-8")
-                artifacts = extractor.extract(source)
+                result = extractor.extract(source)
             except Exception:
                 continue
 
-            # F-07: parse the file once and index its AST nodes by line
-            # number, instead of re-parsing per artifact.
-            if file_path.suffix == ".py":
-                line_nodes, source_lines = self._index_python_source(source)
-            else:
-                line_nodes, source_lines = {}, []
+            extracted_files.append((relative_path, result))
 
-            for artifact in artifacts:
-                artifact["relative_path"] = relative_path
-                artifact["ingestion_id"] = self.ingestion_id
-                artifact.setdefault("title", artifact.get("name", "Untitled"))
-                if "doc_type" not in artifact:
-                    artifact["doc_type"] = "python source"
-
-                # IS1: fix canonical_id double filename
-                artifact_id = artifact.get("id", "")
-                if artifact_id.startswith(relative_path + "#"):
-                    symbol_path = artifact_id[len(relative_path) + 1:]
-                elif artifact_id == relative_path:
-                    symbol_path = None  # MODULE node — no symbol
-                else:
-                    symbol_path = artifact_id  # fallback
-
-                global_id = build_global_id(
-                    self.ingestion_id,
-                    relative_path,
-                    symbol_path,
-                )
-
-                artifact["global_id"] = global_id
-                artifact["canonical_id"] = global_id[1]
-                artifact["text"] = self._extract_artifact_text(
-                    source, artifact, line_nodes, source_lines
-                )
-                artifact["defines"] = []
-
-                graph.add_entity(relative_path, artifact)
-
-            # F-03: call sites travel outside the artifact list.
-            graph.call_sites.extend(getattr(extractor, "call_sites", []))
-
-        symbol_table = build_symbol_table(graph)
-        self._attach_defines(graph)
-        self._resolve_imports(graph)          # F-02 (WP-G2) — before calls
-        self._resolve_inheritance(graph, symbol_table)  # WP-G5 — before calls
-        self._resolve_calls(graph, symbol_table)
-        self._link_docs_to_code(graph, symbol_table)   # IS8 — last step
-
-        return graph
-
-    # -----------------------------
-    # DEFINES Relationships
-    # -----------------------------
-
-    def _attach_defines(self, graph: RepoGraph):
-        definition_types = {
-            "CLASS", "FUNCTION", "METHOD",
-            "MARKDOWN_SECTION",
-        }
-
-        for entity in graph.all_entities():
-            if entity.get("artifact_type") not in definition_types:
-                continue
-
-            parent_id = entity.get("parent_id")
-            if not parent_id:
-                continue
-
-            parent_cid = self._canonical_from_id(graph, parent_id)
-            parent = graph.get_entity(parent_cid) if parent_cid else None
-            if not parent:
-                continue
-
-            graph.add_relationship({
-                "from_canonical_id": parent["canonical_id"],
-                "to_canonical_id": entity["canonical_id"],
-                "relation_type": "DEFINES",
-                "relationship_metadata": {}
-            })
-
-    # -----------------------------
-    # F-02 (WP-G2): IMPORTS Relationships
-    # -----------------------------
-
-    def _resolve_imports(self, graph: RepoGraph) -> None:
-        """Materialize MODULE --IMPORTS--> MODULE edges from IMPORT
-        artifacts. Intra-repo imports resolve against the dotted-module
-        map; external imports get one EXTERNAL_MODULE node per root
-        package. Also records per-file import bindings for call
-        resolution (ADR-032 layer 2)."""
-        module_map: dict[str, str] = {}
-        for entity in graph.all_entities():
-            if entity.get("artifact_type") != "MODULE":
-                continue
-            dotted = self._dotted_module_path(entity["canonical_id"])
-            if dotted:
-                module_map[dotted] = entity["canonical_id"]
-
-        imports = sorted(
-            (
-                e for e in graph.all_entities()
-                if e.get("artifact_type") == "IMPORT"
-            ),
-            key=lambda e: (
-                e.get("relative_path", ""),
-                e.get("metadata", {}).get("lineno", 0),
-                e.get("metadata", {}).get("col_offset", 0),
-                e.get("name", ""),
-            ),
-        )
-
-        # (from_cid, to_cid) -> [[imported_name, asname], ...]
-        edges: dict = {}
-
-        for imp in imports:
-            rel = imp.get("relative_path", "")
-            if rel not in graph.entities:
-                continue  # MODULE canonical id == relative path (ADR-031)
-
-            name = imp.get("name", "")
-            asname = imp.get("metadata", {}).get("asname")
-
-            target_cid, binding = self._resolve_import_target(
-                graph, imp, module_map
-            )
-            # `import pkg.util` binds the dotted path as written at call
-            # sites (`pkg.util.calc()`); an asname replaces it.
-            bindings = graph.import_bindings.setdefault(rel, {})
-            bindings[asname or name] = binding
-
-            if target_cid == rel:
-                continue  # a module importing itself is never an edge
-
-            edges.setdefault((rel, target_cid), []).append(
-                [name, asname]
-            )
-
-        for (from_cid, to_cid) in sorted(edges):
-            pairs = sorted(
-                edges[(from_cid, to_cid)],
-                key=lambda p: (p[0], p[1] or ""),
-            )
-            graph.add_relationship({
-                "from_canonical_id": from_cid,
-                "to_canonical_id": to_cid,
-                "relation_type": "IMPORTS",
-                "relationship_metadata": {
-                    "imports": pairs,
-                    "count": len(pairs),
-                },
-            })
-
-    def _resolve_import_target(
-        self, graph: RepoGraph, imp: dict, module_map: dict
-    ) -> Tuple[str, dict]:
-        """Resolve one IMPORT artifact to (target canonical id, binding).
-
-        ImportFrom tries `base.name` as a module first (`from pkg import
-        util`), then `base` as the module the symbol lives in; plain
-        Import tries the dotted name directly. Misses become one
-        EXTERNAL_MODULE per root package.
-        """
-        meta = imp.get("metadata", {})
-        name = imp.get("name", "")
-        rel = imp.get("relative_path", "")
-
-        if "module" not in meta:  # `import X[.Y]`
-            if name in module_map:
-                return module_map[name], {
-                    "kind": "module", "module_cid": module_map[name],
-                }
-            root = name.split(".")[0]
-            return self._external_module_node(graph, root), {
-                "kind": "external_module", "dotted": name,
-            }
-
-        # `from X import name`
-        dotted_base = self._absolute_import_base(
-            rel, meta.get("module", ""), meta.get("level", 0) or 0
-        )
-        as_module = f"{dotted_base}.{name}" if dotted_base else name
-
-        if as_module in module_map:
-            # the imported name is itself a module
-            return module_map[as_module], {
-                "kind": "module", "module_cid": module_map[as_module],
-            }
-        if dotted_base in module_map:
-            return module_map[dotted_base], {
-                "kind": "symbol",
-                "module_cid": module_map[dotted_base],
-                "symbol": name,
-            }
-        root = (dotted_base or name).split(".")[0]
-        return self._external_module_node(graph, root), {
-            "kind": "external_symbol", "dotted": as_module,
-        }
-
-    def _dotted_module_path(self, relative_path: str) -> Optional[str]:
-        """`pkg/util.py` → `pkg.util`; `pkg/__init__.py` → `pkg`."""
-        if not relative_path.endswith(".py"):
-            return None
-        parts = relative_path[:-3].split("/")
-        if parts and parts[-1] == "__init__":
-            parts = parts[:-1]
-        return ".".join(parts) if parts else None
-
-    def _absolute_import_base(
-        self, relative_path: str, base: str, level: int
-    ) -> str:
-        """Resolve an ImportFrom base to an absolute dotted path.
-        level=0 → already absolute; level=n → n-1 packages above the
-        importing file's package."""
-        if not level:
-            return base
-        pkg_parts = relative_path.split("/")[:-1]
-        drop = level - 1
-        pkg_parts = pkg_parts[: len(pkg_parts) - drop] if drop else pkg_parts
-        if base:
-            pkg_parts = pkg_parts + base.split(".")
-        return ".".join(pkg_parts)
-
-    def _external_module_node(self, graph: RepoGraph, root: str) -> str:
-        """Get or create the single EXTERNAL_MODULE node for an external
-        root package (`numpy`, not `numpy.linalg`). Persisted with empty
-        text so it is never embedded (ADR-039)."""
-        canonical_id = f"EXTERNAL_MODULE:{root}"
-        if canonical_id not in graph.entities:
-            graph.add_entity("", {
-                "artifact_type": "EXTERNAL_MODULE",
-                "id": canonical_id,
-                "canonical_id": canonical_id,
-                "name": root,
-                "title": root,
-                "doc_type": "external",
-                "relative_path": "",
-                "text": "",
-                "metadata": {},
-                "ingestion_id": self.ingestion_id,
-                "defines": [],
-            })
-        return canonical_id
-
-    # -----------------------------
-    # WP-G5: INHERITS / OVERRIDES Relationships
-    # -----------------------------
-
-    def _resolve_inheritance(self, graph: RepoGraph, symbol_table) -> None:
-        """WP-G5: materialize the class hierarchy.
-
-        For each CLASS, resolve its `metadata.bases` strings through the
-        same machinery as call resolution (same-file → imports →
-        unique-global → EXTERNAL_SYMBOL) and emit
-        CLASS --INHERITS--> CLASS|EXTERNAL_SYMBOL edges. Then, for each
-        METHOD redefining a name that exists on the nearest resolved
-        ancestor, emit METHOD --OVERRIDES--> base METHOD. Also records
-        graph.class_bases so `self.x()` resolution can fall back to
-        inherited methods (ADR-032 step 1 extension)."""
-        classes = sorted(
-            (
-                e for e in graph.all_entities()
-                if e.get("artifact_type") == "CLASS"
-            ),
-            key=lambda e: e["canonical_id"],
-        )
-
-        # (from_cid, to_cid) -> {"bases": [strings], "confidence": float}
-        edges: dict = {}
-        for cls in classes:
-            rel = cls.get("relative_path", "")
-            for base_str in cls.get("metadata", {}).get("bases", []):
-                target_id, confidence = self._resolve_base(
-                    graph, symbol_table, rel, base_str
-                )
-                target = graph.get_entity_by_id(target_id)
-                if not target or target["id"] == cls["id"]:
-                    continue
-
-                if target.get("artifact_type") == "CLASS":
-                    bases = graph.class_bases.setdefault(cls["id"], [])
-                    if target["id"] not in bases:
-                        bases.append(target["id"])
-
-                key = (cls["canonical_id"], target["canonical_id"])
-                record = edges.setdefault(
-                    key, {"bases": [], "confidence": confidence}
-                )
-                record["bases"].append(base_str)
-                record["confidence"] = max(record["confidence"], confidence)
-
-        for (from_cid, to_cid) in sorted(edges):
-            record = edges[(from_cid, to_cid)]
-            graph.add_relationship({
-                "from_canonical_id": from_cid,
-                "to_canonical_id": to_cid,
-                "relation_type": "INHERITS",
-                "relationship_metadata": {
-                    "bases": record["bases"],
-                    "confidence": record["confidence"],
-                },
-            })
-
-        self._emit_overrides(graph, classes)
-
-    def _emit_overrides(self, graph: RepoGraph, classes: list) -> None:
-        """METHOD --OVERRIDES--> base METHOD for each method whose name is
-        defined on the nearest resolved intra-repo ancestor class."""
-        methods_by_class: dict = {}
-        for entity in graph.all_entities():
-            if entity.get("artifact_type") == "METHOD":
-                methods_by_class.setdefault(
-                    entity.get("parent_id"), []
-                ).append(entity)
-
-        for cls in classes:
-            if cls["id"] not in graph.class_bases:
-                continue
-            methods = sorted(
-                methods_by_class.get(cls["id"], []),
-                key=lambda m: m["canonical_id"],
-            )
-            for method in methods:
-                base_method_id = self._lookup_method_in_hierarchy(
-                    graph, cls["id"], method["name"], include_self=False
-                )
-                if not base_method_id:
-                    continue
-                base_method = graph.get_entity_by_id(base_method_id)
-                if not base_method:
-                    continue
-                graph.add_relationship({
-                    "from_canonical_id": method["canonical_id"],
-                    "to_canonical_id": base_method["canonical_id"],
-                    "relation_type": "OVERRIDES",
-                    "relationship_metadata": {
-                        "method_name": method["name"],
-                    },
-                })
-
-    def _resolve_base(
-        self, graph: RepoGraph, symbol_table, rel: str, base_str: str
-    ) -> Tuple[str, float]:
-        """Resolve one base-class expression to an entity id.
-
-        Subscripts are stripped (`Generic[T]` → `Generic`) so typed bases
-        resolve to the generic class. Order mirrors ADR-032: same-file →
-        import binding → unique-global → EXTERNAL_SYMBOL."""
-        name = base_str.split("[", 1)[0].strip()
-
-        if not _DOTTED_NAME.match(name):
-            # dynamic bases (call results, subscript-only) fold into an
-            # external symbol carrying the raw expression
-            return self._external_symbol_node(graph, name or base_str), 0.0
-
-        if "." in name:
-            receiver, attr = name.rsplit(".", 1)
-            binding = graph.import_bindings.get(rel, {}).get(receiver)
-            if binding:
-                return self._resolve_via_binding(
-                    graph, symbol_table, binding, attr
-                )
-            local_receiver = symbol_table.lookup_in_file(rel, receiver)
-            if local_receiver:
-                candidate = f"{local_receiver}.{attr}"
-                if graph.get_entity_by_id(candidate):
-                    return candidate, 1.0
-            return self._external_symbol_node(graph, name), 0.0
-
-        local = symbol_table.lookup_in_file(rel, name)
-        if local:
-            return local, 1.0
-
-        binding = graph.import_bindings.get(rel, {}).get(name)
-        if binding:
-            return self._resolve_via_binding(graph, symbol_table, binding, None)
-
-        candidates = symbol_table.lookup_global(name)
-        if len(candidates) == 1:
-            return candidates[0], 0.5
-
-        return self._external_symbol_node(graph, name), 0.0
-
-    def _lookup_method_in_hierarchy(
-        self,
-        graph: RepoGraph,
-        class_id: str,
-        method_name: str,
-        include_self: bool = True,
-    ) -> Optional[str]:
-        """Find `method_name` on class_id or its resolved intra-repo
-        ancestors (BFS in base-declaration order, cycle-guarded). Returns
-        the method entity id of the nearest definition, or None."""
-        initial = (
-            [class_id] if include_self
-            else list(graph.class_bases.get(class_id, []))
-        )
-        queue = deque(initial)
-        seen = {class_id, *initial}
-        while queue:
-            current = queue.popleft()
-            candidate = f"{current}.{method_name}"
-            if graph.get_entity_by_id(candidate):
-                return candidate
-            for base_id in graph.class_bases.get(current, []):
-                if base_id not in seen:
-                    seen.add(base_id)
-                    queue.append(base_id)
-        return None
-
-    # -----------------------------
-    # CALL Relationships
-    # -----------------------------
-
-    def _resolve_calls(self, graph: RepoGraph, symbol_table):
-        """F-03 (WP-G3): consume call-site evidence records and emit one
-        aggregated CALL edge per caller→callee pair. Multiple sites of the
-        same pair land in metadata (call_sites linenos + count) instead of
-        colliding on a shared canonical id."""
-        # (from_cid, to_cid) -> {"linenos": [...], "confidence": float}
-        edges: dict = {}
-
-        for site in sorted(
-            graph.call_sites,
-            key=lambda s: (s["relative_path"], s["lineno"], s["col_offset"]),
-        ):
-            caller_parent_id = site.get("parent_id")
-            if not caller_parent_id:
-                continue
-
-            caller_cid = self._canonical_from_id(graph, caller_parent_id)
-            caller_parent = (
-                graph.get_entity(caller_cid) if caller_cid else None
-            )
-            if not caller_parent:
-                continue
-
-            resolution, confidence = self._resolve_call_site(
-                site, graph, symbol_table
-            )
-            if not resolution:
-                continue
-
-            target_cid = self._canonical_from_id(graph, resolution)
-            target = graph.get_entity(target_cid) if target_cid else None
-            if not target:
-                continue
-
-            key = (caller_parent["canonical_id"], target["canonical_id"])
-            record = edges.setdefault(
-                key, {"linenos": [], "confidence": confidence}
-            )
-            record["linenos"].append(site["lineno"])
-            record["confidence"] = max(record["confidence"], confidence)
-
-        for (from_cid, to_cid) in sorted(edges):
-            record = edges[(from_cid, to_cid)]
-            graph.add_relationship({
-                "from_canonical_id": from_cid,
-                "to_canonical_id": to_cid,
-                "relation_type": "CALL",
-                "relationship_metadata": {
-                    "confidence": record["confidence"],
-                    "call_sites": record["linenos"],
-                    "count": len(record["linenos"]),
-                },
-            })
-
-    def _resolve_call_site(
-        self, site: dict, graph: RepoGraph, symbol_table
-    ) -> Tuple[Optional[str], float]:
-        """F-04 (WP-G4): resolve one call site per ADR-032's order:
-        (1) receiver `self`/`cls` → enclosing class's methods;
-        (2) bare name → same-file symbols;
-        (3) name/receiver imported in this file → target module's symbol;
-        (4) global index, only if unambiguous;
-        (5) else an EXTERNAL_SYMBOL node — never silently dropped.
-
-        Confidence: 1.0 scoped/import-resolved, 0.5 unique-global,
-        0.0 external/unknown. Confidence lives in edge metadata, never
-        in identity (ADR-031)."""
-        name = site.get("name") or ""
-        receiver = site.get("receiver")
-
-        if receiver in ("self", "cls"):
-            class_id = self._enclosing_class_id(site, graph)
-            if class_id:
-                # WP-G5: fall back through resolved base classes so a
-                # method defined only on the base still resolves.
-                candidate = self._lookup_method_in_hierarchy(
-                    graph, class_id, name
-                )
-                if candidate:
-                    return candidate, 1.0
-            return (
-                self._external_symbol_node(graph, f"{receiver}.{name}"),
-                0.0,
-            )
-
-        if receiver is None:
-            return self._resolve_bare_call(site, graph, symbol_table)
-
-        return self._resolve_attribute_call(site, graph, symbol_table)
-
-    def _resolve_bare_call(
-        self, site: dict, graph: RepoGraph, symbol_table
-    ) -> Tuple[str, float]:
-        name = site.get("name") or ""
-        rel = site.get("relative_path", "")
-
-        local = symbol_table.lookup_in_file(rel, name)
-        if local:
-            return local, 1.0
-
-        binding = graph.import_bindings.get(rel, {}).get(name)
-        if binding:
-            return self._resolve_via_binding(
-                graph, symbol_table, binding, None
-            )
-
-        candidates = symbol_table.lookup_global(name)
-        if len(candidates) == 1:
-            return candidates[0], 0.5
-
-        # zero candidates (unknown/builtin) or >1 (ambiguous): surface
-        # as external instead of guessing an arbitrary winner.
-        return self._external_symbol_node(graph, name), 0.0
-
-    def _resolve_attribute_call(
-        self, site: dict, graph: RepoGraph, symbol_table
-    ) -> Tuple[str, float]:
-        name = site.get("name") or ""
-        receiver = site.get("receiver") or ""
-        rel = site.get("relative_path", "")
-
-        binding = graph.import_bindings.get(rel, {}).get(receiver)
-        if binding:
-            return self._resolve_via_binding(
-                graph, symbol_table, binding, name
-            )
-
-        # receiver may be a class in the same file: `Calculator.add()`
-        local_receiver = symbol_table.lookup_in_file(rel, receiver)
-        if local_receiver:
-            candidate = f"{local_receiver}.{name}"
-            if graph.get_entity_by_id(candidate):
-                return candidate, 1.0
-
-        # dynamic receivers (`items[0].strip()`, `get_db().query`) fold
-        # into the bare method name; dotted-name receivers keep context.
-        external_name = (
-            f"{receiver}.{name}"
-            if _DOTTED_NAME.match(receiver)
-            else name
-        )
-        return self._external_symbol_node(graph, external_name), 0.0
-
-    def _resolve_via_binding(
-        self, graph: RepoGraph, symbol_table, binding: dict, attr: Optional[str]
-    ) -> Tuple[str, float]:
-        """Resolve a call through an import binding (ADR-032 layer 2).
-        `attr` is None for `calc()` where calc itself was imported, or
-        the called attribute for `utils.calc()` / `numpy.array()`."""
-        kind = binding["kind"]
-
-        if kind == "module":
-            module_cid = binding["module_cid"]
-            dotted = self._dotted_module_path(module_cid) or module_cid
-            if attr is None:
-                # calling a module object — nothing to resolve to
-                return self._external_symbol_node(graph, dotted), 0.0
-            target = symbol_table.lookup_in_file(module_cid, attr)
-            if target:
-                return target, 1.0
-            return (
-                self._external_symbol_node(graph, f"{dotted}.{attr}"),
-                0.0,
-            )
-
-        if kind == "symbol":
-            module_cid = binding["module_cid"]
-            symbol = binding["symbol"]
-            target = symbol_table.lookup_in_file(module_cid, symbol)
-            if attr is None:
-                if target:
-                    return target, 1.0
-            elif target:
-                # imported class used as receiver: `Calculator.add()`
-                candidate = f"{target}.{attr}"
-                if graph.get_entity_by_id(candidate):
-                    return candidate, 1.0
-            dotted = self._dotted_module_path(module_cid) or module_cid
-            external = f"{dotted}.{symbol}" + (f".{attr}" if attr else "")
-            return self._external_symbol_node(graph, external), 0.0
-
-        # external_module / external_symbol
-        external = binding["dotted"] + (f".{attr}" if attr else "")
-        return self._external_symbol_node(graph, external), 0.0
-
-    def _enclosing_class_id(
-        self, site: dict, graph: RepoGraph
-    ) -> Optional[str]:
-        """Nearest enclosing CLASS of a call site (via the parent chain)."""
-        current = site.get("parent_id")
-        while current:
-            entity = graph.get_entity_by_id(current)
-            if entity is None:
-                return None
-            if entity.get("artifact_type") == "CLASS":
-                return entity.get("id")
-            current = entity.get("parent_id")
-        return None
-
-    def _external_symbol_node(self, graph: RepoGraph, dotted: str) -> str:
-        """Get or create the EXTERNAL_SYMBOL node for an unresolved
-        callee (`requests.get`, `print`). Empty text — never embedded."""
-        canonical_id = f"EXTERNAL_SYMBOL:{dotted}"
-        if canonical_id not in graph.entities:
-            graph.add_entity("", {
-                "artifact_type": "EXTERNAL_SYMBOL",
-                "id": canonical_id,
-                "canonical_id": canonical_id,
-                "name": dotted,
-                "title": dotted,
-                "doc_type": "external",
-                "relative_path": "",
-                "text": "",
-                "metadata": {},
-                "ingestion_id": self.ingestion_id,
-                "defines": [],
-            })
-        return canonical_id
-
-    # -----------------------------
-    # IS8: DOCUMENTS Relationships
-    # Markdown sections → code symbols (exact name match)
-    # -----------------------------
-
-    def _link_docs_to_code(self, graph: RepoGraph, symbol_table) -> None:
-        """
-        IS8: Create DOCUMENTS relationships from MARKDOWN_SECTION nodes
-        to the code symbols they document.
-
-        Strategy: exact name match via symbol table.
-        Deterministic, no LLM, rebuild-safe (ADR-048).
-
-        Only runs within repo ingestion — uploaded files are out of scope.
-        """
-        linked = 0
-        skipped = 0
-
-        for entity in graph.all_entities():
-            if entity.get("artifact_type") != "MARKDOWN_SECTION":
-                continue
-
-            # Raw heading text e.g. "add", "Calculator", "run_demo"
-            section_name = entity.get("name", "").strip()
-            if not section_name:
-                continue
-
-            # Normalise: lowercase, strip whitespace
-            normalised = section_name.lower().strip()
-
-            # Try original casing first, then normalised lowercase
-            target_canonical = symbol_table.lookup(section_name) or \
-                            symbol_table.lookup(normalised)
-
-            if not target_canonical:
-                skipped += 1
-                continue
-
-            # Verify target is a documentable code artifact
-            target = graph.get_entity(target_canonical)
-            if not target:
-                skipped += 1
-                continue
-
-            if target.get("artifact_type") not in DOCUMENTABLE_TYPES:
-                skipped += 1
-                continue
-
-            # Don't link a section to itself (shouldn't happen but guard)
-            if entity["canonical_id"] == target["canonical_id"]:
-                skipped += 1
-                continue
-
-            graph.add_relationship({
-                "from_canonical_id": entity["canonical_id"],
-                "to_canonical_id": target["canonical_id"],
-                "relation_type": "DOCUMENTS",
-                "relationship_metadata": {
-                    "match_strategy": "exact_name",
-                    "section_name": section_name,
-                    "confidence": 1.0,
-                },
-            })
-
-            logger.debug(
-                "IS8: DOCUMENTS link: %s → %s",
-                entity["canonical_id"],
-                target["canonical_id"],
-            )
-            linked += 1
-
-        logger.info(
-            "IS8: _link_docs_to_code complete — %d DOCUMENTS links created, "
-            "%d sections skipped (no match)",
-            linked, skipped,
+        return self.assembler.assemble(
+            self.repo_root, self.ingestion_id, extracted_files
         )
 
     # -----------------------------
     # Helpers
     # -----------------------------
 
-    def _canonical_from_id(
-        self, graph: RepoGraph, entity_id: str
-    ) -> Optional[str]:
-        entity = graph.get_entity_by_id(entity_id)
-        return entity.get("canonical_id") if entity else None
-
     def _walk_repo(self):
-        SUPPORTED = {".py", ".md"}
+        supported = set(EXTRACTORS.keys())
         for dirpath, dirnames, filenames in os.walk(self.repo_root):
             # Prune ignored directories in place so os.walk never descends
             # into them; sorted for deterministic traversal order (ADR-030).
@@ -833,56 +99,13 @@ class RepoGraphBuilder:
                 if filename.startswith("."):
                     continue
                 path = Path(dirpath) / filename
-                if path.suffix not in SUPPORTED:
+                if path.suffix not in supported:
                     continue
                 yield path
 
     def _select_extractor(self, file_path: Path):
         rel = file_path.relative_to(self.repo_root).as_posix()
-        if file_path.suffix == ".py":
-            return PythonASTExtractor(relative_path=rel)
-        if file_path.suffix == ".md":
-            return MarkdownSectionExtractor(relative_path=rel)
-        return None
-
-    def _index_python_source(self, source: str):
-        """F-07: parse a file once; map lineno → first AST node in walk
-        order (matching the pre-refactor per-artifact scan), and pre-split
-        the source lines for segment extraction."""
-        try:
-            tree = ast.parse(source)
-        except SyntaxError:
-            return {}, []
-
-        line_nodes: dict = {}
-        for node in ast.walk(tree):
-            if hasattr(node, "lineno") and hasattr(node, "end_lineno"):
-                line_nodes.setdefault(node.lineno, node)
-        return line_nodes, _splitlines_no_ff(source)
-
-    def _extract_artifact_text(
-        self,
-        source: str,
-        artifact: dict,
-        line_nodes: dict,
-        source_lines: list,
-    ) -> str:
-        # Markdown extractors pre-populate text — don't re-extract
-        if artifact.get("text"):
-            return artifact["text"]
-
-        artifact_type = artifact.get("artifact_type")
-
-        if artifact_type == "MODULE":
-            return source
-
-        if artifact_type in {"CLASS", "FUNCTION", "METHOD"}:
-            lineno = artifact.get("metadata", {}).get("lineno")
-            if lineno is None:
-                return ""
-
-            node = line_nodes.get(lineno)
-            if node is not None:
-                return _source_segment(source_lines, node) or ""
-
-        return ""
+        extractor_cls = EXTRACTORS.get(file_path.suffix)
+        if extractor_cls is None:
+            return None
+        return extractor_cls(relative_path=rel)

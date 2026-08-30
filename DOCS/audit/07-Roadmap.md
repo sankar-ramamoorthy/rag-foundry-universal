@@ -98,7 +98,7 @@ See [[00-Audit-Overview]]'s 2026-08-30 status.
 ## Phase 3 — Multi-language (4–6 weeks)
 *Theme: the headline feature.*
 
-- [ ] [[03-Multi-Language-Graph-Plan#WP-L1 — IR + GraphAssembler refactor (the enabler)|WP-L1]] IR + GraphAssembler (absorbs Track A learnings)
+- [x] [[03-Multi-Language-Graph-Plan#WP-L1 — IR + GraphAssembler refactor (the enabler)|WP-L1]] IR + GraphAssembler (absorbs Track A learnings) — done 2026-08-30, issue #81
 - [ ] [[03-Multi-Language-Graph-Plan#WP-L2 — tree-sitter runtime + TypeScript/JavaScript extractor (first new language)|WP-L2]] TypeScript/JavaScript
 - [ ] [[03-Multi-Language-Graph-Plan#WP-L3 — Rust extractor|WP-L3]] Rust
 - [ ] [[03-Multi-Language-Graph-Plan#WP-L4 — Java extractor|WP-L4]] Java
@@ -157,4 +157,5 @@ graph LR
 > 2. ~~Run Phase 2.75's `WP-Q0` eval pass and record a reranker go/no-go decision~~ — done: **NO-GO on the reranker**, see Phase 2.75 above (issue #49, `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`).
 > 3. Phase 3/4 work may resume — but `WP-S8`'s reranker sub-task specifically stays deferred per the NO-GO verdict. ~~The identified next lever is prompting/context assembly, tracked via issues #64 and #65~~ — #64 and #65 are done (2026-08-29, PRs #72/#73); ~~the remaining next lever is prompting/context assembly for chunks that share surface phrasing but describe different referents, not yet filed as its own issue~~ — done (2026-08-30, issue #79): chunks are now labeled by source in the assembled prompt.
 > 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start, plus the malformed compose healthchecks) stays open but is **deliberately deferred to Phase 5's `WP-E2` deploy part** (see below) — it's the "reproducible builds" work the WP already scopes, not urgent now that #55/#57 removed the multi-GB CUDA cost from every recreate.
+> 5. Phase 3 has begun: `WP-L1` (issue #81, 2026-08-30) landed the IR + `GraphAssembler` refactor — verified behavior-identical against four real codebases (Python and Markdown) ingested pre- and post-refactor. Next: `WP-L2` (TypeScript/JS extractor), not yet started.
 

@@ -31,6 +31,14 @@ aliases:
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 
+## 📍 Current status (2026-08-30b — Phase 3 begins — supersedes the 2026-08-30 status below)
+
+> [!tip] Phase 3 (multi-language) has started. `WP-L1`, its enabling refactor, is done.
+
+- **[Issue #81](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/81) (`WP-L1`) done**: ingestion now runs through a language-agnostic IR (`ingestion_service/src/core/codebase/ir.py`: `SymbolRecord`/`ImportRecord`/`CallSite`/`InheritRecord`) and one `GraphAssembler` (`graph_assembler.py`) that does all identity/DEFINES/IMPORTS/INHERITS/OVERRIDES/CALL/DOCUMENTS resolution, parameterized by a per-language `ModulePathConvention` (`module_conventions.py`). `repo_graph_builder.py` is now thin orchestration with a suffix-keyed extractor registry. `python_extractor.py` and `markdown_extractor.py` were adapted to emit IR instead of building graph entities directly — zero change to Python/Markdown ingestion behavior.
+- **Verified, not just tested**: beyond the full unit suite passing unchanged, self-ingestion was compared pre- vs. post-refactor (via git stash, same input, same `ingestion_id`) across four real, diverse codebases — `rag_orchestrator/src`, `llm_service/src`, `vector_store_service/src` (Python), and `DOCS/adr` (Markdown) — with byte-identical `document_nodes`/`document_relationships` output in every case (entity dicts and relationship tuples compared for full equality, not just counts).
+- **What's next:** `WP-L2` (TypeScript/JS extractor, the first new language) — not started. See [[03-Multi-Language-Graph-Plan]].
+
 ## 📍 Current status (2026-08-30 — supersedes the 2026-08-29 status below)
 
 > [!tip] The one remaining item from WP-Q0's findings — the context-assembly/prompting conflation itself — is now filed and fixed. All three WP-Q0 follow-on findings (#64, #65, #79) are closed.

@@ -12,8 +12,8 @@ import ast
 import pytest
 from uuid import uuid4
 
-from src.core.codebase.repo_graph_builder import (
-    RepoGraphBuilder,
+from src.core.codebase.repo_graph_builder import RepoGraphBuilder
+from src.core.extractors.python_extractor import (
     _source_segment,
     _splitlines_no_ff,
 )
