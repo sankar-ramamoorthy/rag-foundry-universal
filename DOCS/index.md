@@ -16,7 +16,9 @@ here goes stale, fix the routing, not by copying content into this file.
 
 New or substantially-edited docs follow
 [the OKF documentation standard](/DOCS/standards/okf-documentation.md)
-(frontmatter + linking conventions).
+(frontmatter + linking conventions). [`DOCS/log.md`](/DOCS/log.md)
+records documentation-standard-relevant history — new ADRs, policy
+changes, structural migrations.
 
 ## Decisions
 
