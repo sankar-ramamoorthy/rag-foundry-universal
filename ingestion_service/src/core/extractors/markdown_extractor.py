@@ -23,14 +23,16 @@ import logging
 from typing import List, Dict, Optional
 from markdown_it import MarkdownIt
 
+from src.core.codebase.ir import ExtractionResult, SymbolRecord
+
 logger = logging.getLogger(__name__)
 
 
 class MarkdownSectionExtractor:
     """
-    Extracts MARKDOWN_MODULE and MARKDOWN_SECTION artifacts from a .md file.
-    Returns same List[Dict] shape as PythonASTExtractor for
-    RepoGraphBuilder compatibility.
+    Extracts MARKDOWN_MODULE and MARKDOWN_SECTION symbols from a .md
+    file (WP-L1: emits the language-agnostic IR — identity assignment
+    and all resolution live once in GraphAssembler).
     """
 
     def __init__(self, relative_path: str):
@@ -42,16 +44,8 @@ class MarkdownSectionExtractor:
     # Public API
     # ------------------------------------------------------------------
 
-    def extract(self, source: str) -> List[Dict]:
-        """
-        Parse markdown source and return list of artifact dicts.
-
-        Args:
-            source: Raw markdown text
-
-        Returns:
-            List of artifact dicts compatible with RepoGraphBuilder
-        """
+    def extract(self, source: str) -> ExtractionResult:
+        """Parse markdown source and return an ExtractionResult."""
         self._slug_counts = {}   # reset per extraction
         artifacts: List[Dict] = []
 
@@ -74,7 +68,36 @@ class MarkdownSectionExtractor:
             f"MS6-IS2: {self.relative_path} → "
             f"1 module + {len(sections)} sections"
         )
-        return artifacts
+        return ExtractionResult(
+            symbols=[self._to_symbol_record(a) for a in artifacts]
+        )
+
+    def _to_symbol_record(self, a: Dict) -> SymbolRecord:
+        prefix = f"{self.relative_path}#"
+        canonical_id = a["id"]
+        symbol_path = (
+            canonical_id[len(prefix):]
+            if canonical_id.startswith(prefix)
+            else None
+        )
+        parent_id = a.get("parent_id")
+        parent_symbol_path = (
+            parent_id[len(prefix):]
+            if parent_id and parent_id != self.module_id
+            and parent_id.startswith(prefix)
+            else None
+        )
+        metadata = dict(a.get("metadata", {}))
+        metadata["doc_type"] = a["doc_type"]
+        return SymbolRecord(
+            kind=a["artifact_type"],
+            name=a["name"],
+            symbol_path=symbol_path,
+            parent_symbol_path=parent_symbol_path,
+            span=None,
+            text=a["text"],
+            metadata=metadata,
+        )
 
     # ------------------------------------------------------------------
     # Section Parsing

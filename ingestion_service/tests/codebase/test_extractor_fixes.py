@@ -1,7 +1,7 @@
 # ingestion_service/tests/codebase/test_extractor_fixes.py
 """
 F-05: module names must strip the ".py" suffix, not the {., p, y} char set.
-F-01: async defs must produce FUNCTION/METHOD artifacts like sync defs.
+F-01: async defs must produce FUNCTION/METHOD symbols like sync defs.
 """
 import pytest
 from uuid import uuid4
@@ -35,10 +35,9 @@ def test_module_name_strips_suffix_not_charset(
 
 
 def test_module_artifact_carries_fixed_name():
-    artifacts = PythonASTExtractor(relative_path="happy.py").extract("x = 1\n")
-    module = next(a for a in artifacts if a["artifact_type"] == "MODULE")
-    assert module["name"] == "happy"
-    assert module["id"] == "happy.py"  # canonical id unchanged (ADR-031)
+    result = PythonASTExtractor(relative_path="happy.py").extract("x = 1\n")
+    module = next(s for s in result.symbols if s.kind == "MODULE")
+    assert module.name == "happy"
 
 
 # -----------------------------
@@ -64,37 +63,37 @@ ASYNC_SOURCE = (
 
 
 @pytest.fixture()
-def async_artifacts():
-    return PythonASTExtractor(relative_path="app.py").extract(ASYNC_SOURCE)
+def async_symbols():
+    return PythonASTExtractor(relative_path="app.py").extract(ASYNC_SOURCE).symbols
 
 
-def test_async_function_produces_artifact(async_artifacts):
+def test_async_function_produces_artifact(async_symbols):
     funcs = {
-        a["id"]: a for a in async_artifacts
-        if a["artifact_type"] in ("FUNCTION", "METHOD")
+        s.symbol_path: s for s in async_symbols
+        if s.kind in ("FUNCTION", "METHOD")
     }
-    assert "app.py#main" in funcs, "async def main is invisible (F-01)"
-    assert funcs["app.py#main"]["artifact_type"] == "FUNCTION"
-    assert funcs["app.py#main"]["metadata"]["is_async"] is True
+    assert "main" in funcs, "async def main is invisible (F-01)"
+    assert funcs["main"].kind == "FUNCTION"
+    assert funcs["main"].metadata["is_async"] is True
 
 
-def test_async_method_produces_method_artifact(async_artifacts):
+def test_async_method_produces_method_artifact(async_symbols):
     funcs = {
-        a["id"]: a for a in async_artifacts
-        if a["artifact_type"] in ("FUNCTION", "METHOD")
+        s.symbol_path: s for s in async_symbols
+        if s.kind in ("FUNCTION", "METHOD")
     }
-    assert "app.py#Handler.handle" in funcs
-    assert funcs["app.py#Handler.handle"]["artifact_type"] == "METHOD"
-    assert funcs["app.py#Handler.handle"]["metadata"]["is_async"] is True
+    assert "Handler.handle" in funcs
+    assert funcs["Handler.handle"].kind == "METHOD"
+    assert funcs["Handler.handle"].metadata["is_async"] is True
 
 
-def test_sync_defs_marked_not_async(async_artifacts):
+def test_sync_defs_marked_not_async(async_symbols):
     funcs = {
-        a["id"]: a for a in async_artifacts
-        if a["artifact_type"] in ("FUNCTION", "METHOD")
+        s.symbol_path: s for s in async_symbols
+        if s.kind in ("FUNCTION", "METHOD")
     }
-    assert funcs["app.py#helper"]["metadata"]["is_async"] is False
-    assert funcs["app.py#Handler.load"]["metadata"]["is_async"] is False
+    assert funcs["helper"].metadata["is_async"] is False
+    assert funcs["Handler.load"].metadata["is_async"] is False
 
 
 def test_calls_inside_async_body_attributed_to_async_def():
@@ -104,10 +103,10 @@ def test_calls_inside_async_body_attributed_to_async_def():
     extractor = PythonASTExtractor(relative_path="app.py")
     extractor.extract(ASYNC_SOURCE)
     sites = {
-        (s["receiver"], s["name"]): s for s in extractor.call_sites
+        (s.receiver, s.callee_name): s for s in extractor.call_sites
     }
-    assert sites[(None, "helper")]["parent_id"] == "app.py#main"
-    assert sites[("self", "load")]["parent_id"] == "app.py#Handler.handle"
+    assert sites[(None, "helper")].caller_symbol_path == "main"
+    assert sites[("self", "load")].caller_symbol_path == "Handler.handle"
 
 
 def test_async_def_end_to_end_through_graph_builder(tmp_path):

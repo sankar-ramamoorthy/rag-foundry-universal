@@ -14,27 +14,28 @@ def test_extractor_on_self_file(extractor):
     with open(f"src/{SAMPLE_FILE_PATH}", "r", encoding="utf-8") as f:
         source_code = f.read()
 
-    artifacts = extractor.extract(source_code)
+    result = extractor.extract(source_code)
+    symbols = result.symbols
 
     # -----------------------------
-    # Module artifact
+    # Module symbol
     # -----------------------------
-    module_artifacts = [a for a in artifacts if a["artifact_type"] == "MODULE"]
-    assert len(module_artifacts) == 1
-    assert module_artifacts[0]["id"] == SAMPLE_FILE_PATH
+    module_symbols = [s for s in symbols if s.kind == "MODULE"]
+    assert len(module_symbols) == 1
+    assert module_symbols[0].symbol_path is None
 
     # -----------------------------
-    # Class artifacts
+    # Class symbols
     # -----------------------------
-    class_artifacts = [a for a in artifacts if a["artifact_type"] == "CLASS"]
-    class_names = [c["name"] for c in class_artifacts]
+    class_symbols = [s for s in symbols if s.kind == "CLASS"]
+    class_names = [c.name for c in class_symbols]
     assert "PythonASTExtractor" in class_names
 
     # -----------------------------
-    # Method artifacts
+    # Method symbols
     # -----------------------------
-    method_artifacts = [a for a in artifacts if a["artifact_type"] == "METHOD"]
-    method_names = [m["name"] for m in method_artifacts]
+    method_symbols = [s for s in symbols if s.kind == "METHOD"]
+    method_names = [m.name for m in method_symbols]
     # Methods inside PythonASTExtractor
     expected_methods = [
         "extract",
@@ -49,38 +50,37 @@ def test_extractor_on_self_file(extractor):
         assert method in method_names
 
     # -----------------------------
-    # Function artifacts (top-level)
+    # Function symbols (top-level)
     # -----------------------------
-    function_artifacts = [a for a in artifacts if a["artifact_type"] == "FUNCTION"]
-    function_names = [f["name"] for f in function_artifacts]
+    function_symbols = [s for s in symbols if s.kind == "FUNCTION"]
+    function_names = [f.name for f in function_symbols]
     # The top-level helper function
     assert "annotate_parents" in function_names
 
     # -----------------------------
-    # Import artifacts
+    # Import records
     # -----------------------------
-    import_artifacts = [a for a in artifacts if a["artifact_type"] == "IMPORT"]
-    import_names = [i["name"] for i in import_artifacts]
+    import_names = [
+        i.imported_name if i.imported_name is not None else i.raw_module
+        for i in result.imports
+    ]
     import_modules = [
-        i.get("metadata", {}).get("module")
-        for i in import_artifacts
-        if "module" in i.get("metadata", {})
+        i.raw_module for i in result.imports if i.imported_name is not None
     ]
 
     # Check standard imports
     assert "ast" in import_names  # from 'import ast'
 
-    # Check 'from typing import List, Dict, Optional'
-    for symbol in ["List", "Dict", "Optional"]:
+    # Check 'from typing import List, Optional'
+    for symbol in ["List", "Optional"]:
         assert symbol in import_names
-    assert "typing" in import_modules  # ensure the module itself is tracked in metadata
+    assert "typing" in import_modules  # ensure the module itself is tracked
 
     # -----------------------------
-    # Call sites (F-03: evidence list, not artifacts)
+    # Call sites (F-03: evidence list, not symbols)
     # -----------------------------
-    assert not any(a["artifact_type"] == "CALL" for a in artifacts)
-    site_keys = {(s["receiver"], s["name"]) for s in extractor.call_sites}
+    assert not any(s.kind == "CALL" for s in symbols)
+    site_keys = {(s.receiver, s.callee_name) for s in extractor.call_sites}
 
     # Check at least one known call exists: ast.unparse used in extractor
     assert ("ast", "unparse") in site_keys
-

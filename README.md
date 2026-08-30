@@ -256,6 +256,7 @@ for how this gated further retrieval work.
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
 * Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64, #65, and #79 (the code-query filter bug, near-duplicate chunk crowding, and unlabeled-chunk context-assembly conflation that WP-Q0 surfaced) are all fixed — see `DOCS/audit/00-Audit-Overview.md`
+* Multi-language codebase graphs (Rust, TypeScript/JavaScript, Java) beyond today's Python-only extraction — Phase 3 has begun: `WP-L1` (issue #81) refactored ingestion onto a language-agnostic IR and a single `GraphAssembler`, with zero behavior change (verified against real codebases pre/post-refactor); per-language extractors (`WP-L2`+) are next, see `DOCS/audit/03-Multi-Language-Graph-Plan.md`
 * Enhanced observability across ingestion and query pipelines
 * First-class Groq/NVIDIA NIM cloud endpoints (issue #46) — LiteLLM routing to a remote Ollama box and cloud-provider aliases (Anthropic, OpenAI) already ships today
 
