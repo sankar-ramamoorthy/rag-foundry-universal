@@ -20,6 +20,16 @@ retroactively edited except to correct a recording error.
 > status entry. The findings and measurements below are left exactly as
 > recorded on 2026-08-27, per this file's own rule above.
 
+> [!tip] Resolution update (2026-08-30) — added, not a retroactive edit
+> The Q7 finding's own "next lever" (below) — prompting/context assembly to
+> stop the model conflating similarly-worded figures from different
+> documents — is fixed: [issue #79](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/79),
+> per-chunk source labeling in the assembled prompt (`build_labeled_context()`
+> in `rag_orchestrator/src/retrieval/agent_adapter.py`). See
+> `DOCS/audit/00-Audit-Overview.md`'s 2026-08-30 status entry. The findings
+> and measurements below are left exactly as recorded on 2026-08-27, per
+> this file's own rule above.
+
 ---
 
 ## Environment Verification (T001-T002)

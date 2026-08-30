@@ -9,41 +9,71 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Can be overridden externally
 
 
-def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
+def _source_label(c: Dict[str, object]) -> Optional[object]:
     """
-    Human-readable, deduplicated source labels (issue #30 Part 4).
-
     Prefers canonical_id from chunk metadata (`path` or
     `path#Class.method` per ADR-031), then relative_path, then the raw
     document_id. The vector store's search response nests the ingestion
     metadata under `metadata.source_metadata` (vectors.py), so both the
     flat and nested shapes are checked — same duality
-    extract_canonical_ids_from_chunks handles. Labels keep first-seen
-    order, so with seeds ordered before expanded documents the seed
-    sources come first.
+    extract_canonical_ids_from_chunks handles.
+    """
+    raw_metadata = c.get("metadata")
+    metadata: Dict[str, object] = (
+        raw_metadata if isinstance(raw_metadata, dict) else {}
+    )
+    raw_nested = metadata.get("source_metadata")
+    nested: Dict[str, object] = (
+        raw_nested if isinstance(raw_nested, dict) else {}
+    )
+    return (
+        metadata.get("canonical_id")
+        or nested.get("canonical_id")
+        or metadata.get("relative_path")
+        or nested.get("relative_path")
+        or c.get("document_id")
+    )
+
+
+def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
+    """
+    Human-readable, deduplicated source labels (issue #30 Part 4).
+
+    Labels keep first-seen order, so with seeds ordered before expanded
+    documents the seed sources come first.
     """
     sources: List[str] = []
     seen: set = set()
     for c in agent_chunks:
-        raw_metadata = c.get("metadata")
-        metadata: Dict[str, object] = (
-            raw_metadata if isinstance(raw_metadata, dict) else {}
-        )
-        raw_nested = metadata.get("source_metadata")
-        nested: Dict[str, object] = (
-            raw_nested if isinstance(raw_nested, dict) else {}
-        )
-        label = (
-            metadata.get("canonical_id")
-            or nested.get("canonical_id")
-            or metadata.get("relative_path")
-            or nested.get("relative_path")
-            or c.get("document_id")
-        )
+        label = _source_label(c)
         if label and label not in seen:
             seen.add(label)
             sources.append(str(label))
     return sources
+
+
+def build_labeled_context(
+    agent_chunks: List[Dict[str, object]], max_total_tokens: int
+) -> "tuple[str, int]":
+    """
+    Join chunk text into the LLM context, each block prefixed with its
+    source label so chunks that share surface phrasing (e.g. two
+    "p95 latency" figures) but describe different referents stay
+    distinguishable to the model instead of blending into one
+    undifferentiated wall of text (WP-Q0 Q7 finding, issue tracked
+    separately from #64/#65's retrieval-side fixes).
+    """
+    context_parts: List[str] = []
+    token_count = 0
+    for c in agent_chunks:
+        text = str(c["text"])
+        tokens = len(text.split())
+        if token_count + tokens > max_total_tokens:
+            break
+        label = _source_label(c)
+        context_parts.append(f"[Source: {label}]\n{text}" if label else text)
+        token_count += tokens
+    return "\n\n".join(context_parts), token_count
 
 
 def prepare_chunks_for_agent(

@@ -240,7 +240,13 @@ by filtering on `source_type` instead) and
 [issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)
 (near-duplicate chunk crowding from module/sole-child artifacts — fixed in
 [#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73)
-by deduplicating near-identical seed chunks at retrieval time). See
+by deduplicating near-identical seed chunks at retrieval time). The
+context-assembly issue itself — the model conflating similarly-worded
+figures from different documents — is now filed and fixed as
+[issue #79](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/79):
+each chunk in the assembled prompt is now prefixed with its source
+label (canonical ID / path), so chunks that share surface phrasing but
+describe different referents stay distinguishable to the model. See
 `DOCS/audit/00-Audit-Overview.md` and `DOCS/audit/04-Scalability-Plan.md`
 for how this gated further retrieval work.
 
@@ -249,7 +255,7 @@ for how this gated further retrieval work.
 ## 🤖 Future Vision
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
-* Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64 and #65 (the code-query filter bug and near-duplicate chunk crowding WP-Q0 surfaced) are fixed; the remaining identified lever is prompting/context assembly for chunks that share surface phrasing but describe different referents — not yet filed as its own issue, see `DOCS/audit/00-Audit-Overview.md`
+* Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64, #65, and #79 (the code-query filter bug, near-duplicate chunk crowding, and unlabeled-chunk context-assembly conflation that WP-Q0 surfaced) are all fixed — see `DOCS/audit/00-Audit-Overview.md`
 * Enhanced observability across ingestion and query pipelines
 * First-class Groq/NVIDIA NIM cloud endpoints (issue #46) — LiteLLM routing to a remote Ollama box and cloud-provider aliases (Anthropic, OpenAI) already ships today
 

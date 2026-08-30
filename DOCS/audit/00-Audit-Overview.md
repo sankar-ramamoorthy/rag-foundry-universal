@@ -31,6 +31,13 @@ aliases:
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 
+## 📍 Current status (2026-08-30 — supersedes the 2026-08-29 status below)
+
+> [!tip] The one remaining item from WP-Q0's findings — the context-assembly/prompting conflation itself — is now filed and fixed. All three WP-Q0 follow-on findings (#64, #65, #79) are closed.
+
+- **[Issue #79](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/79) filed and fixed**: implemented the first of the three candidate directions the methodology recorded — more salient per-chunk source/section labeling in the assembled prompt. A shared `build_labeled_context()` helper (`rag_orchestrator/src/retrieval/agent_adapter.py`) now prefixes each chunk with its source label (canonical ID / relative path / document ID, same precedence `build_sources` already used) before joining into the LLM context, replacing the previously-duplicated unlabeled join in both `service.py` (`/v1/rag`) and `simple_service.py` (`/v1/rag/simple`). The other two candidate directions (a stricter same-topic/provenance filter, explicit "distinguish figures from different documents" prompt guidance) remain unimplemented — not pursued absent new evidence the labeling fix alone is insufficient.
+- **What is still open:** nothing from WP-Q0's findings. Next work is Phase 3 (multi-language) or other open issues (#60, #46, #41, #16), not gated on any further RAG-quality follow-up.
+
 ## 📍 Current status (2026-08-29 — supersedes the 2026-08-27 status below)
 
 > [!tip] Both WP-Q0 follow-on findings are fixed. The reranker NO-GO verdict and the "next lever is prompting/context assembly" conclusion below still stand.
