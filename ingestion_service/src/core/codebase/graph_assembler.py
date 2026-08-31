@@ -29,7 +29,14 @@ from src.core.codebase.symbol_table import build_symbol_table
 logger = logging.getLogger(__name__)
 
 # IS8: code artifact types eligible for DOCUMENTS relationships
-DOCUMENTABLE_TYPES = {"CLASS", "FUNCTION", "METHOD", "MODULE"}
+# WP-L2: INTERFACE (TS/JS) is documentable the same way CLASS is.
+DOCUMENTABLE_TYPES = {"CLASS", "INTERFACE", "FUNCTION", "METHOD", "MODULE"}
+
+# WP-L2: nodes eligible for INHERITS resolution (extends/implements)  and
+# for OVERRIDES's base-hierarchy walk. CLASS-only under WP-L1 (Python has
+# no interface-like kind); TS/JS interfaces extend other interfaces and
+# classes implement them, so both kinds participate identically.
+INHERITABLE_TYPES = {"CLASS", "INTERFACE"}
 
 # F-04: receivers that are plain dotted names keep their context in
 # EXTERNAL_SYMBOL ids; anything else (subscripts, call results) doesn't.
@@ -159,7 +166,7 @@ class GraphAssembler:
 
     def _attach_defines(self, graph: RepoGraph):
         definition_types = {
-            "CLASS", "FUNCTION", "METHOD",
+            "CLASS", "INTERFACE", "FUNCTION", "METHOD",
             "MARKDOWN_SECTION",
         }
 
@@ -329,18 +336,20 @@ class GraphAssembler:
     def _resolve_inheritance(self, graph: RepoGraph, symbol_table) -> None:
         """WP-G5: materialize the class hierarchy.
 
-        For each CLASS, resolve its `metadata.bases` strings through the
-        same machinery as call resolution (same-file → imports →
-        unique-global → EXTERNAL_SYMBOL) and emit
-        CLASS --INHERITS--> CLASS|EXTERNAL_SYMBOL edges. Then, for each
-        METHOD redefining a name that exists on the nearest resolved
-        ancestor, emit METHOD --OVERRIDES--> base METHOD. Also records
-        graph.class_bases so `self.x()` resolution can fall back to
-        inherited methods (ADR-032 step 1 extension)."""
+        For each CLASS or INTERFACE (WP-L2: TS/JS interfaces extend other
+        interfaces and classes implement them, resolved identically),
+        resolve its `metadata.bases` strings through the same machinery as
+        call resolution (same-file → imports → unique-global →
+        EXTERNAL_SYMBOL) and emit CLASS|INTERFACE --INHERITS-->
+        CLASS|INTERFACE|EXTERNAL_SYMBOL edges. Then, for each METHOD
+        redefining a name that exists on the nearest resolved ancestor,
+        emit METHOD --OVERRIDES--> base METHOD. Also records
+        graph.class_bases so `self.x()`/`this.x()` resolution can fall back
+        to inherited methods (ADR-032 step 1 extension)."""
         classes = sorted(
             (
                 e for e in graph.all_entities()
-                if e.get("artifact_type") == "CLASS"
+                if e.get("artifact_type") in INHERITABLE_TYPES
             ),
             key=lambda e: e["canonical_id"],
         )
@@ -357,7 +366,7 @@ class GraphAssembler:
                 if not target or target["id"] == cls["id"]:
                     continue
 
-                if target.get("artifact_type") == "CLASS":
+                if target.get("artifact_type") in INHERITABLE_TYPES:
                     bases = graph.class_bases.setdefault(cls["id"], [])
                     if target["id"] not in bases:
                         bases.append(target["id"])
@@ -552,7 +561,8 @@ class GraphAssembler:
         self, site: dict, graph: RepoGraph, symbol_table
     ) -> Tuple[Optional[str], float]:
         """F-04 (WP-G4): resolve one call site per ADR-032's order:
-        (1) receiver `self`/`cls` → enclosing class's methods;
+        (1) receiver `self`/`cls`/`this` (WP-L2: TS/JS's own-instance
+        receiver, same structural meaning) → enclosing class's methods;
         (2) bare name → same-file symbols;
         (3) name/receiver imported in this file → target module's symbol;
         (4) global index, only if unambiguous;
@@ -564,7 +574,7 @@ class GraphAssembler:
         name = site.get("name") or ""
         receiver = site.get("receiver")
 
-        if receiver in ("self", "cls"):
+        if receiver in ("self", "cls", "this"):
             class_id = self._enclosing_class_id(site, graph)
             if class_id:
                 # WP-G5: fall back through resolved base classes so a

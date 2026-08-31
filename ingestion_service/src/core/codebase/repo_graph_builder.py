@@ -14,21 +14,47 @@ import os
 
 from src.core.codebase.graph_assembler import GraphAssembler
 from src.core.codebase.ir import ExtractionResult
-from src.core.codebase.module_conventions import PythonModuleConvention
+from src.core.codebase.module_conventions import (
+    CompositeModuleConvention,
+    PythonModuleConvention,
+    TypeScriptModuleConvention,
+)
 from src.core.codebase.repo_graph import RepoGraph
 from src.core.extractors.python_extractor import PythonASTExtractor
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
+from src.core.extractors.treesitter.typescript import TypeScriptExtractor
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 # Registry pattern (WP-L1 acceptance criterion): a new language extractor
 # is added here, by suffix — nothing else in this file or in
-# GraphAssembler needs to change.
+# GraphAssembler needs to change. (WP-L2: the one necessary exception is
+# module-convention selection below, since TS/JS needs a different
+# file-path -> module-name rule than Python's dotted-path convention.)
 EXTRACTORS = {
     ".py": PythonASTExtractor,
     ".md": MarkdownSectionExtractor,
+    ".ts": TypeScriptExtractor,
+    ".tsx": TypeScriptExtractor,
+    ".js": TypeScriptExtractor,
+    ".jsx": TypeScriptExtractor,
+    ".mjs": TypeScriptExtractor,
+    ".cjs": TypeScriptExtractor,
 }
+
+# WP-L2: per-suffix module-naming convention dispatch, so a repo mixing
+# Python and TS/JS resolves each language's imports correctly in one
+# ingestion run (DOCS/audit/03-Multi-Language-Graph-Plan.md §3 WP-L2).
+_MODULE_CONVENTIONS = CompositeModuleConvention({
+    ".py": PythonModuleConvention(),
+    ".ts": TypeScriptModuleConvention(),
+    ".tsx": TypeScriptModuleConvention(),
+    ".js": TypeScriptModuleConvention(),
+    ".jsx": TypeScriptModuleConvention(),
+    ".mjs": TypeScriptModuleConvention(),
+    ".cjs": TypeScriptModuleConvention(),
+})
 
 # F-16: directories that never contain first-party code worth ingesting.
 # Dot-directories (.git, .venv, .tox, …) are excluded by a separate rule.
@@ -52,10 +78,7 @@ class RepoGraphBuilder:
     def __init__(self, repo_root: Path, ingestion_id: str):
         self.repo_root = repo_root
         self.ingestion_id = ingestion_id
-        # Python is the only language today; the assembler takes a
-        # per-language convention once suffix-based dispatch to more
-        # than one convention is needed (WP-L2+).
-        self.assembler = GraphAssembler(module_convention=PythonModuleConvention())
+        self.assembler = GraphAssembler(module_convention=_MODULE_CONVENTIONS)
 
     def build(self) -> RepoGraph:
         extracted_files: list[tuple[str, ExtractionResult]] = []

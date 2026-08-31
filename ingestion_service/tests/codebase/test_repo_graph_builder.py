@@ -162,3 +162,43 @@ def test_rebuild_determinism(tmp_path):
     g2 = RepoGraphBuilder(tmp_path, ingestion_id="fixed-id").build()
     assert sorted(g1.entities.keys()) == sorted(g2.entities.keys())
     assert g1.relationships == g2.relationships
+
+
+# ---------------------------------------------------------------------
+# WP-L2: mixed-language repo (spec SC-006) — Python and TypeScript files
+# in one repo must each resolve through their own module convention with
+# no cross-contamination of import resolution between them.
+# ---------------------------------------------------------------------
+
+
+def test_mixed_python_and_typescript_repo(tmp_path):
+    (tmp_path / "main.py").write_text(
+        "import os\n\n\ndef run():\n    return os.getcwd()\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "util.ts").write_text(
+        "export function helper() {\n  return 1;\n}\n",
+        encoding="utf-8",
+    )
+
+    graph = RepoGraphBuilder(tmp_path, ingestion_id=str(uuid4())).build()
+
+    entity_types = {
+        e["canonical_id"]: e["artifact_type"] for e in graph.all_entities()
+    }
+    assert entity_types["main.py"] == "MODULE"
+    assert entity_types["main.py#run"] == "FUNCTION"
+    assert entity_types["util.ts"] == "MODULE"
+    assert entity_types["util.ts#helper"] == "FUNCTION"
+
+    # Python's import resolves to its own external-module convention
+    # (dotted name); TS's module convention never sees or misresolves it.
+    imports_edges = {
+        (r["from_canonical_id"], r["to_canonical_id"])
+        for r in graph.relationships
+        if r["relation_type"] == "IMPORTS"
+    }
+    assert ("main.py", "EXTERNAL_MODULE:os") in imports_edges
+    # No accidental edge between the two unrelated files/languages.
+    assert ("main.py", "util.ts") not in imports_edges
+    assert ("util.ts", "main.py") not in imports_edges
