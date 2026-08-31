@@ -1,1 +1,3 @@
-{"feature_directory":"specs/001-rag-quality-baseline"}
+{
+  "feature_directory": "specs/002-typescript-js-extractor"
+}
