@@ -9,6 +9,9 @@ class RAGQuery(BaseModel):
     top_k: int = 5
     provider: Optional[str] = None
     model: Optional[str] = None
+    # WP-L6a (#85): optional language scope (python/typescript/javascript).
+    # Omitted = today's unfiltered, all-languages behavior, unchanged.
+    language: Optional[str] = None
 
 class RAGResponse(BaseModel):  # Updated name
     answer: str

@@ -44,7 +44,8 @@ async def rag_endpoint(rag_query: RAGQuery):
         repo_id=rag_query.repo_id,
         top_k=rag_query.top_k,
         provider=rag_query.provider,
-        model=rag_query.model
+        model=rag_query.model,
+        language=rag_query.language,
         )
         return result
 

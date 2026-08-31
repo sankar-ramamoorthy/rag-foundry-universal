@@ -32,7 +32,7 @@ Project Structure.
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirm the migration chain head: `grep -H "^revision\|^down_revision" migrations/versions/*.py | tail -5` and verify `20260829_src_type` has no existing `down_revision` reference (research.md) before authoring the new migration in T008.
+- [x] T001 Confirm the migration chain head: `grep -H "^revision\|^down_revision" migrations/versions/*.py | tail -5` and verify `20260829_src_type` has no existing `down_revision` reference (research.md) before authoring the new migration in T008.
 
 ---
 
@@ -40,14 +40,14 @@ Project Structure.
 
 **⚠️ CRITICAL**: language must exist on graph nodes and vector chunks before the retrieval-filter phase has anything to filter on.
 
-- [ ] T002 Add `LANGUAGE_BY_SUFFIX` constant (`.py`→`python`, `.ts`/`.tsx`→`typescript`, `.js`/`.jsx`/`.mjs`/`.cjs`→`javascript`) to `ingestion_service/src/core/codebase/graph_assembler.py`, module-level alongside the existing `DOCUMENTABLE_TYPES`/`INHERITABLE_TYPES` constants
-- [ ] T003 [P] Unit tests for `LANGUAGE_BY_SUFFIX` lookup behavior (recognized suffixes, unrecognized suffix → `None`, empty string → `None`) in `ingestion_service/tests/codebase/test_graph_assembler_language.py` (new file)
-- [ ] T004 In `GraphAssembler._lower_symbol` and `_lower_import` (`ingestion_service/src/core/codebase/graph_assembler.py`), add a top-level `"language"` key to the returned entity dict, derived via `LANGUAGE_BY_SUFFIX.get(Path(relative_path).suffix)` — mirrors the existing `doc_type` promotion pattern exactly (plan.md Constitution Exception)
-- [ ] T005 Unit tests: ingesting a mixed-suffix fixture (or reusing `ingestion_service/tests/fixtures/ts_repo/` plus one `.py` file) via `RepoGraphBuilder` produces `language="python"` on Python symbols, `language="typescript"`/`"javascript"` on the corresponding TS/JS symbols, and no `language` key on MARKDOWN_SECTION/EXTERNAL_MODULE/EXTERNAL_SYMBOL nodes, in `ingestion_service/tests/codebase/test_graph_assembler_language.py`
-- [ ] T006 Add `chunk.metadata["language"] = node.get("language")` in `_embed_repo_artifacts` (`ingestion_service/src/api/v1/codebase_ingest.py`, alongside the existing `chunk.metadata["doc_type"] = node.get("doc_type", "code")` line)
-- [ ] T007 [P] Add `"language"` to `PgVectorStore.TYPED_FILTER_COLUMNS` (`vector_store_service/src/core/vectorstore/pgvector_store.py`, currently `frozenset({"repo_id", "doc_type", "source_type"})`), add `language` to the `add()` INSERT column list + `%s` placeholder, and add `source_metadata.get("language")` to the typed-copy tuple (research.md's exact line references)
-- [ ] T008 [P] New Alembic migration `migrations/versions/20260831_add_language_typed_column.py` (revision `20260831_language_col`, `down_revision = "20260829_src_type"`) adding `language TEXT` to `ingestion_service.vector_chunks`, backfilling from `source_metadata->>'language'`, and creating `ix_vector_chunks_repo_language (repo_id, language)` + `ix_vector_chunks_language_col (language)` — exact structural mirror of `20260829_add_source_type_typed_column.py`, including a symmetric `downgrade()`
-- [ ] T009 [P] Unit tests for the new typed column in `vector_store_service/tests/core/vectorstore/test_typed_filter_columns.py`: `test_language_equality_uses_typed_column`, `test_in_operator_on_language_typed_column`, `test_ne_operator_on_language_typed_column` — mirrors the existing `doc_type`/`source_type` test triads exactly
+- [x] T002 Add `LANGUAGE_BY_SUFFIX` constant (`.py`→`python`, `.ts`/`.tsx`→`typescript`, `.js`/`.jsx`/`.mjs`/`.cjs`→`javascript`) to `ingestion_service/src/core/codebase/graph_assembler.py`, module-level alongside the existing `DOCUMENTABLE_TYPES`/`INHERITABLE_TYPES` constants
+- [x] T003 [P] Unit tests for `LANGUAGE_BY_SUFFIX` lookup behavior (recognized suffixes, unrecognized suffix → `None`, empty string → `None`) in `ingestion_service/tests/codebase/test_graph_assembler_language.py` (new file)
+- [x] T004 In `GraphAssembler._lower_symbol` and `_lower_import` (`ingestion_service/src/core/codebase/graph_assembler.py`), add a top-level `"language"` key to the returned entity dict, derived via `LANGUAGE_BY_SUFFIX.get(Path(relative_path).suffix)` — mirrors the existing `doc_type` promotion pattern exactly (plan.md Constitution Exception)
+- [x] T005 Unit tests: ingesting a mixed-suffix fixture (or reusing `ingestion_service/tests/fixtures/ts_repo/` plus one `.py` file) via `RepoGraphBuilder` produces `language="python"` on Python symbols, `language="typescript"`/`"javascript"` on the corresponding TS/JS symbols, and no `language` key on MARKDOWN_SECTION/EXTERNAL_MODULE/EXTERNAL_SYMBOL nodes, in `ingestion_service/tests/codebase/test_graph_assembler_language.py`
+- [x] T006 Add `chunk.metadata["language"] = node.get("language")` in `_embed_repo_artifacts` (`ingestion_service/src/api/v1/codebase_ingest.py`, alongside the existing `chunk.metadata["doc_type"] = node.get("doc_type", "code")` line)
+- [x] T007 [P] Add `"language"` to `PgVectorStore.TYPED_FILTER_COLUMNS` (`vector_store_service/src/core/vectorstore/pgvector_store.py`, currently `frozenset({"repo_id", "doc_type", "source_type"})`), add `language` to the `add()` INSERT column list + `%s` placeholder, and add `source_metadata.get("language")` to the typed-copy tuple (research.md's exact line references)
+- [x] T008 [P] New Alembic migration `migrations/versions/20260831_add_language_typed_column.py` (revision `20260831_language_col`, `down_revision = "20260829_src_type"`) adding `language TEXT` to `ingestion_service.vector_chunks`, backfilling from `source_metadata->>'language'`, and creating `ix_vector_chunks_repo_language (repo_id, language)` + `ix_vector_chunks_language_col (language)` — exact structural mirror of `20260829_add_source_type_typed_column.py`, including a symmetric `downgrade()`
+- [x] T009 [P] Unit tests for the new typed column in `vector_store_service/tests/core/vectorstore/test_typed_filter_columns.py`: `test_language_equality_uses_typed_column`, `test_in_operator_on_language_typed_column`, `test_ne_operator_on_language_typed_column` — mirrors the existing `doc_type`/`source_type` test triads exactly
 
 **Checkpoint**: language exists end-to-end from extraction through the vector store schema; nothing filters on it yet.
 
@@ -61,15 +61,15 @@ Project Structure.
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Unit tests in new `rag_orchestrator/tests/test_language_scoping.py` (mirrors `test_repo_scoping.py`'s `_run_hybrid_with_empty_store` harness, extended with an optional `language` kwarg): `test_seed_search_is_language_scoped_python`, `test_seed_search_is_language_scoped_typescript`, `test_seed_search_is_language_scoped_javascript`, `test_seed_search_has_no_language_key_when_omitted` (asserts the exact dict `{"source_type": "code", "repo_id": repo_id}` — no `language` key at all, not `language: None`)
+- [x] T010 [P] [US1] Unit tests in new `rag_orchestrator/tests/test_language_scoping.py` (mirrors `test_repo_scoping.py`'s `_run_hybrid_with_empty_store` harness, extended with an optional `language` kwarg): `test_seed_search_is_language_scoped_python`, `test_seed_search_is_language_scoped_typescript`, `test_seed_search_is_language_scoped_javascript`, `test_seed_search_has_no_language_key_when_omitted` (asserts the exact dict `{"source_type": "code", "repo_id": repo_id}` — no `language` key at all, not `language: None`)
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Add `language: Optional[str] = None` to `RAGQuery` in `rag_orchestrator/src/api/v1/models.py`
-- [ ] T012 [US1] Add `language=rag_query.language` to the `run_rag(...)` call in `rag_endpoint` (`rag_orchestrator/src/api/v1/routes.py`)
-- [ ] T013 [US1] Add `language: Optional[str] = None` parameter to `run_rag` (`rag_orchestrator/src/core/service.py`), threaded into its `hybrid_retrieve(...)` call
-- [ ] T014 [US1] Add `language: Optional[str] = None` parameter to `hybrid_retrieve` (`rag_orchestrator/src/core/service.py`); build the primary seed-search `metadata_filter` conditionally including `"language": language` only when truthy (data-model.md's exact dict shapes) — depends on T013
-- [ ] T015 [US1] Route-level test: `test_route_forwards_language` / `test_route_forwards_none_when_language_omitted` in `test_language_scoping.py`, mirroring `test_repo_scoping.py`'s `test_route_forwards_repo_id` pattern exactly (monkeypatch `routes.run_rag`, `TestClient(app)`, assert captured kwargs)
+- [x] T011 [US1] Add `language: Optional[str] = None` to `RAGQuery` in `rag_orchestrator/src/api/v1/models.py`
+- [x] T012 [US1] Add `language=rag_query.language` to the `run_rag(...)` call in `rag_endpoint` (`rag_orchestrator/src/api/v1/routes.py`)
+- [x] T013 [US1] Add `language: Optional[str] = None` parameter to `run_rag` (`rag_orchestrator/src/core/service.py`), threaded into its `hybrid_retrieve(...)` call
+- [x] T014 [US1] Add `language: Optional[str] = None` parameter to `hybrid_retrieve` (`rag_orchestrator/src/core/service.py`); build the primary seed-search `metadata_filter` conditionally including `"language": language` only when truthy (data-model.md's exact dict shapes) — depends on T013
+- [x] T015 [US1] Route-level test: `test_route_forwards_language` / `test_route_forwards_none_when_language_omitted` in `test_language_scoping.py`, mirroring `test_repo_scoping.py`'s `test_route_forwards_repo_id` pattern exactly (monkeypatch `routes.run_rag`, `TestClient(app)`, assert captured kwargs)
 
 **Checkpoint**: User Story 1 fully functional — a mixed-language repo can be queried per-language via the API, unscoped behavior provably unchanged.
 
@@ -83,12 +83,12 @@ Project Structure.
 
 ### Tests for User Story 2
 
-- [ ] T016 [P] [US2] `test_fallback_keeps_language_scope` in `test_language_scoping.py`, mirroring `test_repo_scoping.py`'s `test_fallback_relaxes_source_type_but_keeps_repo_scope`: assert the second (fallback) payload's `metadata_filter == {"repo_id": repo_id, "language": language}` (no `source_type` key, `language` key present)
-- [ ] T017 [P] [US2] `test_fallback_has_no_language_key_when_omitted` — the existing no-language fallback case (`{"repo_id": repo_id}` exactly) stays a passing regression check, not just inherited from `test_repo_scoping.py`
+- [x] T016 [P] [US2] `test_fallback_keeps_language_scope` in `test_language_scoping.py`, mirroring `test_repo_scoping.py`'s `test_fallback_relaxes_source_type_but_keeps_repo_scope`: assert the second (fallback) payload's `metadata_filter == {"repo_id": repo_id, "language": language}` (no `source_type` key, `language` key present)
+- [x] T017 [P] [US2] `test_fallback_has_no_language_key_when_omitted` — the existing no-language fallback case (`{"repo_id": repo_id}` exactly) stays a passing regression check, not just inherited from `test_repo_scoping.py`
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] In `hybrid_retrieve`'s fallback branch (`rag_orchestrator/src/core/service.py`, currently `payload["metadata_filter"] = {"repo_id": repo_id}`), rebuild the fallback filter conditionally including `"language": language` the same way the primary filter does (depends on T014)
+- [x] T018 [US2] In `hybrid_retrieve`'s fallback branch (`rag_orchestrator/src/core/service.py`, currently `payload["metadata_filter"] = {"repo_id": repo_id}`), rebuild the fallback filter conditionally including `"language": language` the same way the primary filter does (depends on T014)
 
 **Checkpoint**: both user stories independently functional; language scoping is reliable even in the sparse-results fallback path.
 
@@ -96,12 +96,12 @@ Project Structure.
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T019 Run every existing `rag_orchestrator` unit test (`uv run pytest -m unit` from `rag_orchestrator/`) and confirm `test_repo_scoping.py`'s exact `metadata_filter` dict-equality assertions still pass unchanged (Required Non-Regressions in plan.md)
-- [ ] T020 [P] Run every existing `vector_store_service` unit test and confirm all `test_typed_filter_columns.py` cases (existing + new) pass
-- [ ] T021 [P] Run every existing `ingestion_service` unit test, in particular `test_ts_repo_graph_golden.py`/`test_repo_graph_builder.py`, and confirm they remain green with the new `language` entity key present (Required Non-Regressions)
-- [ ] T022 Apply the new migration (`uv run alembic upgrade head`) against a live test DB if available, and confirm `alembic downgrade -1` cleanly reverses it (mirrors `20260829_add_source_type_typed_column.py`'s own downgrade symmetry)
-- [ ] T023 [P] Update `DOCS/audit/03-Multi-Language-Graph-Plan.md` §3 WP-L6 to check off the retrieval-filter acceptance criteria delivered by this issue and note the remaining scope (Gradio dropdown) still open
-- [ ] T024 Run `specs/003-language-aware-retrieval/quickstart.md`'s unit-test section end-to-end and confirm every documented expected outcome holds; leave the manual mixed-language comparison section as a documented follow-up (not executed as part of this issue's merge — no real mixed-language repo fixture exists yet in this environment)
+- [x] T019 Run every existing `rag_orchestrator` unit test (`uv run pytest -m unit` from `rag_orchestrator/`) and confirm `test_repo_scoping.py`'s exact `metadata_filter` dict-equality assertions still pass unchanged (Required Non-Regressions in plan.md)
+- [x] T020 [P] Run every existing `vector_store_service` unit test and confirm all `test_typed_filter_columns.py` cases (existing + new) pass
+- [x] T021 [P] Run every existing `ingestion_service` unit test, in particular `test_ts_repo_graph_golden.py`/`test_repo_graph_builder.py`, and confirm they remain green with the new `language` entity key present (Required Non-Regressions)
+- [x] T022 Applied the new migration against a real `docker-compose.test.yml` Postgres (`alembic upgrade head`, verified resulting schema via `\d ingestion_service.vector_chunks`), confirmed `alembic downgrade -1` cleanly removes the column + both indexes, then re-upgraded to head
+- [x] T023 [P] Updated `DOCS/audit/03-Multi-Language-Graph-Plan.md` §3 WP-L6 (retrieval-filter acceptance criteria checked off, Gradio dropdown noted as remaining) and `DOCS/audit/04-Scalability-Plan.md`'s WP-S4B entry (closes the loop on its own "language in a follow-up migration" note)
+- [x] T024 Ran `vector_store_service/tests/core/vectorstore/test_ann_index_usage.py` (the real `docker-compose.test.yml`-backed integration suite CI's `integration-tests` job runs) against the migrated DB — **caught and fixed a real regression**: the new `(repo_id, language)` index changed the query planner's choice for two pre-existing `repo_id`+`doc_type`/`source_type` EXPLAIN-plan assertions (both tests hardcoded an index-name allow-list that didn't yet include the new index as an acceptable alternative, even though the underlying behavior — index-backed, no seq scan — was unaffected). Fixed by extending both allow-lists, and added three new tests (`test_language_filter_uses_typed_column_index`, `test_repo_language_filter_uses_typed_column_indexes`, `test_language_scoped_search_returns_only_that_language`) plus a language backfill assertion, mirroring the existing doc_type/source_type coverage exactly. The manual mixed-language-repo comparison in quickstart.md remains a documented follow-up (no such repo fixture exists in this environment yet).
 
 ---
 

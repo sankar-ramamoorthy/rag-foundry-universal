@@ -229,9 +229,18 @@ async def hybrid_retrieve(
     repo_id: str,
     query_embedding: List[float],
     top_k: int = 20,
+    language: Optional[str] = None,
 ) -> tuple[Dict[str, List[RetrievedChunk]], Dict[str, Any]]:
     """
     Implements ADR-045 hybrid retrieval pipeline.
+
+    `language` (WP-L6a, #85) optionally scopes the seed search to one
+    language (python/typescript/javascript); omitted, retrieval is
+    unfiltered by language exactly as before this feature existed. The
+    scope survives the source_type-relaxation fallback below the same way
+    repo_id already does (issue #30 Part 1) — graph-traversal expansion
+    needs no separate language filter, since it only ever expands from an
+    already-scoped seed set.
 
     Returns:
         retrieved_chunks_by_document,
@@ -241,17 +250,25 @@ async def hybrid_retrieve(
     logger.info(f"🔄 Hybrid retrieval | repo={repo_id[:8]} | q='{query[:50]}...'")
 
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
+    seed_filter: Dict[str, Any] = {"source_type": "code", "repo_id": repo_id}
+    if language:
+        seed_filter["language"] = language
     payload = {"query_vector": query_embedding, "k": top_k,
-                "metadata_filter": {"source_type": "code", "repo_id": repo_id}}
+                "metadata_filter": seed_filter}
 
     async with httpx.AsyncClient(timeout=200) as client:
         resp = await client.post(search_url, json=payload)
         if resp.status_code != 200 or not resp.json().get("results"):
             logger.info("No code chunks found. Falling back to repo-scoped search.")
-            # Relax only source_type — the fallback must never leave the repo,
-            # or queries against repos with no code chunks silently answer
-            # from other repos (issue #30 Part 1).
-            payload["metadata_filter"] = {"repo_id": repo_id}
+            # Relax only source_type — the fallback must never leave the
+            # repo or the requested language, or queries against a
+            # sparsely-populated scope silently answer from outside it
+            # (issue #30 Part 1; WP-L6a extends the same reasoning to
+            # language).
+            fallback_filter: Dict[str, Any] = {"repo_id": repo_id}
+            if language:
+                fallback_filter["language"] = language
+            payload["metadata_filter"] = fallback_filter
             resp = await client.post(search_url, json=payload)
         resp.raise_for_status()
         raw_results = resp.json().get("results", [])
@@ -339,6 +356,7 @@ async def run_rag(
     provider: Optional[str] = None,
     model: Optional[str] = None,
     chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
+    language: Optional[str] = None,
 ) -> RAGResult:
 
     settings = get_settings()
@@ -353,7 +371,7 @@ async def run_rag(
     query_embedding = embed_query(query, embedder)
 
     retrieved_chunks_by_document, retrieval_plan_dict = await hybrid_retrieve(
-        query, resolved_repo_id, query_embedding, top_k
+        query, resolved_repo_id, query_embedding, top_k, language=language
     )
     seed_document_ids = list(retrieved_chunks_by_document.keys())
 

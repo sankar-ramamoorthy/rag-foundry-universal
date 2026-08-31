@@ -79,7 +79,7 @@ related:
 **Goal:** vector search latency independent of corpus size.
 **Files:** new Alembic migration; `pgvector_store.py`.
 **Directions:**
-- Migration: `CREATE INDEX CONCURRENTLY ix_vector_chunks_hnsw ON ingestion_service.vector_chunks USING hnsw (vector vector_cosine_ops)` (+ analyze). Note: filtered queries (`source_metadata->>…`) partially bypass HNSW — add btree expression indexes on `(source_metadata->>'doc_type')` and `(source_metadata->>'repo_id')`, and put `repo_id`/`doc_type`/`language` into **real columns** on `vector_chunks` in a follow-up migration (JSONB-only filtering won't scale).
+- Migration: `CREATE INDEX CONCURRENTLY ix_vector_chunks_hnsw ON ingestion_service.vector_chunks USING hnsw (vector vector_cosine_ops)` (+ analyze). Note: filtered queries (`source_metadata->>…`) partially bypass HNSW — add btree expression indexes on `(source_metadata->>'doc_type')` and `(source_metadata->>'repo_id')`, and put `repo_id`/`doc_type`/`language` into **real columns** on `vector_chunks` in a follow-up migration (JSONB-only filtering won't scale). `repo_id`/`doc_type` done here; `source_type` followed (issue #64); `language` was the last of the four, done via WP-L6a (issue #85, `migrations/versions/20260831_add_language_typed_column.py`).
 - `similarity_search`: set `SET LOCAL hnsw.ef_search = 100` per query; expose `k` and filter as today.
 **Acceptance criteria:**
 - [x] `EXPLAIN ANALYZE` on a filtered search shows index scan, not seq scan

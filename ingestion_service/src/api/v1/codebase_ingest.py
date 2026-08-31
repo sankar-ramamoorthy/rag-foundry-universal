@@ -118,6 +118,7 @@ def _embed_repo_artifacts(
             chunk.metadata["repo_id"] = repo_id
             chunk.metadata["relative_path"] = node.get("relative_path", "")
             chunk.metadata["doc_type"] = node.get("doc_type", "code")
+            chunk.metadata["language"] = node.get("language")
             chunk.metadata["source_metadata"] = {          # keep source_metadata too
                 **chunk.metadata.get("source_metadata", {}),
                 "canonical_id": canonical_id,
