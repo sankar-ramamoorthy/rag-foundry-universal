@@ -133,19 +133,24 @@ Each language extractor is *only* responsible for producing correct IR. **All** 
 - [ ] Adding a new extractor requires touching only the registry + new extractor file
 
 ### WP-L2 — tree-sitter runtime + TypeScript/JavaScript extractor (first new language)
+**Status:** Shipped (issue #83, `specs/002-typescript-js-extractor/`).
 **Goal:** `.ts/.tsx/.js/.jsx/.mjs/.cjs` files produce MODULE/CLASS/INTERFACE/FUNCTION/METHOD nodes, IMPORTS (ESM + `require`), CALL sites, EXTENDS/IMPLEMENTS.
 **Why TS first:** biggest enterprise demand; exercises the hardest module-resolution rules (relative paths, `index.ts`, extensionless imports) — if the `ModulePathConvention` abstraction survives TS, Rust and Java are easy.
-**Files:** new `extractors/treesitter/base.py` (parser cache, `.scm` query runner), `extractors/treesitter/typescript.py`, query files under `extractors/treesitter/queries/typescript/*.scm`; add `tree-sitter-language-pack` (or per-grammar wheels) to `ingestion_service/pyproject.toml`.
+**Files:** new `extractors/treesitter/base.py` (parser cache, `.scm` query runner), `extractors/treesitter/typescript.py`, query files under `extractors/treesitter/queries/typescript/*.scm`; added `tree-sitter-typescript`/`tree-sitter-javascript` to `ingestion_service/pyproject.toml` (both were already transitive lock entries — promoted to direct dependencies).
 **Directions:**
 - Use declarative tree-sitter **queries** (`.scm`) per concept, not hand-walked cursors — keeps per-language code small and reviewable.
 - Module resolution: relative specifiers only in v1 (`./x`, `../x`, `/index` resolution, drop extensions); bare specifiers (`react`) → `EXTERNAL_MODULE`. **No tsconfig `paths` support in v1** — document as limitation.
 - Arrow functions: only named bindings (`const f = () =>`) and class-property arrows become symbols; anonymous callbacks are skipped (metadata counts them).
+**Delivery notes (beyond what this plan anticipated):**
+- `GraphAssembler`/`RepoGraphBuilder` needed two additive touches, not zero: `INTERFACE` added to `definition_types`/`DOCUMENTABLE_TYPES`/the inheritance-resolution filter, and a new `CompositeModuleConvention` dispatching per-suffix so a repo can mix Python and TS/JS in one ingestion run. See `specs/002-typescript-js-extractor/plan.md`'s Constitution Exceptions table for the full justification.
+- `symbol_table.py` also needed `INTERFACE` added to its indexed-type set — discovered only by an end-to-end smoke test, not by inspection: `implements SomeInterface` silently fell through to `EXTERNAL_SYMBOL` without it, since base-class/interface resolution reads through the symbol table, not `graph.entities` directly.
+- TS default exports (`export default function f() {}`) needed both `symbol_path` **and** `name` synthesized to the literal string `"default"` (not just identity) — `SymbolTable` indexes by `name`, so a default-imported binding's cross-file lookup only succeeds if the exporting symbol's `name` is literally `"default"` too. The originally-declared name is preserved in `metadata.declared_name`.
 **Acceptance criteria:**
-- [ ] Fixture repo (checked into `tests/fixtures/ts_repo/`) with classes, interfaces, arrow exports, `require`, ESM imports, `extends`/`implements` produces the expected node/edge snapshot (golden-file test)
-- [ ] `import { helper } from "./util"` → IMPORTS edge to `util.ts` module node; `from "react"` → EXTERNAL_MODULE
-- [ ] `this.method()` calls resolve within the class
-- [ ] Ingesting a real mid-size TS repo (e.g. a clone of `fastify` or similar) completes and logs zero unhandled exceptions
-- [ ] Rebuild determinism test passes
+- [x] Fixture repo (checked into `tests/fixtures/ts_repo/`) with classes, interfaces, arrow exports, `require`, ESM imports, `extends`/`implements` produces the expected node/edge snapshot (golden-file test)
+- [x] `import { helper } from "./util"` → IMPORTS edge to `util.ts` module node; `from "react"` → EXTERNAL_MODULE
+- [x] `this.method()` calls resolve within the class
+- [ ] Ingesting a real mid-size TS repo (e.g. a clone of `fastify` or similar) completes and logs zero unhandled exceptions — **deferred**: this environment has no guaranteed network access; fixture-based coverage only (see spec.md Non-Goals). Left as a manual follow-up.
+- [x] Rebuild determinism test passes
 
 ### WP-L3 — Rust extractor
 **Goal:** `.rs` files produce MODULE/STRUCT/ENUM/TRAIT/IMPL/FUNCTION/METHOD, `use`-based IMPORTS, CALL sites, TRAIT_IMPL edges.

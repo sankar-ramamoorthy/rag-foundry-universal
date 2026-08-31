@@ -11,15 +11,18 @@ Layers:
 - global: symbol_name -> sorted list of canonical_ids
   (a list, so ambiguity is surfaced instead of last-write-wins.)
 
-Indexed artifact types: CLASS, FUNCTION, METHOD.
+Indexed artifact types: CLASS, INTERFACE, FUNCTION, METHOD. (WP-L2:
+INTERFACE added so TS/JS `implements`/`extends Interface` resolves to the
+actual INTERFACE node instead of falling through to EXTERNAL_SYMBOL —
+same priority tier as CLASS, since both are referable by bare name.)
 """
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
-# FUNCTION/CLASS are callable/referable by bare name; METHOD is not,
-# so it only matches when nothing else in the file has the name.
-_PRIORITY = {"CLASS": 0, "FUNCTION": 0, "METHOD": 1}
+# FUNCTION/CLASS/INTERFACE are callable/referable by bare name; METHOD is
+# not, so it only matches when nothing else in the file has the name.
+_PRIORITY = {"CLASS": 0, "INTERFACE": 0, "FUNCTION": 0, "METHOD": 1}
 
 
 class SymbolTable:
@@ -81,13 +84,13 @@ class SymbolTable:
 # ----------------------------------------------------------------
 
 def build_symbol_table(graph) -> SymbolTable:
-    """Build a SymbolTable from a RepoGraph (CLASS/FUNCTION/METHOD)."""
+    """Build a SymbolTable from a RepoGraph (CLASS/INTERFACE/FUNCTION/METHOD)."""
     table = SymbolTable()
 
     for entity in graph.all_entities():
         artifact_type = entity.get("artifact_type")
 
-        if artifact_type in {"CLASS", "FUNCTION", "METHOD"}:
+        if artifact_type in {"CLASS", "INTERFACE", "FUNCTION", "METHOD"}:
             name = entity.get("name")
             canonical_id = entity.get("canonical_id")
 
