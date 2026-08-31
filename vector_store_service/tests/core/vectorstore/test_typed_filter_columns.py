@@ -78,3 +78,37 @@ def test_in_operator_on_typed_column():
     conditions, values = render({"doc_type": {"in": ["file", "pdf"]}})
     assert conditions == ['vc."doc_type" IN (%s, %s)']
     assert values == ["file", "pdf"]
+
+
+def test_language_equality_uses_typed_column():
+    """WP-L6a (#85): language is the fourth typed column WP-S4B already
+    anticipated but never implemented."""
+    conditions, values = render({"language": "python"})
+    assert conditions == ['vc."language" = %s']
+    assert values == ["python"]
+
+
+def test_in_operator_on_language_typed_column():
+    conditions, values = render({"language": {"in": ["typescript", "javascript"]}})
+    assert conditions == ['vc."language" IN (%s, %s)']
+    assert values == ["typescript", "javascript"]
+
+
+def test_ne_operator_on_language_typed_column():
+    conditions, values = render({"language": {"ne": "python"}})
+    assert conditions == ['(vc."language" IS NULL OR vc."language" != %s)']
+    assert values == ["python"]
+
+
+def test_language_scoped_hybrid_query_filter_shape():
+    """The exact filter /v1/rag sends when a language scope is requested
+    (specs/003-language-aware-retrieval/data-model.md)."""
+    conditions, values = render(
+        {"source_type": "code", "repo_id": "repo-x", "language": "python"}
+    )
+    assert conditions == [
+        'vc."source_type" = %s',
+        'vc."repo_id" = %s',
+        'vc."language" = %s',
+    ]
+    assert values == ["code", "repo-x", "python"]

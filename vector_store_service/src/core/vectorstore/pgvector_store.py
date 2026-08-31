@@ -19,11 +19,13 @@ class PgVectorStore(VectorStore):
     # better recall, slower query. 100 is comfortable for k <= 50.
     HNSW_EF_SEARCH = 100
 
-    # WP-S4B (+ issue #64): filter keys promoted from JSONB to real indexed
-    # columns. The write path copies them out of source_metadata, so
-    # filtering on the column and on the JSONB key are equivalent for every
-    # row.
-    TYPED_FILTER_COLUMNS = frozenset({"repo_id", "doc_type", "source_type"})
+    # WP-S4B (+ issue #64; WP-L6a added "language"): filter keys promoted
+    # from JSONB to real indexed columns. The write path copies them out of
+    # source_metadata, so filtering on the column and on the JSONB key are
+    # equivalent for every row.
+    TYPED_FILTER_COLUMNS = frozenset(
+        {"repo_id", "doc_type", "source_type", "language"}
+    )
 
     def __init__(self, dsn: str, dimension: int, provider: str = "mock") -> None:
         self._dsn = dsn
@@ -51,8 +53,8 @@ class PgVectorStore(VectorStore):
             INSERT INTO {schema}.vector_chunks
             (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
              chunk_text, source_metadata, provider, document_id,
-             repo_id, doc_type, source_type)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             repo_id, doc_type, source_type, language)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """).format(schema=sql.Identifier(self.SCHEMA))
 
         with psycopg.connect(self._dsn) as conn:
@@ -66,10 +68,12 @@ class PgVectorStore(VectorStore):
                         Jsonb(source_metadata),
                         record.metadata.provider or self._provider,
                         record.metadata.document_id or None,
-                        # WP-S4B / issue #64: typed copies of the filter-critical keys
+                        # WP-S4B / issue #64 / WP-L6a (#85): typed copies of
+                        # the filter-critical keys
                         source_metadata.get("repo_id"),
                         source_metadata.get("doc_type"),
                         source_metadata.get("source_type"),
+                        source_metadata.get("language"),
                     ))
         logging.info(
             "PgVectorStore.add: %d records written to vector_chunks", len(records)

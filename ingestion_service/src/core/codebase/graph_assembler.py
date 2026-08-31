@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from collections import deque
 import logging
+from pathlib import PurePosixPath
 import re
 from typing import Dict, List, Optional, Tuple
 
@@ -37,6 +38,26 @@ DOCUMENTABLE_TYPES = {"CLASS", "INTERFACE", "FUNCTION", "METHOD", "MODULE"}
 # no interface-like kind); TS/JS interfaces extend other interfaces and
 # classes implement them, so both kinds participate identically.
 INHERITABLE_TYPES = {"CLASS", "INTERFACE"}
+
+# WP-L6a: a file's language is intrinsic to its path, so it's derived here
+# once rather than duplicated as metadata in every extractor (plan.md's
+# Constitution Exceptions table, specs/003-language-aware-retrieval). Not
+# set for markdown/unrecognized suffixes or the empty relative_path on
+# EXTERNAL_MODULE/EXTERNAL_SYMBOL synthetic nodes — none of those are a
+# programming language.
+LANGUAGE_BY_SUFFIX = {
+    ".py": "python",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+}
+
+
+def _language_for_path(relative_path: str) -> Optional[str]:
+    return LANGUAGE_BY_SUFFIX.get(PurePosixPath(relative_path).suffix)
 
 # F-04: receivers that are plain dotted names keep their context in
 # EXTERNAL_SYMBOL ids; anything else (subscripts, call results) doesn't.
@@ -102,6 +123,7 @@ class GraphAssembler:
             "ingestion_id": ingestion_id,
             "title": sym.name or "Untitled",
             "doc_type": sym.metadata.get("doc_type", "unknown"),
+            "language": _language_for_path(relative_path),
             "text": sym.text,
             "metadata": metadata,
             "defines": [],
@@ -139,6 +161,7 @@ class GraphAssembler:
             "ingestion_id": ingestion_id,
             "title": name,
             "doc_type": imp.metadata.get("doc_type", "unknown"),
+            "language": _language_for_path(relative_path),
             "text": "",
             "metadata": metadata,
             "defines": [],

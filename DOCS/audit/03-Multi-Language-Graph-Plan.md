@@ -178,11 +178,23 @@ Each language extractor is *only* responsible for producing correct IR. **All** 
 - [ ] File with a syntax error yields partial artifacts instead of file skip (improvement over today's `except: continue`)
 
 ### WP-L6 — Query/UI awareness of language
+**Status:** Retrieval-filter half shipped as WP-L6a (issue #85, PR TBD,
+`specs/003-language-aware-retrieval/`), pulled forward ahead of WP-L3/L4
+because it doubles as the measurement apparatus for validating WP-L2
+against a real mixed-language repo. UI half (Gradio dropdown) remains open.
 **Goal:** language surfaces in retrieval + UI.
 **Directions:** `metadata.language` on every node (assembler sets it from extractor); optional `language` filter on `/v1/rag` and vector search metadata filter; Gradio dropdown. Embedding note: keep one embedder for all languages (code-capable embedder already in use); benchmark per-language recall later — do **not** fork embedders per language now.
+**Delivery note (WP-L6a):** `language` is derived centrally in
+`GraphAssembler` from file suffix (`LANGUAGE_BY_SUFFIX`), not set
+per-extractor as this directive originally phrased it — see
+`specs/003-language-aware-retrieval/plan.md`'s Constitution Exceptions
+table for why. Promoted to a typed, indexed `vector_chunks.language`
+column — the fourth typed column WP-S4B (`DOCS/audit/04-Scalability-Plan.md`)
+had already anticipated but never implemented.
 **Acceptance criteria:**
-- [ ] Vector chunks carry `language` in `source_metadata`
-- [ ] `/v1/rag` accepts optional `language` param and filters seeds accordingly
+- [x] Vector chunks carry `language` in `source_metadata` (WP-L6a)
+- [x] `/v1/rag` accepts optional `language` param and filters seeds accordingly (WP-L6a)
+- [ ] Gradio dropdown (remaining WP-L6 scope, not part of WP-L6a)
 
 ## 4 · Effort & sequencing
 
