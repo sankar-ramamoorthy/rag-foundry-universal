@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-`rag-foundry-universal` is a **read-only, graph-aware RAG system** for Python codebases and documents. It is not a coding agent — it never writes or edits the code it ingests. It ingests a Git repo (AST-based code graph) or arbitrary documents (Docling/OCR chunking), stores everything in Postgres+pgvector, and answers natural-language queries by combining vector similarity search with deterministic graph traversal (BFS over CALL/DEFINES/IMPORT/DOCUMENTS edges). See `README.md` and `README_VISION.md` for the full design rationale before making architectural changes.
+`rag-foundry-universal` is a **read-only, graph-aware RAG system** for Python and TypeScript/JavaScript codebases (Rust/Java planned — see `DOCS/audit/03-Multi-Language-Graph-Plan.md`) and documents. It is not a coding agent — it never writes or edits the code it ingests. It ingests a Git repo (AST-based graph for Python, tree-sitter-based for TypeScript/JavaScript, both resolved through one language-agnostic IR + `GraphAssembler`) or arbitrary documents (Docling/OCR chunking), stores everything in Postgres+pgvector, and answers natural-language queries by combining vector similarity search with deterministic graph traversal (BFS over CALL/DEFINES/IMPORTS/INHERITS/OVERRIDES/DOCUMENTS edges). See `README.md` and `README_VISION.md` for the full design rationale before making architectural changes.
 
 ## Architecture: independent services over HTTP
 
