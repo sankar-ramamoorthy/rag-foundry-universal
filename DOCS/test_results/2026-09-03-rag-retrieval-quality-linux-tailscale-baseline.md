@@ -1187,11 +1187,120 @@ the expansion/cap/fetch pipeline changed.
 
 ## Whether the evidence supports closing issue #89
 
-**Not yet.** This step delivers and unit-verifies a scoped, minimal fix for
-the confirmed truncation mechanism, with a clean no-regression result on
-the existing suite. It does not yet carry live-stack, LLM-graded evidence
-that the fix measurably improves the original 10-question baseline's
-PASS/FAIL counts, which the issue's completion criteria call for
-("evaluated against the existing quality baseline"). Issue #89 should stay
-open until that live comparison — or an explicit, deliberate decision to
-accept the unit-level evidence as sufficient — is recorded.
+**Not yet as of this section** — see section 16 below, written after a live
+before/after comparison became possible (2026-09-06, same day, once the
+user completed a Linux-side ingestion_service rebuild and repo
+re-ingestion). Section 16 supersedes this section's "not yet" for the
+live-comparison question specifically; the fix itself was already unit-
+verified as described above.
+
+---
+
+# 16. Live Before/After Comparison (issue #89, same-day follow-up)
+
+Once the user rebuilt the Linux ingestion_service container and re-ingested
+this repo (repo query id `f7641840-ba13-5f9d-9ae6-87e1f924709d` — same id
+as the original eval docs; the value the user gave when starting ingestion,
+`c171cc00-3be7-42c4-bb21-328412d40a7f`, is a separate `ingestion_id` field,
+not the id `run_rag` takes), a live before/after comparison of the fix in
+section 15 became possible without any container redeploy: a local script
+(`issue89_live_eval.py`, not committed — a one-off ops script hardcoding
+the Tailscale host) imports `rag_orchestrator`'s `run_rag` directly from
+the local checkout and runs it as an HTTP client against the real remote
+`ingestion_service` / `vector_store_service` / `llm_service` / Ollama over
+Tailscale. The orchestration/ranking code under test runs locally; every
+retrieval and generation call hits real remote data.
+
+## Method
+
+Replayed all 10 questions from
+`DOCS/test_results/2026-09-03-rag-quality-source-eval.md`, each wired with
+its documented target canonical_id(s) via `trace_canonical_ids`
+(PR #90's instrumentation), against the freshly re-ingested repo:
+
+- **AFTER**: this branch as committed (relation-type-aware ranking, section 15's fix).
+- **BEFORE**: `traversal_selector.py` temporarily reverted to its pre-fix
+  state (commit d6a07b5, instrumentation-only) for one run, then restored
+  immediately afterward. Same questions, same freshly-ingested repo, same
+  process — only the ranking logic differed between the two runs.
+
+## Result: every target's rank/final-context status, before vs. after
+
+Diffing all 10 questions' `evidence_trace` entries, only three targets
+changed at all (everything else — including all `not_found_by_vector_or_graph`
+cases in Q1/Q3, which are a distinct, unrelated failure mode this fix
+doesn't touch — was byte-identical before and after, confirming no
+regression on the live data):
+
+| Question | Target | Rank before → after | Reaches final context before → after |
+|---|---|---|---|
+| Q7 | `codebase_queries.py#traverse_defines` | 24 → 12 | **False → True** |
+| Q9 | `agent_adapter.py#_source_label` | 5 → 0 | True → True (already safe both times) |
+| Q10 | `simple_service.py#run_simple_rag` | 137 → 88 | False → False (moved 49 ranks closer, still short of the cap=20) |
+
+**Q7 is the clean, positive, measured result**: `traverse_defines` was
+genuinely truncated by `MAX_EXPANDED_DOCS` before the fix (rank 24, one
+past the cap of 20) and genuinely recovered after it (rank 12, well inside
+the cap) — the exact mechanism the fix targets, now confirmed on live data,
+not just the synthetic fixture.
+
+**Q10 is the honest negative/partial result**: `run_simple_rag` moved up
+49 ranks (137→88) — the DEFINES-priority reordering did help it — but it
+started so far back that it's nowhere near survivable even after the
+improvement. This is precisely the documented limitation from section 15
+and the "single relation type" fixture in `test_evidence_survival.py`: when
+a target competes against many same-priority candidates (not a
+DEFINES-vs-CALL mismatch), relation-type-aware ranking alone cannot rescue
+it. `MAX_EXPANDED_DOCS` and/or a finer-grained specificity signal remain
+open follow-up work for cases shaped like this one.
+
+## Important side-finding: eval-document self-contamination
+
+Every one of the 10 questions' RAG answers, in **both** the before and
+after runs, retrieved `DOCS/test_results/2026-09-03-rag-quality-source-eval.md`
+(and often the other two `test_results/*.md` docs) as a source — because
+those documents, now part of this repo's own ingested corpus, contain the
+verbatim ground truth, classification, and correct answer for each of
+these same 10 questions. One answer even referenced "the evaluation's
+source evidence for item #7" and "the RAG system previously incorrectly
+stated..." — i.e. the model was partly answering from a summary of a past
+evaluation of itself, not from the underlying source code.
+
+This means: **the retrieval-level `evidence_trace` measurements above
+(rank / survives_cap / reaches_final_context) remain valid** — they track
+whether the actual source-code canonical_id reached context, independent
+of what else also got retrieved. But **this run cannot be used to claim
+the final *answer quality* improved** on a strict PASS/FAIL/WEAK-PASS
+re-grading basis, because both before and after answers had access to a
+document that already states the correct answer. Re-running these exact 10
+questions against this self-ingested repo is no longer a clean generation-
+quality signal and shouldn't be treated as one going forward.
+
+**Mitigation for future live evals against this repo**: either exclude
+`DOCS/test_results/*.md` from the seed/expansion set for evaluation runs
+(e.g. a metadata filter), or use questions whose answers aren't already
+written up in the repo's own eval documentation (a second, un-ingested-yet
+repository, or newly-authored questions, or the TradeForge repo the user is
+ingesting separately for TypeScript coverage).
+
+## Whether the evidence supports closing issue #89
+
+**Still not fully.** This is now a materially stronger position than
+section 15: the fix has live confirmation of its core claimed mechanism
+(Q7), a live confirmation of its known limitation (Q10), and zero live
+regressions across the other 8 questions' targets — all three exactly as
+predicted by the unit-level work in section 15. What remains before
+closing #89 outright:
+
+- A clean, uncontaminated answer-quality regrade (blocked by the
+  self-contamination finding above — needs either a filtered eval or a
+  different corpus/question set).
+- A decision on whether Q10's shape (same-relation-type overload) needs
+  its own follow-up (e.g. raising `MAX_EXPANDED_DOCS` as a targeted
+  control for this specific pattern, per candidate A, now evaluated with
+  real numbers rather than in the abstract) or whether one confirmed
+  live win with no live regressions is sufficient evidence to close this
+  issue and track Q10-shaped cases separately.
+
+Recommend treating the second point as the user's call, not an automatic
+next unit of AI-driven work.
