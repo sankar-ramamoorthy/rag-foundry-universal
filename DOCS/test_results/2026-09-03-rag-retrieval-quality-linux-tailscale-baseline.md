@@ -995,3 +995,64 @@ for implementation authority, source type, language, function specificity, or
 the query's explicit file/function targets.
 
 No implementation recommendation is made in this test result.
+
+---
+
+# 14. Follow-Up: Evidence-Survival Instrumentation and Regression Fixture (issue #89)
+
+This section records the first concrete step taken on issue #89
+(https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/89),
+opened against the confirmed finding in section 13. Per the issue's ordering,
+this step adds only the minimum diagnostic instrumentation and a regression
+fixture reproducing the confirmed failure — no ranking/cap behavior was
+changed.
+
+## What was added
+
+- `rag_orchestrator/src/retrieval/evidence_trace.py` — a small, dict-based
+  instrumentation module. Given a set of target `canonical_id`s, it reports,
+  per target: `found_by_vector`, `found_by_graph` (+ `expanded_rank`),
+  `survives_cap`, `chunk_fetched`, `reaches_final_context`, and a
+  `drop_reason` naming the first stage that discarded it
+  (`not_found_by_vector_or_graph`, `truncated_by_max_expanded_docs`,
+  `fetch_returned_no_chunks`, `dropped_before_final_context`).
+- `hybrid_retrieve` gained an optional `trace_canonical_ids` parameter
+  (`rag_orchestrator/src/core/service.py`). Omitted (the default, used by
+  every production call), it costs nothing and changes no behavior. When
+  supplied, the returned `retrieval_plan_dict` carries the partial trace
+  through the `MAX_EXPANDED_DOCS` cap and fetch stages; `run_rag` finalizes
+  it against the actual post-truncation final context and exposes it as
+  `retrieval_plan["evidence_trace"]`.
+- `rag_orchestrator/tests/test_evidence_survival.py` — a regression fixture
+  modeled directly on the confirmed `treesitter/base.py` case: one seed
+  module graph-DEFINES 30 children, three of them targeted as "helper
+  functions" landing at ranks 25-27 (past the `MAX_EXPANDED_DOCS=20`
+  default), matching the diagnostic's own rank numbers. The fixture asserts
+  the instrumentation shows exactly the confirmed failure chain: found by
+  graph, not surviving the cap, never fetched, never reaching final context,
+  with `drop_reason == "truncated_by_max_expanded_docs"`.
+
+## Result
+
+All 3 new tests pass, confirming the failure is reproducible outside the
+live diagnostic session, and the full `rag_orchestrator` suite (101 tests)
+passes with the instrumentation in place — no regressions from adding it.
+
+## Explicitly not done in this step
+
+- No ranking or cap behavior was changed. The regression fixture currently
+  documents the *existing* failure, not a fix.
+- No reranker or other intervention (issue #89's candidates A-E) was
+  implemented or chosen.
+- The instrumentation is not wired into the `/v1/rag` HTTP endpoint/response
+  model — it's a Python-level hook for eval scripts and tests, kept
+  deliberately out of the public API contract for this step.
+- Generation-only failures (Q4/Q6/Q10 in the source eval) remain untouched
+  and out of scope.
+
+## Next steps (per issue #89)
+
+Repeat the same diagnostic shape on a few more failed questions from the two
+eval docs (one Python, one YAML/config, one UI/API-contract case) to check
+whether the rank/cap pattern generalizes, before comparing candidate
+interventions.
