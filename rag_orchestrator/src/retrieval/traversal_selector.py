@@ -164,31 +164,47 @@ def execute_traversals(
     graph: CodebaseGraph,
     start_canonical_id: str,
     strategies: List[Callable[[CodebaseGraph, str], List[Node]]]
-) -> List[Node]:
+) -> List[tuple[Node, int]]:
     """
     Execute all selected traversal strategies from the seed and its
     DEFINES descendants (see `_seed_and_defines_descendants`).
+
+    Returns (node, strategy_index) pairs rather than bare nodes: the index
+    is the position within `strategies` that discovered the node (its
+    lowest index, if more than one strategy found it). Issue #89: callers
+    use this to prefer nodes found by an earlier-listed, more structurally
+    authoritative strategy (e.g. DEFINES before CALL — see
+    `_DEFAULT_STRATEGIES`) once nodes are deduplicated, instead of that
+    signal being computed here and then thrown away.
     """
-    all_expanded_nodes = []
+    all_expanded: List[tuple[Node, int]] = []
     anchors = _seed_and_defines_descendants(graph, start_canonical_id)
 
-    for strategy in strategies:
+    for strategy_index, strategy in enumerate(strategies):
         for anchor in anchors:
             try:
                 nodes = strategy(graph, anchor)
-                all_expanded_nodes.extend(nodes)
+                all_expanded.extend((node, strategy_index) for node in nodes)
                 logger.debug(f"Strategy returned {len(nodes)} nodes from {anchor}")
             except Exception as e:
                 logger.warning(f"Traversal strategy failed: {e}")
                 continue
 
-    # Deduplicate by canonical_id. A DEFINES descendant used purely as an
-    # extra anchor (e.g. Dog.speak when the seed was Dog) can legitimately
-    # also be the answer itself for a "structure" query, so anchors are
-    # not excluded here — only the true seed is, by the caller.
-    unique_nodes = {node.canonical_id: node for node in all_expanded_nodes}.values()
-    logger.info(f"Total unique expanded nodes: {len(unique_nodes)}")
-    return list(unique_nodes)
+    # Deduplicate by canonical_id, keeping the lowest (most authoritative)
+    # strategy_index seen for each node. A DEFINES descendant used purely
+    # as an extra anchor (e.g. Dog.speak when the seed was Dog) can
+    # legitimately also be the answer itself for a "structure" query, so
+    # anchors are not excluded here — only the true seed is, by the caller.
+    best_index: Dict[str, int] = {}
+    node_by_cid: Dict[str, Node] = {}
+    for node, strategy_index in all_expanded:
+        cid = node.canonical_id
+        node_by_cid.setdefault(cid, node)
+        if cid not in best_index or strategy_index < best_index[cid]:
+            best_index[cid] = strategy_index
+
+    logger.info(f"Total unique expanded nodes: {len(node_by_cid)}")
+    return [(node_by_cid[cid], best_index[cid]) for cid in node_by_cid]
 
 def execute_traversals_from_seeds(
     graph: CodebaseGraph,
@@ -207,16 +223,34 @@ def execute_traversals_from_seeds(
     # most seed-adjacent ones. All strategies currently traverse at
     # depth=1, so "reached from more seeds" is the adjacency signal;
     # canonical_id breaks ties deterministically.
+    #
+    # Issue #89: strategy_index (see execute_traversals) is now the primary
+    # key, ahead of seed-hit count. A node reached only via CALL/IMPORT from
+    # one seed used to rank ahead of, or tie alphabetically against, a true
+    # DEFINES child of that same seed -- e.g. an external library symbol
+    # crowding out the seed module's own helper functions for the
+    # MAX_EXPANDED_DOCS cap purely on canonical_id ordering. Confirmed
+    # failure case: DOCS/test_results/
+    # 2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md section 13.
     seed_hits: Dict[str, int] = {}
+    best_strategy_index: Dict[str, int] = {}
     node_by_cid: Dict[str, Node] = {}
     for start_cid in sorted(seed_canonical_ids):
-        for node in execute_traversals(graph, start_cid, strategies):
-            seed_hits[node.canonical_id] = seed_hits.get(node.canonical_id, 0) + 1
-            node_by_cid.setdefault(node.canonical_id, node)
+        for node, strategy_index in execute_traversals(graph, start_cid, strategies):
+            cid = node.canonical_id
+            seed_hits[cid] = seed_hits.get(cid, 0) + 1
+            node_by_cid.setdefault(cid, node)
+            prev_index = best_strategy_index.get(cid)
+            if prev_index is None or strategy_index < prev_index:
+                best_strategy_index[cid] = strategy_index
 
     ranked = sorted(
         node_by_cid.values(),
-        key=lambda n: (-seed_hits[n.canonical_id], n.canonical_id),
+        key=lambda n: (
+            best_strategy_index[n.canonical_id],
+            -seed_hits[n.canonical_id],
+            n.canonical_id,
+        ),
     )
     logger.info(
         f"Multi-seed expansion: {len(seed_canonical_ids)} seeds → "

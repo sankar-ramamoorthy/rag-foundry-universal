@@ -1056,3 +1056,142 @@ Repeat the same diagnostic shape on a few more failed questions from the two
 eval docs (one Python, one YAML/config, one UI/API-contract case) to check
 whether the rank/cap pattern generalizes, before comparing candidate
 interventions.
+
+---
+
+# 15. Frozen Evaluation Set, Regression Bar, and Implemented Intervention (issue #89)
+
+This section records the second step on issue #89: freezing the evaluation
+set and numeric acceptance/regression bar before changing retrieval
+behavior, implementing the smallest evidence-supported intervention, and
+reporting before/after results against that bar.
+
+## Frozen evaluation set and bar
+
+Live LLM-graded re-evaluation of the 10 questions in
+`DOCS/test_results/2026-09-03-rag-quality-source-eval.md` was not performed
+for this step: doing so would require deploying this branch's code to the
+Linux/Tailscale Docker stack that produced that baseline, which means a
+container rebuild on that host — the kind of operation flagged as a known
+cost/risk by issue #41 (containers resolve their uv environment at runtime;
+multi-GB re-download on recreation) and not something to trigger
+unilaterally mid-issue. That live re-run remains open follow-up work (see
+Deferred below), not something this step claims to have done.
+
+Instead, the frozen evaluation set and bar for *this* step are unit-level
+and structural, built directly on the evidence-survival instrumentation
+added in PR #90:
+
+- **Primary regression fixture** (`rag_orchestrator/tests/test_evidence_survival.py`,
+  first two tests): the confirmed `treesitter/base.py` case — single
+  relation type, helpers ranked past the cap purely by canonical_id.
+  Frozen expectation: this fixture is *not* required to start passing as
+  "fixed" — when every competing candidate is the same relation type, no
+  ranking change can rescue all of them, and that's an explicitly
+  out-of-scope limitation for this step (raising `MAX_EXPANDED_DOCS` or a
+  finer specificity signal would be the lever, not attempted here).
+- **New fix-target fixture** (same file, `test_defines_children_outrank_call_derived_noise_for_the_cap`
+  and `test_defines_children_reach_final_context_ahead_of_call_noise`):
+  mirrors the live diagnostic's actual finding (section 11: graph expansion
+  returned both the true DEFINES helpers *and* "many external tree-sitter
+  symbols" reached via CALL, at the same seed-hit count). Numeric bar: all
+  3 target helper canonical IDs must show `survives_cap: true`,
+  `chunk_fetched: true`, `reaches_final_context: true`, `drop_reason: null`
+  after the change — i.e. the confirmed competition pattern from the real
+  case must no longer discard authoritative evidence.
+- **No-regression bar**: the full pre-existing `rag_orchestrator` suite
+  (101 tests as of PR #90, including the two ranking-determinism tests
+  `test_expansion_ranks_by_seed_adjacency` and
+  `test_ranking_ties_break_deterministically`) must continue to pass
+  **unmodified** — i.e. the change must not alter ranking behavior for the
+  single-relation-type / already-tested cases, only add a new ordering
+  dimension ahead of the existing seed-hit/alphabetical tiebreak.
+
+## Candidate interventions considered
+
+Per issue #89's list (A. raise cap, B. rerank, C. prefer implementation over
+docs, D. prefer graph-proximal children of strong seeds, E. guarantee
+child-symbol survival when the parent is a strong seed):
+
+- **D was implemented** (see below) — it directly targets the confirmed
+  mechanism (flat positional truncation losing a structural signal the
+  code already computes) with no new dependency, no LLM call, and no
+  semantic-similarity re-scoring; the graph already univocally distinguishes
+  DEFINES (structural: literally defined inside a seed) from
+  CALL/IMPORT/other (referential), so "prefer graph-proximal children of
+  strong seeds" reduces to "don't discard the relation-type signal that
+  `execute_traversals` already computes per node."
+- **A (raise `MAX_EXPANDED_DOCS`)** was explicitly not chosen as the fix:
+  the source eval doc's own `top_k` A/B test already showed raising a
+  similar cap increases distractor competition and degraded answers at
+  `top_k=20` — the same risk applies here, and it doesn't fix the
+  underlying authority-blindness, only delays when it bites.
+- **B (rerank)** was not implemented in this step, per
+  [[rag-quality-evaluation-gate]] / the roadmap's flag-gated,
+  eval-justified requirement for a reranker — it remains a candidate for a
+  later step if D proves insufficient once live-evaluated.
+- **C and E** were not separately implemented: E is effectively subsumed by
+  D's mechanism (a DEFINES child of a strong seed now structurally
+  outranks non-DEFINES competition), and C (implementation-over-docs
+  preference) operates on the *seed* vector-search stage, not the
+  *expanded*-candidate stage this issue is scoped to — left for a
+  follow-up issue if generalization testing (next steps) shows seed-stage
+  competition is still the dominant failure mode.
+
+Comparison stopped once D cleared the frozen bar — per the tightened goal,
+this step does not exhaustively implement every candidate.
+
+## Implemented intervention: relation-type-aware expansion ranking
+
+`rag_orchestrator/src/retrieval/traversal_selector.py`:
+`execute_traversals` now returns `(Node, strategy_index)` pairs instead of
+bare nodes, `strategy_index` being the position of the traversal strategy
+(e.g. `traverse_defines` before `traverse_calls` in `_DEFAULT_STRATEGIES`)
+that discovered each node. `execute_traversals_from_seeds` now sorts
+expanded candidates by `(best_strategy_index, -seed_hits, canonical_id)`
+instead of `(-seed_hits, canonical_id)` — the relation-type signal was
+already being computed per traversal call and then discarded before the
+final sort; it is now retained as the primary ranking key. Nothing else in
+the expansion/cap/fetch pipeline changed.
+
+## Result against the frozen bar
+
+- Fix-target fixture: **3/3 target helper IDs** now show `survives_cap:
+  true`, `chunk_fetched: true`, `reaches_final_context: true`,
+  `drop_reason: null` (previously would have shown `truncated_by_max_expanded_docs`
+  under the old ranking, verified by inspection of the pre-fix sort order —
+  CALL-derived `call_extern_*` IDs sort alphabetically before `helper_*`,
+  so the old canonical_id tiebreak would have filled the 20-slot cap with
+  external noise first).
+- No-regression bar: full `rag_orchestrator` suite — **103/103 pass**
+  (101 pre-existing + 2 new fix-verification tests), including both
+  ranking-determinism tests unmodified and passing.
+- Primary regression fixture (single relation type): still fails the cap
+  as expected/frozen — confirms the fix is scoped to the mixed-relation-type
+  competition it targets, not silently masking the single-type limitation.
+- `ruff check` and `pyright` on changed files: clean, no new errors (same
+  pre-existing import-resolution errors in this sandboxed root venv
+  present on `main` too, unrelated to this change).
+
+## Deferred (not done in this step)
+
+- Live re-run of the 10-question source eval against a deployed build of
+  this branch, to get an LLM-graded before/after PASS/FAIL/WEAK-PASS count
+  — requires a Linux-side container rebuild, out of scope for this step
+  per the reasoning above.
+- Generalizing the diagnostic to a Python/YAML/API-contract failure case
+  and a second-repository control, per the diagnostic doc's original Next
+  Steps §§3-4.
+- Any change to seed-stage vector search (candidate C) or a reranker
+  (candidate B).
+
+## Whether the evidence supports closing issue #89
+
+**Not yet.** This step delivers and unit-verifies a scoped, minimal fix for
+the confirmed truncation mechanism, with a clean no-regression result on
+the existing suite. It does not yet carry live-stack, LLM-graded evidence
+that the fix measurably improves the original 10-question baseline's
+PASS/FAIL counts, which the issue's completion criteria call for
+("evaluated against the existing quality baseline"). Issue #89 should stay
+open until that live comparison — or an explicit, deliberate decision to
+accept the unit-level evidence as sufficient — is recorded.

@@ -16,7 +16,18 @@ canonical_id since they're all one graph-hop from the same seed, three of
 them landing past the cap) using the same fake-backend harness as
 test_expansion_caps.py, and asserts the evidence_trace instrumentation
 (rag_orchestrator/src/retrieval/evidence_trace.py) surfaces exactly that
-failure — before any ranking/cap fix is attempted, per issue #89's ordering.
+failure.
+
+The first two tests below (single relation type: every candidate is a
+DEFINES child) intentionally still fail the cap after the issue #89 fix in
+traversal_selector.py -- when every competing candidate is equally
+authoritative, no ranking change can save all of them; that's a distinct,
+out-of-scope limitation (raising MAX_EXPANDED_DOCS or a specificity signal
+beyond relation type would be needed, not attempted here). The third test
+class below (mixed relation types: DEFINES helpers competing against many
+CALL-derived external symbols, matching what section 11 of the baseline doc
+actually found in the live diagnostic) reproduces the shape the fix
+targets, and confirms it now survives.
 """
 import asyncio
 import json
@@ -187,3 +198,164 @@ def test_no_trace_requested_costs_nothing(monkeypatch):
 
     assert "_evidence_trace_partial" not in plan
     assert "evidence_trace" not in plan
+
+
+# ------------------------------------------------------------------
+# Fix verification: relation-type-aware expansion ranking (issue #89).
+#
+# The live diagnostic (baseline doc section 11) found that graph expansion
+# from the treesitter/base.py seed returned both the true DEFINES helper
+# functions *and* "many external tree-sitter symbols" (CALL-reached) at the
+# same seed-hit count, all competing for the same MAX_EXPANDED_DOCS cap
+# under the old canonical_id-only tiebreak. This fixture reproduces that
+# mix and confirms traversal_selector.execute_traversals_from_seeds now
+# ranks DEFINES-discovered nodes ahead of CALL-discovered ones regardless
+# of alphabetical order, so the true helpers survive the cap.
+# ------------------------------------------------------------------
+
+MIXED_HELPER_IDS = {"helper_a", "helper_b", "helper_c"}
+N_EXTERNAL_CALL_NOISE = 25  # "call_extern_*" sorts before "helper_*"
+
+
+def _build_mixed_relation_graph() -> CodebaseGraph:
+    """One seed module DEFINES 3 real helper functions and also CALLS 25
+    external symbols -- mirrors the real diagnosed case exactly."""
+    graph = CodebaseGraph()
+    graph.add_node(Node("module.py", "module.py"))
+
+    for cid in sorted(MIXED_HELPER_IDS):
+        graph.add_node(Node(cid, f"module.py#{cid}"))
+        graph.add_edge("module.py", cid, "DEFINES")
+
+    for i in range(N_EXTERNAL_CALL_NOISE):
+        cid = f"call_extern_{i:02d}"
+        graph.add_node(Node(cid, f"external/{cid}.py"))
+        graph.add_edge("module.py", cid, "CALL")
+
+    return graph
+
+
+class MixedRelationBackend:
+    def __init__(self):
+        self.search_by_doc_docs = []
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+
+        if path == "/v1/vectors/search":
+            return httpx.Response(
+                200,
+                json={
+                    "results": [
+                        {
+                            "document_id": "module-doc",
+                            "chunk_id": "module-chunk-0",
+                            "text": "module docstring/header",
+                            "score": 0.9,
+                            "metadata": {
+                                "canonical_id": "module.py",
+                                "repo_id": "repo-x",
+                            },
+                        }
+                    ]
+                },
+            )
+
+        if path.startswith("/v1/graph/repos/"):
+            nodes = [{"canonical_id": "module.py", "document_id": "module-doc"}]
+            nodes += [
+                {"canonical_id": cid, "document_id": f"{cid}-doc"}
+                for cid in sorted(MIXED_HELPER_IDS)
+            ]
+            nodes += [
+                {
+                    "canonical_id": f"call_extern_{i:02d}",
+                    "document_id": f"call_extern_{i:02d}-doc",
+                }
+                for i in range(N_EXTERNAL_CALL_NOISE)
+            ]
+            return httpx.Response(200, json={"nodes": nodes})
+
+        if path == "/v1/vectors/search-by-doc":
+            doc_id = json.loads(request.content)["document_id"]
+            self.search_by_doc_docs.append(doc_id)
+            return httpx.Response(
+                200,
+                json={
+                    "results": [
+                        {
+                            "chunk_id": f"chunk-of-{doc_id}",
+                            "text": f"implementation of {doc_id}",
+                            "score": 0.5,
+                            "metadata": {},
+                        }
+                    ]
+                },
+            )
+
+        return httpx.Response(404)
+
+
+def _run_hybrid_mixed(monkeypatch, backend, trace_canonical_ids=None):
+    real_async_client = httpx.AsyncClient
+
+    def patched_client(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(backend)
+        return real_async_client(*args, **kwargs)
+
+    monkeypatch.setattr(httpx, "AsyncClient", patched_client)
+    monkeypatch.setattr(
+        codebase_utils,
+        "get_cached_graph",
+        lambda repo_id: _build_mixed_relation_graph(),
+    )
+
+    return asyncio.run(
+        hybrid_retrieve(
+            query="explain the module",  # default routing: defines + calls
+            repo_id="repo-x",
+            query_embedding=[0.0] * 8,
+            top_k=5,
+            trace_canonical_ids=trace_canonical_ids,
+        )
+    )
+
+
+def test_defines_children_outrank_call_derived_noise_for_the_cap(monkeypatch):
+    """The fix: DEFINES-discovered helpers must survive MAX_EXPANDED_DOCS
+    ahead of CALL-discovered external noise, regardless of alphabetical
+    order between the two groups."""
+    backend = MixedRelationBackend()
+    _, plan = _run_hybrid_mixed(
+        monkeypatch, backend, trace_canonical_ids=MIXED_HELPER_IDS
+    )
+
+    trace = {e["canonical_id"]: e for e in plan["_evidence_trace_partial"]}
+    assert set(trace) == MIXED_HELPER_IDS
+    for cid in MIXED_HELPER_IDS:
+        entry = trace[cid]
+        assert entry["found_by_graph"] is True
+        assert entry["expanded_rank"] < 3  # ranks 0-2: all DEFINES nodes first
+        assert entry["survives_cap"] is True
+        assert entry["chunk_fetched"] is True
+        assert entry["drop_reason"] is None
+
+    fetched_docs = set(backend.search_by_doc_docs)
+    assert {f"{cid}-doc" for cid in MIXED_HELPER_IDS} <= fetched_docs
+
+
+def test_defines_children_reach_final_context_ahead_of_call_noise(monkeypatch):
+    backend = MixedRelationBackend()
+    chunks_by_doc, plan = _run_hybrid_mixed(
+        monkeypatch, backend, trace_canonical_ids=MIXED_HELPER_IDS
+    )
+
+    final_document_ids = set(chunks_by_doc.keys())
+    finalized = finalize_evidence_survival(
+        plan["_evidence_trace_partial"], final_document_ids
+    )
+
+    assert len(finalized) == 3
+    for entry in finalized:
+        assert entry["reaches_final_context"] is True
+        assert entry["drop_reason"] is None
