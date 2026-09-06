@@ -12,7 +12,7 @@
 
 ## 🚀 Overview
 
-`rag-foundry-universal` provides **graph-aware RAG querying** across **Python codebases** and **documents**, enabling semantic search at both the code and document level. Unlike a simple RAG system, it preserves structure in code and Markdown across an entire repository, giving precise answers that respect relationships like function calls, imports, and documentation links.
+`rag-foundry-universal` provides **graph-aware RAG querying** across **Python and TypeScript/JavaScript codebases** and **documents**, enabling semantic search at both the code and document level. Unlike a simple RAG system, it preserves structure in code and Markdown across an entire repository, giving precise answers that respect relationships like function calls, imports, and documentation links.
 
 It enables you to:
 
@@ -27,7 +27,7 @@ It enables you to:
 ## 🧩 Key Features
 
 * **Dual Ingestion Paths**: Git repositories (graph-aware) and uploaded files (Docling + chunking)
-* **Deterministic Artifact Graph**: AST-based extraction for code (modules, classes, functions, calls, imports, inheritance) — five edge types: `CALL`, `DEFINES`, `IMPORT`, `INHERITS`, `OVERRIDES`
+* **Deterministic Artifact Graph**: AST-based extraction for Python, tree-sitter-based extraction for TypeScript/JavaScript (modules, classes, interfaces, functions, calls, imports, inheritance) — five edge types: `CALL`, `DEFINES`, `IMPORTS`, `INHERITS`, `OVERRIDES`. A `language` filter is available on graph-aware queries.
 * **Cross-linking of Markdown to Code**: DOCUMENTS relationships connect Markdown headings to the code they describe (ADR-048)
 * **Vector Embeddings**: Ollama embedder, 1024 dimensions (mxbai-embed-large:latest), batched end-to-end (embedder batches + bulk vector writes)
 * **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — p95 ≈ 62 ms measured at Phase 1 benchmark scale (56k artifacts, see below). The "latency independent of corpus size" goal is a target for `DOCS/audit/04-Scalability-Plan.md`'s WP-S4 (<100 ms p95 at 1M+ chunk rows) — not yet measured at that scale.
@@ -104,7 +104,7 @@ It enables you to:
 | ------------------- | --------------------------------- |
 | API / Orchestration | Python + FastAPI                  |
 | Database            | PostgreSQL + `pgvector`           |
-| Code Parsing        | Python AST                        |
+| Code Parsing        | Python AST; tree-sitter (TypeScript/JavaScript) |
 | Markdown Parsing    | `markdown-it-py`                  |
 | OCR                 | Tesseract                         |
 | Embeddings          | Ollama (1024d)                    |
@@ -119,7 +119,8 @@ It enables you to:
 
 | Content Type             | Path                        | Embeddings | Graph                   | Query           |
 | ------------------------ | --------------------------- | ---------- | ----------------------- | --------------- |
-| Python code              | AST + canonical graph       | ✅          | ✅ CALL, DEFINES, IMPORT, INHERITS, OVERRIDES | Graph-aware RAG |
+| Python code              | AST + canonical graph       | ✅          | ✅ CALL, DEFINES, IMPORTS, INHERITS, OVERRIDES | Graph-aware RAG |
+| TypeScript / JavaScript  | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS | Graph-aware RAG |
 | Markdown (repo)          | Section extraction          | ✅          | ✅ DEFINES               | Graph-aware RAG |
 | Markdown (upload)        | Section extraction          | ✅          | ✅ DEFINES               | Document RAG    |
 | PDFs                     | Docling → Markdown → chunks | ✅          | — flat                  | Document RAG    |
@@ -250,13 +251,26 @@ describe different referents stay distinguishable to the model. See
 `DOCS/audit/00-Audit-Overview.md` and `DOCS/audit/04-Scalability-Plan.md`
 for how this gated further retrieval work.
 
+**Update (2026-09-06):** a separate retrieval-quality bug, independent of
+the reranker question above, was found, fixed, and verified live —
+[issue #89](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/89):
+graph expansion could correctly discover the right implementation evidence,
+only for authority-blind ranking to discard it at the `MAX_EXPANDED_DOCS`
+cap. Fixed with relation-type-aware expansion ranking and confirmed against
+live, freshly-ingested data (a previously-truncated target's rank moved
+from 24 to 12 and it started reaching the final LLM context), with zero
+regressions elsewhere. A distinct, still-open limitation — same-relation-type
+candidate overload, which ranking alone can't fully resolve — is tracked
+separately as [issue #91](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/91).
+Full evidence: `DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`.
+
 ---
 
 ## 🤖 Future Vision
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
 * Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64, #65, and #79 (the code-query filter bug, near-duplicate chunk crowding, and unlabeled-chunk context-assembly conflation that WP-Q0 surfaced) are all fixed — see `DOCS/audit/00-Audit-Overview.md`
-* Multi-language codebase graphs (Rust, TypeScript/JavaScript, Java) beyond today's Python-only extraction — Phase 3 has begun: `WP-L1` (issue #81) refactored ingestion onto a language-agnostic IR and a single `GraphAssembler`, with zero behavior change (verified against real codebases pre/post-refactor); per-language extractors (`WP-L2`+) are next, see `DOCS/audit/03-Multi-Language-Graph-Plan.md`
+* Multi-language codebase graphs beyond today's Python + TypeScript/JavaScript support — Phase 3 is in progress: `WP-L1` (issue #81) refactored ingestion onto a language-agnostic IR and a single `GraphAssembler` with zero behavior change; `WP-L2` (issue #83) shipped the TypeScript/JavaScript tree-sitter extractor; `WP-L6a` (issue #85) shipped a `language` filter on graph-aware queries, pulled forward to validate `WP-L2` against a real mixed-language repo. Rust and Java extractors (`WP-L3`/`WP-L4`) are next, see `DOCS/audit/03-Multi-Language-Graph-Plan.md`
 * Enhanced observability across ingestion and query pipelines
 * First-class Groq/NVIDIA NIM cloud endpoints (issue #46) — LiteLLM routing to a remote Ollama box and cloud-provider aliases (Anthropic, OpenAI) already ships today
 
