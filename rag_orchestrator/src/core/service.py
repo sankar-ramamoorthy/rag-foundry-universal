@@ -26,6 +26,10 @@ from rag_orchestrator.src.retrieval.codebase_utils import (
     extract_canonical_ids_from_chunks,
     dedupe_near_identical_chunks,
 )
+from rag_orchestrator.src.retrieval.evidence_trace import (
+    compute_partial_evidence_survival,
+    finalize_evidence_survival,
+)
 from rag_orchestrator.src.retrieval.traversal_selector import (
     select_traversal_strategies,
     execute_traversals_from_seeds,
@@ -230,9 +234,18 @@ async def hybrid_retrieve(
     query_embedding: List[float],
     top_k: int = 20,
     language: Optional[str] = None,
+    trace_canonical_ids: Optional[Set[str]] = None,
 ) -> tuple[Dict[str, List[RetrievedChunk]], Dict[str, Any]]:
     """
     Implements ADR-045 hybrid retrieval pipeline.
+
+    `trace_canonical_ids` (issue #89) is an optional evaluation/debug hook:
+    when given, the returned retrieval_plan_dict carries a
+    "_evidence_trace_partial" entry recording, for each of those canonical
+    IDs, whether it was found by vector search, found by graph expansion (and
+    at what rank), survived the MAX_EXPANDED_DOCS cap, and had a chunk
+    fetched. It costs nothing when omitted (the default, used by every
+    production call) and does not affect retrieval behavior either way.
 
     `language` (WP-L6a, #85) optionally scopes the seed search to one
     language (python/typescript/javascript); omitted, retrieval is
@@ -339,6 +352,21 @@ async def hybrid_retrieve(
         "total_docs": len(retrieved_chunks_by_document),
     }
 
+    if trace_canonical_ids:
+        fetched_doc_ids_with_chunks = {
+            doc_id for doc_id, results in fetched if results
+        }
+        retrieval_plan_dict["_evidence_trace_partial"] = (
+            compute_partial_evidence_survival(
+                target_canonical_ids=trace_canonical_ids,
+                seed_canonical_ids=seed_canonical_ids,
+                expanded_ranked=expanded_ranked,
+                canonical_to_doc=canonical_to_doc,
+                expanded_doc_ids_used=expanded_doc_ids,
+                fetched_doc_ids_with_chunks=fetched_doc_ids_with_chunks,
+            )
+        )
+
     logger.info(f"✅ Hybrid retrieval complete: {retrieval_plan_dict}")
     return retrieved_chunks_by_document, retrieval_plan_dict
 
@@ -357,6 +385,7 @@ async def run_rag(
     model: Optional[str] = None,
     chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
     language: Optional[str] = None,
+    trace_canonical_ids: Optional[Set[str]] = None,
 ) -> RAGResult:
 
     settings = get_settings()
@@ -371,7 +400,12 @@ async def run_rag(
     query_embedding = embed_query(query, embedder)
 
     retrieved_chunks_by_document, retrieval_plan_dict = await hybrid_retrieve(
-        query, resolved_repo_id, query_embedding, top_k, language=language
+        query,
+        resolved_repo_id,
+        query_embedding,
+        top_k,
+        language=language,
+        trace_canonical_ids=trace_canonical_ids,
     )
     seed_document_ids = list(retrieved_chunks_by_document.keys())
 
@@ -399,6 +433,15 @@ async def run_rag(
         debug=True,
     )
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
+
+    evidence_trace_partial = retrieval_plan_dict.pop("_evidence_trace_partial", None)
+    if evidence_trace_partial is not None:
+        final_document_ids = {
+            cast(str, c["document_id"]) for c in agent_chunks
+        }
+        retrieval_plan_dict["evidence_trace"] = finalize_evidence_survival(
+            evidence_trace_partial, final_document_ids
+        )
 
     # Token budget
     context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)

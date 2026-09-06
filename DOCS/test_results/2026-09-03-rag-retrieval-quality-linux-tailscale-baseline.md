@@ -995,3 +995,312 @@ for implementation authority, source type, language, function specificity, or
 the query's explicit file/function targets.
 
 No implementation recommendation is made in this test result.
+
+---
+
+# 14. Follow-Up: Evidence-Survival Instrumentation and Regression Fixture (issue #89)
+
+This section records the first concrete step taken on issue #89
+(https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/89),
+opened against the confirmed finding in section 13. Per the issue's ordering,
+this step adds only the minimum diagnostic instrumentation and a regression
+fixture reproducing the confirmed failure — no ranking/cap behavior was
+changed.
+
+## What was added
+
+- `rag_orchestrator/src/retrieval/evidence_trace.py` — a small, dict-based
+  instrumentation module. Given a set of target `canonical_id`s, it reports,
+  per target: `found_by_vector`, `found_by_graph` (+ `expanded_rank`),
+  `survives_cap`, `chunk_fetched`, `reaches_final_context`, and a
+  `drop_reason` naming the first stage that discarded it
+  (`not_found_by_vector_or_graph`, `truncated_by_max_expanded_docs`,
+  `fetch_returned_no_chunks`, `dropped_before_final_context`).
+- `hybrid_retrieve` gained an optional `trace_canonical_ids` parameter
+  (`rag_orchestrator/src/core/service.py`). Omitted (the default, used by
+  every production call), it costs nothing and changes no behavior. When
+  supplied, the returned `retrieval_plan_dict` carries the partial trace
+  through the `MAX_EXPANDED_DOCS` cap and fetch stages; `run_rag` finalizes
+  it against the actual post-truncation final context and exposes it as
+  `retrieval_plan["evidence_trace"]`.
+- `rag_orchestrator/tests/test_evidence_survival.py` — a regression fixture
+  modeled directly on the confirmed `treesitter/base.py` case: one seed
+  module graph-DEFINES 30 children, three of them targeted as "helper
+  functions" landing at ranks 25-27 (past the `MAX_EXPANDED_DOCS=20`
+  default), matching the diagnostic's own rank numbers. The fixture asserts
+  the instrumentation shows exactly the confirmed failure chain: found by
+  graph, not surviving the cap, never fetched, never reaching final context,
+  with `drop_reason == "truncated_by_max_expanded_docs"`.
+
+## Result
+
+All 3 new tests pass, confirming the failure is reproducible outside the
+live diagnostic session, and the full `rag_orchestrator` suite (101 tests)
+passes with the instrumentation in place — no regressions from adding it.
+
+## Explicitly not done in this step
+
+- No ranking or cap behavior was changed. The regression fixture currently
+  documents the *existing* failure, not a fix.
+- No reranker or other intervention (issue #89's candidates A-E) was
+  implemented or chosen.
+- The instrumentation is not wired into the `/v1/rag` HTTP endpoint/response
+  model — it's a Python-level hook for eval scripts and tests, kept
+  deliberately out of the public API contract for this step.
+- Generation-only failures (Q4/Q6/Q10 in the source eval) remain untouched
+  and out of scope.
+
+## Next steps (per issue #89)
+
+Repeat the same diagnostic shape on a few more failed questions from the two
+eval docs (one Python, one YAML/config, one UI/API-contract case) to check
+whether the rank/cap pattern generalizes, before comparing candidate
+interventions.
+
+---
+
+# 15. Frozen Evaluation Set, Regression Bar, and Implemented Intervention (issue #89)
+
+This section records the second step on issue #89: freezing the evaluation
+set and numeric acceptance/regression bar before changing retrieval
+behavior, implementing the smallest evidence-supported intervention, and
+reporting before/after results against that bar.
+
+## Frozen evaluation set and bar
+
+Live LLM-graded re-evaluation of the 10 questions in
+`DOCS/test_results/2026-09-03-rag-quality-source-eval.md` was not performed
+for this step: doing so would require deploying this branch's code to the
+Linux/Tailscale Docker stack that produced that baseline, which means a
+container rebuild on that host — the kind of operation flagged as a known
+cost/risk by issue #41 (containers resolve their uv environment at runtime;
+multi-GB re-download on recreation) and not something to trigger
+unilaterally mid-issue. That live re-run remains open follow-up work (see
+Deferred below), not something this step claims to have done.
+
+Instead, the frozen evaluation set and bar for *this* step are unit-level
+and structural, built directly on the evidence-survival instrumentation
+added in PR #90:
+
+- **Primary regression fixture** (`rag_orchestrator/tests/test_evidence_survival.py`,
+  first two tests): the confirmed `treesitter/base.py` case — single
+  relation type, helpers ranked past the cap purely by canonical_id.
+  Frozen expectation: this fixture is *not* required to start passing as
+  "fixed" — when every competing candidate is the same relation type, no
+  ranking change can rescue all of them, and that's an explicitly
+  out-of-scope limitation for this step (raising `MAX_EXPANDED_DOCS` or a
+  finer specificity signal would be the lever, not attempted here).
+- **New fix-target fixture** (same file, `test_defines_children_outrank_call_derived_noise_for_the_cap`
+  and `test_defines_children_reach_final_context_ahead_of_call_noise`):
+  mirrors the live diagnostic's actual finding (section 11: graph expansion
+  returned both the true DEFINES helpers *and* "many external tree-sitter
+  symbols" reached via CALL, at the same seed-hit count). Numeric bar: all
+  3 target helper canonical IDs must show `survives_cap: true`,
+  `chunk_fetched: true`, `reaches_final_context: true`, `drop_reason: null`
+  after the change — i.e. the confirmed competition pattern from the real
+  case must no longer discard authoritative evidence.
+- **No-regression bar**: the full pre-existing `rag_orchestrator` suite
+  (101 tests as of PR #90, including the two ranking-determinism tests
+  `test_expansion_ranks_by_seed_adjacency` and
+  `test_ranking_ties_break_deterministically`) must continue to pass
+  **unmodified** — i.e. the change must not alter ranking behavior for the
+  single-relation-type / already-tested cases, only add a new ordering
+  dimension ahead of the existing seed-hit/alphabetical tiebreak.
+
+## Candidate interventions considered
+
+Per issue #89's list (A. raise cap, B. rerank, C. prefer implementation over
+docs, D. prefer graph-proximal children of strong seeds, E. guarantee
+child-symbol survival when the parent is a strong seed):
+
+- **D was implemented** (see below) — it directly targets the confirmed
+  mechanism (flat positional truncation losing a structural signal the
+  code already computes) with no new dependency, no LLM call, and no
+  semantic-similarity re-scoring; the graph already univocally distinguishes
+  DEFINES (structural: literally defined inside a seed) from
+  CALL/IMPORT/other (referential), so "prefer graph-proximal children of
+  strong seeds" reduces to "don't discard the relation-type signal that
+  `execute_traversals` already computes per node."
+- **A (raise `MAX_EXPANDED_DOCS`)** was explicitly not chosen as the fix:
+  the source eval doc's own `top_k` A/B test already showed raising a
+  similar cap increases distractor competition and degraded answers at
+  `top_k=20` — the same risk applies here, and it doesn't fix the
+  underlying authority-blindness, only delays when it bites.
+- **B (rerank)** was not implemented in this step, per
+  [[rag-quality-evaluation-gate]] / the roadmap's flag-gated,
+  eval-justified requirement for a reranker — it remains a candidate for a
+  later step if D proves insufficient once live-evaluated.
+- **C and E** were not separately implemented: E is effectively subsumed by
+  D's mechanism (a DEFINES child of a strong seed now structurally
+  outranks non-DEFINES competition), and C (implementation-over-docs
+  preference) operates on the *seed* vector-search stage, not the
+  *expanded*-candidate stage this issue is scoped to — left for a
+  follow-up issue if generalization testing (next steps) shows seed-stage
+  competition is still the dominant failure mode.
+
+Comparison stopped once D cleared the frozen bar — per the tightened goal,
+this step does not exhaustively implement every candidate.
+
+## Implemented intervention: relation-type-aware expansion ranking
+
+`rag_orchestrator/src/retrieval/traversal_selector.py`:
+`execute_traversals` now returns `(Node, strategy_index)` pairs instead of
+bare nodes, `strategy_index` being the position of the traversal strategy
+(e.g. `traverse_defines` before `traverse_calls` in `_DEFAULT_STRATEGIES`)
+that discovered each node. `execute_traversals_from_seeds` now sorts
+expanded candidates by `(best_strategy_index, -seed_hits, canonical_id)`
+instead of `(-seed_hits, canonical_id)` — the relation-type signal was
+already being computed per traversal call and then discarded before the
+final sort; it is now retained as the primary ranking key. Nothing else in
+the expansion/cap/fetch pipeline changed.
+
+## Result against the frozen bar
+
+- Fix-target fixture: **3/3 target helper IDs** now show `survives_cap:
+  true`, `chunk_fetched: true`, `reaches_final_context: true`,
+  `drop_reason: null` (previously would have shown `truncated_by_max_expanded_docs`
+  under the old ranking, verified by inspection of the pre-fix sort order —
+  CALL-derived `call_extern_*` IDs sort alphabetically before `helper_*`,
+  so the old canonical_id tiebreak would have filled the 20-slot cap with
+  external noise first).
+- No-regression bar: full `rag_orchestrator` suite — **103/103 pass**
+  (101 pre-existing + 2 new fix-verification tests), including both
+  ranking-determinism tests unmodified and passing.
+- Primary regression fixture (single relation type): still fails the cap
+  as expected/frozen — confirms the fix is scoped to the mixed-relation-type
+  competition it targets, not silently masking the single-type limitation.
+- `ruff check` and `pyright` on changed files: clean, no new errors (same
+  pre-existing import-resolution errors in this sandboxed root venv
+  present on `main` too, unrelated to this change).
+
+## Deferred (not done in this step)
+
+- Live re-run of the 10-question source eval against a deployed build of
+  this branch, to get an LLM-graded before/after PASS/FAIL/WEAK-PASS count
+  — requires a Linux-side container rebuild, out of scope for this step
+  per the reasoning above.
+- Generalizing the diagnostic to a Python/YAML/API-contract failure case
+  and a second-repository control, per the diagnostic doc's original Next
+  Steps §§3-4.
+- Any change to seed-stage vector search (candidate C) or a reranker
+  (candidate B).
+
+## Whether the evidence supports closing issue #89
+
+**Not yet as of this section** — see section 16 below, written after a live
+before/after comparison became possible (2026-09-06, same day, once the
+user completed a Linux-side ingestion_service rebuild and repo
+re-ingestion). Section 16 supersedes this section's "not yet" for the
+live-comparison question specifically; the fix itself was already unit-
+verified as described above.
+
+---
+
+# 16. Live Before/After Comparison (issue #89, same-day follow-up)
+
+Once the user rebuilt the Linux ingestion_service container and re-ingested
+this repo (repo query id `f7641840-ba13-5f9d-9ae6-87e1f924709d` — same id
+as the original eval docs; the value the user gave when starting ingestion,
+`c171cc00-3be7-42c4-bb21-328412d40a7f`, is a separate `ingestion_id` field,
+not the id `run_rag` takes), a live before/after comparison of the fix in
+section 15 became possible without any container redeploy: a local script
+(`issue89_live_eval.py`, not committed — a one-off ops script hardcoding
+the Tailscale host) imports `rag_orchestrator`'s `run_rag` directly from
+the local checkout and runs it as an HTTP client against the real remote
+`ingestion_service` / `vector_store_service` / `llm_service` / Ollama over
+Tailscale. The orchestration/ranking code under test runs locally; every
+retrieval and generation call hits real remote data.
+
+## Method
+
+Replayed all 10 questions from
+`DOCS/test_results/2026-09-03-rag-quality-source-eval.md`, each wired with
+its documented target canonical_id(s) via `trace_canonical_ids`
+(PR #90's instrumentation), against the freshly re-ingested repo:
+
+- **AFTER**: this branch as committed (relation-type-aware ranking, section 15's fix).
+- **BEFORE**: `traversal_selector.py` temporarily reverted to its pre-fix
+  state (commit d6a07b5, instrumentation-only) for one run, then restored
+  immediately afterward. Same questions, same freshly-ingested repo, same
+  process — only the ranking logic differed between the two runs.
+
+## Result: every target's rank/final-context status, before vs. after
+
+Diffing all 10 questions' `evidence_trace` entries, only three targets
+changed at all (everything else — including all `not_found_by_vector_or_graph`
+cases in Q1/Q3, which are a distinct, unrelated failure mode this fix
+doesn't touch — was byte-identical before and after, confirming no
+regression on the live data):
+
+| Question | Target | Rank before → after | Reaches final context before → after |
+|---|---|---|---|
+| Q7 | `codebase_queries.py#traverse_defines` | 24 → 12 | **False → True** |
+| Q9 | `agent_adapter.py#_source_label` | 5 → 0 | True → True (already safe both times) |
+| Q10 | `simple_service.py#run_simple_rag` | 137 → 88 | False → False (moved 49 ranks closer, still short of the cap=20) |
+
+**Q7 is the clean, positive, measured result**: `traverse_defines` was
+genuinely truncated by `MAX_EXPANDED_DOCS` before the fix (rank 24, one
+past the cap of 20) and genuinely recovered after it (rank 12, well inside
+the cap) — the exact mechanism the fix targets, now confirmed on live data,
+not just the synthetic fixture.
+
+**Q10 is the honest negative/partial result**: `run_simple_rag` moved up
+49 ranks (137→88) — the DEFINES-priority reordering did help it — but it
+started so far back that it's nowhere near survivable even after the
+improvement. This is precisely the documented limitation from section 15
+and the "single relation type" fixture in `test_evidence_survival.py`: when
+a target competes against many same-priority candidates (not a
+DEFINES-vs-CALL mismatch), relation-type-aware ranking alone cannot rescue
+it. `MAX_EXPANDED_DOCS` and/or a finer-grained specificity signal remain
+open follow-up work for cases shaped like this one.
+
+## Important side-finding: eval-document self-contamination
+
+Every one of the 10 questions' RAG answers, in **both** the before and
+after runs, retrieved `DOCS/test_results/2026-09-03-rag-quality-source-eval.md`
+(and often the other two `test_results/*.md` docs) as a source — because
+those documents, now part of this repo's own ingested corpus, contain the
+verbatim ground truth, classification, and correct answer for each of
+these same 10 questions. One answer even referenced "the evaluation's
+source evidence for item #7" and "the RAG system previously incorrectly
+stated..." — i.e. the model was partly answering from a summary of a past
+evaluation of itself, not from the underlying source code.
+
+This means: **the retrieval-level `evidence_trace` measurements above
+(rank / survives_cap / reaches_final_context) remain valid** — they track
+whether the actual source-code canonical_id reached context, independent
+of what else also got retrieved. But **this run cannot be used to claim
+the final *answer quality* improved** on a strict PASS/FAIL/WEAK-PASS
+re-grading basis, because both before and after answers had access to a
+document that already states the correct answer. Re-running these exact 10
+questions against this self-ingested repo is no longer a clean generation-
+quality signal and shouldn't be treated as one going forward.
+
+**Mitigation for future live evals against this repo**: either exclude
+`DOCS/test_results/*.md` from the seed/expansion set for evaluation runs
+(e.g. a metadata filter), or use questions whose answers aren't already
+written up in the repo's own eval documentation (a second, un-ingested-yet
+repository, or newly-authored questions, or the TradeForge repo the user is
+ingesting separately for TypeScript coverage).
+
+## Whether the evidence supports closing issue #89
+
+**Still not fully.** This is now a materially stronger position than
+section 15: the fix has live confirmation of its core claimed mechanism
+(Q7), a live confirmation of its known limitation (Q10), and zero live
+regressions across the other 8 questions' targets — all three exactly as
+predicted by the unit-level work in section 15. What remains before
+closing #89 outright:
+
+- A clean, uncontaminated answer-quality regrade (blocked by the
+  self-contamination finding above — needs either a filtered eval or a
+  different corpus/question set).
+- A decision on whether Q10's shape (same-relation-type overload) needs
+  its own follow-up (e.g. raising `MAX_EXPANDED_DOCS` as a targeted
+  control for this specific pattern, per candidate A, now evaluated with
+  real numbers rather than in the abstract) or whether one confirmed
+  live win with no live regressions is sufficient evidence to close this
+  issue and track Q10-shaped cases separately.
+
+Recommend treating the second point as the user's call, not an automatic
+next unit of AI-driven work.
