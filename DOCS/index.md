@@ -54,6 +54,13 @@ binding: [[proposals/sdd-spec-kit-adoption]],
 `DOCS/test_results/` — benchmark and verification records tied to specific
 audit findings.
 
+## Evaluations
+
+`DOCS/evaluations/` — pre-registered evaluation question/candidate sets
+(defined before the experiment runs, distinct from `DOCS/test_results/`'s
+post-hoc verification evidence):
+[[evaluations/2026-09-07-evidence-survival-question-set]].
+
 ## Notes
 
 `DOCS/notes/` — ad hoc working notes.
