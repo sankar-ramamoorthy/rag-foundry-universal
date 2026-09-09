@@ -1,0 +1,160 @@
+---
+title: "Production Docker Compose Release Process"
+date: 2026-09-09
+type: deployment-guide
+status: accepted
+tags: [deployment, production, docker-compose, release, provenance]
+related:
+  - "[Documentation Index](/DOCS/index.md)"
+  - "[RAG Quality Evaluation Methodology](/DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md)"
+---
+
+# Production Docker Compose Release Process
+
+## Development vs. production
+
+The default `docker-compose.yml` is optimized for local development. It
+bind-mounts service source directories into containers so edits on the host are
+reflected immediately.
+
+Production uses `docker-compose.yml` plus `docker-compose.prod.yml`. The
+production override removes application source bind mounts so containers run the
+immutable image contents that were built and labeled for an exact Git commit.
+
+Do not assume `latest` is a production release identifier. Production is
+identified by an exact Git SHA, optionally with a human-readable tag such as
+`prod-2026-09-12`.
+
+## Required release metadata
+
+Set build metadata mechanically from the checked-out release commit:
+
+```bash
+export GIT_SHA=$(git rev-parse HEAD)
+export BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+export RELEASE_VERSION=prod-YYYY-MM-DD
+```
+
+Each application image records:
+
+```text
+org.opencontainers.image.source
+org.opencontainers.image.url
+org.opencontainers.image.title
+org.opencontainers.image.description
+org.opencontainers.image.licenses
+org.opencontainers.image.revision
+org.opencontainers.image.created
+org.opencontainers.image.version
+```
+
+`org.opencontainers.image.revision` must equal the approved RAG-FOUNDRY-UNIVERSAL
+Git SHA. It must not reflect the `astral/uv` base image revision.
+
+## Pre-deploy capture
+
+Before changing the production checkout, record:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml ps
+docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.ID}}'
+docker inspect rag-orchestrator --format '{{.Image}}'
+docker image inspect <running-image-id> \
+  --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}'
+```
+
+For the first controlled release, the prior runtime Git SHA may be `unknown`.
+Record prior image IDs anyway.
+
+## Effective config proof
+
+Before the first production deploy, render the effective Compose config:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.prod.yml config
+```
+
+The rendered config must show:
+
+- persistent Postgres storage: `./volumes/ingestion-db:/var/lib/postgresql/data`
+- no application source bind mounts for service source directories or `shared`
+- required production build args wired into every app image build
+- no accidental dev-only mounts
+
+If this proof fails, do not deploy.
+
+## Deployment sequence
+
+```bash
+git fetch --tags origin
+git status --short
+git checkout <approved-sha-or-tag>
+
+export GIT_SHA=$(git rev-parse HEAD)
+export BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+export RELEASE_VERSION=prod-YYYY-MM-DD
+
+docker compose -f docker-compose.yml -f docker-compose.prod.yml config
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+Before `up -d`, classify and record whether the release requires:
+
+- DB migration
+- DB backup
+- repo re-ingestion
+- graph rebuild
+- vector re-embedding
+- configuration changes
+
+Back up the database before schema-changing releases. Never use
+`docker compose down -v` or recreate `./volumes/ingestion-db` during normal
+deploys.
+
+## Validation
+
+Check health:
+
+```bash
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+curl http://localhost:8003/health
+curl http://localhost:8004/health
+curl http://localhost:7860
+```
+
+Verify the running container image, not only the `latest` tag:
+
+```bash
+docker inspect rag-orchestrator --format '{{.Image}}'
+docker image inspect <running-image-id> \
+  --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}'
+```
+
+For every app container, the approved Git SHA, running image ID label, and release
+record must agree.
+
+Run one known graph-aware RAG smoke query against a complete repository and
+record pass/fail plus sources.
+
+## Rollback
+
+For ordinary code rollback:
+
+```bash
+git checkout <previous-prod-sha>
+export GIT_SHA=$(git rev-parse HEAD)
+export BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+export RELEASE_VERSION=rollback-YYYY-MM-DD
+
+docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+```
+
+If an incompatible DB migration was applied, rollback requires restoring the
+pre-migration DB backup or an explicitly reviewed downgrade path.
+
+Application rollback and corpus re-ingestion are separate operations. Do not
+automatically re-ingest repositories, rebuild graph state, or re-embed vectors as
+part of application rollback.

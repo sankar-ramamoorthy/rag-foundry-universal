@@ -167,6 +167,18 @@ curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/j
 
 ---
 
+## Production deployments
+
+The default Compose file is optimized for development and bind-mounts source
+directories into the containers. For production or long-lived deployments, use
+the production Compose override documented in
+[`DOCS/deployment/production-docker-compose.md`](/DOCS/deployment/production-docker-compose.md)
+so containers execute immutable image contents labeled with the exact Git SHA.
+Do not treat `latest` as a production release identifier; pin an exact Git SHA,
+tag, or image digest.
+
+---
+
 ## 🧪 Tests & CI
 
 CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:

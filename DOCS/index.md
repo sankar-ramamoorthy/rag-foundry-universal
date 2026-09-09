@@ -43,6 +43,13 @@ architecture just by being written down.
 flow, repo query ASCII flow, extraction hierarchy model). Not yet
 frontmatter-linked — planned follow-up.
 
+## Deployment
+
+`DOCS/deployment/` holds operational deployment guidance. Start with
+[Production Docker Compose Release Process](/DOCS/deployment/production-docker-compose.md)
+for the manual production release procedure, provenance checks, validation,
+and rollback rules.
+
 ## Proposals
 
 `DOCS/proposals/` — process/tooling proposals under discussion, not yet

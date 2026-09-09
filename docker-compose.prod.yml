@@ -1,0 +1,39 @@
+# Production override for Docker Compose 2.32+.
+#
+# Use with:
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml config
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml build
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# The !override tags intentionally remove development source bind mounts so
+# production containers execute the immutable image contents.
+
+x-prod-build-args: &prod-build-args
+  GIT_SHA: ${GIT_SHA:?Set GIT_SHA to the approved release commit}
+  BUILD_DATE: ${BUILD_DATE:?Set BUILD_DATE to the UTC image build timestamp}
+  RELEASE_VERSION: ${RELEASE_VERSION:-prod-local}
+
+services:
+  ingestion_service:
+    build:
+      args: *prod-build-args
+    volumes: !override []
+
+  vector_store_service:
+    build:
+      args: *prod-build-args
+    volumes: !override []
+
+  llm_service:
+    build:
+      args: *prod-build-args
+    volumes: !override []
+
+  rag_orchestrator:
+    build:
+      args: *prod-build-args
+    volumes: !override []
+
+  gradio:
+    build:
+      args: *prod-build-args

@@ -24,6 +24,19 @@ RUN uv sync
 # Ensure imports work across services
 ENV PYTHONPATH=/app:/app/shared
 
+ARG GIT_SHA=unknown
+ARG BUILD_DATE=unknown
+ARG RELEASE_VERSION=dev
+
+LABEL org.opencontainers.image.source="https://github.com/sankar-ramamoorthy/rag-foundry-universal" \
+      org.opencontainers.image.url="https://github.com/sankar-ramamoorthy/rag-foundry-universal" \
+      org.opencontainers.image.title="rag-foundry-universal" \
+      org.opencontainers.image.description="Graph-aware RAG system for code repositories and documents" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.version="${RELEASE_VERSION}"
+
 EXPOSE 8002
 
 # Run FastAPI app
