@@ -177,6 +177,14 @@ so containers execute immutable image contents labeled with the exact Git SHA.
 Do not treat `latest` as a production release identifier; pin an exact Git SHA,
 tag, or image digest.
 
+Current production release: `prod-2026-09-12`, deployed from
+`202d91b34ee18e21c1dbb625d72acf9b82bce16d`. This is the first recorded
+production release using the audited Docker Compose process: CI-green main SHA,
+self-contained application images, no production source bind mounts, preserved
+Postgres storage, running-image OCI provenance checks, health checks, and a known
+RAG smoke test. See
+[`DOCS/releases/2026-09-12-prod-release.md`](/DOCS/releases/2026-09-12-prod-release.md).
+
 ---
 
 ## 🧪 Tests & CI

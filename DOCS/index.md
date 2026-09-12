@@ -50,6 +50,12 @@ frontmatter-linked — planned follow-up.
 for the manual production release procedure, provenance checks, validation,
 and rollback rules.
 
+`DOCS/releases/` holds production release records. Current release:
+[prod-2026-09-12](/DOCS/releases/2026-09-12-prod-release.md), deployed from
+`202d91b34ee18e21c1dbb625d72acf9b82bce16d`. The earlier
+[827c9cdc failed promotion](/DOCS/releases/2026-09-12-827c9cdc-failed-promotion.md)
+is retained as part of the audit trail.
+
 ## Proposals
 
 `DOCS/proposals/` — process/tooling proposals under discussion, not yet

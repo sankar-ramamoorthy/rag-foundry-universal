@@ -110,6 +110,15 @@ See [[00-Audit-Overview]]'s 2026-08-30 status.
 ## Phase 4 — Scale + operate (3–4 weeks, parallel with late Phase 3)
 *Theme: survives real repos and real ops.*
 
+- [x] Production Docker Compose release discipline (unplanned operational
+  hardening): `prod-2026-09-12` deployed from
+  `202d91b34ee18e21c1dbb625d72acf9b82bce16d` with CI-green main SHA,
+  self-contained application images, no production application source bind
+  mounts, OCI provenance labels, persistent Postgres preservation, health checks,
+  RAG smoke validation, rollback awareness, and release records. The failed
+  predecessor `827c9cdc182073966f0b794968f90a7dc4388d18` is recorded as a failed
+  promotion; issue #96 fixed the narrow `rag_orchestrator` image-packaging
+  defect. Issue #41 remains deferred to Phase 5/WP-E2.
 - [ ] [[04-Scalability-Plan#WP-S5 — Job queue for ingestion|WP-S5]] Job queue (arq + Redis)
 - [ ] [[04-Scalability-Plan#WP-S6 — Incremental ingestion (the massive-repo unlock)|WP-S6]] Incremental ingestion + snapshot lineage
 - [ ] [[04-Scalability-Plan#WP-S7 — Bounded graph service instead of whole-graph-in-RAM|WP-S7]] Traverse endpoint, kill whole-graph RAM cache
@@ -159,4 +168,5 @@ graph LR
 > 4. ~~Issue #52 (dev bind-mount ignored by `CMD`)~~ — done, closed 2026-07-20 (PR #54). ~~Issue #55 (rag_orchestrator CUDA torch)~~ and ~~issue #57 (ingestion_service CUDA torch + torchvision ABI mismatch)~~ — done, closed 2026-07-21. Issue #41 (per-service uv env re-resolved fresh at every container start, plus the malformed compose healthchecks) stays open but is **deliberately deferred to Phase 5's `WP-E2` deploy part** (see below) — it's the "reproducible builds" work the WP already scopes, not urgent now that #55/#57 removed the multi-GB CUDA cost from every recreate.
 > 5. ~~Phase 3 has begun: `WP-L1` ... Next: `WP-L2` (TypeScript/JS extractor), not yet started.~~ — done. `WP-L1` (issue #81, 2026-08-30) landed the IR + `GraphAssembler` refactor, verified behavior-identical against four real codebases pre/post-refactor. `WP-L2` (issue #83, 2026-08-30) shipped the TypeScript/JavaScript tree-sitter extractor. `WP-L6a` (issue #85, 2026-08-31) — the retrieval-filter half of `WP-L6` — was pulled forward to validate `WP-L2` against a real mixed-language repo, and shipped: `language` is a typed/indexed `vector_chunks` column, and `/v1/rag` accepts an optional `language` filter.
 > 6. **RAG retrieval-quality follow-up, separate from the WP-Q0/reranker track (2026-09-06):** live diagnosis (`DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`) found graph expansion can correctly discover authoritative implementation evidence that then gets discarded by authority-blind ranking at the `MAX_EXPANDED_DOCS` cap. [Issue #89](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/89) fixed this with relation-type-aware expansion ranking (`traversal_selector.py`), **confirmed on live data** (PR #90: a truncated target's rank moved from 24 to 12 and it now reaches final context; zero regressions across the rest of the live baseline questions). A distinct, still-open limitation — same-relation-type candidate overload, where ranking alone isn't enough to beat the cap — is tracked separately as [issue #91](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/91). Next: characterize how often #91's pattern recurs before choosing an intervention (same discipline #89 used), and continue Phase 3 (`WP-L3` Rust or `WP-L4` Java next) independently — neither track blocks the other.
+> 7. **Production hardening completed (2026-09-12):** `prod-2026-09-12` is deployed and tagged at `202d91b34ee18e21c1dbb625d72acf9b82bce16d`; release evidence lives in `DOCS/releases/2026-09-12-prod-release.md`. The next recommended work is retrieval observability/evidence-survival tracing before choosing further retrieval interventions.
 
