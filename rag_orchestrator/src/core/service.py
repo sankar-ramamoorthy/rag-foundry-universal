@@ -139,13 +139,26 @@ async def canonical_to_document_map_http(
         return {}
 
     settings = get_settings()
-    url = f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}/nodes"
-    logger.info(f"url = {url}")
-    params = {"canonical_ids": ",".join(sorted(canonical_ids))}
+    # Issue #107: POST with a JSON body, not GET with a query string. A
+    # combined seed+expansion canonical_id set of a few hundred entries
+    # (routine on a dense repo/query, e.g. a large monorepo) can produce
+    # a query string long enough to exceed the server's URL/header
+    # length limit, which previously came back as a plain HTTP 400 that
+    # this function's except-and-swallow turned into an empty mapping --
+    # identical, from every caller's perspective, to "none of these
+    # canonical_ids matched anything." That silently broke graph
+    # expansion (every expanded canonical_id fails to resolve a
+    # document_id, so none get fetched) whenever the combined ID count
+    # got large enough, with no visible error anywhere. Confirmed live:
+    # a 344-canonical_id GET request to this endpoint returned 400
+    # "Invalid HTTP request received." while the same lookup one ID at a
+    # time succeeded. A POST body has no such practical size limit.
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}/nodes/lookup"
+    payload = {"canonical_ids": sorted(canonical_ids)}
 
     async with httpx.AsyncClient(timeout=200) as client:
         try:
-            resp = await client.get(url, params=params)
+            resp = await client.post(url, json=payload)
             resp.raise_for_status()
             data = resp.json()
 
@@ -160,6 +173,12 @@ async def canonical_to_document_map_http(
             )
             return mapping
 
+        except httpx.HTTPStatusError as e:
+            logger.error(
+                f"Graph lookup failed with HTTP {e.response.status_code} for "
+                f"{len(canonical_ids)} canonical_ids: {e.response.text[:200]!r}"
+            )
+            return {}
         except Exception as e:
             logger.warning(f"Graph lookup failed: {e}")
             return {}

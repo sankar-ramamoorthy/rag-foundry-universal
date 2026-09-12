@@ -47,29 +47,16 @@ class DocumentRelationshipsResponse(BaseModel):
 
 
 # -------------------------------
-# GET /graph/repos/{repo_id}/nodes
+# Shared lookup logic (GET + POST below)
 # -------------------------------
 
-@router.get("/repos/{repo_id}/nodes", response_model=CanonicalLookupResponse)
-async def get_nodes_by_canonical_ids(
-    repo_id: str,
-    canonical_ids: str = Query(..., description="Comma-separated canonical_ids"),
-):
-    """
-    Convert canonical_ids → document_ids for graph traversal.
-
-    Example:
-        /v1/graph/repos/<repo_id>/nodes?canonical_ids=file.py,file.py#function
-    """
-    if not canonical_ids.strip():
-        raise HTTPException(400, "canonical_ids required")
-
-    cids = [cid.strip() for cid in canonical_ids.split(",") if cid.strip()]
-
+def _lookup_nodes_by_canonical_ids(
+    repo_id: str, cids: List[str], log_label: str
+) -> CanonicalLookupResponse:
     if not cids:
         return CanonicalLookupResponse(nodes=[], total=0)
 
-    logger.debug(f"Graph lookup: repo={repo_id[:8]}, cids={len(cids)}")
+    logger.debug(f"Graph lookup ({log_label}): repo={repo_id[:8]}, cids={len(cids)}")
 
     nodes = db_utils.get_document_nodes_by_canonical_ids(repo_id, cids)
 
@@ -84,9 +71,63 @@ async def get_nodes_by_canonical_ids(
         for node in nodes
     ]
 
-    logger.info(f"Graph lookup: {len(cids)} canonical_ids → {len(result)} nodes")
+    logger.info(
+        f"Graph lookup ({log_label}): {len(cids)} canonical_ids → {len(result)} nodes"
+    )
 
     return CanonicalLookupResponse(nodes=result, total=len(result))
+
+
+class CanonicalLookupRequest(BaseModel):
+    canonical_ids: List[str]
+
+
+# -------------------------------
+# GET /graph/repos/{repo_id}/nodes
+# -------------------------------
+
+@router.get("/repos/{repo_id}/nodes", response_model=CanonicalLookupResponse)
+async def get_nodes_by_canonical_ids(
+    repo_id: str,
+    canonical_ids: str = Query(..., description="Comma-separated canonical_ids"),
+):
+    """
+    Convert canonical_ids → document_ids for graph traversal.
+
+    Example:
+        /v1/graph/repos/<repo_id>/nodes?canonical_ids=file.py,file.py#function
+
+    Issue #107: a large combined seed+expansion canonical_id set (a few
+    hundred IDs is common on a dense repo/query) can overflow the
+    server's URL/header length limit here, returning a 400 that looks
+    to callers like "nothing matched" rather than a request-size error.
+    Prefer POST /repos/{repo_id}/nodes/lookup for any caller whose
+    canonical_id count isn't small and fixed (this GET form stays for
+    small/ad hoc lookups, e.g. from a browser or curl).
+    """
+    if not canonical_ids.strip():
+        raise HTTPException(400, "canonical_ids required")
+
+    cids = [cid.strip() for cid in canonical_ids.split(",") if cid.strip()]
+    return _lookup_nodes_by_canonical_ids(repo_id, cids, log_label="GET")
+
+
+# -------------------------------
+# POST /graph/repos/{repo_id}/nodes/lookup
+# -------------------------------
+
+@router.post("/repos/{repo_id}/nodes/lookup", response_model=CanonicalLookupResponse)
+async def post_nodes_by_canonical_ids(repo_id: str, payload: CanonicalLookupRequest):
+    """
+    POST variant of GET /repos/{repo_id}/nodes (issue #107): canonical_ids
+    travel in the JSON request body instead of the query string, so a
+    large canonical_id batch can't hit the URL/header length limit that
+    silently turns into an empty, indistinguishable-from-"nothing
+    matched" result for the caller. This is the endpoint
+    rag_orchestrator's canonical_to_document_map_http uses.
+    """
+    cids = [cid.strip() for cid in payload.canonical_ids if cid and cid.strip()]
+    return _lookup_nodes_by_canonical_ids(repo_id, cids, log_label="POST")
 
 
 # -------------------------------
