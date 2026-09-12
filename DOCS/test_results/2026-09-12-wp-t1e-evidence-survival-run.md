@@ -19,6 +19,20 @@ related:
 
 # WP-T1e: Evidence-Survival Question Set — First Live Run
 
+> [!tip] Resolution update (2026-09-12) — added, not a retroactive edit
+> Both follow-up issues this run filed are resolved. **#107** (the trace's canonical_id→document_id
+> resolution bug) is fixed: the root cause was a real production defect, not just an
+> instrumentation quirk — `GET /v1/graph/repos/{repo_id}/nodes?canonical_ids=...` silently 400s once
+> a combined seed+expansion canonical_id batch crosses ~19KB (~300 IDs), which
+> `canonical_to_document_map_http` swallowed into an empty mapping. Fixed by moving to
+> `POST /v1/graph/repos/{repo_id}/nodes/lookup` with a JSON body (no such limit). **#106** (corpus
+> self-contamination) is resolved as a process decision, not a code change — see
+> `DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md`: self-ingestion stays fine for
+> retrieval-mechanics checks, but answer-quality grading against a corpus containing the question
+> set's own expected answers (as this run did for most Python-repo candidates) is no longer
+> permitted. The findings and per-candidate table below are left exactly as recorded on 2026-09-12,
+> per this project's convention for eval-doc resolution updates.
+
 Per explicit instruction for this run: **the frozen 8-question candidate set was run as-is against
 the currently-ingested corpus, with no preemptive re-ingestion or answer-key refresh.** Where a
 finding below looks like corpus staleness rather than a retrieval defect, that is called out

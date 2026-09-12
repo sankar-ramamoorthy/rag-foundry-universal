@@ -244,6 +244,15 @@ the intended sequence is: this repo first, then at least one unrelated
 repository to check the findings generalize, then a polyglot repository once
 Phase 3 (multi-language) lands.
 
+> [!warning] Self-ingestion and answer-quality grading (2026-09-12, issue #106)
+> Self-ingesting this repo is fine for engineering smoke tests and retrieval-mechanics debugging,
+> but must not be used to grade generated-answer quality against a question set whose expected
+> answers (or a document restating them) are themselves committed under `DOCS/` — they get
+> retrieved as sources for the very questions they answer. See
+> [DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md](/DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md)
+> for the full decision, found via WP-T1e's first live run
+> ([DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md)).
+
 **Toward a durable corpus, not a one-off:** over time, real questions and
 real observed failures — not just synthetic ones — could be promoted into
 a standing regression/evaluation corpus that later changes are checked

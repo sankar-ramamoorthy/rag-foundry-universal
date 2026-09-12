@@ -19,6 +19,15 @@ related:
 
 # Evidence-survival question set: 12 candidates for the frozen 8-question experiment
 
+> [!warning] This document is itself answer-key content (2026-09-12)
+> WP-T1e's first live run against this repo's self-ingested corpus found that this exact document
+> gets retrieved as a source for most of its own candidates' queries, since it's committed under
+> `DOCS/` and this repo is regularly self-ingested. Any answer-quality grading against a corpus that
+> includes this document is unreliable — see `DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md`
+> (decided) and `DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md` (the run that found
+> it, issue #106). Retrieval-mechanics checks (evidence-trace fields, cap/rank behavior) are
+> unaffected and remain trustworthy against this corpus; only generated-answer grading is not.
+
 > [!abstract] Purpose
 > This is a **candidate pool, not results**. It records 12 source-grounded questions against the exact source snapshot below, from which a future experiment will freeze 8 to measure where required evidence survives or disappears across the retrieval/context pipeline described in [[../audit/2026-09-07-current-state-retrieval-audit]]. No `/v1/rag`, vector, or generation endpoint was called while writing this document; no ingestion was run. The "Known control case" candidate below was verified only by reading current source, not by re-running the historical evaluation that first surfaced it.
 

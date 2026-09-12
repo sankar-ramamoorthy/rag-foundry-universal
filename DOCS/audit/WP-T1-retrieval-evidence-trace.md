@@ -18,16 +18,16 @@ related:
   - "[WP-T1e first live run](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md)"
 ---
 
-> [!tip] Status: complete (2026-09-12)
+> [!tip] Status: complete (2026-09-12), both follow-ups resolved
 > T1a-T1d shipped as PRs #102-#105. T1e ran the frozen 8-question evidence-survival set live
 > against the production instance (Tailscale) — see
 > [DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md).
-> Two new follow-up issues came out of that run: [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106)
-> (this repo's own `DOCS/evaluations/`/audit docs contaminate the corpus they evaluate) and
-> [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (the evidence
-> trace's own canonical_id→document_id resolution can silently return null for an ID confirmed to
-> exist). Neither is fixed here, per the same evidence-first discipline #89 used — both are
-> deliberately separate, undecided next steps.
+> Two follow-up issues came out of that run, both now closed: [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107)
+> (the trace's canonical_id→document_id resolution silently returning null) was a real production
+> defect — `GET .../nodes?canonical_ids=...` 400s past ~300 IDs, swallowed into an empty mapping —
+> fixed in PR #109 by switching to `POST .../nodes/lookup`. [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106)
+> (`DOCS/evaluations/`/audit docs leaking into the corpus they evaluate) is resolved as a process
+> decision, not code — see [DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md](/DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md).
 
 # WP-T1 — Retrieval Evidence Trace
 
