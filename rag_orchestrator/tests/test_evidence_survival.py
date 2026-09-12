@@ -175,17 +175,22 @@ def test_helper_functions_never_reach_final_context(monkeypatch):
         monkeypatch, backend, trace_canonical_ids=HELPER_CANONICAL_IDS
     )
 
-    # Simulates run_rag's post-prepare_chunks_for_agent finalization: only
-    # the seed module document made it into the final prompt.
+    # Simulates run_rag's post-prepare_chunks_for_agent /
+    # post-build_labeled_context finalization: only the seed module
+    # document made it into the final prompt, at both stages (WP-T1c
+    # splits this into chunk-limits and token-budget document sets, but
+    # neither ever contains the helpers here since they never even
+    # survived the cap).
     final_document_ids = {"module-doc"}
     finalized = finalize_evidence_survival(
-        plan["_evidence_trace_partial"], final_document_ids
+        plan["_evidence_trace_partial"], final_document_ids, final_document_ids
     )
 
     assert len(finalized) == 3
     for entry in finalized:
+        assert entry["survives_chunk_limits"] is False
         assert entry["reaches_final_context"] is False
-        # already dropped at the cap stage; final-context check must not
+        # already dropped at the cap stage; later checks must not
         # overwrite the more specific reason.
         assert entry["drop_reason"] == DROP_TRUNCATED_BY_CAP
 
@@ -350,12 +355,17 @@ def test_defines_children_reach_final_context_ahead_of_call_noise(monkeypatch):
         monkeypatch, backend, trace_canonical_ids=MIXED_HELPER_IDS
     )
 
+    # WP-T1c: this test predates the chunk-limits/token-budget split and
+    # doesn't exercise either truncation stage (it stops at hybrid_retrieve,
+    # before prepare_chunks_for_agent/build_labeled_context ever run), so
+    # the same document set stands in for both stages here.
     final_document_ids = set(chunks_by_doc.keys())
     finalized = finalize_evidence_survival(
-        plan["_evidence_trace_partial"], final_document_ids
+        plan["_evidence_trace_partial"], final_document_ids, final_document_ids
     )
 
     assert len(finalized) == 3
     for entry in finalized:
+        assert entry["survives_chunk_limits"] is True
         assert entry["reaches_final_context"] is True
         assert entry["drop_reason"] is None
