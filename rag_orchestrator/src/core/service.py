@@ -22,6 +22,7 @@ from shared.retrieval.retrieval_plan import (
 )
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
 from rag_orchestrator.src.retrieval.agent_adapter import (
+    build_final_context_manifest,
     build_labeled_context,
     build_sources,
     prepare_chunks_for_agent,
@@ -670,6 +671,22 @@ async def run_rag(
     retrieval_plan_dict["tokens_before_budget"] = tokens_before_budget
     retrieval_plan_dict["tokens_after_budget"] = token_count
     logger.info(f"Final context: ~{token_count} tokens from {len(agent_chunks)} chunks")
+
+    # WP-T1d: structured pre-LLM-call record of exactly what crossed into
+    # the assembled context -- built from the same chunk list
+    # build_labeled_context joined, so it can never drift from what the
+    # model actually receives.
+    final_context_manifest = build_final_context_manifest(
+        chunks_in_final_context,
+        seed_document_ids=true_seed_document_ids,
+        expansion_metadata=retrieval_plan_dict["expansion_metadata"],
+    )
+    retrieval_plan_dict["final_context_manifest"] = final_context_manifest
+    _log_stage(
+        trace_id,
+        "context.finalized",
+        manifest_entries=len(final_context_manifest),
+    )
 
     # LLM call
     llm_payload = {"context": context_str, "query": query}
