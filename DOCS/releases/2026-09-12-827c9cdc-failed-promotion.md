@@ -41,6 +41,7 @@ related:
 ## Follow-Up
 
 Do not record `827c9cdc182073966f0b794968f90a7dc4388d18` as a successful
-production release. The packaging fix must land in a new Git commit, and that
-new SHA becomes the next release candidate after dev production-layer validation
-passes.
+production release. Issue #96 and PR #97 fixed the packaging defect, and
+`prod-2026-09-12` subsequently deployed
+`202d91b34ee18e21c1dbb625d72acf9b82bce16d` successfully. See
+[the successful release record](/DOCS/releases/2026-09-12-prod-release.md).

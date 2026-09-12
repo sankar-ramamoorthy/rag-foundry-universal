@@ -31,6 +31,37 @@ aliases:
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 
+## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
+
+> [!tip] The first audited Docker Compose production release is complete. The
+> next major product-quality track is retrieval observability and
+> evidence-survival measurement, not another deployment-platform expansion.
+
+- **Production release `prod-2026-09-12` is deployed and recorded.** Runtime
+  SHA `202d91b34ee18e21c1dbb625d72acf9b82bce16d` was merged to `main` via PR
+  #97, passed main-branch CI (`lint`, `unit-tests`, `integration-tests`), and is
+  tagged `prod-2026-09-12`. The release record was merged via PR #98 and is
+  [DOCS/releases/2026-09-12-prod-release.md](/DOCS/releases/2026-09-12-prod-release.md).
+- **Production images now have a credible provenance/self-containment story.**
+  Production Compose removes application source bind mounts; application images
+  carry project-owned OCI revision labels; running image IDs and labels were
+  verified after deployment; persistent Postgres storage was preserved; health
+  checks and a graph-aware RAG smoke query passed.
+- **The failed predecessor attempt remains part of the audit trail.**
+  `827c9cdc182073966f0b794968f90a7dc4388d18` passed build provenance checks but
+  failed promotion because `rag_orchestrator` did not include `shared/` in its
+  image once production bind mounts were removed. No migration, re-ingestion,
+  graph rebuild, vector re-embedding, or corpus mutation occurred. See
+  [DOCS/releases/2026-09-12-827c9cdc-failed-promotion.md](/DOCS/releases/2026-09-12-827c9cdc-failed-promotion.md).
+- **Issue #96 is closed by the narrow production image self-containment fix.**
+  The broader issue #41 reproducible-build/runtime-`uv` work remains deferred
+  to Phase 5/WP-E2; #96 did not attempt to solve baked service environments,
+  malformed healthchecks, registry deployment, Kubernetes, or GitOps.
+- **What should come next:** retrieval tracing/evidence-survival work. The
+  system is now deployable in a disciplined way; the next unproven question is
+  whether the right evidence reliably survives seed retrieval, graph expansion,
+  caps/ranking, chunk fetch, token budgeting, and final context assembly.
+
 ## 📍 Current status (2026-09-06 — supersedes the 2026-08-30b status below)
 
 > [!tip] Phase 3 has two more work packages done since 2026-08-30b, and a RAG retrieval-quality bug distinct from the WP-Q0/reranker track was found, fixed, and live-verified — with one follow-up limitation deliberately left open as its own issue.

@@ -25,6 +25,13 @@ Do not assume `latest` is a production release identifier. Production is
 identified by an exact Git SHA, optionally with a human-readable tag such as
 `prod-2026-09-12`.
 
+The first successful release under this process is recorded as
+[prod-2026-09-12](/DOCS/releases/2026-09-12-prod-release.md), deployed from
+`202d91b34ee18e21c1dbb625d72acf9b82bce16d`. Its predecessor candidate
+`827c9cdc182073966f0b794968f90a7dc4388d18` is recorded separately as a
+[failed promotion](/DOCS/releases/2026-09-12-827c9cdc-failed-promotion.md);
+do not infer success from a build label alone.
+
 ## Required release metadata
 
 Set build metadata mechanically from the checked-out release commit:
