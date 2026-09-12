@@ -74,6 +74,58 @@ def select_chunks_within_token_budget(
     return included
 
 
+def build_final_context_manifest(
+    chunks_in_final_context: List[Dict[str, object]],
+    *,
+    seed_document_ids: Optional[set] = None,
+    expansion_metadata: Optional[Dict[str, object]] = None,
+) -> List[Dict[str, object]]:
+    """
+    WP-T1d: one structured record per chunk that actually crosses into
+    the assembled LLM context (survives build_labeled_context's token
+    budget) -- the hard boundary the WP-T1 planning doc calls "retrieval
+    succeeded only if the needed evidence crossed this boundary".
+    Deliberately built from the same chunk list build_labeled_context
+    joins (via select_chunks_within_token_budget), so the manifest can
+    never drift from what the model actually receives.
+
+    `seed_document_ids`/`expansion_metadata` (plain dicts, matching
+    retrieval_plan_dict's shape) are optional so this stays usable
+    standalone; without them every chunk's selection_reason is "unknown".
+    """
+    seed_document_ids = seed_document_ids or set()
+    expansion_metadata = expansion_metadata or {}
+    manifest: List[Dict[str, object]] = []
+    for c in chunks_in_final_context:
+        text = str(c.get("text", ""))
+        document_id = c.get("document_id")
+        meta = expansion_metadata.get(document_id) if document_id else None
+        if document_id in seed_document_ids:
+            selection_reason = "seed"
+        elif meta is not None:
+            selection_reason = (
+                f"expanded via {meta['relation_type']} "
+                f"from {meta['source_document_id']}"
+            )
+        elif document_id is not None:
+            selection_reason = "expanded"
+        else:
+            selection_reason = "unknown"
+        manifest.append(
+            {
+                "canonical_id": c.get("canonical_id"),
+                "document_id": document_id,
+                "chunk_id": c.get("chunk_id"),
+                "chunk_index": c.get("chunk_index"),
+                "source_label": _source_label(c),
+                "char_count": len(text),
+                "token_count": len(text.split()),
+                "selection_reason": selection_reason,
+            }
+        )
+    return manifest
+
+
 def build_labeled_context(
     agent_chunks: List[Dict[str, object]], max_total_tokens: int
 ) -> "tuple[str, int]":
@@ -173,6 +225,9 @@ def prepare_chunks_for_agent(
                 # WP-T1c: which chunk index (within its document's fetch)
                 # this is, for chunk-index-level evidence tracing.
                 "chunk_index": getattr(c, "chunk_index", None),
+                # WP-T1d: first-class canonical_id, for the final-context
+                # manifest (previously only reachable via metadata digging).
+                "canonical_id": getattr(c, "canonical_id", None),
             }
 
             # Token budget enforcement
