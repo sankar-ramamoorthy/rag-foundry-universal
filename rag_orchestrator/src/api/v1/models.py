@@ -22,6 +22,9 @@ class RAGResponse(BaseModel):  # Updated name
     model_used: Optional[str] = None
     model_alias: Optional[str] = None
     fallback_from: Optional[str] = None
+    # WP-T1b: one ID connecting every retrieval-pipeline stage-event log
+    # line for this request.
+    trace_id: Optional[str] = None
 
 class SearchQuery(BaseModel):
     question: str

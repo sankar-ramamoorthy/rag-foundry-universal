@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import uuid
 from dataclasses import dataclass
 from typing import List, Optional, Callable, Dict, Any, Set, cast
 import httpx
@@ -46,6 +47,25 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+def _new_trace_id() -> str:
+    """WP-T1b: one trace_id per /v1/rag request."""
+    return uuid.uuid4().hex
+
+
+def _log_stage(trace_id: str, stage: str, **fields: Any) -> None:
+    """
+    WP-T1b: one structured-ish log line per retrieval-pipeline checkpoint,
+    all carrying the same trace_id so a single request's stages can be
+    correlated (by grepping for the trace_id) without reconstructing the
+    call by hand from unrelated log lines. Deliberately plain `logging`,
+    not a new structured-logging/tracing framework -- see WP-T1's scope
+    note in DOCS/audit/WP-T1-retrieval-evidence-trace.md (that belongs to
+    Phase 4's WP-E5, sequenced after this).
+    """
+    rendered = " ".join(f"{key}={value}" for key, value in fields.items())
+    logger.info(f"trace_id={trace_id} stage={stage} {rendered}".rstrip())
+
+
 # ------------------------------------------------------------------
 # Response Model
 # ------------------------------------------------------------------
@@ -59,6 +79,9 @@ class RAGResult(BaseModel):
     model_used: Optional[str] = None
     model_alias: Optional[str] = None
     fallback_from: Optional[str] = None
+    # WP-T1b: one ID connecting every stage-event log line for this
+    # request, for evidence-survival tracing.
+    trace_id: Optional[str] = None
 
 
 # ------------------------------------------------------------------
@@ -304,9 +327,14 @@ async def hybrid_retrieve(
     top_k: int = 20,
     language: Optional[str] = None,
     trace_canonical_ids: Optional[Set[str]] = None,
+    trace_id: Optional[str] = None,
 ) -> tuple[Dict[str, List[RetrievedChunk]], Dict[str, Any]]:
     """
     Implements ADR-045 hybrid retrieval pipeline.
+
+    `trace_id` (WP-T1b) identifies this request across every stage-event
+    log line hybrid_retrieve emits; generated if omitted, so callers that
+    invoke hybrid_retrieve directly (e.g. tests, notebooks) still get one.
 
     `trace_canonical_ids` (issue #89) is an optional evaluation/debug hook:
     when given, the returned retrieval_plan_dict carries a
@@ -329,6 +357,7 @@ async def hybrid_retrieve(
         retrieval_plan_dict
     """
     settings = get_settings()
+    trace_id = trace_id or _new_trace_id()
     logger.info(f"🔄 Hybrid retrieval | repo={repo_id[:8]} | q='{query[:50]}...'")
 
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
@@ -383,10 +412,22 @@ async def hybrid_retrieve(
     logger.info(
         f"📊 {len(seed_chunks)} chunks → {len(seed_canonical_ids)} canonical_ids"
     )
+    _log_stage(
+        trace_id,
+        "retrieval.seed.completed",
+        seed_chunks=len(seed_chunks),
+        seed_canonical_ids=len(seed_canonical_ids),
+        seed_docs=len(retrieved_chunks_by_document),
+    )
 
     ranking = _rank_expanded_canonical_ids(query, repo_id, seed_canonical_ids)
     expanded_ranked = ranking.expanded_ranked
     expanded_canonical_ids = set(expanded_ranked)
+    _log_stage(
+        trace_id,
+        "graph.expand.completed",
+        expanded_canonical_ids=len(expanded_canonical_ids),
+    )
 
     all_canonical_ids = seed_canonical_ids | expanded_canonical_ids
     canonical_to_doc = await canonical_to_document_map_http(repo_id, all_canonical_ids)
@@ -407,10 +448,23 @@ async def hybrid_retrieve(
 
     expanded_docs_considered = len(expanded_doc_ids)
     expanded_doc_ids = expanded_doc_ids[: settings.MAX_EXPANDED_DOCS]
+    _log_stage(
+        trace_id,
+        "expansion.cap.applied",
+        expanded_docs_considered=expanded_docs_considered,
+        expanded_docs_used=len(expanded_doc_ids),
+    )
 
     fetched = await _fetch_expanded_doc_chunks(expanded_doc_ids)
     for doc_id, doc_results in fetched:
         _add_chunks(doc_id, doc_results, seen_chunk_ids, retrieved_chunks_by_document)
+    _log_stage(
+        trace_id,
+        "chunks.fetch.completed",
+        docs_fetched=len(expanded_doc_ids),
+        docs_with_chunks=sum(1 for _, results in fetched if results),
+        total_docs=len(retrieved_chunks_by_document),
+    )
 
     expansion_metadata = _build_expansion_metadata(
         expanded_ranked=expanded_ranked,
@@ -421,6 +475,9 @@ async def hybrid_retrieve(
     )
 
     retrieval_plan_dict = {
+        # WP-T1b: one ID connecting every stage-event log line above for
+        # this request.
+        "trace_id": trace_id,
         "seed_canonical_ids": sorted(seed_canonical_ids),
         "expanded_canonical_ids": sorted(expanded_canonical_ids),
         "seed_docs": len(seed_doc_ids),
@@ -481,6 +538,9 @@ async def run_rag(
 ) -> RAGResult:
 
     settings = get_settings()
+    trace_id = _new_trace_id()
+    _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
+
     resolved_repo_id = await resolve_repo_id_http(repo_id)
 
     embedder = get_embedder(
@@ -498,6 +558,7 @@ async def run_rag(
         top_k,
         language=language,
         trace_canonical_ids=trace_canonical_ids,
+        trace_id=trace_id,
     )
     # NOTE: seed_document_ids here means "every document with retrieved
     # chunks, seed and expanded merged" -- prepare_chunks_for_agent below
@@ -568,9 +629,22 @@ async def run_rag(
         resp = await client.post(llm_url, json=llm_payload, params=params)
         resp.raise_for_status()
         result = resp.json()
+    _log_stage(
+        trace_id,
+        "llm.generate.completed",
+        model=result.get("model"),
+        fallback_from=result.get("fallback_from"),
+    )
 
     # Issue #30 Part 4: canonical IDs / paths, deduplicated, seeds first
     sources = build_sources(agent_chunks)
+
+    _log_stage(
+        trace_id,
+        "rag.query.completed",
+        sources=len(sources),
+        answer_chars=len(result.get("response", "")),
+    )
 
     return RAGResult(
         answer=result.get("response", ""),
@@ -580,4 +654,5 @@ async def run_rag(
         model_used=result.get("model"),
         model_alias=result.get("model_alias"),
         fallback_from=result.get("fallback_from"),
+        trace_id=trace_id,
     )
