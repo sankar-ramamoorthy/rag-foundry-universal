@@ -25,6 +25,7 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
     build_labeled_context,
     build_sources,
     prepare_chunks_for_agent,
+    select_chunks_within_token_budget,
 )
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
@@ -261,7 +262,7 @@ def _add_chunks(
 ) -> List[RetrievedChunk]:
     """Append result rows as RetrievedChunks, skipping seen chunk_ids."""
     added: List[RetrievedChunk] = []
-    for r in results:
+    for index, r in enumerate(results):
         if r["chunk_id"] in seen_chunk_ids:
             continue
         seen_chunk_ids.add(r["chunk_id"])
@@ -273,6 +274,10 @@ def _add_chunks(
             score=r.get("score"),
             metadata=metadata,
             canonical_id=canonical_id_from_metadata(metadata) or None,
+            # WP-T1c: position within this results list -- the ordered
+            # /search-by-doc response for expanded docs, or a
+            # single-item list per seed chunk.
+            chunk_index=index,
         )
         added.append(chunk)
         retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
@@ -456,8 +461,22 @@ async def hybrid_retrieve(
     )
 
     fetched = await _fetch_expanded_doc_chunks(expanded_doc_ids)
+    # WP-T1c: chunk indices requested (always range(EXPANDED_DOC_CHUNKS),
+    # the k passed to /search-by-doc) vs. actually returned (post
+    # cross-document chunk_id dedup, so a chunk already seen as a seed or
+    # via another expanded doc is excluded here even if the store
+    # returned it).
+    chunks_requested_by_document: Dict[str, List[int]] = {
+        doc_id: list(range(settings.EXPANDED_DOC_CHUNKS)) for doc_id in expanded_doc_ids
+    }
+    chunks_returned_by_document: Dict[str, List[int]] = {}
     for doc_id, doc_results in fetched:
-        _add_chunks(doc_id, doc_results, seen_chunk_ids, retrieved_chunks_by_document)
+        added = _add_chunks(
+            doc_id, doc_results, seen_chunk_ids, retrieved_chunks_by_document
+        )
+        chunks_returned_by_document[doc_id] = [
+            c.chunk_index for c in added if c.chunk_index is not None
+        ]
     _log_stage(
         trace_id,
         "chunks.fetch.completed",
@@ -499,6 +518,9 @@ async def hybrid_retrieve(
             }
             for doc_id, meta in expansion_metadata.items()
         },
+        # WP-T1c: chunk-index-level detail on /search-by-doc fetches.
+        "chunks_requested_by_document": chunks_requested_by_document,
+        "chunks_returned_by_document": chunks_returned_by_document,
     }
 
     if trace_canonical_ids:
@@ -603,17 +625,50 @@ async def run_rag(
     )
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
 
+    # WP-T1c: two genuinely distinct survival stages, both computed before
+    # the LLM call so the evidence trace and retrieval_plan can report
+    # each separately instead of conflating them.
+    #   1. survives_chunk_limits: made it past execute_retrieval_plan's
+    #      per-document slice and prepare_chunks_for_agent's chunk-count
+    #      limits -- this is `agent_chunks` as-is.
+    #   2. reaches_final_context: of those, which also survive
+    #      build_labeled_context's token-budget truncation.
+    chunk_limited_document_ids = {
+        cast(str, c["document_id"]) for c in agent_chunks
+    }
+    _log_stage(
+        trace_id,
+        "chunks.limit.applied",
+        agent_chunks=len(agent_chunks),
+        documents=len(chunk_limited_document_ids),
+    )
+    tokens_before_budget = sum(len(str(c["text"]).split()) for c in agent_chunks)
+    chunks_in_final_context = select_chunks_within_token_budget(
+        agent_chunks, max_total_tokens
+    )
+    final_context_document_ids = {
+        cast(str, c["document_id"]) for c in chunks_in_final_context
+    }
+    _log_stage(
+        trace_id,
+        "context.token_budget.applied",
+        tokens_before_budget=tokens_before_budget,
+        chunks_in_final_context=len(chunks_in_final_context),
+        documents=len(final_context_document_ids),
+    )
+
     evidence_trace_partial = retrieval_plan_dict.pop("_evidence_trace_partial", None)
     if evidence_trace_partial is not None:
-        final_document_ids = {
-            cast(str, c["document_id"]) for c in agent_chunks
-        }
         retrieval_plan_dict["evidence_trace"] = finalize_evidence_survival(
-            evidence_trace_partial, final_document_ids
+            evidence_trace_partial,
+            chunk_limited_document_ids,
+            final_context_document_ids,
         )
 
     # Token budget
     context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)
+    retrieval_plan_dict["tokens_before_budget"] = tokens_before_budget
+    retrieval_plan_dict["tokens_after_budget"] = token_count
     logger.info(f"Final context: ~{token_count} tokens from {len(agent_chunks)} chunks")
 
     # LLM call

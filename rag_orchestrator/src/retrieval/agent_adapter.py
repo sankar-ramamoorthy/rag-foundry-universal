@@ -52,6 +52,28 @@ def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
     return sources
 
 
+def select_chunks_within_token_budget(
+    agent_chunks: List[Dict[str, object]], max_total_tokens: int
+) -> List[Dict[str, object]]:
+    """
+    WP-T1c: the same word-count truncation decision build_labeled_context
+    makes, factored out so callers can learn exactly which chunks survive
+    the token budget (for evidence-survival tracing / a future
+    final-context manifest) without re-deriving the tokenization logic --
+    build_labeled_context is written in terms of this function, so the
+    two can never drift apart.
+    """
+    included: List[Dict[str, object]] = []
+    token_count = 0
+    for c in agent_chunks:
+        tokens = len(str(c["text"]).split())
+        if token_count + tokens > max_total_tokens:
+            break
+        included.append(c)
+        token_count += tokens
+    return included
+
+
 def build_labeled_context(
     agent_chunks: List[Dict[str, object]], max_total_tokens: int
 ) -> "tuple[str, int]":
@@ -65,14 +87,11 @@ def build_labeled_context(
     """
     context_parts: List[str] = []
     token_count = 0
-    for c in agent_chunks:
+    for c in select_chunks_within_token_budget(agent_chunks, max_total_tokens):
         text = str(c["text"])
-        tokens = len(text.split())
-        if token_count + tokens > max_total_tokens:
-            break
         label = _source_label(c)
         context_parts.append(f"[Source: {label}]\n{text}" if label else text)
-        token_count += tokens
+        token_count += len(text.split())
     return "\n\n".join(context_parts), token_count
 
 
@@ -151,6 +170,9 @@ def prepare_chunks_for_agent(
                 "chunk_id": c.chunk_id,
                 "score": getattr(c, "score", None),
                 "metadata": c.metadata,
+                # WP-T1c: which chunk index (within its document's fetch)
+                # this is, for chunk-index-level evidence tracing.
+                "chunk_index": getattr(c, "chunk_index", None),
             }
 
             # Token budget enforcement
