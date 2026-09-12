@@ -30,6 +30,7 @@ aliases:
 | [[06-LLM-Provider-LiteLLM-Plan]] | LiteLLM + model switching? | Replace `llm_service` internals with LiteLLM Router; 2–3 day work package |
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
+| [WP-T1-retrieval-evidence-trace](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) | Does evidence actually survive seed retrieval → graph expansion → caps → chunk fetch → token budget → final context? | Proposed — extends the existing `evidence_trace.py` (#89) into a complete, automatic, query-level trace |
 
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
@@ -61,6 +62,12 @@ aliases:
   system is now deployable in a disciplined way; the next unproven question is
   whether the right evidence reliably survives seed retrieval, graph expansion,
   caps/ranking, chunk fetch, token budgeting, and final context assembly.
+- **Filed as [WP-T1](/DOCS/audit/WP-T1-retrieval-evidence-trace.md), [issue #100](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/100
+  ), 2026-09-12.** Scoped to extend the existing, opt-in `evidence_trace.py`
+  instrumentation (from issue #89/PR #90) into a complete, automatic,
+  query-level trace with a `trace_id`, chunk-index detail, and a final-context
+  manifest — not a new observability framework, and explicitly separate from
+  Phase 4's `WP-E5 Observability` (generic ops tracing/metrics/logging).
 
 ## 📍 Current status (2026-09-06 — supersedes the 2026-08-30b status below)
 
