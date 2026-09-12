@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+from dataclasses import dataclass
 from typing import List, Optional, Callable, Dict, Any, Set, cast
 import httpx
 
@@ -13,7 +14,11 @@ from src.core.config import get_settings
 from shared.embedders.query import embed_query
 from shared.embedders.factory import get_embedder
 
-from shared.retrieval.retrieval_plan import RetrievalPlan
+from shared.retrieval.retrieval_plan import (
+    ExpansionMetadata,
+    RetrievalConstraints,
+    RetrievalPlan,
+)
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
 from rag_orchestrator.src.retrieval.agent_adapter import (
     build_labeled_context,
@@ -23,6 +28,7 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
 from rag_orchestrator.src.retrieval.codebase_utils import (
+    canonical_id_from_metadata,
     extract_canonical_ids_from_chunks,
     dedupe_near_identical_chunks,
 )
@@ -32,9 +38,9 @@ from rag_orchestrator.src.retrieval.evidence_trace import (
 )
 from rag_orchestrator.src.retrieval.traversal_selector import (
     select_traversal_strategies,
-    execute_traversals_from_seeds,
+    execute_traversals_from_seeds_detailed,
 )
-from rag_orchestrator.src.retrieval.codebase_queries import CodebaseGraph, Node
+from rag_orchestrator.src.retrieval.codebase_queries import CodebaseGraph
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -138,32 +144,52 @@ async def canonical_to_document_map_http(
 # HYBRID RETRIEVAL (Vector → Canonical → Graph → Docs → Chunks)
 # ------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class ExpansionRanking:
+    """
+    WP-T1a: `_rank_expanded_canonical_ids`'s result, extended with the
+    relation type and originating seed for each expanded canonical_id
+    (previously computed by traversal_selector and then discarded) so
+    `hybrid_retrieve` can populate RetrievalPlan.expansion_metadata
+    instead of leaving it always empty.
+    """
+    expanded_ranked: List[str]
+    relation_type_by_canonical_id: Dict[str, str]
+    source_seed_by_canonical_id: Dict[str, str]
+
+
 def _rank_expanded_canonical_ids(
     query: str,
     repo_id: str,
     seed_canonical_ids: Set[str],
-) -> List[str]:
+) -> ExpansionRanking:
     """
     Graph-expand from every seed and return expanded canonical_ids,
     most seed-adjacent first, seeds excluded. The order drives the
     MAX_EXPANDED_DOCS cap (issue #30 Part 3).
     """
     if not seed_canonical_ids:
-        return []
+        return ExpansionRanking([], {}, {})
 
     from rag_orchestrator.src.retrieval.codebase_utils import get_cached_graph
 
     graph: CodebaseGraph = get_cached_graph(repo_id)
     strategies = select_traversal_strategies(query, seed_canonical_ids)
     # F-12: expand from every seed, not just the longest-named one
-    expanded_nodes: List[Node] = execute_traversals_from_seeds(
+    candidates = execute_traversals_from_seeds_detailed(
         graph, seed_canonical_ids, strategies
     )
-    return [
-        node.canonical_id
-        for node in expanded_nodes
-        if node.canonical_id not in seed_canonical_ids
-    ]
+    expanded_ranked: List[str] = []
+    relation_type_by_cid: Dict[str, str] = {}
+    source_seed_by_cid: Dict[str, str] = {}
+    for candidate in candidates:
+        cid = candidate.node.canonical_id
+        if cid in seed_canonical_ids:
+            continue
+        expanded_ranked.append(cid)
+        relation_type_by_cid[cid] = candidate.relation_type
+        source_seed_by_cid[cid] = candidate.source_seed_canonical_id
+    return ExpansionRanking(expanded_ranked, relation_type_by_cid, source_seed_by_cid)
 
 
 async def _fetch_expanded_doc_chunks(
@@ -216,16 +242,59 @@ def _add_chunks(
         if r["chunk_id"] in seen_chunk_ids:
             continue
         seen_chunk_ids.add(r["chunk_id"])
+        metadata = r.get("metadata", {})
         chunk = RetrievedChunk(
             document_id=doc_id,
             chunk_id=r["chunk_id"],
             text=r["text"],
             score=r.get("score"),
-            metadata=r.get("metadata", {}),
+            metadata=metadata,
+            canonical_id=canonical_id_from_metadata(metadata) or None,
         )
         added.append(chunk)
         retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
     return added
+
+
+def _build_expansion_metadata(
+    *,
+    expanded_ranked: List[str],
+    expanded_doc_ids: List[str],
+    ranking: "ExpansionRanking",
+    canonical_to_doc: Dict[str, str],
+    retrieved_chunks_by_document: Dict[str, List[RetrievedChunk]],
+) -> Dict[str, ExpansionMetadata]:
+    """
+    WP-T1a: populate RetrievalPlan.expansion_metadata (previously always
+    {} on this path) with the relation type and source seed for every
+    expanded document that actually survived the cap and had chunks
+    fetched -- restricted to expanded_doc_ids (the post-cap list) so this
+    exactly matches the set of documents run_rag treats as "expanded"
+    elsewhere, with no behavior change to what gets fetched or ranked.
+    """
+    expansion_metadata: Dict[str, ExpansionMetadata] = {}
+    expanded_doc_ids_with_chunks = set(expanded_doc_ids) & set(
+        retrieved_chunks_by_document.keys()
+    )
+    for cid in expanded_ranked:
+        doc_id = canonical_to_doc.get(cid)
+        if (
+            not doc_id
+            or doc_id not in expanded_doc_ids_with_chunks
+            or doc_id in expansion_metadata
+        ):
+            continue
+        source_seed_cid = ranking.source_seed_by_canonical_id.get(cid)
+        source_doc_id = (
+            canonical_to_doc.get(source_seed_cid) if source_seed_cid else None
+        )
+        if not source_doc_id:
+            continue
+        expansion_metadata[doc_id] = ExpansionMetadata(
+            source_document_id=source_doc_id,
+            relation_type=ranking.relation_type_by_canonical_id.get(cid, "UNKNOWN"),
+        )
+    return expansion_metadata
 
 
 async def hybrid_retrieve(
@@ -315,7 +384,8 @@ async def hybrid_retrieve(
         f"📊 {len(seed_chunks)} chunks → {len(seed_canonical_ids)} canonical_ids"
     )
 
-    expanded_ranked = _rank_expanded_canonical_ids(query, repo_id, seed_canonical_ids)
+    ranking = _rank_expanded_canonical_ids(query, repo_id, seed_canonical_ids)
+    expanded_ranked = ranking.expanded_ranked
     expanded_canonical_ids = set(expanded_ranked)
 
     all_canonical_ids = seed_canonical_ids | expanded_canonical_ids
@@ -342,6 +412,14 @@ async def hybrid_retrieve(
     for doc_id, doc_results in fetched:
         _add_chunks(doc_id, doc_results, seen_chunk_ids, retrieved_chunks_by_document)
 
+    expansion_metadata = _build_expansion_metadata(
+        expanded_ranked=expanded_ranked,
+        expanded_doc_ids=expanded_doc_ids,
+        ranking=ranking,
+        canonical_to_doc=canonical_to_doc,
+        retrieved_chunks_by_document=retrieved_chunks_by_document,
+    )
+
     retrieval_plan_dict = {
         "seed_canonical_ids": sorted(seed_canonical_ids),
         "expanded_canonical_ids": sorted(expanded_canonical_ids),
@@ -350,6 +428,20 @@ async def hybrid_retrieve(
         "expanded_docs_used": len(expanded_doc_ids),
         "expanded_docs": len(expanded_doc_ids),
         "total_docs": len(retrieved_chunks_by_document),
+        # WP-T1a: raw pieces run_rag needs to build a properly split
+        # RetrievalPlan (seed_document_ids/expanded_document_ids used to
+        # both be collapsed into one set with expansion_metadata always
+        # empty). Kept in the dict (not popped) so they're also visible
+        # in RAGResult.retrieval_plan for inspection.
+        "seed_document_ids": sorted(seed_doc_ids),
+        "expanded_document_ids": sorted(expansion_metadata.keys()),
+        "expansion_metadata": {
+            doc_id: {
+                "source_document_id": meta.source_document_id,
+                "relation_type": meta.relation_type,
+            }
+            for doc_id, meta in expansion_metadata.items()
+        },
     }
 
     if trace_canonical_ids:
@@ -407,13 +499,29 @@ async def run_rag(
         language=language,
         trace_canonical_ids=trace_canonical_ids,
     )
+    # NOTE: seed_document_ids here means "every document with retrieved
+    # chunks, seed and expanded merged" -- prepare_chunks_for_agent below
+    # relies on this dict's insertion order (seeds added before expanded
+    # docs) to drop expansion first on truncation. It is NOT the same as
+    # the true seed-only set used to build `plan` below (WP-T1a).
     seed_document_ids = list(retrieved_chunks_by_document.keys())
 
+    # WP-T1a: build the RetrievalPlan from the actual seed/expanded split
+    # and per-document expansion metadata hybrid_retrieve computed, instead
+    # of collapsing everything into seed_document_ids with an always-empty
+    # expansion_metadata.
+    true_seed_document_ids = set(retrieval_plan_dict["seed_document_ids"])
+    expanded_document_ids = set(retrieval_plan_dict["expanded_document_ids"])
+    expansion_metadata = {
+        doc_id: ExpansionMetadata(**meta)
+        for doc_id, meta in retrieval_plan_dict["expansion_metadata"].items()
+    }
+
     plan = RetrievalPlan(
-        seed_document_ids=set(seed_document_ids),
-        expanded_document_ids=set(),
-        expansion_metadata={},
-        constraints=None,
+        seed_document_ids=true_seed_document_ids,
+        expanded_document_ids=expanded_document_ids,
+        expansion_metadata=expansion_metadata,
+        constraints=RetrievalConstraints(),
     )
     retrieved_context = execute_retrieval_plan(
         plan=plan,
