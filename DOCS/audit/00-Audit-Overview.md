@@ -30,7 +30,7 @@ aliases:
 | [[06-LLM-Provider-LiteLLM-Plan]] | LiteLLM + model switching? | Replace `llm_service` internals with LiteLLM Router; 2–3 day work package |
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
-| [WP-T1-retrieval-evidence-trace](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) | Does evidence actually survive seed retrieval → graph expansion → caps → chunk fetch → token budget → final context? | Complete — T1a-d shipped the trace; T1e's first live run found two real generation failures despite correct evidence reaching context, plus two new instrumentation/corpus issues (#106, #107) |
+| [WP-T1-retrieval-evidence-trace](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) | Does evidence actually survive seed retrieval → graph expansion → caps → chunk fetch → token budget → final context? | Complete — T1a-d shipped the trace; T1e's first live run found two real generation failures despite correct evidence reaching context, plus follow-ups #106/#107, both now resolved |
 
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
@@ -75,10 +75,15 @@ aliases:
   seed/graph retrieval miss; and — the clearest actionable signal — **two clean cases where the
   correct evidence reached the final LLM context and the default model (`Qwen3:4b`) still produced
   a wrong or refused answer**, including the question set's own designated sanity-floor easy
-  control. Also surfaced two new, unfixed issues: [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106)
-  (this repo's own `DOCS/evaluations/`/audit docs leak into the corpus they evaluate) and
-  [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (the trace's own
-  canonical_id→document_id resolution can silently return null for an ID confirmed to exist).
+  control. Also surfaced two follow-up issues, both now closed: [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107)
+  (the trace's canonical_id→document_id resolution silently returning null) was a real production
+  defect — `GET .../nodes?canonical_ids=...` 400s once a combined seed+expansion batch crosses
+  ~300 IDs, swallowed into an empty mapping — fixed in PR #109 via a new
+  `POST .../nodes/lookup` endpoint taking the IDs in a JSON body. [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106)
+  (this repo's own `DOCS/evaluations/`/audit docs leak into the corpus they evaluate) is resolved as
+  a process decision, not code: self-ingestion stays fine for retrieval-mechanics checks, but
+  answer-quality grading against a corpus containing the question set's own expected answers is no
+  longer permitted — see [DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md](/DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md).
   Per the question set's own decision principle, no retrieval/ranking/cap code change is justified
   yet from this single pass — the next lever this run points to is generation reliability with the
   currently-deployed small model, not another retrieval-side fix.
