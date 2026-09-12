@@ -2,6 +2,7 @@
 """
 Keyword-driven traversal strategy selection.
 """
+from dataclasses import dataclass
 from typing import Dict, List, Callable, Set
 from functools import partial
 import logging
@@ -33,6 +34,31 @@ logger = logging.getLogger(__name__)
 
 def _s(traversal) -> Callable[[CodebaseGraph, str], List[Node]]:
     return partial(traversal, depth=1)
+
+
+# WP-T1a: best-effort relation-type label per traversal function, for
+# populating RetrievalPlan.expansion_metadata. Keyed by the underlying
+# traversal function (not the partial `_s()` wraps it in), so lookup
+# unwraps `functools.partial.func` first -- see `_relation_type_of`.
+_RELATION_TYPE_BY_TRAVERSAL_FUNC: Dict[Callable, str] = {
+    traverse_defines: "DEFINES",
+    traverse_calls: "CALL",
+    traverse_incoming_calls: "CALL",
+    traverse_incoming_imports: "IMPORTS",
+    traverse_superclasses: "INHERITS",
+    traverse_subclasses: "INHERITS",
+    traverse_overrides: "OVERRIDES",
+    traverse_overridden_by: "OVERRIDES",
+}
+
+
+def _relation_type_of(strategy: Callable) -> str:
+    """Relation-type label for a strategy callable. Falls back to
+    "UNKNOWN" for callables this module doesn't recognize (e.g. test
+    doubles) -- labeling must never fail or change ranking behavior just
+    because a label can't be resolved."""
+    func = getattr(strategy, "func", strategy)
+    return _RELATION_TYPE_BY_TRAVERSAL_FUNC.get(func, "UNKNOWN")
 
 
 # (intent, patterns, strategy factories) — evaluated top to bottom.
@@ -164,27 +190,33 @@ def execute_traversals(
     graph: CodebaseGraph,
     start_canonical_id: str,
     strategies: List[Callable[[CodebaseGraph, str], List[Node]]]
-) -> List[tuple[Node, int]]:
+) -> List[tuple[Node, int, str]]:
     """
     Execute all selected traversal strategies from the seed and its
     DEFINES descendants (see `_seed_and_defines_descendants`).
 
-    Returns (node, strategy_index) pairs rather than bare nodes: the index
-    is the position within `strategies` that discovered the node (its
-    lowest index, if more than one strategy found it). Issue #89: callers
-    use this to prefer nodes found by an earlier-listed, more structurally
-    authoritative strategy (e.g. DEFINES before CALL — see
-    `_DEFAULT_STRATEGIES`) once nodes are deduplicated, instead of that
-    signal being computed here and then thrown away.
+    Returns (node, strategy_index, relation_type) triples rather than bare
+    nodes: the index is the position within `strategies` that discovered
+    the node (its lowest index, if more than one strategy found it).
+    Issue #89: callers use this to prefer nodes found by an
+    earlier-listed, more structurally authoritative strategy (e.g. DEFINES
+    before CALL — see `_DEFAULT_STRATEGIES`) once nodes are deduplicated,
+    instead of that signal being computed here and then thrown away.
+    `relation_type` (WP-T1a) is the same "which strategy found it" signal
+    resolved to a label (DEFINES/CALL/IMPORTS/INHERITS/OVERRIDES), kept
+    alongside the index instead of being discarded the same way.
     """
-    all_expanded: List[tuple[Node, int]] = []
+    all_expanded: List[tuple[Node, int, str]] = []
     anchors = _seed_and_defines_descendants(graph, start_canonical_id)
 
     for strategy_index, strategy in enumerate(strategies):
+        relation_type = _relation_type_of(strategy)
         for anchor in anchors:
             try:
                 nodes = strategy(graph, anchor)
-                all_expanded.extend((node, strategy_index) for node in nodes)
+                all_expanded.extend(
+                    (node, strategy_index, relation_type) for node in nodes
+                )
                 logger.debug(f"Strategy returned {len(nodes)} nodes from {anchor}")
             except Exception as e:
                 logger.warning(f"Traversal strategy failed: {e}")
@@ -196,21 +228,42 @@ def execute_traversals(
     # legitimately also be the answer itself for a "structure" query, so
     # anchors are not excluded here — only the true seed is, by the caller.
     best_index: Dict[str, int] = {}
+    best_relation: Dict[str, str] = {}
     node_by_cid: Dict[str, Node] = {}
-    for node, strategy_index in all_expanded:
+    for node, strategy_index, relation_type in all_expanded:
         cid = node.canonical_id
         node_by_cid.setdefault(cid, node)
         if cid not in best_index or strategy_index < best_index[cid]:
             best_index[cid] = strategy_index
+            best_relation[cid] = relation_type
 
     logger.info(f"Total unique expanded nodes: {len(node_by_cid)}")
-    return [(node_by_cid[cid], best_index[cid]) for cid in node_by_cid]
+    return [
+        (node_by_cid[cid], best_index[cid], best_relation[cid])
+        for cid in node_by_cid
+    ]
 
-def execute_traversals_from_seeds(
+
+@dataclass(frozen=True)
+class ExpandedCandidate:
+    """
+    WP-T1a: one graph-expansion candidate, carrying the relation type that
+    discovered it and which seed it was reached from, on top of the plain
+    Node that `execute_traversals_from_seeds` already returns -- additive
+    data for populating RetrievalPlan.expansion_metadata, not a ranking
+    change.
+    """
+    node: Node
+    strategy_index: int
+    relation_type: str
+    source_seed_canonical_id: str
+
+
+def execute_traversals_from_seeds_detailed(
     graph: CodebaseGraph,
     seed_canonical_ids: Set[str],
     strategies: List[Callable[[CodebaseGraph, str], List[Node]]]
-) -> List[Node]:
+) -> List[ExpandedCandidate]:
     """
     F-12: expand from ALL seed canonical_ids, not one arbitrary seed.
 
@@ -218,6 +271,12 @@ def execute_traversals_from_seeds(
     vector-search hit was silently dropped from graph expansion. Seeds are
     bounded by vector-search top_k, so this stays cheap. Iteration is
     sorted for deterministic results; nodes are deduplicated across seeds.
+
+    Same ranking as `execute_traversals_from_seeds`, but keeps the
+    relation type and originating seed for each candidate (WP-T1a)
+    instead of discarding them once ranking is computed --
+    `execute_traversals_from_seeds` is a thin wrapper over this that
+    strips back down to bare nodes for existing callers.
     """
     # Issue #30 Part 3: rank expanded nodes so downstream caps keep the
     # most seed-adjacent ones. All strategies currently traverse at
@@ -234,26 +293,58 @@ def execute_traversals_from_seeds(
     # 2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md section 13.
     seed_hits: Dict[str, int] = {}
     best_strategy_index: Dict[str, int] = {}
+    best_relation_type: Dict[str, str] = {}
+    best_source_seed: Dict[str, str] = {}
     node_by_cid: Dict[str, Node] = {}
     for start_cid in sorted(seed_canonical_ids):
-        for node, strategy_index in execute_traversals(graph, start_cid, strategies):
+        for node, strategy_index, relation_type in execute_traversals(
+            graph, start_cid, strategies
+        ):
             cid = node.canonical_id
             seed_hits[cid] = seed_hits.get(cid, 0) + 1
             node_by_cid.setdefault(cid, node)
             prev_index = best_strategy_index.get(cid)
             if prev_index is None or strategy_index < prev_index:
                 best_strategy_index[cid] = strategy_index
+                best_relation_type[cid] = relation_type
+                best_source_seed[cid] = start_cid
 
-    ranked = sorted(
-        node_by_cid.values(),
-        key=lambda n: (
-            best_strategy_index[n.canonical_id],
-            -seed_hits[n.canonical_id],
-            n.canonical_id,
+    ranked_cids = sorted(
+        node_by_cid,
+        key=lambda cid: (
+            best_strategy_index[cid],
+            -seed_hits[cid],
+            cid,
         ),
     )
     logger.info(
         f"Multi-seed expansion: {len(seed_canonical_ids)} seeds → "
-        f"{len(ranked)} unique nodes"
+        f"{len(ranked_cids)} unique nodes"
     )
-    return ranked
+    return [
+        ExpandedCandidate(
+            node=node_by_cid[cid],
+            strategy_index=best_strategy_index[cid],
+            relation_type=best_relation_type[cid],
+            source_seed_canonical_id=best_source_seed[cid],
+        )
+        for cid in ranked_cids
+    ]
+
+
+def execute_traversals_from_seeds(
+    graph: CodebaseGraph,
+    seed_canonical_ids: Set[str],
+    strategies: List[Callable[[CodebaseGraph, str], List[Node]]]
+) -> List[Node]:
+    """
+    Bare-node view of `execute_traversals_from_seeds_detailed`, kept for
+    existing callers that only need ranked nodes, not per-candidate
+    relation-type/source-seed provenance.
+    """
+    return [
+        candidate.node
+        for candidate in execute_traversals_from_seeds_detailed(
+            graph, seed_canonical_ids, strategies
+        )
+    ]

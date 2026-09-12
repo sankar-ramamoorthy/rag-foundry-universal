@@ -16,16 +16,33 @@ _repo_graphs: Dict[str, CodebaseGraph] = {}
 settings = get_settings()
 ingestion_service_url=settings.INGESTION_SERVICE_URL
 
+def canonical_id_from_metadata(metadata: dict) -> str:
+    """
+    WP-T1a: single source of truth for pulling canonical_id out of a raw
+    vector-search result's metadata dict, checked both flat (ingestion
+    writes it directly) and nested under source_metadata (the vector
+    store's search response shape) -- used both to populate
+    RetrievedChunk.canonical_id at construction time and as the fallback
+    for any chunk that predates that field.
+    """
+    metadata = metadata or {}
+    return (
+        metadata.get("canonical_id")
+        or metadata.get("source_metadata", {}).get("canonical_id")
+        or ""
+    )
+
+
 def extract_canonical_ids_from_chunks(chunks: List) -> Set[str]:
     """
-    Extract canonical_ids from retrieved chunk metadata.
+    Extract canonical_ids from retrieved chunks, preferring the
+    first-class RetrievedChunk.canonical_id field (WP-T1a) and falling
+    back to metadata digging for anything constructed without it.
     """
     canonical_ids: Set[str] = set()
     for chunk in chunks:
-        metadata = getattr(chunk, "metadata", {}) or {}
-        cid = (
-            metadata.get("canonical_id")
-            or metadata.get("source_metadata", {}).get("canonical_id")
+        cid = getattr(chunk, "canonical_id", None) or canonical_id_from_metadata(
+            getattr(chunk, "metadata", {})
         )
         if cid:
             canonical_ids.add(cid)
@@ -45,11 +62,8 @@ def _relative_path_of(chunk) -> str:
 
 
 def _canonical_id_of(chunk) -> str:
-    metadata = getattr(chunk, "metadata", {}) or {}
-    return (
-        metadata.get("canonical_id")
-        or metadata.get("source_metadata", {}).get("canonical_id")
-        or ""
+    return getattr(chunk, "canonical_id", None) or canonical_id_from_metadata(
+        getattr(chunk, "metadata", {})
     )
 
 

@@ -11,6 +11,9 @@ class RetrievedChunk:
     text: str
     score: Optional[float]  # can be None if not provided
     metadata: dict
+    # WP-T1a: first-class canonical_id instead of ad hoc metadata digging
+    # (metadata["canonical_id"] or metadata["source_metadata"]["canonical_id"]).
+    canonical_id: Optional[str] = None
 
 
 @dataclass(frozen=True)
