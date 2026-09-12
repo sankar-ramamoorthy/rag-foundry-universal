@@ -2,7 +2,7 @@
 title: "WP-T1 — Retrieval Evidence Trace"
 date: 2026-09-12
 type: audit
-status: proposed
+status: complete
 issue: "#100"
 tags:
   - audit
@@ -15,7 +15,19 @@ related:
   - "[07-Roadmap](/DOCS/audit/07-Roadmap.md)"
   - "[2026-09-07 Current-state retrieval audit](/DOCS/audit/2026-09-07-current-state-retrieval-audit.md)"
   - "[08-RAG-Quality-Evaluation-Methodology](/DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md)"
+  - "[WP-T1e first live run](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md)"
 ---
+
+> [!tip] Status: complete (2026-09-12)
+> T1a-T1d shipped as PRs #102-#105. T1e ran the frozen 8-question evidence-survival set live
+> against the production instance (Tailscale) — see
+> [DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md).
+> Two new follow-up issues came out of that run: [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106)
+> (this repo's own `DOCS/evaluations/`/audit docs contaminate the corpus they evaluate) and
+> [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (the evidence
+> trace's own canonical_id→document_id resolution can silently return null for an ID confirmed to
+> exist). Neither is fixed here, per the same evidence-first discipline #89 used — both are
+> deliberately separate, undecided next steps.
 
 # WP-T1 — Retrieval Evidence Trace
 

@@ -30,7 +30,7 @@ aliases:
 | [[06-LLM-Provider-LiteLLM-Plan]] | LiteLLM + model switching? | Replace `llm_service` internals with LiteLLM Router; 2–3 day work package |
 | [[07-Roadmap]] | In what order? | 5 phases, each decomposed into agent-sized work packages |
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
-| [WP-T1-retrieval-evidence-trace](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) | Does evidence actually survive seed retrieval → graph expansion → caps → chunk fetch → token budget → final context? | Proposed — extends the existing `evidence_trace.py` (#89) into a complete, automatic, query-level trace |
+| [WP-T1-retrieval-evidence-trace](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) | Does evidence actually survive seed retrieval → graph expansion → caps → chunk fetch → token budget → final context? | Complete — T1a-d shipped the trace; T1e's first live run found two real generation failures despite correct evidence reaching context, plus two new instrumentation/corpus issues (#106, #107) |
 
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
@@ -62,12 +62,26 @@ aliases:
   system is now deployable in a disciplined way; the next unproven question is
   whether the right evidence reliably survives seed retrieval, graph expansion,
   caps/ranking, chunk fetch, token budgeting, and final context assembly.
-- **Filed as [WP-T1](/DOCS/audit/WP-T1-retrieval-evidence-trace.md), [issue #100](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/100
-  ), 2026-09-12.** Scoped to extend the existing, opt-in `evidence_trace.py`
-  instrumentation (from issue #89/PR #90) into a complete, automatic,
-  query-level trace with a `trace_id`, chunk-index detail, and a final-context
-  manifest — not a new observability framework, and explicitly separate from
-  Phase 4's `WP-E5 Observability` (generic ops tracing/metrics/logging).
+- **[WP-T1](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) ([issue #100](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/100)) done, 2026-09-12.**
+  Extended the existing, opt-in `evidence_trace.py` instrumentation (from issue #89/PR #90) into a
+  complete, automatic, query-level trace with a `trace_id`, chunk-index detail, a final-context
+  manifest, and a `survives_chunk_limits`/`reaches_final_context` split (PRs #102-#105) — not a new
+  observability framework, and explicitly separate from Phase 4's `WP-E5 Observability` (generic
+  ops tracing/metrics/logging).
+- **T1e's first live run** ([DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md))
+  ran the frozen 8-question evidence-survival set against the live production instance (condition 1
+  only, one rep, corpus used as-found — not re-ingested or refreshed, per explicit instruction).
+  Found: cap loss (issue #91's mechanism) reconfirmed live on two candidates; one genuine
+  seed/graph retrieval miss; and — the clearest actionable signal — **two clean cases where the
+  correct evidence reached the final LLM context and the default model (`Qwen3:4b`) still produced
+  a wrong or refused answer**, including the question set's own designated sanity-floor easy
+  control. Also surfaced two new, unfixed issues: [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106)
+  (this repo's own `DOCS/evaluations/`/audit docs leak into the corpus they evaluate) and
+  [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (the trace's own
+  canonical_id→document_id resolution can silently return null for an ID confirmed to exist).
+  Per the question set's own decision principle, no retrieval/ranking/cap code change is justified
+  yet from this single pass — the next lever this run points to is generation reliability with the
+  currently-deployed small model, not another retrieval-side fix.
 
 ## 📍 Current status (2026-09-06 — supersedes the 2026-08-30b status below)
 
