@@ -9,7 +9,8 @@ COPY pyproject.toml uv.lock ./
 # Install dependencies
 RUN uv sync
 
-# Copy the package source
+# Copy shared + service code
+COPY shared /app/shared
 COPY rag_orchestrator/ ./rag_orchestrator/
 
 # Set PYTHONPATH so imports work in Docker
