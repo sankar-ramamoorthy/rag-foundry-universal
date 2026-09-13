@@ -240,3 +240,63 @@ def test_llm_default_alias_ignored_when_target_pruned(monkeypatch):
         },
     })
     assert registry.resolve(None, None).model == f"ollama/{OLLAMA_MODEL}"
+
+
+# ------------------------------------------------------------------
+# WP-M7: runtime-persisted model policy overrides
+# ------------------------------------------------------------------
+
+
+def test_policy_overrides_model_but_preserves_yaml_timeout_and_fallback():
+    policy = {"slots": {"smart": {"model": "groq/llama-3.3-70b-versatile"}}}
+    registry = ModelRegistry(CONFIG, policy)
+
+    resolved = registry.resolve(None, "smart")
+    assert resolved.model == "groq/llama-3.3-70b-versatile"
+    assert resolved.timeout == 120.0  # unchanged from CONFIG's timeouts.default
+
+    chain = registry.fallback_chain(resolved)
+    # fallback config from the yaml (smart -> [fast, default]) survives
+    assert [c.alias for c in chain] == ["smart", "fast", "default"]
+
+
+def test_policy_can_create_a_brand_new_slot_not_in_yaml():
+    policy = {"slots": {"reasoning": {"model": "groq/openai/gpt-oss-120b"}}}
+    registry = ModelRegistry(CONFIG, policy)
+
+    resolved = registry.resolve(None, "reasoning")
+    assert resolved.model == "groq/openai/gpt-oss-120b"
+    assert resolved.alias == "reasoning"
+
+
+def test_describe_flags_policy_overridden_slots():
+    policy = {"slots": {"fast": {"model": "groq/llama-3.1-8b-instant"}}}
+    registry = ModelRegistry(CONFIG, policy)
+
+    menu = {m["alias"]: m for m in registry.describe()}
+    assert menu["fast"]["overridden_by_policy"] is True
+    assert menu["smart"]["overridden_by_policy"] is False
+
+
+def test_no_policy_means_no_overrides():
+    registry = ModelRegistry(CONFIG, None)
+    menu = {m["alias"]: m for m in registry.describe()}
+    assert all(not m["overridden_by_policy"] for m in menu.values())
+
+
+def test_corrupt_policy_file_degrades_to_yaml_only(monkeypatch, tmp_path):
+    """get_registry() (not the ModelRegistry constructor directly) must
+    not crash when the policy file is corrupt -- it logs and proceeds
+    with yaml-only aliases."""
+    from src.core import model_registry as mr
+
+    bad_path = tmp_path / "model-policy.json"
+    bad_path.write_text("{not valid json", encoding="utf-8")
+    monkeypatch.setenv("MODEL_POLICY_PATH", str(bad_path))
+    mr.reset_registry()
+    try:
+        registry = mr.get_registry()
+        # no crash, and no slot was overridden (nothing to apply)
+        assert registry.policy_overridden_slots == set()
+    finally:
+        mr.reset_registry()

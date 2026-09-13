@@ -27,7 +27,11 @@ services:
   llm_service:
     build:
       args: *prod-build-args
-    volumes: !override []
+    # WP-M7: /runtime holds the runtime model-policy.json (outside /app,
+    # never a source bind mount) so the mount-invariant checks in
+    # scripts/prod-refresh.sh still pass unchanged.
+    volumes: !override
+      - ./volumes/llm-runtime:/runtime
 
   rag_orchestrator:
     build:

@@ -6,6 +6,7 @@ from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
 from src.api.v1.models import GenerateRequest
+from src.api.v1 import admin  # WP-M7: runtime model policy admin endpoints
 from src.api.v1 import summarize  # 🔥 MS7-IS2: Import summarize module
 from src.core.config import (
     DEFAULT_LLM_PROVIDER,
@@ -23,6 +24,7 @@ app = FastAPI(title="LLM Service")
 
 # 🔥 MS7-IS2: Add summarize router FIRST (prefix=/v1/summarize)
 app.include_router(summarize.router)
+app.include_router(admin.router)
 
 @app.post("/generate")
 async def generate(
