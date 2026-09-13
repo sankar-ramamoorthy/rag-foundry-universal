@@ -151,6 +151,37 @@ Compose: new `/runtime` bind mount (`./volumes/llm-runtime`) for both `docker-co
 checks are unaffected. Tests: `llm_service/tests/core/test_model_policy.py`,
 `llm_service/tests/core/test_model_registry.py`, `llm_service/tests/api/test_admin_endpoint.py`.
 
+### WP-M8 — Transient-error-aware retry/backoff (2026-09-13, shipped, issue #125)
+**Goal:** WP-M2's `num_retries=2` retried every exception identically before falling back to the
+next model — including permanent failures that can never succeed on retry. Confirmed live: an
+unpulled/mistyped Ollama model (`litellm.NotFoundError`) burned 2 pointless retries every time,
+while free-tier cloud providers' real transient failures (Groq/OpenRouter shared-pool 429s, 503s —
+also observed live the same day, see
+[[../notes/20260913-free-provider-live-verification|the live free-provider verification note]])
+got no backoff between attempts. Scope
+deliberately kept small per explicit request: no per-provider-specific tuning, no proactive
+token-bucket rate limiter, no streaming-aware retry (WP-M3 doesn't exist yet) — just distinguish
+transient from permanent and back off before retrying the *same* candidate.
+**Shipped:** `llm_client.py`'s `_complete()` now sets `num_retries=0` on the `litellm.acompletion()`
+call (litellm's own blind retry is disabled) and wraps it in a new `_acompletion_with_backoff()`
+that retries only `litellm.RateLimitError`, `ServiceUnavailableError`, `APIConnectionError`,
+`Timeout`, and `InternalServerError` — the errors that plausibly succeed on retry — up to
+`MAX_TRANSIENT_RETRIES` (default 2, env-configurable) times, sleeping
+`RETRY_BACKOFF_BASE_SECONDS * 2**attempt` (default base 0.5s) between attempts. Any other exception
+(`NotFoundError`, `AuthenticationError`, `BadRequestError`, unknown) is never retried here — it
+propagates immediately to `generate_completion()`'s existing fallback loop, which moves to the next
+candidate exactly as before. Both new settings live in `llm_service/src/core/config.py` alongside
+`LLM_TIMEOUT`/`MODEL_CATALOG_TTL_SECONDS`. Tests:
+`llm_service/tests/core/test_llm_transient_retry.py` (retry-in-place on a transient error with no
+fallback firing; exponential backoff observed then falls back once exhausted; a permanent error
+fires zero backoff sleeps and falls back on the first attempt) plus an updated
+`test_llm_resilience.py::test_per_model_timeout_passed` (renamed from
+`test_per_model_timeout_and_retries_passed`, since retries are no longer delegated to LiteLLM).
+**Acceptance criteria:**
+- [x] A mocked transient error on attempt 1, success on attempt 2 → answer from the same model, no fallback, one backoff sleep
+- [x] A mocked permanent error → immediate fallback, zero backoff sleeps
+- [x] A transient error on every attempt → falls back after `MAX_TRANSIENT_RETRIES` exhausted, existing `AllProvidersFailedError`/503 behavior unchanged when every candidate exhausts
+
 ## 4 · Sequencing
 
 WP-M1 → WP-M2 (same PR acceptable) → WP-M5 (small) → WP-M3 → WP-M4. Total ≈ 4–5 agent-days. No migrations, no schema changes, no other service's code touched except the two orchestrator endpoints (stream + models passthrough).

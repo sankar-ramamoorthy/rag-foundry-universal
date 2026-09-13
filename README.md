@@ -34,7 +34,7 @@ It enables you to:
 * **Atomic Repo Rebuilds**: re-ingesting a repo replaces its whole graph in one transaction under a per-repo advisory lock — a failed or concurrent ingest can never corrupt or lose the previous graph
 * **RAG Query Paths**: Separate endpoints for code repo queries and document queries, combining vector similarity seeding with deterministic BFS graph expansion (empirically shown to matter — see RAG Quality below)
 * **OCR Support**: Tesseract for scanned PDFs/images
-* **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default; a Tailscale-reachable remote Ollama box or a cloud provider (Anthropic, OpenAI) can be made the default per-machine via a gitignored `.env` — no code changes (see `llm_service/models.yaml`). Groq/NVIDIA NIM first-class support is tracked separately (issue #46). Windows & CPU-friendly: tested on laptops without a GPU.
+* **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default; a Tailscale-reachable remote Ollama box, a cloud provider (Anthropic, OpenAI), or a free-tier endpoint (Groq, NVIDIA NIM, OpenRouter) can be made the default per-machine via a gitignored `.env` — no code changes (see `llm_service/models.yaml`). A dynamic model catalog (`GET /v1/models`, issue #46 follow-up, `WP-M6`) and a runtime-persisted model-policy admin endpoint (`PUT /v1/admin/policy/{slot}`, `WP-M7`) let the model backing any alias change without a redeploy; transient provider errors (rate limits, momentary unavailability) get an in-place retry with backoff before falling back to the next configured model (`WP-M8`, issue #125). Live-verified 2026-09-13: OpenRouter's free-tier models work end-to-end; Groq's free tier is usable but rotates which model is up; NVIDIA NIM is currently broken in this deployment (issues #123, #124) — see `DOCS/notes/20260913-free-provider-live-verification.md`. Windows & CPU-friendly: tested on laptops without a GPU.
 
 ---
 
@@ -292,7 +292,7 @@ Full evidence: `DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailsca
 * Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64, #65, and #79 (the code-query filter bug, near-duplicate chunk crowding, and unlabeled-chunk context-assembly conflation that WP-Q0 surfaced) are all fixed — see `DOCS/audit/00-Audit-Overview.md`
 * Multi-language codebase graphs beyond today's Python + TypeScript/JavaScript support — Phase 3 is in progress: `WP-L1` (issue #81) refactored ingestion onto a language-agnostic IR and a single `GraphAssembler` with zero behavior change; `WP-L2` (issue #83) shipped the TypeScript/JavaScript tree-sitter extractor; `WP-L6a` (issue #85) shipped a `language` filter on graph-aware queries, pulled forward to validate `WP-L2` against a real mixed-language repo. Rust and Java extractors (`WP-L3`/`WP-L4`) are next, see `DOCS/audit/03-Multi-Language-Graph-Plan.md`
 * Enhanced observability across ingestion and query pipelines
-* First-class Groq/NVIDIA NIM cloud endpoints (issue #46) — LiteLLM routing to a remote Ollama box and cloud-provider aliases (Anthropic, OpenAI) already ships today
+* Fix NVIDIA NIM, currently broken in the live deployment: the fallback chain's error message only surfaces the last-attempted model's failure, masking NIM's real error (issue #123), and the local-Ollama safety net it falls through to references a model not actually pulled on the host (issue #124)
 
 ---
 
