@@ -159,6 +159,69 @@ expect_success "compose_image_name is pure string composition" \
 expect_fail "regression tripwire: 'compose images' (container-dependent lookup) must not reappear in code" \
   bash -c "grep -vE '^[[:space:]]*#' '$TARGET' | grep -qE 'compose images'"
 
+# --- health checks must be a time budget, not a fixed attempt count --------
+# Found live: 5 attempts x 3s (15s total, regardless of --health-timeout-
+# seconds) aborted a --deploy run on a transient readiness race, even though
+# the deploy itself had already succeeded. Verify the retry loop actually
+# waits close to the configured budget before giving up, against a port
+# nothing listens on (curl fails fast, so this stays quick to run).
+
+start_ts=$(date +%s)
+bash -c "
+  source '$TARGET'
+  HEALTH_ENDPOINTS=(http://127.0.0.1:1/health)
+  HEALTH_TIMEOUT_SECONDS=3
+  HEALTH_POLL_INTERVAL_SECONDS=1
+  health_check_all
+" >/tmp/prod-refresh-test-out 2>&1
+health_check_exit=$?
+elapsed_ts=$(( $(date +%s) - start_ts ))
+
+if [[ "$health_check_exit" -ne 0 && "$elapsed_ts" -ge 2 ]]; then
+  echo "ok: health_check_all respects HEALTH_TIMEOUT_SECONDS as a time budget (waited ${elapsed_ts}s, configured 3s)"
+  pass_count=$((pass_count + 1))
+else
+  echo "FAIL: health_check_all did not behave as a time-budgeted retry (exit=$health_check_exit, elapsed=${elapsed_ts}s)"
+  cat /tmp/prod-refresh-test-out
+  fail_count=$((fail_count + 1))
+fi
+
+# --- release record must survive a post-deploy failure (on_exit trap) ------
+# Found live: write_release_summary was only called at the very end of
+# main()'s happy path, so a failure anywhere in post-deploy verification
+# (like the health-check race above) meant no record was written at all,
+# discarding evidence that build + provenance checks had already passed.
+
+RECORDS_DIR="$FIXTURE_DIR/records"
+expected_record="$RECORDS_DIR/$(date -u +%Y-%m-%d)-test-release.md"
+bash -c "
+  source '$TARGET'
+  RECORD_DIR='$RECORDS_DIR'
+  GIT_SHA=deadbeef
+  REF=main
+  RELEASE_LABEL=test-release
+  BUILD_DATE=2026-01-01T00:00:00Z
+  PREV_GIT_SHA=oldsha
+  CONFIG_CHECK=pass
+  BUILD_CHECK=pass
+  BUILT_LABELS_CHECK=pass
+  RUNNING_LABELS_CHECK=pass
+  RUNNING_MOUNTS_CHECK=pass
+  DEPLOY_STARTED=1
+  trap on_exit EXIT
+  fail 'simulated post-deploy failure (e.g. a health-check timing race)'
+" >/tmp/prod-refresh-test-out 2>&1
+
+if [[ -f "$expected_record" ]] && grep -q "status: incomplete" "$expected_record" \
+  && grep -q "Health checks: not run" "$expected_record"; then
+  echo "ok: on_exit writes a release record (marked incomplete) even after a simulated post-deploy failure"
+  pass_count=$((pass_count + 1))
+else
+  echo "FAIL: expected an 'incomplete' release record at $expected_record after a simulated failure"
+  cat /tmp/prod-refresh-test-out
+  fail_count=$((fail_count + 1))
+fi
+
 echo
 echo "$pass_count passed, $fail_count failed"
 [[ "$fail_count" -eq 0 ]]
