@@ -100,6 +100,29 @@ async def _complete(
         else None
     )
 
+    # WP-M4 (issue #46 follow-up), scoped down: per-request cost visibility
+    # ahead of substantial cloud-model use, without the Prometheus/Grafana
+    # dashboard (WP-E5, not built) or per-request DB persistence (would
+    # need ingestion_service, the only service allowed DB access) the full
+    # plan doc envisioned. completion_cost() has no pricing data for many
+    # models (local Ollama, some free-tier cloud models) -- that's a
+    # normal, expected case, not an error, so it degrades to None rather
+    # than failing the request.
+    try:
+        cost_usd = litellm.completion_cost(completion_response=response)
+    except Exception:
+        cost_usd = None
+
+    logger.info(
+        "LLM completion",
+        extra={
+            "model": resolved.model,
+            "model_alias": resolved.alias,
+            "usage": usage_dict,
+            "cost_usd": cost_usd,
+        },
+    )
+
     return {
         # kept for backward compatibility with the pre-LiteLLM shape
         "provider": resolved.model.split("/", 1)[0],
@@ -107,5 +130,6 @@ async def _complete(
         "model_alias": resolved.alias,
         "response": content.strip(),
         "usage": usage_dict,
+        "cost_usd": cost_usd,
         "prompt_template": PROMPT_TEMPLATE_VERSION,
     }
