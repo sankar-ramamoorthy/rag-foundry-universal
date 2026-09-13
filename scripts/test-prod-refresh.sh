@@ -143,6 +143,22 @@ expect_success "clean running-container mounts pass" \
 expect_fail "running-container mount targeting /app fails (not in any hardcoded list)" \
   bash -c "source '$TARGET'; check_mounts_json mounts 'test' < '$FIXTURE_DIR/mounts_app.json'"
 
+# --- built-image lookup must never depend on container state ---------------
+# Found live: `docker compose images -q <svc>` looks up the image via each
+# service's CONTAINER, so it fails ("failed to retrieve image for container
+# ...") or reports the wrong (old) image whenever a previous release's
+# container is still running for that service -- exactly the state every
+# real --check/--deploy run is in right before `up -d`. The fix resolves the
+# image reference from parsed compose config instead; these tests pin that
+# down as a pure function, plus a regression tripwire so the container-
+# dependent lookup can't quietly come back.
+
+expect_success "compose_image_name is pure string composition" \
+  bash -c "source '$TARGET'; [[ \"\$(compose_image_name rag-foundry-universal rag_orchestrator)\" == 'rag-foundry-universal-rag_orchestrator' ]]"
+
+expect_fail "regression tripwire: 'compose images' (container-dependent lookup) must not reappear in code" \
+  bash -c "grep -vE '^[[:space:]]*#' '$TARGET' | grep -qE 'compose images'"
+
 echo
 echo "$pass_count passed, $fail_count failed"
 [[ "$fail_count" -eq 0 ]]

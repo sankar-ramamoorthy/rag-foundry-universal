@@ -280,17 +280,44 @@ build_images() {
 }
 
 # --- Step 10: verify OCI revision labels on the freshly built images -------
+# `docker compose images -q <svc>` looks up the image via each service's
+# CONTAINER, not the build output -- it fails outright ("failed to retrieve
+# image for container ...") when a container doesn't exist yet, and would
+# report the OLD image's ID/label for a service whose previous-release
+# container is still running (exactly the state we're in right before
+# `up -d`, every normal `--check`/`--deploy` run). Confirmed live: --check
+# failed here with old prod containers still up. Resolve the image
+# reference from parsed compose config instead -- config-derived, so it
+# never depends on container state -- and inspect that image directly.
+#
+# compose_image_name is pure (no docker calls) so it's testable in
+# isolation; get_project_name does the one docker call this step needs.
+compose_image_name() {
+  local project="$1" svc="$2"
+  printf '%s-%s\n' "$project" "$svc"
+}
+
+get_project_name() {
+  compose config --format json | python3 -c '
+import json, sys
+print(json.load(sys.stdin)["name"])
+'
+}
+
 verify_built_image_labels() {
   log "verifying OCI revision labels on built images"
-  local svc image_id label
+  local project_name svc image_ref label
+  project_name="$(get_project_name)" \
+    || fail "could not determine the compose project name"
   for svc in "${SERVICES[@]}"; do
-    image_id="$(compose images -q "$svc")"
-    [[ -n "$image_id" ]] || fail "could not find a built image ID for service $svc"
-    label="$(docker image inspect "$image_id" \
-      --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')"
+    image_ref="$(compose_image_name "$project_name" "$svc")"
+    if ! label="$(docker image inspect "$image_ref" \
+      --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' 2>/dev/null)"; then
+      fail "could not inspect built image '$image_ref' for service $svc -- expected docker compose build to tag it as <project>-<service> when no explicit 'image:' is set in the compose file"
+    fi
     [[ "$label" == "$GIT_SHA" ]] \
-      || fail "$svc built image revision label '$label' != requested GIT_SHA '$GIT_SHA'"
-    log "  $svc: image $image_id revision=$label (matches)"
+      || fail "$svc built image ($image_ref) revision label '$label' != requested GIT_SHA '$GIT_SHA'"
+    log "  $svc: image $image_ref revision=$label (matches)"
   done
 }
 
