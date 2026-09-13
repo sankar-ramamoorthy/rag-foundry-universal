@@ -116,24 +116,26 @@ async def test_all_providers_down_raises_actionable_error(
     assert "connection refused" in str(err)
 
 
-async def test_per_model_timeout_and_retries_passed(registry, monkeypatch):
+async def test_per_model_timeout_passed(registry, monkeypatch):
     captured = []
 
     async def failing_then_ok(**kwargs):
         captured.append((kwargs["model"], kwargs["timeout"], kwargs["num_retries"]))
         if len(captured) < 3:
-            raise RuntimeError("down")
+            raise RuntimeError("down")  # permanent (non-transient) -> no retry
         return _FakeResponse()
 
     monkeypatch.setattr(llm_client.litellm, "acompletion", failing_then_ok)
 
     await llm_client.generate_completion(context="c", query="q", model="primary")
 
-    # each candidate carries its own timeout; retries delegated to LiteLLM
+    # each candidate carries its own timeout; litellm's own blind retry is
+    # disabled (WP-M8, issue #125) -- llm_client now owns retries itself,
+    # and only for transient errors (see test_llm_transient_retry.py)
     assert captured == [
-        ("anthropic/claude-sonnet-5", 120.0, llm_client.NUM_RETRIES),
-        ("openai/gpt-5.1", 120.0, llm_client.NUM_RETRIES),
-        ("ollama/llama3:70b", 300.0, llm_client.NUM_RETRIES),
+        ("anthropic/claude-sonnet-5", 120.0, llm_client.LITELLM_NUM_RETRIES),
+        ("openai/gpt-5.1", 120.0, llm_client.LITELLM_NUM_RETRIES),
+        ("ollama/llama3:70b", 300.0, llm_client.LITELLM_NUM_RETRIES),
     ]
 
 

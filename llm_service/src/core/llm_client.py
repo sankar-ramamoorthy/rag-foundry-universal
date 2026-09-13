@@ -3,21 +3,42 @@
 # provider/model params; Ollama remains the default; llm_service stays
 # the seam owning prompts and model policy — other services never call
 # vendors directly.
-# WP-M2: provider outages degrade gracefully — per-attempt LiteLLM
-# retries with backoff, then the registry's fallback chain; only when
-# every candidate fails does the request error (503 at the API layer).
+# WP-M2: provider outages degrade gracefully — retries within one
+# candidate model (WP-M8: only for transient errors, with backoff), then
+# the registry's fallback chain; only when every candidate fails does the
+# request error (503 at the API layer).
+import asyncio
 import logging
 
 import litellm
 
+from src.core.config import MAX_TRANSIENT_RETRIES, RETRY_BACKOFF_BASE_SECONDS
 from src.core.model_registry import ResolvedModel, get_registry
 from src.core.prompts import PROMPT_TEMPLATE_VERSION, build_messages
 
 logger = logging.getLogger(__name__)
 
-# WP-M2: retries within one candidate model before falling back.
-# LiteLLM applies exponential backoff between attempts.
-NUM_RETRIES = 2
+# WP-M8 (issue #125): litellm's own num_retries retried every exception
+# identically -- including permanent ones (e.g. a 404 "model not found"
+# on a mistyped/unpulled model burned 2 pointless retries, confirmed
+# live). Disabled here; _acompletion_with_backoff below owns retries and
+# only retries the errors that can plausibly succeed on a retry.
+LITELLM_NUM_RETRIES = 0
+
+# Errors worth retrying the *same* candidate model for: the request
+# reached a real provider and got a transient failure (shared free-tier
+# rate limits, momentary unavailability, a dropped connection/timeout).
+# Deliberately excludes litellm.NotFoundError, AuthenticationError,
+# BadRequestError, and anything else -- those can never succeed on retry,
+# so generate_completion()'s fallback loop should move to the next
+# candidate immediately instead of waiting through a doomed retry.
+_TRANSIENT_LITELLM_ERRORS = (
+    litellm.RateLimitError,
+    litellm.ServiceUnavailableError,
+    litellm.APIConnectionError,
+    litellm.Timeout,
+    litellm.InternalServerError,
+)
 
 
 class AllProvidersFailedError(RuntimeError):
@@ -74,6 +95,31 @@ async def generate_completion(
     raise AllProvidersFailedError([c.model for c in chain], last_error)
 
 
+async def _acompletion_with_backoff(kwargs: dict):
+    """WP-M8 (issue #125): retry only transient errors on this candidate
+    model, with exponential backoff, before letting the caller's
+    exception propagate to generate_completion()'s fallback loop."""
+    attempt = 0
+    while True:
+        try:
+            return await litellm.acompletion(**kwargs)
+        except _TRANSIENT_LITELLM_ERRORS as e:
+            if attempt >= MAX_TRANSIENT_RETRIES:
+                raise
+            delay = RETRY_BACKOFF_BASE_SECONDS * (2**attempt)
+            logger.warning(
+                "Transient LLM error, retrying same candidate after backoff",
+                extra={
+                    "model": kwargs["model"],
+                    "attempt": attempt + 1,
+                    "delay_s": delay,
+                    "error": str(e),
+                },
+            )
+            await asyncio.sleep(delay)
+            attempt += 1
+
+
 async def _complete(
     resolved: ResolvedModel, *, context: str, query: str
 ) -> dict:
@@ -81,12 +127,12 @@ async def _complete(
         "model": resolved.model,
         "messages": build_messages(context, query),
         "timeout": resolved.timeout,
-        "num_retries": NUM_RETRIES,
+        "num_retries": LITELLM_NUM_RETRIES,
     }
     if resolved.api_base:
         kwargs["api_base"] = resolved.api_base
 
-    response = await litellm.acompletion(**kwargs)
+    response = await _acompletion_with_backoff(kwargs)
 
     content = response.choices[0].message.content or ""
     usage = getattr(response, "usage", None)
