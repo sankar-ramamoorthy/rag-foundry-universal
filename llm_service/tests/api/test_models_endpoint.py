@@ -61,9 +61,24 @@ def test_models_endpoint_universal_without_remote_env(fake_endpoints):
     assert "remote" not in by_alias
     assert "summarize" not in by_alias
 
+    # issue #46: Groq/NIM/OpenRouter aliases are always listed (no
+    # api_base to env-gate on), unlike the machine-specific remote/
+    # summarize entries above -- they only fail at call time without a
+    # matching API key.
+    assert by_alias["groq_fast"]["model"] == "groq/llama-3.1-8b-instant"
+    assert "groq_smart" in by_alias
+    assert "groq_reasoning" in by_alias
+    assert by_alias["nim_fast"]["model"] == "nvidia_nim/meta/llama3-8b-instruct"
+    assert "nim_smart" in by_alias
+    assert "openrouter_free" in by_alias
+
     endpoint_names = {e["name"] for e in body["endpoints"]}
     assert "tailscaleollamalinux" not in endpoint_names
     assert "windowsollamalocal" in endpoint_names
+    # nvidia_nim's default api_base is NVIDIA's public endpoint, not a
+    # machine-specific address, so unlike tailscaleollamalinux it's
+    # always present even without any env var set.
+    assert "nvidia_nim" in endpoint_names
 
 
 def test_models_endpoint_with_remote_env(remote_env, fake_endpoints):
