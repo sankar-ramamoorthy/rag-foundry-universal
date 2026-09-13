@@ -84,8 +84,22 @@ Upstream, `rag_orchestrator` already passes optional `provider`/`model` query pa
 ### WP-M4 — Cost & usage telemetry
 **Goal:** per-request cost visibility; the enterprise chargeback hook.
 **Directions:** LiteLLM's `completion_cost()` + usage callbacks → structured log + Prometheus counters (`llm_tokens_total{model,team}`, `llm_cost_usd_total{model,team}`); persist per-request usage rows (model, tokens, cost, user/team once [[05-Enterprise-Platform-Plan#WP-E3 — Identity & multi-tenancy|WP-E3]] lands). When/if Option B (proxy) is adopted, budgets/virtual keys replace the homegrown accounting — keep this layer thin.
+
+> [!tip] Partially shipped 2026-09-13, scoped down (issue #46 follow-up)
+> The first acceptance bullet is done: `_complete()` in `llm_service/src/core/llm_client.py` calls
+> `litellm.completion_cost()` after every completion (degrading to `None`, not an error, when a
+> model has no pricing data — routine for local Ollama and some free-tier cloud models), logs
+> `model`/`model_alias`/`usage`/`cost_usd` via a structured `logger.info`, and returns `cost_usd` in
+> the `/generate` response body. The second bullet (Grafana dashboard) and the persisted
+> per-request usage rows are **not** done — both depend on infrastructure that doesn't exist yet
+> ([[05-Enterprise-Platform-Plan#WP-E5 — Observability|WP-E5]] Prometheus/Grafana,
+> [[05-Enterprise-Platform-Plan#WP-E3 — Identity & multi-tenancy|WP-E3]] user/team dimensions) and
+> per-request DB persistence would need routing through `ingestion_service`, the only service
+> allowed direct DB access — deliberately deferred rather than building around that invariant for a
+> quick follow-up.
+
 **Acceptance criteria:**
-- [ ] Every `/generate` logs model, tokens, and computed cost
+- [x] Every `/generate` logs model, tokens, and computed cost
 - [ ] Metrics visible in the Grafana dashboard from [[05-Enterprise-Platform-Plan#WP-E5 — Observability|WP-E5]]
 
 ### WP-M5 — Model switching in the product surface

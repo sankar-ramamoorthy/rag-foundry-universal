@@ -117,6 +117,32 @@ async def test_response_includes_usage_and_template_version(capture):
     assert result["prompt_template"] == PROMPT_TEMPLATE_VERSION
 
 
+# ------------------------------------------------------------------
+# WP-M4 (issue #46 follow-up): per-request cost visibility
+# ------------------------------------------------------------------
+
+
+async def test_response_includes_computed_cost(capture, monkeypatch):
+    monkeypatch.setattr(
+        llm_client.litellm, "completion_cost", lambda **kwargs: 0.00042
+    )
+    result = await llm_client.generate_completion(context="c", query="q")
+    assert result["cost_usd"] == 0.00042
+
+
+async def test_cost_unavailable_degrades_to_none_without_failing_request(capture):
+    """completion_cost() has no pricing data for many models (local
+    Ollama, some free-tier cloud models) -- that's a normal case, not an
+    error, so the whole request must not fail because of it. The default
+    `capture` fixture's _FakeResponse already exercises this: it's not a
+    real litellm response object, so completion_cost() raises internally
+    and this asserts that failure degrades cleanly rather than
+    propagating."""
+    result = await llm_client.generate_completion(context="c", query="q")
+    assert result["cost_usd"] is None
+    assert result["response"] == "the answer"
+
+
 async def test_unsupported_provider_without_model_raises(capture):
     with pytest.raises(ValueError, match="Unsupported LLM provider"):
         await llm_client.generate_completion(
