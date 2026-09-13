@@ -3,17 +3,27 @@
 # scripts/test-prod-refresh.sh -- lightweight self-test for
 # scripts/prod-refresh.sh (WP-D1, issue #111).
 #
-# No Docker/Compose/DB required: exercises argument parsing and the pure
-# mount-marker checks in isolation by sourcing prod-refresh.sh (its `main`
-# does not run when sourced -- see the guard at the bottom of that file).
-# Full end-to-end behavior (build/deploy/health-checks) still needs to be
-# exercised by hand against a real host, per
-# DOCS/deployment/production-docker-compose.md.
+# No Docker/Compose/DB required: exercises argument parsing and the pure,
+# structured-JSON mount checks in isolation by sourcing prod-refresh.sh (its
+# `main`/re-exec do not run when sourced -- both are guarded by the
+# BASH_SOURCE-vs-$0 check at the bottom of that file). Full end-to-end
+# behavior (build/deploy/health-checks) still needs to be exercised by hand
+# against a real host, per DOCS/deployment/production-docker-compose.md.
 
 set -uo pipefail
 
+# On Git Bash/MSYS (Windows), any string that looks like a Unix absolute
+# path gets silently rewritten (e.g. "/var/lib/postgresql/data" ->
+# "C:/Program Files/Git/var/lib/postgresql/data") before it reaches a native
+# .exe like python3 -- this affects nothing on the real Linux production
+# host prod-refresh.sh actually runs on, but would otherwise break these
+# tests when run locally on Windows.
+export MSYS_NO_PATHCONV=1
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TARGET="$SCRIPT_DIR/prod-refresh.sh"
+FIXTURE_DIR="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE_DIR"' EXIT
 
 pass_count=0
 fail_count=0
@@ -61,23 +71,77 @@ expect_success "valid --check args are accepted" \
 expect_success "valid --deploy args are accepted" \
   bash -c "source '$TARGET'; parse_args --ref abc123 --release x --deploy"
 
-# --- source-mount / postgres-mount detection --------------------------------
+expect_success "--record-dir override is accepted" \
+  bash -c "source '$TARGET'; parse_args --ref abc123 --release x --check --record-dir /tmp/wherever"
 
-DEV_MOUNT_SNIPPET='      - ./ingestion_service/src:/app/ingestion_service/src'
-CLEAN_SNIPPET='    volumes: []'
-PG_MOUNT_SNIPPET='      - ./volumes/ingestion-db:/var/lib/postgresql/data'
+# --- structured mount checks (docker compose config --format json shape) ---
+# These fixtures mirror the real `docker compose config --format json`
+# output shape confirmed live against this repo's own docker-compose.prod.yml
+# (app services -> volumes: null after `!override []`; postgres -> one bind
+# mount with a host-specific absolute source path and a fixed target).
 
-expect_fail "detects a leaked source bind mount" \
-  bash -c "source '$TARGET'; assert_no_source_mounts '$DEV_MOUNT_SNIPPET' 'test config'"
+cat > "$FIXTURE_DIR/compose_clean.json" <<'JSON'
+{
+  "services": {
+    "rag_orchestrator": {"volumes": null},
+    "gradio": {"volumes": null},
+    "postgres": {
+      "volumes": [
+        {"type": "bind", "source": "/media/sankar/llm/rag/rag-foundry-universal/volumes/ingestion-db", "target": "/var/lib/postgresql/data", "bind": {}}
+      ]
+    }
+  }
+}
+JSON
 
-expect_success "clean config has no source bind mounts" \
-  bash -c "source '$TARGET'; assert_no_source_mounts '$CLEAN_SNIPPET' 'test config'"
+cat > "$FIXTURE_DIR/compose_leaked_app_mount.json" <<'JSON'
+{
+  "services": {
+    "rag_orchestrator": {
+      "volumes": [
+        {"type": "bind", "source": "./rag_orchestrator/src", "target": "/app/rag_orchestrator/src", "bind": {}}
+      ]
+    },
+    "postgres": {
+      "volumes": [
+        {"type": "bind", "source": "/media/sankar/llm/rag/rag-foundry-universal/volumes/ingestion-db", "target": "/var/lib/postgresql/data", "bind": {}}
+      ]
+    }
+  }
+}
+JSON
 
-expect_fail "detects a missing Postgres mount" \
-  bash -c "source '$TARGET'; assert_postgres_mount_present '$CLEAN_SNIPPET' 'test config'"
+cat > "$FIXTURE_DIR/compose_missing_postgres_mount.json" <<'JSON'
+{
+  "services": {
+    "rag_orchestrator": {"volumes": null},
+    "postgres": {"volumes": null}
+  }
+}
+JSON
 
-expect_success "detects a present Postgres mount" \
-  bash -c "source '$TARGET'; assert_postgres_mount_present '$PG_MOUNT_SNIPPET' 'test config'"
+cat > "$FIXTURE_DIR/mounts_clean.json" <<'JSON'
+[{"Destination": "/var/lib/postgresql/data"}]
+JSON
+
+cat > "$FIXTURE_DIR/mounts_app.json" <<'JSON'
+[{"Destination": "/app/rag_orchestrator/src"}]
+JSON
+
+expect_success "clean compose config (long-form pg mount, absolute host source) passes" \
+  bash -c "source '$TARGET'; check_mounts_json compose 'test' < '$FIXTURE_DIR/compose_clean.json'"
+
+expect_fail "compose config with a leaked /app bind mount fails" \
+  bash -c "source '$TARGET'; check_mounts_json compose 'test' < '$FIXTURE_DIR/compose_leaked_app_mount.json'"
+
+expect_fail "compose config missing the Postgres mount fails" \
+  bash -c "source '$TARGET'; check_mounts_json compose 'test' < '$FIXTURE_DIR/compose_missing_postgres_mount.json'"
+
+expect_success "clean running-container mounts pass" \
+  bash -c "source '$TARGET'; check_mounts_json mounts 'test' < '$FIXTURE_DIR/mounts_clean.json'"
+
+expect_fail "running-container mount targeting /app fails (not in any hardcoded list)" \
+  bash -c "source '$TARGET'; check_mounts_json mounts 'test' < '$FIXTURE_DIR/mounts_app.json'"
 
 echo
 echo "$pass_count passed, $fail_count failed"
