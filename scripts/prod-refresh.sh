@@ -37,6 +37,17 @@
 #                     dirty it and make the next run's clean-tree check fail.
 #                     Copying a record into DOCS/releases/ for versioning is
 #                     a separate, manual step (branch + PR), not automated.
+#   --health-timeout-seconds N
+#                     Optional. Total time budget (not attempt count) to
+#                     wait for each health endpoint to return 200 after
+#                     `up -d`, since a container with `depends_on:
+#                     condition: service_healthy` can legitimately take a
+#                     while. Default 180.
+#
+# Once --deploy has actually started (past build + provenance checks), a
+# release record is always written on exit -- success or failure -- so a
+# later step failing (e.g. a health-check timing race) never discards
+# evidence that the deploy itself already succeeded.
 #
 # This script re-executes itself from a temp copy on startup (once, guarded
 # by PROD_REFRESH_REEXEC) so that the `git checkout` below can never rewrite
@@ -75,6 +86,15 @@ HEALTH_ENDPOINTS=(
   "http://localhost:8004/health"
   "http://localhost:7860"
 )
+# Total time budget per endpoint, not a fixed attempt count -- a container
+# with `depends_on: condition: service_healthy` can legitimately take longer
+# than a few seconds to become reachable right after `up -d`. Confirmed
+# live: a --deploy run aborted here on a transient "curl status 000" for one
+# endpoint that returned 200 a minute later on its own -- the deploy itself
+# had already succeeded (image labels and mounts were already verified);
+# only this check's patience was too short.
+HEALTH_TIMEOUT_SECONDS=180
+HEALTH_POLL_INTERVAL_SECONDS=5
 
 DEFAULT_REPO_ID="f7641840-ba13-5f9d-9ae6-87e1f924709d"
 DEFAULT_SMOKE_QUERY="What service handles RAG queries, and what downstream services does it call?"
@@ -88,11 +108,30 @@ SMOKE_QUERY="$DEFAULT_SMOKE_QUERY"
 # corrected by reexec_from_tmp_if_needed before parse_args runs).
 RECORD_DIR=""
 
+# --- Per-step status, for the release record (review follow-up) ------------
+# A --deploy run that fails partway through post-deploy verification must
+# not lose the evidence steps that already passed (image build, provenance,
+# pre-deploy state) -- confirmed live: a health-check timing race aborted a
+# run whose deploy had actually succeeded, and no release record was written
+# at all. DEPLOY_STARTED gates whether the exit trap writes a record; each
+# status var defaults to "not run" and is updated to "pass" or "FAILED: ..."
+# as its step actually executes, so the record always reflects what really
+# happened instead of the hardcoded "pass" this used to be.
+DEPLOY_STARTED=0
+CONFIG_CHECK="not run"
+BUILD_CHECK="not run"
+BUILT_LABELS_CHECK="not run"
+RUNNING_LABELS_CHECK="not run"
+RUNNING_MOUNTS_CHECK="not run"
+HEALTH_CHECK="not run"
+CORPUS_CHECK="not run"
+SMOKE_RESULT="not run"
+
 log()  { printf '[prod-refresh] %s\n' "$*"; }
 fail() { printf '[prod-refresh] FAIL: %s\n' "$*" >&2; exit 1; }
 
 usage() {
-  sed -n '2,52p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,63p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
@@ -106,6 +145,7 @@ parse_args() {
       --repo-id) REPO_ID="$2"; shift 2 ;;
       --smoke-query) SMOKE_QUERY="$2"; shift 2 ;;
       --record-dir) RECORD_DIR="$2"; shift 2 ;;
+      --health-timeout-seconds) HEALTH_TIMEOUT_SECONDS="$2"; shift 2 ;;
       -h|--help) usage 0 ;;
       *) fail "Unknown argument: $1 (use --help)" ;;
     esac
@@ -125,12 +165,26 @@ compose() {
 # re-execs, once (guarded by PROD_REFRESH_REEXEC), before any git/docker
 # calls happen. REPO_ROOT is explicitly preserved across the re-exec --
 # recomputing it from ${BASH_SOURCE[0]} after re-exec would point into /tmp.
+# Single combined EXIT handler (bash keeps only one trap per signal, so
+# temp-copy cleanup and "always write the release record once deploy has
+# started" must live in one function, not two separate `trap ... EXIT`
+# calls that would silently replace each other).
+on_exit() {
+  local exit_code=$?
+  if [[ "${PROD_REFRESH_REEXEC:-0}" == "1" ]]; then
+    rm -f "${BASH_SOURCE[0]}"
+  fi
+  if [[ "$DEPLOY_STARTED" == "1" ]]; then
+    write_release_summary "$exit_code"
+  fi
+}
+
 reexec_from_tmp_if_needed() {
   if [[ "${PROD_REFRESH_REEXEC:-0}" == "1" ]]; then
     REPO_ROOT="$PROD_REFRESH_REPO_ROOT"
-    # A trap set before `exec` does not survive it -- set cleanup here, in
-    # the process that is actually running from the temp copy.
-    trap 'rm -f "${BASH_SOURCE[0]}"' EXIT
+    # A trap set before `exec` does not survive it -- set it here, in the
+    # process that is actually running from the temp copy.
+    trap on_exit EXIT
     log "running from re-exec'd copy: ${BASH_SOURCE[0]}"
     return 0
   fi
@@ -269,14 +323,22 @@ $errors"
 
 render_and_check_config() {
   log "rendering effective compose config (structured JSON)"
-  compose config --format json | check_mounts_json "compose" "rendered prod config"
+  if ! compose config --format json | check_mounts_json "compose" "rendered prod config"; then
+    CONFIG_CHECK="FAILED"
+    exit 1
+  fi
   log "no service volume targets /app, and the persistent Postgres mount is present"
+  CONFIG_CHECK="pass"
 }
 
 # --- Step 9: build ------------------------------------------------------------
 build_images() {
   log "building prod images"
-  compose build
+  if ! compose build; then
+    BUILD_CHECK="FAILED"
+    fail "docker compose build failed"
+  fi
+  BUILD_CHECK="pass"
 }
 
 # --- Step 10: verify OCI revision labels on the freshly built images -------
@@ -307,24 +369,27 @@ print(json.load(sys.stdin)["name"])
 verify_built_image_labels() {
   log "verifying OCI revision labels on built images"
   local project_name svc image_ref label
-  project_name="$(get_project_name)" \
-    || fail "could not determine the compose project name"
+  project_name="$(get_project_name)" || { BUILT_LABELS_CHECK="FAILED"; fail "could not determine the compose project name"; }
   for svc in "${SERVICES[@]}"; do
     image_ref="$(compose_image_name "$project_name" "$svc")"
     if ! label="$(docker image inspect "$image_ref" \
       --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}' 2>/dev/null)"; then
+      BUILT_LABELS_CHECK="FAILED: could not inspect $image_ref"
       fail "could not inspect built image '$image_ref' for service $svc -- expected docker compose build to tag it as <project>-<service> when no explicit 'image:' is set in the compose file"
     fi
-    [[ "$label" == "$GIT_SHA" ]] \
-      || fail "$svc built image ($image_ref) revision label '$label' != requested GIT_SHA '$GIT_SHA'"
+    if [[ "$label" != "$GIT_SHA" ]]; then
+      BUILT_LABELS_CHECK="FAILED: $svc revision '$label' != '$GIT_SHA'"
+      fail "$svc built image ($image_ref) revision label '$label' != requested GIT_SHA '$GIT_SHA'"
+    fi
     log "  $svc: image $image_ref revision=$label (matches)"
   done
+  BUILT_LABELS_CHECK="pass"
 }
 
 # --- Step 11: deploy ----------------------------------------------------------
 deploy() {
   log "deploying: docker compose up -d"
-  compose up -d
+  compose up -d || fail "docker compose up -d failed"
 }
 
 # --- Step 12: verify running image revision labels --------------------------
@@ -335,10 +400,13 @@ verify_running_image_labels() {
     image_id="$(docker inspect "$name" --format '{{.Image}}')"
     label="$(docker image inspect "$image_id" \
       --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')"
-    [[ "$label" == "$GIT_SHA" ]] \
-      || fail "$name running image revision label '$label' != requested GIT_SHA '$GIT_SHA'"
+    if [[ "$label" != "$GIT_SHA" ]]; then
+      RUNNING_LABELS_CHECK="FAILED: $name revision '$label' != '$GIT_SHA'"
+      fail "$name running image revision label '$label' != requested GIT_SHA '$GIT_SHA'"
+    fi
     log "  $name: image $image_id revision=$label (matches)"
   done
+  RUNNING_LABELS_CHECK="pass"
 }
 
 # --- Step 13: verify no source mounts on running containers -----------------
@@ -350,22 +418,44 @@ verify_no_running_source_mounts() {
       | check_mounts_json "mounts" "running container $name"
   done
   log "no running container has a volume mount targeting /app"
+  RUNNING_MOUNTS_CHECK="pass"
 }
 
 # --- Step 14: health checks --------------------------------------------------
+# Polls each endpoint for up to HEALTH_TIMEOUT_SECONDS (a time budget, not a
+# fixed attempt count) -- a container with `depends_on: condition:
+# service_healthy` can legitimately take longer than a few seconds to become
+# reachable right after `up -d`. Confirmed live: 5 attempts x 3s (15s total)
+# was too short and aborted a --deploy run whose actual deploy had already
+# succeeded (image labels and mounts were verified before this step ever
+# ran); the endpoint in question returned 200 on its own about a minute
+# later.
 health_check_all() {
-  log "checking service health endpoints"
-  local url attempt status
+  log "checking service health endpoints (up to ${HEALTH_TIMEOUT_SECONDS}s per endpoint)"
+  local url status elapsed start failures=""
   for url in "${HEALTH_ENDPOINTS[@]}"; do
+    start=$SECONDS
     status=""
-    for attempt in 1 2 3 4 5; do
-      status="$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$url" || true)"
+    elapsed=0
+    while true; do
+      status="$(curl -s -o /dev/null -w '%{http_code}' -m 10 "$url" 2>/dev/null || true)"
+      elapsed=$((SECONDS - start))
       [[ "$status" == "200" ]] && break
-      sleep 3
+      (( elapsed >= HEALTH_TIMEOUT_SECONDS )) && break
+      sleep "$HEALTH_POLL_INTERVAL_SECONDS"
     done
-    [[ "$status" == "200" ]] || fail "$url did not return 200 (last status: $status)"
-    log "  $url -> 200"
+    if [[ "$status" == "200" ]]; then
+      log "  $url -> 200 (after ${elapsed}s)"
+    else
+      log "  $url -> never returned 200 within ${HEALTH_TIMEOUT_SECONDS}s (last status: $status)"
+      failures+="${url} (last status: ${status}); "
+    fi
   done
+  if [[ -n "$failures" ]]; then
+    HEALTH_CHECK="FAILED: $failures"
+    fail "one or more health endpoints never returned 200 within ${HEALTH_TIMEOUT_SECONDS}s: $failures"
+  fi
+  HEALTH_CHECK="pass"
 }
 
 # --- Step 15: corpus persistence check --------------------------------------
@@ -414,6 +504,19 @@ print(json.dumps({"query": os.environ["SMOKE_QUERY"], "repo_id": os.environ["REP
 
 # --- Step 17: release-record skeleton ---------------------------------------
 write_release_summary() {
+  # $1: the script's exit code, passed by the on_exit trap (0 on a clean
+  # --deploy completion; nonzero if a post-deploy step failed). Always
+  # called once DEPLOY_STARTED=1 -- including on failure -- so a post-deploy
+  # hiccup (e.g. a health-check timing race) never discards the evidence
+  # that build/provenance/mount checks already passed.
+  local exit_code="${1:-0}"
+  local record_status="complete"
+  local outcome="--deploy completed successfully"
+  if [[ "$exit_code" != "0" ]]; then
+    record_status="incomplete"
+    outcome="--deploy exited early (code $exit_code) -- see the fields below for exactly which step; re-run to confirm current state before trusting this as final"
+  fi
+
   local out_path="$RECORD_DIR/$(date -u +%Y-%m-%d)-${RELEASE_LABEL}.md"
   log "writing release record to $out_path (outside the repo checkout -- see --record-dir)"
   mkdir -p "$RECORD_DIR"
@@ -429,7 +532,7 @@ write_release_summary() {
 title: "Production Release Record: ${RELEASE_LABEL}"
 date: $(date -u +%Y-%m-%d)
 type: release-record
-status: complete
+status: ${record_status}
 tags: [release, production, provenance]
 related:
   - "[Production Docker Compose Release Process](/DOCS/deployment/production-docker-compose.md)"
@@ -437,10 +540,14 @@ related:
 
 # ${RELEASE_LABEL}
 
+**Outcome: ${outcome}**
+
 Generated by \`scripts/prod-refresh.sh --deploy\` (WP-D1, issue #111). Written to \`${RECORD_DIR}\`,
 outside the repo checkout, so this deploy never leaves the production working tree dirty. Copy
 this into \`DOCS/releases/\` via a normal branch + PR if you want it versioned. Fields marked
-**FILL IN** require human judgment and were not determined by the script.
+**FILL IN** require human judgment and were not determined by the script. This record is always
+written once a deploy has actually started (image build + provenance checks already passed) --
+even if a later step like a health-check timing race fails, so evidence is never silently lost.
 
 ## Identity
 
@@ -470,18 +577,16 @@ ${pre_deploy_rows}
   DOCS/deployment/production-docker-compose.md; if ad hoc, name the qualifying gate criterion and
   the issue it fixes)
 
-## Deployment validation (script-verified)
+## Deployment validation (script-verified; reflects what actually happened, not an assumption)
 
-- Rendered Compose config checked: pass
-- Application source bind mounts absent (rendered config): pass
-- Application source bind mounts absent (running containers): pass
-- Postgres persistent storage present: pass
-- Build completed: pass
-- Built-image OCI revision labels match ${GIT_SHA}: pass
-- Running-container OCI revision labels match ${GIT_SHA}: pass
-- Health checks: pass (${HEALTH_ENDPOINTS[*]})
-- Corpus persistence check: ${CORPUS_CHECK:-not run}
-- RAG smoke query: ${SMOKE_RESULT:-not run}
+- Rendered Compose config + Postgres mount checked: ${CONFIG_CHECK}
+- Build completed: ${BUILD_CHECK}
+- Built-image OCI revision labels match ${GIT_SHA}: ${BUILT_LABELS_CHECK}
+- Running-container OCI revision labels match ${GIT_SHA}: ${RUNNING_LABELS_CHECK}
+- Application source bind mounts absent (running containers): ${RUNNING_MOUNTS_CHECK}
+- Health checks: ${HEALTH_CHECK} (${HEALTH_ENDPOINTS[*]})
+- Corpus persistence check: ${CORPUS_CHECK}
+- RAG smoke query: ${SMOKE_RESULT}
 
 ## RAG smoke query
 
@@ -515,13 +620,16 @@ main() {
     exit 0
   fi
 
+  # From here on, the on_exit trap always writes a release record -- even if
+  # a later step fails -- since the checks that matter most for "is this a
+  # safe deploy" (build, image provenance) have already passed.
+  DEPLOY_STARTED=1
   deploy
   verify_running_image_labels
   verify_no_running_source_mounts
   health_check_all
   verify_corpus_present
   run_smoke_query
-  write_release_summary
 
   log "--deploy complete: $RELEASE_LABEL ($GIT_SHA) is live and verified."
 }
