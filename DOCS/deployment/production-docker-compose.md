@@ -187,8 +187,20 @@ scripts/prod-refresh.sh --ref <sha-or-tag> --release <label> --deploy   # full r
 
 `--check` runs every step through image build and provenance verification but stops before
 `up -d`. `--deploy` performs the full refresh: build, deploy, post-deploy provenance/mount/health
-verification, an optional corpus + RAG smoke check, and a release-record skeleton written to
-`DOCS/releases/`.
+verification, an optional corpus + RAG smoke check, and a release record capturing pre-deploy
+image/revision state (for rollback) plus the new deployment's provenance.
+
+The release record is written **outside** the repo checkout — by default
+`<repo-parent>/rag-foundry-release-records/` (override with `--record-dir`) — so a `--deploy` run
+never leaves the production working tree dirty. Copy a record into `DOCS/releases/` via a normal
+branch + PR afterward if you want it versioned; the script never commits anything itself.
+
+Mount/provenance checks (rendered compose config, running-container mounts, OCI revision labels)
+are done against structured JSON (`docker compose config --format json`, `docker inspect --format
+'{{json .Mounts}}'`), not text/regex over YAML — this survives host-specific differences like an
+absolute vs. relative Postgres volume source path. The script also re-executes itself from a `/tmp`
+copy on startup, so the `git checkout` step can never rewrite the running script file out from
+under itself mid-run.
 
 The script deliberately never: runs `docker compose down -v`, runs database migrations, triggers
 repo re-ingestion, creates or pushes a git tag, chooses which ref to deploy, or decides whether a
