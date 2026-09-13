@@ -74,6 +74,13 @@ audit findings.
 post-hoc verification evidence):
 [[evaluations/2026-09-07-evidence-survival-question-set]].
 
+## Patterns
+
+`DOCS/patterns/` — reusable, framework-agnostic architecture patterns
+worth taking to other projects (distinct from `DOCS/adr/`'s
+this-repo decision records):
+[Three-Layer Model/Provider Configuration](/DOCS/patterns/three-layer-model-config-pattern.md).
+
 ## Notes
 
 `DOCS/notes/` — ad hoc working notes.

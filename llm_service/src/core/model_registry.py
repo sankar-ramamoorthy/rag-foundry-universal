@@ -42,6 +42,7 @@ OLLAMA_MODEL to preserve pre-LiteLLM behavior.
 """
 from __future__ import annotations
 
+import logging
 import os
 import re
 from dataclasses import dataclass
@@ -50,7 +51,10 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from src.core import model_policy
 from src.core.config import LLM_TIMEOUT, OLLAMA_BASE_URL, OLLAMA_MODEL
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ALIAS = "default"
 
@@ -93,8 +97,36 @@ class ResolvedModel:
     timeout: float
 
 
+def _parse_providers(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    return {
+        name: dict(value)
+        for name, value in raw.items()
+        if isinstance(value, dict) and value.get("catalog_url")
+    }
+
+
+def _apply_policy(
+    aliases: Dict[str, Dict[str, Any]], policy: Optional[Dict[str, Any]]
+) -> set[str]:
+    """WP-M7: overlay runtime policy overrides onto the yaml-derived
+    aliases (mutates `aliases` in place). Returns the set of overridden
+    slot names. Only `model` is overridden; an existing alias's
+    timeout/fallback config from the yaml is preserved. A slot naming an
+    alias absent from the yaml becomes a brand-new alias."""
+    overridden: set[str] = set()
+    for slot, entry in ((policy or {}).get("slots") or {}).items():
+        model = entry.get("model") if isinstance(entry, dict) else None
+        if not model:
+            continue
+        aliases[slot] = {**aliases.get(slot, {}), "model": model}
+        overridden.add(slot)
+    return overridden
+
+
 class ModelRegistry:
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(
+        self, config: Dict[str, Any], policy: Optional[Dict[str, Any]] = None
+    ):
         config = _interpolate_env(config)
         raw_models = config.get("models") or {}
         self._aliases: Dict[str, Dict[str, Any]] = {}
@@ -129,8 +161,17 @@ class ModelRegistry:
             if isinstance(value, dict) and value.get("api_base"):
                 self._endpoints[name] = dict(value)
 
+        # WP-M6: provider families eligible for dynamic catalog discovery
+        # (model_catalog.py). Purely descriptive -- never consulted by
+        # resolve()/fallback_chain().
+        self._providers = _parse_providers(config.get("providers") or {})
+
         self.fallbacks: Dict[str, List[str]] = config.get("fallbacks") or {}
         self._timeouts: Dict[str, Any] = config.get("timeouts") or {}
+
+        # WP-M7: runtime-persisted policy overrides (model_policy.py) --
+        # applied last so they win over the committed yaml.
+        self.policy_overridden_slots = _apply_policy(self._aliases, policy)
 
     # ------------------------------------------------------------
     # Public API
@@ -143,12 +184,13 @@ class ModelRegistry:
         return name in self._aliases
 
     def describe(self) -> List[Dict[str, Any]]:
-        """Alias menu for GET /v1/models (WP-M5)."""
+        """Alias menu for GET /v1/models (WP-M5 + WP-M7)."""
         return [
             {
                 "alias": alias,
                 "model": self._aliases[alias]["model"],
                 "is_default": alias == DEFAULT_ALIAS,
+                "overridden_by_policy": alias in self.policy_overridden_slots,
             }
             for alias in self.aliases()
         ]
@@ -163,6 +205,18 @@ class ModelRegistry:
                 "api_base": entry["api_base"],
             }
             for name, entry in sorted(self._endpoints.items())
+        ]
+
+    def describe_providers(self) -> List[Dict[str, Any]]:
+        """Provider families eligible for catalog discovery (WP-M6), for
+        the caller to enrich with a live/cached catalog fetch."""
+        return [
+            {
+                "name": name,
+                "credential_env": entry.get("credential_env"),
+                "catalog_url": entry.get("catalog_url"),
+            }
+            for name, entry in sorted(self._providers.items())
         ]
 
     def fallback_chain(self, primary: ResolvedModel) -> List[ResolvedModel]:
@@ -266,11 +320,25 @@ def get_registry() -> ModelRegistry:
             loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
             if isinstance(loaded, dict):
                 config = loaded
-        _registry = ModelRegistry(config)
+
+        # WP-M7: a corrupt/unreadable policy file must not crash the
+        # service -- degrade to yaml-only aliases, same philosophy as
+        # cost_usd/catalog-fetch degradation elsewhere in llm_service.
+        try:
+            policy = model_policy.load_policy()
+        except model_policy.ModelPolicyError as e:
+            logger.warning("Model policy file unreadable, ignoring: %s", e)
+            policy = None
+
+        _registry = ModelRegistry(config, policy)
     return _registry
 
 
 def reset_registry() -> None:
-    """Testing hook: force a reload on next get_registry()."""
+    """WP-M7 runtime policy refresh: persist a policy change -> call this
+    -> the registry singleton is invalidated -> the next get_registry()
+    call lazily rebuilds it from models.yaml + the current policy file.
+    Nothing is pushed or reloaded eagerly; also usable as a plain testing
+    hook to force a rebuild between tests."""
     global _registry
     _registry = None
