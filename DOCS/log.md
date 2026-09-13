@@ -6,6 +6,16 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-09-13
+
+Added `DOCS/patterns/` — a new top-level category for reusable,
+framework-agnostic architecture patterns worth taking to other projects,
+distinct from `DOCS/adr/`'s this-repo decision records. First entry:
+[Three-Layer Model/Provider Configuration](/DOCS/patterns/three-layer-model-config-pattern.md),
+extracted from WP-M6/WP-M7's dynamic model catalog + runtime model policy
+work in `llm_service`
+([LLM Provider Plan](/DOCS/audit/06-LLM-Provider-LiteLLM-Plan.md)).
+
 ## 2026-09-12
 
 Promoted `DOCS/releases/` from a template-only folder to an explicit production

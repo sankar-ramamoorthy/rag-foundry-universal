@@ -110,6 +110,47 @@ Upstream, `rag_orchestrator` already passes optional `provider`/`model` query pa
 - [ ] Gradio dropdown switches models; answer metadata shows the model used
 - [ ] Summarize endpoint honors model alias
 
+### WP-M6 — Dynamic model catalog (2026-09-13, shipped)
+**Goal:** trying a newly-available model (especially a free-tier one) never requires editing
+`models.yaml`, committing, or redeploying — the catalog is advisory/observational runtime state,
+never a gate. See [[../patterns/three-layer-model-config-pattern|the reusable pattern write-up]]
+for the general shape (this is its layer 2).
+**Shipped:** `llm_service/src/core/model_catalog.py` — per-provider fetchers (OpenRouter, Groq,
+NVIDIA NIM, and the pre-existing Ollama `/api/tags` probe now folded in) behind a shared
+TTL-cached (`MODEL_CATALOG_TTL_SECONDS`, default 3600s), degrade-to-last-known-good `get_catalog()`.
+`models.yaml` gained a `providers:` section (family + credential env var name + catalog URL only —
+never concrete discovered model IDs). `GET /v1/models` gained a `providers[]` array and an optional
+`?free_only=true` filter. Free-tier detection is real-evidence-only: OpenRouter's own per-model
+pricing (`prompt`/`completion` == `"0"`) drives `free: true|false`; Groq/NVIDIA NIM's `/models`
+responses carry no equivalent signal, so their entries always get `free: null` rather than a guess.
+`resolve()`'s existing raw-passthrough behavior is untouched and never validated against the
+catalog. Tests: `llm_service/tests/core/test_model_catalog.py`,
+`llm_service/tests/api/test_models_endpoint.py`.
+
+### WP-M7 — Runtime-persisted model policy (2026-09-13, shipped)
+**Goal:** which concrete model backs each slot (`default`/`fast`/`smart`/`reasoning`/...) is
+changeable at runtime with no code change, no committed-file edit, and no redeploy — layer 3 of
+[[../patterns/three-layer-model-config-pattern|the reusable pattern]]. Explicitly out of scope:
+API-key encryption/vaulting (keys stay plain `.env` vars, unchanged) and validating a policy write
+against the WP-M6 catalog (validated only via `resolve()`, since the catalog is advisory and may be
+stale/incomplete).
+**Shipped:** `llm_service/src/core/model_policy.py` — file-backed slot overrides at
+`MODEL_POLICY_PATH` (default `/runtime/model-policy.json`), atomic write (temp file + rename) plus
+a cross-process `fcntl.flock` sidecar lock (documented as single-host scope; `threading.Lock` alone
+was explicitly rejected — it doesn't protect across multiple Uvicorn worker processes).
+`ModelRegistry` gained an optional `policy` param merged onto yaml-derived aliases (only `model` is
+overridden; existing timeout/fallback config from the yaml survives); a corrupt policy file
+degrades `get_registry()` to yaml-only aliases rather than crashing. `reset_registry()` is now
+documented as the **runtime policy refresh** mechanism (persist → invalidate the singleton →
+rebuild lazily on next access — deliberately not called "hot reload"). New
+`llm_service/src/api/v1/admin.py`: `PUT`/`DELETE /v1/admin/policy/{slot}`, gated by a shared secret
+(`LLM_ADMIN_SECRET`, `X-Admin-Secret` header, `hmac.compare_digest`), fail-closed (503) if unset;
+read access (`GET /v1/models`, now with `overridden_by_policy` per alias) stays unauthenticated.
+Compose: new `/runtime` bind mount (`./volumes/llm-runtime`) for both `docker-compose.yml` and its
+`docker-compose.prod.yml` override — never `/app`, so `scripts/prod-refresh.sh`'s mount-invariant
+checks are unaffected. Tests: `llm_service/tests/core/test_model_policy.py`,
+`llm_service/tests/core/test_model_registry.py`, `llm_service/tests/api/test_admin_endpoint.py`.
+
 ## 4 · Sequencing
 
 WP-M1 → WP-M2 (same PR acceptable) → WP-M5 (small) → WP-M3 → WP-M4. Total ≈ 4–5 agent-days. No migrations, no schema changes, no other service's code touched except the two orchestrator endpoints (stream + models passthrough).
