@@ -40,7 +40,9 @@ def _patch_retrieval_pipeline(monkeypatch):
     monkeypatch.setattr(service, "hybrid_retrieve", fake_hybrid_retrieve)
     monkeypatch.setattr(service, "execute_retrieval_plan", lambda **kwargs: {})
     monkeypatch.setattr(service, "prepare_chunks_for_agent", lambda *a, **k: [])
-    monkeypatch.setattr(service, "select_chunks_within_token_budget", lambda *a, **k: [])
+    monkeypatch.setattr(
+        service, "select_chunks_within_token_budget", lambda *a, **k: []
+    )
     monkeypatch.setattr(service, "build_labeled_context", lambda *a, **k: ("", 0))
     monkeypatch.setattr(service, "build_final_context_manifest", lambda *a, **k: [])
     monkeypatch.setattr(service, "build_sources", lambda *a, **k: [])

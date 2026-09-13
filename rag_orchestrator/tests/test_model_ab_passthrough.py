@@ -166,7 +166,10 @@ def test_raw_model_ab_passthrough_against_live_stack(monkeypatch):
     assert (
         first_result.retrieval_plan["seed_document_ids"]
         == second_result.retrieval_plan["seed_document_ids"]
-    ), "retrieval must be identical across model overrides -- only generation should vary"
+    ), (
+        "retrieval must be identical across model overrides -- only "
+        "generation should vary"
+    )
     assert (
         first_result.retrieval_plan["expanded_document_ids"]
         == second_result.retrieval_plan["expanded_document_ids"]
