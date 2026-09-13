@@ -44,6 +44,26 @@ models:
   smart: anthropic/claude-sonnet-5
   gpt: openai/gpt-5.1
 
+  # issue #46: first-class Groq / NVIDIA NIM / OpenRouter. Raw LiteLLM
+  # strings (e.g. "groq/llama-3.1-8b-instant") already pass through
+  # verbatim without these entries -- these are committed convenience
+  # aliases (listed in GET /v1/models, usable in the Gradio dropdown) so
+  # a user doesn't have to know exact model-ID strings. Like fast/smart/
+  # gpt above, these are always listed (no api_base to env-gate on) and
+  # simply fail at call time if the matching API key isn't set --
+  # GROQ_API_KEY / NVIDIA_API_KEY / OPENROUTER_API_KEY, env-only, read
+  # natively by LiteLLM. Exact model IDs shift over time (verify against
+  # each provider's current catalog, especially OpenRouter's free tier,
+  # which rotates frequently) -- update this file, not code, when they do.
+  groq_fast: groq/llama-3.1-8b-instant
+  groq_smart: groq/llama-3.3-70b-versatile
+  groq_reasoning: groq/openai/gpt-oss-120b
+  nim_fast: nvidia_nim/meta/llama3-8b-instruct
+  nim_smart: nvidia_nim/meta/llama3-70b-instruct
+  # OpenRouter's free-tier roster rotates frequently -- verify this
+  # slug still exists at openrouter.ai/models before relying on it.
+  openrouter_free: openrouter/meta-llama/llama-3.3-70b-instruct:free
+
 # Named inference endpoints: `model=<name>/<anything>` routes that model
 # string to the endpoint's api_base with its LiteLLM provider prefix.
 # GET /v1/models lists these with a live model inventory when reachable.
@@ -57,6 +77,17 @@ endpoints:
     provider: ollama
     api_base: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
     timeout: 600
+  # issue #46: NVIDIA NIM as a named endpoint -- `nvidia_nim/<any model>`
+  # (e.g. nvidia_nim/meta/llama3-405b-instruct) routes to NVIDIA's hosted
+  # catalog without pre-registering every model, same pattern as the
+  # Ollama endpoints above. Unlike those, this one always exists (its
+  # default api_base is NVIDIA's public endpoint, not a machine-specific
+  # address) -- NVIDIA_NIM_API_BASE only needs setting for a self-hosted
+  # NIM deployment.
+  nvidia_nim:
+    provider: nvidia_nim
+    api_base: ${NVIDIA_NIM_API_BASE:https://integrate.api.nvidia.com/v1/}
+    timeout: 120
 
 # WP-M2 fallback chains. Keys may be aliases or endpoint names; targets
 # are aliases, tried in order after the primary fails (2 retries each).
@@ -68,6 +99,18 @@ fallbacks:
   summarize: [local]
   tailscaleollamalinux: [local]
   smart: [gpt, default]
+  # issue #46: cloud aliases degrade to local instead of failing outright
+  # when a key is missing/invalid or a provider has an outage.
+  groq_fast: [local]
+  groq_smart: [groq_fast, local]
+  groq_reasoning: [groq_smart, groq_fast, local]
+  nim_fast: [local]
+  nim_smart: [nim_fast, local]
+  openrouter_free: [local]
+  # matches tailscaleollamalinux above: applies when a user picks
+  # nvidia_nim/<any model> directly rather than the nim_fast/nim_smart
+  # aliases.
+  nvidia_nim: [local]
 
 # Per-alias request timeout in seconds; `default` applies to everything
 # without an explicit entry (falls back to LLM_TIMEOUT env, 120 s).
