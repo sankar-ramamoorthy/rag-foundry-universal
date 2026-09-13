@@ -2,7 +2,6 @@
 import asyncio
 import logging
 
-import httpx
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
 
@@ -12,6 +11,7 @@ from src.core.config import (
     DEFAULT_LLM_PROVIDER,
     OLLAMA_MODEL,
 )
+from src.core import model_catalog
 from src.core.llm_client import AllProvidersFailedError, generate_completion
 from src.core.model_registry import (
     DEFAULT_ALIAS,
@@ -60,35 +60,63 @@ async def _endpoint_inventory(endpoint: dict) -> dict:
     """issue #43: enrich a named endpoint with its live model list so
     the UI can offer `<endpoint>/<model>` choices. Best-effort — an
     unreachable endpoint reports available_models: null and the menu
-    still renders."""
+    still renders. WP-M6: now goes through the shared TTL-cached catalog
+    (model_catalog.py) instead of probing /api/tags on every request."""
     entry = dict(endpoint)
     entry["available_models"] = None
     if entry.get("provider") != "ollama":
         return entry
-    try:
-        async with httpx.AsyncClient(timeout=3) as client:
-            resp = await client.get(f"{entry['api_base']}/api/tags")
-            resp.raise_for_status()
-            entry["available_models"] = sorted(
-                m["name"] for m in resp.json().get("models", [])
-            )
-    except Exception as e:
-        logging.debug("Endpoint %s inventory failed: %s", entry["name"], e)
+    models, _stale, _configured = await model_catalog.get_catalog(
+        entry["name"], "ollama", entry
+    )
+    if models:
+        entry["available_models"] = [m.id for m in models]
     return entry
 
 
+async def _provider_inventory(provider: dict, *, free_only: bool) -> dict:
+    """WP-M6: enrich a provider family with its discovered model catalog.
+    Advisory/observational only — never a gate on what /generate accepts.
+    An unconfigured or unreachable provider still renders in the menu
+    (catalog: [] / null-flagged fields), it just has nothing to show."""
+    models, stale, configured = await model_catalog.get_catalog(
+        provider["name"], provider["name"], provider
+    )
+    if free_only:
+        models = [m for m in models if m.free is True]
+    return {
+        "name": provider["name"],
+        "configured": configured,
+        "catalog": [{"id": m.id, "free": m.free} for m in models],
+        "catalog_stale": stale,
+    }
+
+
 @app.get("/v1/models")
-async def list_models() -> dict:
-    """WP-M5 + issue #43: aliases from models.yaml, the default, and
-    named endpoints with live model inventories."""
+async def list_models(free_only: bool = Query(False)) -> dict:
+    """WP-M5 + issue #43 + WP-M6: aliases from models.yaml, the default,
+    named endpoints with live model inventories, and each provider
+    family's dynamically discovered model catalog (advisory only —
+    `?free_only=true` filters each provider's catalog to models the
+    provider's own pricing data marks as free; it never affects `models`/
+    `endpoints`, which have no reliable per-request cost signal)."""
     registry = get_registry()
-    endpoints = await asyncio.gather(
-        *(_endpoint_inventory(e) for e in registry.describe_endpoints())
+    endpoints, providers = await asyncio.gather(
+        asyncio.gather(
+            *(_endpoint_inventory(e) for e in registry.describe_endpoints())
+        ),
+        asyncio.gather(
+            *(
+                _provider_inventory(p, free_only=free_only)
+                for p in registry.describe_providers()
+            )
+        ),
     )
     return {
         "models": registry.describe(),
         "default": DEFAULT_ALIAS,
         "endpoints": list(endpoints),
+        "providers": list(providers),
     }
 
 

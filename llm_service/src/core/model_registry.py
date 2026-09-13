@@ -93,6 +93,14 @@ class ResolvedModel:
     timeout: float
 
 
+def _parse_providers(raw: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    return {
+        name: dict(value)
+        for name, value in raw.items()
+        if isinstance(value, dict) and value.get("catalog_url")
+    }
+
+
 class ModelRegistry:
     def __init__(self, config: Dict[str, Any]):
         config = _interpolate_env(config)
@@ -129,6 +137,11 @@ class ModelRegistry:
             if isinstance(value, dict) and value.get("api_base"):
                 self._endpoints[name] = dict(value)
 
+        # WP-M6: provider families eligible for dynamic catalog discovery
+        # (model_catalog.py). Purely descriptive -- never consulted by
+        # resolve()/fallback_chain().
+        self._providers = _parse_providers(config.get("providers") or {})
+
         self.fallbacks: Dict[str, List[str]] = config.get("fallbacks") or {}
         self._timeouts: Dict[str, Any] = config.get("timeouts") or {}
 
@@ -163,6 +176,18 @@ class ModelRegistry:
                 "api_base": entry["api_base"],
             }
             for name, entry in sorted(self._endpoints.items())
+        ]
+
+    def describe_providers(self) -> List[Dict[str, Any]]:
+        """Provider families eligible for catalog discovery (WP-M6), for
+        the caller to enrich with a live/cached catalog fetch."""
+        return [
+            {
+                "name": name,
+                "credential_env": entry.get("credential_env"),
+                "catalog_url": entry.get("catalog_url"),
+            }
+            for name, entry in sorted(self._providers.items())
         ]
 
     def fallback_chain(self, primary: ResolvedModel) -> List[ResolvedModel]:

@@ -89,6 +89,23 @@ endpoints:
     api_base: ${NVIDIA_NIM_API_BASE:https://integrate.api.nvidia.com/v1/}
     timeout: 120
 
+# WP-M6: provider families that support dynamic model-catalog discovery
+# (llm_service/src/core/model_catalog.py). This section stays deliberately
+# minimal -- provider families and stable defaults only, never concrete
+# discovered model IDs. The catalog itself is runtime state (fetched live,
+# TTL-cached, advisory-only) and must never get written back into this
+# committed file.
+providers:
+  groq:
+    credential_env: GROQ_API_KEY
+    catalog_url: https://api.groq.com/openai/v1/models
+  openrouter:
+    credential_env: OPENROUTER_API_KEY
+    catalog_url: https://openrouter.ai/api/v1/models
+  nvidia_nim:
+    credential_env: NVIDIA_API_KEY
+    catalog_url: ${NVIDIA_NIM_API_BASE:https://integrate.api.nvidia.com/v1/}models
+
 # WP-M2 fallback chains. Keys may be aliases or endpoint names; targets
 # are aliases, tried in order after the primary fails (2 retries each).
 # `default: [local]` is harmless when default IS local (duplicates
