@@ -273,6 +273,54 @@ human-approved-merge workflow already used for issues #64/#65 above. Human
 approval stays the control point throughout; the system evaluates itself,
 it does not modify itself.
 
+## 6 · Model A/B comparison harness (issue #120)
+
+> [!note] Direct-caller passthrough acceptance criterion (added 2026-09-13)
+> **Direct `run_rag()` callers must support raw model passthrough, not
+> only HTTP/UI callers.** An eval harness comparing free providers
+> (Groq/NIM/OpenRouter) needs to call `run_rag()` with an explicit raw
+> model string — bypassing named aliases/slots entirely — so retrieval
+> stays identical across runs and only generation varies:
+>
+> ```python
+> run_rag(repo_id=..., query=..., model="groq/openai/gpt-oss-120b")
+> run_rag(repo_id=..., query=..., model="openrouter/nvidia/nemotron-3-ultra-550b-a55b:free")
+> ```
+>
+> This traces back to a real failure: `models.yaml` aliases like
+> `groq_fast`/`groq_smart` pointed at Groq model IDs
+> (`llama-3.1-8b-instant`, `llama-3.3-70b-versatile`) that Groq has since
+> deprecated — confirmed live, they're no longer in Groq's `/models`
+> catalog. A harness that only exercises named aliases inherits that
+> same fragility.
+
+`run_rag()` (`rag_orchestrator/src/core/service.py`) already accepted
+`model: Optional[str]` and forwarded it verbatim to `llm_service`'s
+`/generate`, and `ModelRegistry.resolve()` already passed through any raw
+LiteLLM string unchanged — the plumbing already met the criterion. The
+actual gap was test coverage: every existing `run_rag`-adjacent test
+monkeypatched it at the HTTP-router boundary, so nothing exercised the
+real code path a direct Python caller (like an eval harness) uses.
+
+Closed by:
+
+- `rag_orchestrator/tests/test_run_rag_model_override.py` (unit, mocked)
+  — proves a raw model string reaches the outgoing `/generate` request
+  unchanged from a direct `run_rag()` call, and that omitting `model`
+  leaves today's implicit-default behavior untouched.
+- `rag_orchestrator/tests/test_model_ab_passthrough.py` (integration,
+  opt-in via `RAG_EVAL_*` env vars) — the real A/B harness shape: runs
+  retrieval once, tries live free-provider models discovered dynamically
+  from `GET /v1/models` (never a hardcoded model ID, for the same reason
+  the original alias broke), and asserts retrieval is identical while
+  `model_used` differs and matches each requested raw string exactly.
+  Verified passing against the live Tailscale deployment
+  (`100.105.24.12`) during development — including discovering, live,
+  that a catalog-listed model can still fail at call time on a realistic
+  context size despite succeeding on a trivial probe query, which is why
+  the test retries candidates rather than trusting the catalog listing
+  alone.
+
 ## Related
 
 - [[09-Retrieval-Technique-Decision-Gates]] — where this doc's findings feed decisions about retrieval/generation techniques; §5 above is the future direction for keeping that table fed with ongoing evidence
