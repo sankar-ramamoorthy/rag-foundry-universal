@@ -88,6 +88,28 @@ aliases:
   yet from this single pass — the next lever this run points to is generation reliability with the
   currently-deployed small model, not another retrieval-side fix.
 
+## Current status (2026-09-13 - supersedes the 2026-09-12 status above)
+
+> [!tip] Prod-refresh.sh review findings all resolved (#113/#114/#115); a fresh, uncontaminated
+> evidence-survival specimen further confirms generation reliability is the open question, not
+> retrieval.
+
+- **`scripts/prod-refresh.sh`'s three post-review fixes are all merged**: [PR #113](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/113)
+  (self-reexec guard, structured-JSON mount checks, pre-deploy state capture, external release
+  records), [PR #114](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/114)
+  (built-image lookup made container-independent), [PR #115](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/115)
+  (health checks are now a time budget, not a fixed attempt count, and a release record is always
+  written once `--deploy` has actually started). All found via real `--check`/`--deploy` runs
+  against the actual Linux production host, not anticipated in the abstract.
+- **[Clean specimen: correct evidence reached the prompt, generation fabricated a citation](/DOCS/test_results/2026-09-13-clean-specimen-canonical-to-document-mapping.md)**.
+  A question formulated fresh (not one of the frozen `DOCS/evaluations/` candidates, avoiding
+  issue #106's contamination) found both target functions as clean seed hits that survived to
+  final context with zero token-budget loss — and the model still fabricated a nonexistent
+  mechanism, a fake code snippet, and a fake citation to a nonexistent audit section, ignoring the
+  correct implementation sitting in the same prompt. This is the **third independent occurrence**
+  of evidence-reached-but-generation-failed (after WP-T1e's candidates 7 and 10), and the cleanest
+  one yet since no contaminated answer key was available to explain the wrong answer away.
+
 ## 📍 Current status (2026-09-06 — supersedes the 2026-08-30b status below)
 
 > [!tip] Phase 3 has two more work packages done since 2026-08-30b, and a RAG retrieval-quality bug distinct from the WP-Q0/reranker track was found, fixed, and live-verified — with one follow-up limitation deliberately left open as its own issue.
