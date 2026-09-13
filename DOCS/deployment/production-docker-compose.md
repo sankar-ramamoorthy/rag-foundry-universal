@@ -11,6 +11,36 @@ related:
 
 # Production Docker Compose Release Process
 
+## Deployment cadence (2026-09-12, issue #111)
+
+There are two deployment cadences for this stack:
+
+- **Normal prod release**: slow, deliberate, tagged, CI-green, full release record — the process
+  documented below, unchanged.
+- **Ad hoc prod refresh**: exceptional, only for a narrow runtime defect that materially blocks
+  evaluation, observability, or correctness, and has already passed CI on `main`.
+
+An ad hoc refresh is justified only when the change is one of:
+
+1. **Correctness blocker** — current prod behavior is known wrong.
+2. **Observability blocker** — current prod cannot produce trustworthy evidence for work being
+   actively evaluated.
+3. **Security/availability issue** — an obvious urgent case.
+4. **Evaluation invalidation** — the currently deployed runtime would make the next planned
+   experiment misleading or impossible.
+
+> **Rule:** ad hoc prod refreshes are allowed only for merged, CI-green runtime fixes that unblock
+> correctness, observability, or a currently scheduled evaluation. They do not change the slower
+> normal release cadence. A cosmetic change, docs-only change, or general improvement waits for the
+> normal cycle.
+
+`scripts/prod-refresh.sh` (issue #111) automates the safe *mechanics* of either cadence — checkout,
+build, deploy, provenance verification, health checks — using the exact process below. It does
+**not** decide whether a refresh is warranted, or which ref to deploy; those stay explicit human
+decisions, made before running the script. Use a release label like `prod-hotfix-2026-09-12-107`
+for an ad hoc refresh so it stays visibly distinct from a normal `prod-YYYY-MM-DD` release in
+`DOCS/releases/`.
+
 ## Development vs. production
 
 The default `docker-compose.yml` is optimized for local development. It
@@ -144,6 +174,27 @@ record must agree.
 
 Run one known graph-aware RAG smoke query against a complete repository and
 record pass/fail plus sources.
+
+## Automated mechanics: `scripts/prod-refresh.sh`
+
+The steps in "Deployment sequence" and "Validation" above are also available as a script, run on
+the production host:
+
+```bash
+scripts/prod-refresh.sh --ref <sha-or-tag> --release <label> --check    # validate only, no deploy
+scripts/prod-refresh.sh --ref <sha-or-tag> --release <label> --deploy   # full refresh
+```
+
+`--check` runs every step through image build and provenance verification but stops before
+`up -d`. `--deploy` performs the full refresh: build, deploy, post-deploy provenance/mount/health
+verification, an optional corpus + RAG smoke check, and a release-record skeleton written to
+`DOCS/releases/`.
+
+The script deliberately never: runs `docker compose down -v`, runs database migrations, triggers
+repo re-ingestion, creates or pushes a git tag, chooses which ref to deploy, or decides whether a
+refresh is safe or warranted. Those stay explicit human decisions — the operator always passes
+`--ref`, and the "Deployment cadence" gate above is judged by a person before the script runs, not
+by the script itself.
 
 ## Rollback
 
