@@ -185,7 +185,7 @@ The project has a **sound architectural thesis** — read-only, graph-aware code
 | 🔴 P0 | Correctness bugs in graph build ([[01-Codebase-Audit-Findings#P0 — Graph correctness]]) | Everything downstream reasons over wrong data | ✅ Done (Phase 1/2) |
 | 🔴 P0 | O(N²) ingestion hot loops | Blocks any repo beyond toy size | ✅ Done (WP-S1) |
 | 🟠 P1 | ANN index + batch embedding | Query latency and ingest throughput | ✅ Done (WP-S2/S4/S4B) |
-| 🟠 P1 | LiteLLM provider abstraction | Unblocks enterprise LLM requirements; small effort | ✅ Done + extended (PR #47); Groq/NIM tracked as issue #46 |
+| 🟠 P1 | LiteLLM provider abstraction | Unblocks enterprise LLM requirements; small effort | ✅ Done + extended (PR #47); Groq/NIM was tracked as issue #46, closed 2026-09-13 by `WP-M6`/`WP-M7`/`WP-M8` (dynamic catalog, runtime policy, transient retry/backoff — see [[06-LLM-Provider-LiteLLM-Plan]]) |
 | 🟡 P2 | Tree-sitter IR + multi-language | The headline feature ask | 🟡 In progress (Phase 3) — IR + TypeScript/JS done (`WP-L1`/`WP-L2`), language-aware retrieval filter done (`WP-L6a`); Rust/Java/Python-parity/UI still open |
 | 🟡 P2 | Job queue + incremental ingestion | Massive-repo readiness | Not started (Phase 4) |
 | 🟢 P3 | Auth / multi-tenancy / web frontend | Enterprise productization | Not started (Phase 5) |

@@ -125,7 +125,10 @@ See [[00-Audit-Overview]]'s 2026-08-30 status.
 - [ ] [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]] Concurrent fetch, real tokenizer, reranker flag (reranker sub-task gated on Phase 2.75's eval — see above)
 - [ ] [[05-Enterprise-Platform-Plan#WP-E1 — Security baseline (do first, small)|WP-E1]] Security baseline *(can and should be pulled earlier if anything is network-exposed)*
 - [ ] [[05-Enterprise-Platform-Plan#WP-E5 — Observability|WP-E5]] Observability
-- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M3 — Streaming|WP-M3]] / [[06-LLM-Provider-LiteLLM-Plan#WP-M4 — Cost & usage telemetry|WP-M4]] Streaming + cost telemetry
+- [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M3 — Streaming|WP-M3]] Streaming
+- [~] [[06-LLM-Provider-LiteLLM-Plan#WP-M4 — Cost & usage telemetry|WP-M4]] Cost & usage telemetry — per-request logging/response field shipped 2026-09-13; Grafana dashboard and persisted usage rows still depend on WP-E5/WP-E3
+- [x] *(beyond original scope)* [[06-LLM-Provider-LiteLLM-Plan#WP-M6 — Dynamic model catalog (2026-09-13, shipped)|WP-M6]] Dynamic model catalog and [[06-LLM-Provider-LiteLLM-Plan#WP-M7 — Runtime-persisted model policy (2026-09-13, shipped)|WP-M7]] runtime-persisted model policy — issue #46 follow-up (PRs #118/#119), closing out the Groq/NVIDIA NIM/OpenRouter first-class support originally deferred there
+- [x] *(beyond original scope)* [[06-LLM-Provider-LiteLLM-Plan#WP-M8 — Transient-error-aware retry/backoff (2026-09-13, shipped, issue #125)|WP-M8]] Transient-error-aware retry/backoff (issue #125, PR #126) — prompted by live verification of the free providers WP-M6/M7 exposed: OpenRouter's free tier works end-to-end, Groq's is usable but rotates which model is up, NVIDIA NIM is currently broken (issues #122 config staleness, #123 fallback-error masking, #124 stale local-Ollama fallback model — see `DOCS/notes/20260913-free-provider-live-verification.md`). Also landed the same day: issue #120 (direct `run_rag()` raw-model passthrough, PR #121), the acceptance criterion that made this live verification possible from a script instead of only the HTTP API.
 
 **Exit criteria:** 1M-LOC monorepo cold-ingests < 30 min; 1-file PR re-ingests < 30 s; traces + dashboards live; nothing unauthenticated.
 
