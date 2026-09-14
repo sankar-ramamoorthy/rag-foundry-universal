@@ -46,6 +46,15 @@ class RepoGraph:
         # ids, in declaration order. Built by _resolve_inheritance;
         # consumed by self/cls call resolution. In-memory only.
         self.class_bases: Dict[str, List[str]] = {}
+        # WP-L3: raw `impl Trait for Type`-style inheritance facts (never
+        # entities) — {relative_path, child_name, parent_name, kind}. Both
+        # names are as-written text, resolved independently through the
+        # same same-file/import/global machinery as ordinary base-class
+        # strings (_resolve_base), since a Rust impl block can live in a
+        # different file than either the type or the trait it connects.
+        # Consumed by _resolve_inherit_records; empty for extractors that
+        # never emit ExtractionResult.inherits (Python/TS today).
+        self.inherit_records: List[dict] = []
 
     def add_entity(self, relative_path: str, entity: dict):
         """
