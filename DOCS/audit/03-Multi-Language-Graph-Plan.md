@@ -2,7 +2,7 @@
 title: "Multi-Language Graph Plan — Rust, TypeScript, Java, JavaScript"
 date: 2026-07-09
 type: audit-plan
-status: proposed
+status: in-progress
 languages: [python, rust, typescript, javascript, java]
 tags:
   - audit

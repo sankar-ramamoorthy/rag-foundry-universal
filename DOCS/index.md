@@ -12,6 +12,16 @@ aliases: [Docs Index, DOCS MOC]
 This routes to where the knowledge lives — it doesn't restate it. If a fact
 here goes stale, fix the routing, not by copying content into this file.
 
+## Status
+
+[`DOCS/status.md`](/DOCS/status.md) is the single, continuously-updated
+snapshot of what's currently shipped, in progress, and known-broken —
+language/codebase-graph support, RAG quality evaluation results, and
+known issues. `README.md` links here rather than embedding ADR/issue/PR
+numbers itself. Not to be confused with `DOCS/log.md` (documentation-
+structure governance) or `../status/` (an abandoned dated-snapshot
+convention, see "Historical" below).
+
 ## Documentation Standard
 
 New or substantially-edited docs follow

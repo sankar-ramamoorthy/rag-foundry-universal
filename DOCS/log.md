@@ -6,6 +6,18 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-09-14
+
+Added [`DOCS/status.md`](/DOCS/status.md) — a new top-level, single,
+continuously-updated status doc (language/codebase-graph support, RAG
+quality results, known issues), distinct from the abandoned `status/`
+dated-snapshot directory and from this file's own documentation-
+structure-governance scope. Motivated by WP-L5 (issue #134) shipping:
+`README.md` had accumulated ADR/issue/`WP-L*` references and status
+prose that belonged in a dedicated doc instead, so those moved here and
+`README.md` now links to it. `DOCS/index.md` updated with a `## Status`
+entry pointing to it.
+
 ## 2026-09-13
 
 Added `DOCS/patterns/` — a new top-level category for reusable,
