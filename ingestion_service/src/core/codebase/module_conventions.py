@@ -13,6 +13,24 @@ from typing import Dict, List, Optional, Protocol, Tuple
 
 
 class ModulePathConvention(Protocol):
+    """A fourth, OPTIONAL method exists outside this Protocol on purpose:
+    `implicit_bindings(relative_path, module_map) -> Dict[str, dict]`
+    (WP-L4) — bindings available WITHOUT an explicit import statement
+    (e.g. Java's same-package visibility — `Caller.java` can reference
+    `Animal` from the same package with no `import`). It's deliberately
+    NOT part of this Protocol: most conventions (Python/TS/Rust) don't
+    need it, and Protocol methods are structurally required, not
+    defaultable, for unrelated concrete classes. GraphAssembler probes
+    for it duck-typed via `getattr(..., "implicit_bindings", None)` and
+    no-ops if absent — see JavaModuleConvention below for the one
+    convention that implements it, and
+    GraphAssembler._seed_implicit_bindings for the call site. When
+    present, `module_map` is dotted_path -> MODULE canonical_id for every
+    file in the repo (the same map _resolve_imports already builds), and
+    the returned dict is name -> binding, the same shape as one entry of
+    graph.import_bindings[relative_path] — applied as a base layer before
+    explicit imports, which still take priority per name."""
+
     def dotted_path(self, relative_path: str) -> Optional[str]:
         """`pkg/util.py` -> `pkg.util`, or None if not a module file."""
         ...
@@ -178,6 +196,73 @@ class RustModuleConvention:
         return f"{prefix}.{base}" if base else prefix
 
 
+_JAVA_SOURCE_ROOT_PREFIXES = ("src/main/java/", "src/test/java/")
+
+
+class JavaModuleConvention:
+    """WP-L4: package-qualified dotted-path convention for Java `.java`
+    files (DOCS/audit/03-Multi-Language-Graph-Plan.md §3 WP-L4). Unlike
+    Rust (RustModuleConvention), this needs no repo-wide pre-scan — the
+    Maven/Gradle `src/main/java/`-rooted directory layout is a
+    near-universal, purely path-derivable convention, so this stays
+    stateless per file exactly like PythonModuleConvention.
+
+    Dotted paths use "." (matching Java's own import syntax and, not
+    incidentally, the "." GraphAssembler._resolve_import_target already
+    hardcodes between a resolved module path and an imported name).
+
+    v1 limitation: only the standard `src/main/java/`-rooted (or
+    unrooted, package-directories-from-repo-root) layout is modeled — a
+    project with a non-standard source root is not detected."""
+
+    def dotted_path(self, relative_path: str) -> Optional[str]:
+        if not relative_path.endswith(".java"):
+            return None
+        within = relative_path
+        for prefix in _JAVA_SOURCE_ROOT_PREFIXES:
+            if within.startswith(prefix):
+                within = within[len(prefix):]
+                break
+        stripped = within[: -len(".java")]
+        parts = [p for p in stripped.split("/") if p]
+        return ".".join(parts) if parts else None
+
+    def absolute_import_base(
+        self, relative_path: str, base: str, level: int
+    ) -> str:
+        # Java imports are always fully qualified — no relative-import
+        # concept, so `level` is unused and `base` is already the
+        # dotted path to resolve (same shape PythonModuleConvention
+        # returns for level=0).
+        return base
+
+    def implicit_bindings(
+        self, relative_path: str, module_map: Dict[str, str]
+    ) -> Dict[str, dict]:
+        """Every other same-package file's short class name is usable
+        without an import — this is the common case for intra-package
+        references in real Java code (e.g. `new Animal(...)` from
+        `Caller.java`, same package, no `import` statement). Bound as a
+        "symbol" (not "module") binding: the file IS the class (Java's
+        one-top-level-type-per-file convention), so the short name
+        resolves to the type symbol itself via symbol_table.
+        lookup_in_file, exactly like an explicit single-class import."""
+        own = self.dotted_path(relative_path)
+        if not own or "." not in own:
+            return {}
+        own_package = own.rsplit(".", 1)[0]
+        bindings: Dict[str, dict] = {}
+        for dotted, module_cid in module_map.items():
+            if module_cid == relative_path or "." not in dotted:
+                continue
+            package, _, short_name = dotted.rpartition(".")
+            if package == own_package:
+                bindings[short_name] = {
+                    "kind": "symbol", "module_cid": module_cid, "symbol": short_name,
+                }
+        return bindings
+
+
 class CompositeModuleConvention:
     """WP-L2: dispatches to a per-suffix ModulePathConvention so one repo
     can mix languages (e.g. Python + TypeScript) in a single ingestion run
@@ -206,3 +291,12 @@ class CompositeModuleConvention:
         if convention is None:
             return base
         return convention.absolute_import_base(relative_path, base, level)
+
+    def implicit_bindings(
+        self, relative_path: str, module_map: Dict[str, str]
+    ) -> Dict[str, dict]:
+        convention = self._convention_for(relative_path)
+        if convention is None:
+            return {}
+        fn = getattr(convention, "implicit_bindings", None)
+        return fn(relative_path, module_map) if fn else {}

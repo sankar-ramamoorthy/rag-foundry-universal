@@ -17,6 +17,7 @@ from src.core.codebase.graph_assembler import GraphAssembler
 from src.core.codebase.ir import ExtractionResult
 from src.core.codebase.module_conventions import (
     CompositeModuleConvention,
+    JavaModuleConvention,
     PythonModuleConvention,
     RustModuleConvention,
     TypeScriptModuleConvention,
@@ -24,6 +25,7 @@ from src.core.codebase.module_conventions import (
 from src.core.codebase.repo_graph import RepoGraph
 from src.core.extractors.python_extractor import PythonASTExtractor
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
+from src.core.extractors.treesitter.java import JavaExtractor
 from src.core.extractors.treesitter.rust import RustExtractor
 from src.core.extractors.treesitter.typescript import TypeScriptExtractor
 
@@ -45,6 +47,7 @@ EXTRACTORS = {
     ".mjs": TypeScriptExtractor,
     ".cjs": TypeScriptExtractor,
     ".rs": RustExtractor,
+    ".java": JavaExtractor,
 }
 
 _STATIC_MODULE_CONVENTIONS = {
@@ -55,6 +58,10 @@ _STATIC_MODULE_CONVENTIONS = {
     ".jsx": TypeScriptModuleConvention(),
     ".mjs": TypeScriptModuleConvention(),
     ".cjs": TypeScriptModuleConvention(),
+    # WP-L4: Java's package->directory convention is purely path-derivable
+    # (like Python's), no repo-wide pre-scan needed — unlike Rust's
+    # crate-aware convention below, this can live in the static dict.
+    ".java": JavaModuleConvention(),
 }
 
 # WP-L2: per-suffix module-naming convention dispatch, so a repo mixing

@@ -32,9 +32,11 @@ logger = logging.getLogger(__name__)
 # IS8: code artifact types eligible for DOCUMENTS relationships
 # WP-L2: INTERFACE (TS/JS) is documentable the same way CLASS is.
 # WP-L3: STRUCT/ENUM/TRAIT (Rust) are documentable the same way.
+# WP-L4: RECORD (Java) joins ENUM as documentable (CLASS/INTERFACE
+# already cover Java's class/interface kinds).
 DOCUMENTABLE_TYPES = {
     "CLASS", "INTERFACE", "FUNCTION", "METHOD", "MODULE",
-    "STRUCT", "ENUM", "TRAIT",
+    "STRUCT", "ENUM", "TRAIT", "RECORD",
 }
 
 # WP-L2: nodes eligible for INHERITS resolution (extends/implements) and
@@ -46,7 +48,9 @@ DOCUMENTABLE_TYPES = {
 # resolves `impl Trait for Type` edges independently of same-file
 # metadata.bases (Rust impls routinely live in a different file than
 # either the type or the trait they connect).
-INHERITABLE_TYPES = {"CLASS", "INTERFACE", "STRUCT", "ENUM", "TRAIT"}
+# WP-L4: RECORD joins — Java records can implement interfaces
+# (metadata.bases, same inline-declaration pattern as CLASS).
+INHERITABLE_TYPES = {"CLASS", "INTERFACE", "STRUCT", "ENUM", "TRAIT", "RECORD"}
 
 # WP-L6a: a file's language is intrinsic to its path, so it's derived here
 # once rather than duplicated as metadata in every extractor (plan.md's
@@ -63,6 +67,7 @@ LANGUAGE_BY_SUFFIX = {
     ".mjs": "javascript",
     ".cjs": "javascript",
     ".rs": "rust",
+    ".java": "java",
 }
 
 
@@ -207,7 +212,7 @@ class GraphAssembler:
     def _attach_defines(self, graph: RepoGraph):
         definition_types = {
             "CLASS", "INTERFACE", "FUNCTION", "METHOD",
-            "MARKDOWN_SECTION", "STRUCT", "ENUM", "TRAIT",
+            "MARKDOWN_SECTION", "STRUCT", "ENUM", "TRAIT", "RECORD",
         }
 
         for entity in graph.all_entities():
@@ -234,12 +239,36 @@ class GraphAssembler:
     # WP-G2: IMPORTS Relationships
     # -----------------------------
 
+    def _seed_implicit_bindings(self, graph: RepoGraph, module_map: dict) -> None:
+        """WP-L4: some languages (Java) allow referencing same-package
+        siblings with no explicit import — ModulePathConvention.
+        implicit_bindings (optional; default absent) supplies these as a
+        base layer, applied via setdefault so a later explicit import
+        for the same name still wins. No-op for conventions that don't
+        implement it (Python/TS/Rust today)."""
+        implicit_fn = getattr(self.module_convention, "implicit_bindings", None)
+        if implicit_fn is None:
+            return
+        for entity in graph.all_entities():
+            if entity.get("artifact_type") != "MODULE":
+                continue
+            rel = entity["canonical_id"]
+            implicit = implicit_fn(rel, module_map)
+            if not implicit:
+                continue
+            bindings = graph.import_bindings.setdefault(rel, {})
+            for name, binding in implicit.items():
+                bindings.setdefault(name, binding)
+
     def _resolve_imports(self, graph: RepoGraph) -> None:
         """Materialize MODULE --IMPORTS--> MODULE edges from IMPORT
         artifacts. Intra-repo imports resolve against the dotted-module
         map; external imports get one EXTERNAL_MODULE node per root
         package. Also records per-file import bindings for call
-        resolution (ADR-032 layer 2)."""
+        resolution (ADR-032 layer 2) — seeded first with any
+        implicit_bindings the language's convention supplies (WP-L4:
+        Java's same-package visibility), which explicit imports below
+        still take priority over per name."""
         module_map: dict[str, str] = {}
         for entity in graph.all_entities():
             if entity.get("artifact_type") != "MODULE":
@@ -247,6 +276,8 @@ class GraphAssembler:
             dotted = self.module_convention.dotted_path(entity["canonical_id"])
             if dotted:
                 module_map[dotted] = entity["canonical_id"]
+
+        self._seed_implicit_bindings(graph, module_map)
 
         imports = sorted(
             (
@@ -778,13 +809,17 @@ class GraphAssembler:
         self, site: dict, graph: RepoGraph
     ) -> Optional[str]:
         """Nearest enclosing CLASS (WP-L3: or STRUCT/ENUM, Rust's `self`-
-        receiver equivalents) of a call site, via the parent chain."""
+        receiver equivalents; WP-L4: or INTERFACE/RECORD, for Java's
+        `this` inside a default interface method or a record) of a call
+        site, via the parent chain."""
         current = site.get("parent_id")
         while current:
             entity = graph.get_entity_by_id(current)
             if entity is None:
                 return None
-            if entity.get("artifact_type") in ("CLASS", "STRUCT", "ENUM"):
+            if entity.get("artifact_type") in (
+                "CLASS", "STRUCT", "ENUM", "INTERFACE", "RECORD",
+            ):
                 return entity.get("id")
             current = entity.get("parent_id")
         return None
