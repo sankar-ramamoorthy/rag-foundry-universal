@@ -23,9 +23,11 @@ from src.core.codebase.module_conventions import (
     TypeScriptModuleConvention,
 )
 from src.core.codebase.repo_graph import RepoGraph
+from src.core.config import get_settings
 from src.core.extractors.python_extractor import PythonASTExtractor
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
 from src.core.extractors.treesitter.java import JavaExtractor
+from src.core.extractors.treesitter.python import PythonTreeSitterExtractor
 from src.core.extractors.treesitter.rust import RustExtractor
 from src.core.extractors.treesitter.typescript import TypeScriptExtractor
 
@@ -38,6 +40,13 @@ logger.setLevel(logging.DEBUG)
 # module-convention selection below, since TS/JS needs a different
 # file-path -> module-name rule than Python's dotted-path convention.)
 EXTRACTORS = {
+    # WP-L5 (issue #134): `.py` dispatch is resolved dynamically by
+    # _select_extractor via _PythonExtractorProxy below, not from this
+    # dict — this entry's value is unused for dispatch and kept only so
+    # `_walk_repo`'s `set(EXTRACTORS.keys())` suffix-support check still
+    # includes ".py". See _PythonExtractorProxy for the rollback
+    # mechanism (config.py's PYTHON_TREESITTER_ENABLED /
+    # PYTHON_TREESITTER_AUTO_FALLBACK).
     ".py": PythonASTExtractor,
     ".md": MarkdownSectionExtractor,
     ".ts": TypeScriptExtractor,
@@ -96,6 +105,54 @@ DEFAULT_IGNORED_DIRS = {
 
 
 _CARGO_NAME_RE = re.compile(r'^\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
+
+
+class _PythonExtractorProxy:
+    """WP-L5 rollback mechanism (DOCS/audit/03-Multi-Language-Graph-Plan.md
+    WP-L5 section, issue #134): picks PythonTreeSitterExtractor vs. the
+    legacy PythonASTExtractor per settings.PYTHON_TREESITTER_ENABLED, and
+    -- when settings.PYTHON_TREESITTER_AUTO_FALLBACK is True (the default)
+    -- catches any exception raised while parsing with the tree-sitter
+    extractor and automatically retries the same source with
+    PythonASTExtractor, logging a warning (a durable, searchable
+    operational signal -- grep ingestion logs for
+    "PYTHON_TREESITTER_AUTO_FALLBACK" to see how often this fires; a
+    healthy rollout should show it firing rarely to never).
+
+    IMPORTANT -- this only guards against catastrophic failures (parse
+    exceptions). It does NOT guarantee the tree-sitter extractor's output
+    is semantically correct: a buggy-but-non-raising extractor (e.g. one
+    that silently misses a nested method) returns a valid ExtractionResult
+    and this fallback never fires. Semantic equivalence is the A/B parity
+    harness's job (tests/codebase/test_python_parity_harness.py), not this
+    proxy's. Keep this class's responsibility limited to exactly two
+    things -- selecting AST vs. tree-sitter, and this crash-only fallback
+    -- do not grow it into a general extraction framework.
+
+    A tree-sitter regression in production self-heals on the very next
+    ingest run with NO code revert and NO manual flag flip; only
+    disabling PYTHON_TREESITTER_AUTO_FALLBACK itself (e.g. to see raw
+    failures during rollout) requires touching a flag. Mirrors
+    ingest.py's Docling-to-PyMuPDF fallback shape exactly."""
+
+    def __init__(self, relative_path: str):
+        self.relative_path = relative_path
+        self._settings = get_settings()
+
+    def extract(self, source_code: str) -> ExtractionResult:
+        if not self._settings.PYTHON_TREESITTER_ENABLED:
+            return PythonASTExtractor(self.relative_path).extract(source_code)
+        try:
+            return PythonTreeSitterExtractor(self.relative_path).extract(source_code)
+        except Exception as exc:
+            if not self._settings.PYTHON_TREESITTER_AUTO_FALLBACK:
+                raise
+            logger.warning(
+                "PYTHON_TREESITTER_AUTO_FALLBACK: tree-sitter extraction "
+                "failed for %s (%s) -- falling back to PythonASTExtractor",
+                self.relative_path, exc,
+            )
+            return PythonASTExtractor(self.relative_path).extract(source_code)
 
 
 class RepoGraphBuilder:
@@ -199,6 +256,8 @@ class RepoGraphBuilder:
 
     def _select_extractor(self, file_path: Path):
         rel = file_path.relative_to(self.repo_root).as_posix()
+        if file_path.suffix == ".py":
+            return _PythonExtractorProxy(relative_path=rel)
         extractor_cls = EXTRACTORS.get(file_path.suffix)
         if extractor_cls is None:
             return None

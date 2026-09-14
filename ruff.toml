@@ -6,6 +6,10 @@ exclude = [
     "dist",
     "__pycache__",
     ".git",
+    # WP-L5 (issue #134): deliberately-invalid Python fixture data, not a
+    # lint target -- exercises PythonTreeSitterExtractor's partial-
+    # extraction-on-syntax-error behavior.
+    "ingestion_service/tests/fixtures/python_repo_syntax_error",
 ]
 [lint]
 select = ["E", "F", "W", "C"]

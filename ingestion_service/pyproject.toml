@@ -23,10 +23,21 @@ dependencies = [
     "pytesseract>=0.3.13",
     "pymupdf>=1.22.5",
     "tree_sitter>=0.20.0",
+    # WP-L5 (issue #134): tree-sitter==0.26.0 causes native access
+    # violations (segfaults, not catchable Python exceptions) when
+    # PythonTreeSitterExtractor processes real-world files — reproduced
+    # and bisected during WP-L5; tree-sitter==0.25.2 does not exhibit it.
+    # A segfault would defeat _PythonExtractorProxy's crash-only fallback
+    # entirely (it can't catch a killed process), so this upper bound is
+    # a deliberate safety pin, not routine version hygiene — do not widen
+    # it without re-running scripts/python_parity_report.py across a
+    # real, varied corpus first.
+    "tree-sitter>=0.23.0,<0.26.0",
     "tree-sitter-typescript>=0.23.0",
     "tree-sitter-javascript>=0.23.0",
     "tree-sitter-rust>=0.23.0",
     "tree-sitter-java>=0.23.0",
+    "tree-sitter-python>=0.23.0",
     "GitPython>=3.1.43",
     "markdown-it-py>=3.0.0",
 
