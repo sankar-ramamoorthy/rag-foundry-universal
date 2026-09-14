@@ -1,12 +1,37 @@
-## README.md
----
-
 # rag-foundry-universal
 
-**AI-Powered Code & Document Intelligence**
-*Query code repositories and documents like a developer assistant.*
+**Graph-aware retrieval, measured: 70% → 90% Recall@5** over raw vector
+search alone, by combining vector similarity with deterministic graph
+traversal (BFS over CALL/DEFINES/IMPORTS/INHERITS/OVERRIDES/DOCUMENTS edges).
+*Query Python and TypeScript/JavaScript codebases, plus documents, like a
+developer assistant.*
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sankar-ramamoorthy/rag-foundry-universal)
 [![CI](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml)
+
+**Project status:** CI-green on every PR and push to `main` · production
+releases are pinned to an exact Git SHA and go through an audited
+release process (see [Production deployments](#production-deployments)) ·
+retrieval architecture decisions (e.g. reranker) are evaluation-gated, not
+speculative (see [RAG Quality](#-rag-quality)).
+
+---
+
+> **📝 Illustrative example — not a live transcript.** The stack isn't
+> running in this environment; the exchange below shows the shape of a real
+> query/response, not an actual recorded run.
+
+**Example query → answer**
+
+> **Query:** `"what calls GraphAssembler.build() and what edges does it produce?"`
+>
+> **Answer:** `GraphAssembler.build()` is called from
+> `ingestion_service/src/pipeline/orchestrator.py` during repo ingestion. It
+> assembles the language-agnostic IR into the artifact graph, producing
+> `DEFINES` edges (module → class/function), `CALL` edges (resolved
+> call-site → callee), `IMPORTS` edges, and `INHERITS`/`OVERRIDES` edges for
+> class hierarchies. These are the edges the BFS graph-expansion step
+> traverses at query time.
 
 ---
 
@@ -34,14 +59,52 @@ It enables you to:
 * **Atomic Repo Rebuilds**: re-ingesting a repo replaces its whole graph in one transaction under a per-repo advisory lock — a failed or concurrent ingest can never corrupt or lose the previous graph
 * **RAG Query Paths**: Separate endpoints for code repo queries and document queries, combining vector similarity seeding with deterministic BFS graph expansion (empirically shown to matter — see RAG Quality below)
 * **OCR Support**: Tesseract for scanned PDFs/images
-* **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default; a Tailscale-reachable remote Ollama box, a cloud provider (Anthropic, OpenAI), or a free-tier endpoint (Groq, NVIDIA NIM, OpenRouter) can be made the default per-machine via a gitignored `.env` — no code changes (see `llm_service/models.yaml`). A dynamic model catalog (`GET /v1/models`, issue #46 follow-up, `WP-M6`) and a runtime-persisted model-policy admin endpoint (`PUT /v1/admin/policy/{slot}`, `WP-M7`) let the model backing any alias change without a redeploy; transient provider errors (rate limits, momentary unavailability) get an in-place retry with backoff before falling back to the next configured model (`WP-M8`, issue #125). Live-verified 2026-09-13: OpenRouter's free-tier models work end-to-end; Groq's free tier is usable but rotates which model is up; NVIDIA NIM is currently broken in this deployment (issues #123, #124) — see `DOCS/notes/20260913-free-provider-live-verification.md`. Windows & CPU-friendly: tested on laptops without a GPU.
+* **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default, switchable per-machine (Tailscale-reachable Ollama, Anthropic/OpenAI, or a free-tier endpoint) via a gitignored `.env` — no code changes; see `llm_service/models.yaml`, the live provider-verification notes in `DOCS/notes/20260913-free-provider-live-verification.md`, and the dynamic model catalog/admin-policy endpoints documented in [Service URLs](#-service-urls).
+
+---
+
+## 💡 Getting Started
+
+**Prerequisites**
+
+* Ensure **Ollama** is installed on the host
+* The containers expect Ollama served at `http://host.docker.internal:11434`
+* Pre-download the embedder (`mxbai-embed-large:latest`), the default
+  generation model (`phi4-mini:latest`), and the summarization-step model
+  (`granite4:350m`) — all three are used by the default local-Ollama
+  configuration
+* Optional: route generation through a different endpoint (a Tailscale-reachable remote Ollama box, or a cloud provider like Anthropic/OpenAI) by setting `LLM_DEFAULT_ALIAS` and the matching env vars in a gitignored `.env` — see `llm_service/models.yaml`. The committed default stays local-Ollama-only so a fresh clone works without any provider account.
+
+**Steps**
+
+```
+git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
+cd rag-foundry-universal
+
+docker compose up --build
+DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5434/ingestion_db \
+    uv run alembic upgrade head
+
+# File ingestion
+curl -X POST http://localhost:8001/v1/ingest/file -F file=@my_doc.txt
+
+# Repo ingestion
+curl -X POST http://localhost:8001/v1/ingest-repo -F git_url=https://github.com/your/repo.git
+
+# Code repo query
+curl -X POST http://localhost:8004/v1/rag -H "Content-Type: application/json" \
+     -d '{"query": "what calls add()", "repo_id": "<repo_id>", "top_k": 5}'
+
+# Document query
+curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/json" \
+     -d '{"query": "what are the key features", "top_k": 5}'
+```
 
 ---
 
 ## 🏗️ Architecture
+
 ```
-
-
 ┌─────────────────────────────┐
 │ Gradio UI :7860             │
 │ ├── Repo ingestion          │
@@ -82,17 +145,17 @@ It enables you to:
    │ ├── /v1/summarize/{id} │ generate summary
    │ └── /health           │ health check
    └───────────────────────┘
-
+```
 
 ---
 
 ## 🌐 Service URLs
 
 | Service                | Port | Endpoint Examples                                                      |
-| ---------------------- | ---- | ---------------------------------------------------------------------- |
+| ----------------------- | ---- | ------------------------------------------------------------------------ |
 | `ingestion_service`    | 8001 | `/v1/ingest/file`, `/v1/ingest-repo`, `/v1/graph/repos/{repo_id}`      |
 | `vector_store_service` | 8002 | `/v1/vectors/batch`, `/v1/vectors/search`, `/v1/vectors/search-by-doc` |
-| `llm_service`          | 8003 | `/generate`, `/v1/summarize/{ingestion_id}`                            |
+| `llm_service`          | 8003 | `/generate`, `/v1/summarize/{ingestion_id}`, `GET /v1/models`, `PUT /v1/admin/policy/{slot}` |
 | `rag_orchestrator`     | 8004 | `/v1/rag`, `/v1/rag/simple`                                            |
 | `gradio`               | 7860 | Web UI                                                                 |
 
@@ -128,43 +191,6 @@ It enables you to:
 | Text files               | Chunking + embedding        | ✅          | — flat                  | Document RAG    |
 | Images                   | OCR via Tesseract → chunks  | ✅          | — flat                  | Document RAG    |
 
-```
----
-
-## 💡 Getting Started
-
-**Prerequisites**
-
-* Ensure **Ollama** is installed on the host
-* The containers expect Ollama served at `http://host.docker.internal:11434`
-* Required embedder and at least the `granite4:350m` LLM should be pre-downloaded
-* Optional: route generation through a different endpoint (a Tailscale-reachable remote Ollama box, or a cloud provider like Anthropic/OpenAI) by setting `LLM_DEFAULT_ALIAS` and the matching env vars in a gitignored `.env` — see `llm_service/models.yaml`. The committed default stays local-Ollama-only so a fresh clone works without any provider account.
-
-**Steps**
-
-```
-git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
-cd rag-foundry-universal
-
-docker compose up --build
-DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5434/ingestion_db \
-    uv run alembic upgrade head
-
-# File ingestion
-curl -X POST http://localhost:8001/v1/ingest/file -F file=@my_doc.txt
-
-# Repo ingestion
-curl -X POST http://localhost:8001/v1/ingest-repo -F git_url=https://github.com/your/repo.git
-
-# Code repo query
-curl -X POST http://localhost:8004/v1/rag -H "Content-Type: application/json" \
-     -d '{"query": "what calls add()", "repo_id": "<repo_id>", "top_k": 5}'
-
-# Document query
-curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/json" \
-     -d '{"query": "what are the key features", "top_k": 5}'
-```
-
 ---
 
 ## Production deployments
@@ -177,13 +203,11 @@ so containers execute immutable image contents labeled with the exact Git SHA.
 Do not treat `latest` as a production release identifier; pin an exact Git SHA,
 tag, or image digest.
 
-Current production release: `prod-2026-09-12`, deployed from
-`202d91b34ee18e21c1dbb625d72acf9b82bce16d`. This is the first recorded
-production release using the audited Docker Compose process: CI-green main SHA,
-self-contained application images, no production source bind mounts, preserved
-Postgres storage, running-image OCI provenance checks, health checks, and a known
-RAG smoke test. See
-[`DOCS/releases/2026-09-12-prod-release.md`](/DOCS/releases/2026-09-12-prod-release.md).
+Every release follows an audited process — CI-green main SHA, self-contained
+application images, no production source bind mounts, preserved Postgres
+storage, running-image OCI provenance checks, health checks, and a known RAG
+smoke test — recorded per-release under `DOCS/releases/`. See the most recent
+release doc there for the current pinned SHA and deployment date.
 
 ---
 
@@ -230,69 +254,48 @@ in `DOCS/audit/`.
 
 ---
 
-## 🎯 RAG Quality (WP-Q0 baseline — 2026-08-27)
+## 🎯 RAG Quality
 
-Retrieval and answer quality were empirically evaluated before any further
-retrieval work (issue #49; full evidence in
-`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`): 10
-known-answer questions (5 code, 5 document) run end-to-end through
-production `/v1/rag` and `/v1/rag/simple`.
+Retrieval and answer quality are evaluated empirically, not assumed. The
+WP-Q0 baseline (issue #49; full evidence in
+`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) ran 10
+known-answer questions (5 code, 5 document) end-to-end through production
+`/v1/rag` and `/v1/rag/simple`:
 
 | Metric | Result |
 | --- | --- |
 | End-to-end pass rate | 9/10 (90%) |
 | Recall@5 — raw vector search only | 70% |
 | Recall@5 — production path (incl. graph expansion) | 90% |
-| Reranker decision | **NO-GO** — no failures fell in the rank 8–20 band a reranker could address |
+| Reranker decision | **NO-GO** |
 
 The 70%→90% gap is graph expansion recovering questions raw vector search
 alone missed — direct measured evidence for the graph-aware architecture,
-not just an architectural claim. The one failure had its correct evidence
-already ranked in the top 3; a clean-context test confirmed it as a
-prompting/context-assembly issue (the model conflated two similarly-worded
-latency figures from different documents), not a retrieval or generation
-capability problem. Two related findings were filed during the
-evaluation, out of scope to fix as part of it, and have since been fixed:
-[issue #64](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/64)
-(the code-query seed filter's `doc_type` match never fired, silently
-falling back to repo-scoped search on every code query — fixed in
-[#72](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/72)
-by filtering on `source_type` instead) and
-[issue #65](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/65)
-(near-duplicate chunk crowding from module/sole-child artifacts — fixed in
-[#73](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/73)
-by deduplicating near-identical seed chunks at retrieval time). The
-context-assembly issue itself — the model conflating similarly-worded
-figures from different documents — is now filed and fixed as
-[issue #79](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/79):
-each chunk in the assembled prompt is now prefixed with its source
-label (canonical ID / path), so chunks that share surface phrasing but
-describe different referents stay distinguishable to the model. See
-`DOCS/audit/00-Audit-Overview.md` and `DOCS/audit/04-Scalability-Plan.md`
-for how this gated further retrieval work.
+not just an architectural claim. The reranker decision is
+**evaluation-gated**: WP-Q0 found zero failures in the rank 8–20 band a
+reranker could address, so a reranker stays explicitly out of scope unless a
+future evaluation finds a non-trivial fraction of failures landing there and
+not already explained by a chunking or generation defect (full reversal
+criterion in `DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4).
 
-**Update (2026-09-06):** a separate retrieval-quality bug, independent of
-the reranker question above, was found, fixed, and verified live —
-[issue #89](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/89):
-graph expansion could correctly discover the right implementation evidence,
-only for authority-blind ranking to discard it at the `MAX_EXPANDED_DOCS`
-cap. Fixed with relation-type-aware expansion ranking and confirmed against
-live, freshly-ingested data (a previously-truncated target's rank moved
-from 24 to 12 and it started reaching the final LLM context), with zero
-regressions elsewhere. A distinct, still-open limitation — same-relation-type
-candidate overload, which ranking alone can't fully resolve — is tracked
-separately as [issue #91](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/91).
-Full evidence: `DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`.
+Retrieval-quality fixes and a follow-up evaluation round (issues #64, #65,
+#79, #89, #91) are tracked in
+`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md` and
+`DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`,
+including a live-verified graph-expansion ranking fix (#89) and one
+still-open limitation around same-relation-type candidate overload (#91).
+See `DOCS/audit/00-Audit-Overview.md` for how these results gate further
+retrieval work.
 
 ---
 
 ## 🤖 Future Vision
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
-* Retrieval quality improvements driven by evidence, not speculation: a reranker is **explicitly not planned** unless a future evaluation shows failures landing in the rank 8–20 band — WP-Q0 (2026-08-27) found none. Issues #64, #65, and #79 (the code-query filter bug, near-duplicate chunk crowding, and unlabeled-chunk context-assembly conflation that WP-Q0 surfaced) are all fixed — see `DOCS/audit/00-Audit-Overview.md`
+* Retrieval quality improvements driven by evidence, not speculation — see [RAG Quality](#-rag-quality) for the current evaluation-gated reranker decision
 * Multi-language codebase graphs beyond today's Python + TypeScript/JavaScript support — Phase 3 is in progress: `WP-L1` (issue #81) refactored ingestion onto a language-agnostic IR and a single `GraphAssembler` with zero behavior change; `WP-L2` (issue #83) shipped the TypeScript/JavaScript tree-sitter extractor; `WP-L6a` (issue #85) shipped a `language` filter on graph-aware queries, pulled forward to validate `WP-L2` against a real mixed-language repo. Rust and Java extractors (`WP-L3`/`WP-L4`) are next, see `DOCS/audit/03-Multi-Language-Graph-Plan.md`
 * Enhanced observability across ingestion and query pipelines
-* Fix NVIDIA NIM, currently broken in the live deployment: the fallback chain's error message only surfaces the last-attempted model's failure, masking NIM's real error (issue #123), and the local-Ollama safety net it falls through to references a model not actually pulled on the host (issue #124)
+* Free-tier LLM provider reliability — NVIDIA NIM is currently broken in the live deployment (issues #123, #124); see `DOCS/notes/20260913-free-provider-live-verification.md` for current provider status
 
 ---
 
@@ -304,6 +307,6 @@ Full evidence: `DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailsca
 
 ## 📄 License
 
-MIT License
+Apache License 2.0 — see [`LICENSE`](/LICENSE).
 
 ---
