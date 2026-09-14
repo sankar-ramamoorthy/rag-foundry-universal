@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Dict, List
 
 from tree_sitter import Language, Node, Parser, Query, QueryCursor
+import tree_sitter_java as ts_java
 import tree_sitter_javascript as ts_javascript
 import tree_sitter_rust as ts_rust
 import tree_sitter_typescript as ts_typescript
@@ -27,6 +28,7 @@ _TSX_SUFFIXES = (".tsx",)
 _TS_SUFFIXES = (".ts",)
 _JS_SUFFIXES = (".js", ".jsx", ".mjs", ".cjs")
 _RS_SUFFIXES = (".rs",)
+_JAVA_SUFFIXES = (".java",)
 
 
 @lru_cache(maxsize=None)
@@ -39,6 +41,8 @@ def _language_for(suffix: str) -> Language:
         return Language(ts_javascript.language())
     if suffix in _RS_SUFFIXES:
         return Language(ts_rust.language())
+    if suffix in _JAVA_SUFFIXES:
+        return Language(ts_java.language())
     raise ValueError(f"No tree-sitter grammar registered for suffix {suffix!r}")
 
 
