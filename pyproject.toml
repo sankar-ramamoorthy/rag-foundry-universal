@@ -25,10 +25,16 @@ dependencies = [
     "litellm>=1.93.0",
     "pyyaml>=6.0.3",
     "tree_sitter>=0.20.0",
+    # WP-L5 (issue #134): tree-sitter==0.26.0 causes native access
+    # violations (segfaults) on real-world files — see
+    # ingestion_service/pyproject.toml for details. Keep this pin in
+    # sync with that file.
+    "tree-sitter>=0.23.0,<0.26.0",
     "tree-sitter-typescript>=0.23.0",
     "tree-sitter-javascript>=0.23.0",
     "tree-sitter-rust>=0.23.0",
     "tree-sitter-java>=0.23.0",
+    "tree-sitter-python>=0.23.0",
 ]
 
 [project.optional-dependencies]
