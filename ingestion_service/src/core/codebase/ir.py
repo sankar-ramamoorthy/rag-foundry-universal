@@ -8,10 +8,16 @@ language's own syntax tree.
 
 InheritRecord exists for extractors where a base/trait reference isn't
 naturally expressed as class metadata (e.g. Rust's `impl Trait for
-Type`, WP-L3). The current Python extractor keeps base-class strings on
-SymbolRecord.metadata["bases"] instead — GraphAssembler's inheritance
-resolution reads that shape today; InheritRecord is unused until a
-future extractor needs it.
+Type`, WP-L3). Python/TS keep base-class strings on
+SymbolRecord.metadata["bases"] instead, since `extends`/`implements` are
+declared inline on the class itself; Rust's RustExtractor emits
+InheritRecord instead, because an `impl Trait for Type` block can live
+in a different file than either Type or Trait's own definition —
+GraphAssembler._resolve_inherit_records resolves both `child_symbol_path`
+(here: the impl target's as-written type name, not necessarily a
+locally-known symbol_path) and `parent_name` independently, relative to
+the impl block's own file, rather than assuming either is already a
+known local entity.
 """
 from __future__ import annotations
 

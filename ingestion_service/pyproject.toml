@@ -25,6 +25,7 @@ dependencies = [
     "tree_sitter>=0.20.0",
     "tree-sitter-typescript>=0.23.0",
     "tree-sitter-javascript>=0.23.0",
+    "tree-sitter-rust>=0.23.0",
     "GitPython>=3.1.43",
     "markdown-it-py>=3.0.0",
 

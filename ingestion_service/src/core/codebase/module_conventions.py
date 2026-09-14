@@ -9,7 +9,7 @@ changes to import resolution itself.
 from __future__ import annotations
 
 import posixpath
-from typing import Dict, Optional, Protocol
+from typing import Dict, List, Optional, Protocol, Tuple
 
 
 class ModulePathConvention(Protocol):
@@ -90,6 +90,92 @@ class TypeScriptModuleConvention:
         if parts and parts[-1] == "index":
             parts = parts[:-1]
         return "/".join(parts) if parts else stripped
+
+
+class RustModuleConvention:
+    """WP-L3: crate-qualified dotted-path convention for Rust `.rs` files
+    (DOCS/audit/03-Multi-Language-Graph-Plan.md §3 WP-L3). Dotted paths use
+    "." as the separator (not "::") on purpose: GraphAssembler.
+    _resolve_import_target's `as_module = f"{dotted_base}.{name}"` check
+    (the "is the imported name itself a submodule" case) hardcodes "."
+    between a resolved module path and an imported name — using "." here
+    makes that check work for Rust exactly as it already does for Python,
+    with zero GraphAssembler changes.
+
+    File->module rules (plan doc): `src/lib.rs`/`src/main.rs` = crate
+    root, `foo/mod.rs` == `foo.rs`, and a multi-crate workspace gets one
+    namespace prefix per crate (each `Cargo.toml` directory) so same-named
+    modules in different crates never collide — `RepoGraphBuilder` builds
+    the `crate_roots` map once per build() call via a pre-scan, since
+    (unlike Python/TS) Rust's module identity isn't derivable from one
+    file's path in isolation.
+
+    v1 limitation (matches WP-L2's "no tsconfig paths" precedent): only
+    the standard file-path-based module convention is modeled. `#[path]`
+    attribute overrides and non-standard `mod` remapping are not
+    supported — a `mod foo;` declaration is assumed to always point at
+    `foo.rs`/`foo/mod.rs` next to the declaring file. A bare `use`
+    (leading segment neither `crate`/`self`/`super`) is left exactly as
+    written (level 0) — an external crate, or a same-named local crate,
+    are not disambiguated in v1.
+    """
+
+    def __init__(self, crate_roots: Optional[Dict[str, str]] = None):
+        # {crate_root_relative_dir: crate_name}; "" is a valid key (repo
+        # root itself is a crate root). Falls back to a single implicit
+        # crate named "crate" when no Cargo.toml was found anywhere, so
+        # single-crate repos/fixtures work without one.
+        self._crate_roots = crate_roots or {}
+
+    def _crate_for(self, relative_path: str) -> Tuple[str, str]:
+        best_root = ""
+        best_name = self._crate_roots.get("", "crate")
+        for root, name in self._crate_roots.items():
+            if not root:
+                continue
+            if relative_path == root or relative_path.startswith(root + "/"):
+                if len(root) > len(best_root):
+                    best_root, best_name = root, name
+        return best_root, best_name
+
+    def _module_parts(self, relative_path: str) -> List[str]:
+        crate_root, _ = self._crate_for(relative_path)
+        within = relative_path
+        if crate_root:
+            within = within[len(crate_root):].lstrip("/")
+        if within.startswith("src/"):
+            within = within[len("src/"):]
+        stripped = within[:-3] if within.endswith(".rs") else within
+        parts = [p for p in stripped.split("/") if p]
+        if parts and parts[-1] in ("lib", "main", "mod"):
+            parts = parts[:-1]
+        return parts
+
+    def dotted_path(self, relative_path: str) -> Optional[str]:
+        if not relative_path.endswith(".rs"):
+            return None
+        _, crate_name = self._crate_for(relative_path)
+        segments = [crate_name] + self._module_parts(relative_path)
+        return ".".join(segments)
+
+    def absolute_import_base(
+        self, relative_path: str, base: str, level: int
+    ) -> str:
+        if level == 0:
+            return base  # bare path: external crate, or same-name local
+                          # crate reference — left as-written (v1)
+        _, crate_name = self._crate_for(relative_path)
+        if level == 1:  # `crate::`
+            return f"{crate_name}.{base}" if base else crate_name
+        own = self.dotted_path(relative_path) or crate_name
+        if level == 2:  # `self::`
+            return f"{own}.{base}" if base else own
+        # level >= 3: `super::` repeated (level - 2) times
+        parts = own.split(".")
+        supers = level - 2
+        parts = parts[: max(1, len(parts) - supers)]
+        prefix = ".".join(parts)
+        return f"{prefix}.{base}" if base else prefix
 
 
 class CompositeModuleConvention:

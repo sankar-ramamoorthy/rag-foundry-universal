@@ -31,13 +31,22 @@ logger = logging.getLogger(__name__)
 
 # IS8: code artifact types eligible for DOCUMENTS relationships
 # WP-L2: INTERFACE (TS/JS) is documentable the same way CLASS is.
-DOCUMENTABLE_TYPES = {"CLASS", "INTERFACE", "FUNCTION", "METHOD", "MODULE"}
+# WP-L3: STRUCT/ENUM/TRAIT (Rust) are documentable the same way.
+DOCUMENTABLE_TYPES = {
+    "CLASS", "INTERFACE", "FUNCTION", "METHOD", "MODULE",
+    "STRUCT", "ENUM", "TRAIT",
+}
 
-# WP-L2: nodes eligible for INHERITS resolution (extends/implements)  and
+# WP-L2: nodes eligible for INHERITS resolution (extends/implements) and
 # for OVERRIDES's base-hierarchy walk. CLASS-only under WP-L1 (Python has
 # no interface-like kind); TS/JS interfaces extend other interfaces and
 # classes implement them, so both kinds participate identically.
-INHERITABLE_TYPES = {"CLASS", "INTERFACE"}
+# WP-L3: STRUCT/ENUM (the `impl Trait for Type` child) and TRAIT (the
+# parent side) both participate — see _resolve_inherit_records, which
+# resolves `impl Trait for Type` edges independently of same-file
+# metadata.bases (Rust impls routinely live in a different file than
+# either the type or the trait they connect).
+INHERITABLE_TYPES = {"CLASS", "INTERFACE", "STRUCT", "ENUM", "TRAIT"}
 
 # WP-L6a: a file's language is intrinsic to its path, so it's derived here
 # once rather than duplicated as metadata in every extractor (plan.md's
@@ -53,6 +62,7 @@ LANGUAGE_BY_SUFFIX = {
     ".jsx": "javascript",
     ".mjs": "javascript",
     ".cjs": "javascript",
+    ".rs": "rust",
 }
 
 
@@ -89,6 +99,13 @@ class GraphAssembler:
                 )
             for cs in result.calls:
                 graph.call_sites.append(self._lower_call_site(relative_path, cs))
+            for ir in result.inherits:
+                graph.inherit_records.append({
+                    "relative_path": relative_path,
+                    "child_name": ir.child_symbol_path,
+                    "parent_name": ir.parent_name,
+                    "kind": ir.kind,
+                })
 
         symbol_table = build_symbol_table(graph)
         self._attach_defines(graph)
@@ -190,7 +207,7 @@ class GraphAssembler:
     def _attach_defines(self, graph: RepoGraph):
         definition_types = {
             "CLASS", "INTERFACE", "FUNCTION", "METHOD",
-            "MARKDOWN_SECTION",
+            "MARKDOWN_SECTION", "STRUCT", "ENUM", "TRAIT",
         }
 
         for entity in graph.all_entities():
@@ -401,6 +418,8 @@ class GraphAssembler:
                 record["bases"].append(base_str)
                 record["confidence"] = max(record["confidence"], confidence)
 
+        self._resolve_inherit_records(graph, symbol_table, edges)
+
         for (from_cid, to_cid) in sorted(edges):
             record = edges[(from_cid, to_cid)]
             graph.add_relationship({
@@ -414,6 +433,49 @@ class GraphAssembler:
             })
 
         self._emit_overrides(graph, classes)
+
+    def _resolve_inherit_records(
+        self, graph: RepoGraph, symbol_table, edges: dict
+    ) -> None:
+        """WP-L3: fold `graph.inherit_records` (raw `impl Trait for Type`
+        facts, ir.py's InheritRecord) into the same `edges` accumulator
+        `_resolve_inheritance` uses for metadata.bases. Unlike a base
+        string attached to its own class's SymbolRecord, neither side of
+        an inherit_record is known to be a real local entity in advance —
+        both `child_name` and `parent_name` are resolved independently
+        through _resolve_base, relative to the impl block's own file (Rust
+        name resolution for both names follows that file's own `use`
+        imports, regardless of where the type/trait are actually
+        defined). Mutates `edges` in place; no-op for extractors that
+        never populate inherit_records (Python/TS today)."""
+        for rec in graph.inherit_records:
+            rel = rec["relative_path"]
+            child_id, _ = self._resolve_base(
+                graph, symbol_table, rel, rec["child_name"]
+            )
+            child = graph.get_entity_by_id(child_id)
+            if not child or child.get("artifact_type") not in INHERITABLE_TYPES:
+                continue  # only attach to a real, locally-known type
+
+            parent_id, confidence = self._resolve_base(
+                graph, symbol_table, rel, rec["parent_name"]
+            )
+            parent = graph.get_entity_by_id(parent_id)
+            if not parent or parent["id"] == child["id"]:
+                continue
+
+            if parent.get("artifact_type") in INHERITABLE_TYPES:
+                bases = graph.class_bases.setdefault(child["id"], [])
+                if parent["id"] not in bases:
+                    bases.append(parent["id"])
+
+            key = (child["canonical_id"], parent["canonical_id"])
+            record = edges.setdefault(
+                key, {"bases": [], "confidence": confidence}
+            )
+            if rec["parent_name"] not in record["bases"]:
+                record["bases"].append(rec["parent_name"])
+            record["confidence"] = max(record["confidence"], confidence)
 
     def _emit_overrides(self, graph: RepoGraph, classes: list) -> None:
         """METHOD --OVERRIDES--> base METHOD for each method whose name is
@@ -715,13 +777,14 @@ class GraphAssembler:
     def _enclosing_class_id(
         self, site: dict, graph: RepoGraph
     ) -> Optional[str]:
-        """Nearest enclosing CLASS of a call site (via the parent chain)."""
+        """Nearest enclosing CLASS (WP-L3: or STRUCT/ENUM, Rust's `self`-
+        receiver equivalents) of a call site, via the parent chain."""
         current = site.get("parent_id")
         while current:
             entity = graph.get_entity_by_id(current)
             if entity is None:
                 return None
-            if entity.get("artifact_type") == "CLASS":
+            if entity.get("artifact_type") in ("CLASS", "STRUCT", "ENUM"):
                 return entity.get("id")
             current = entity.get("parent_id")
         return None

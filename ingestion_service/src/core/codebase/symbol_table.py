@@ -11,18 +11,29 @@ Layers:
 - global: symbol_name -> sorted list of canonical_ids
   (a list, so ambiguity is surfaced instead of last-write-wins.)
 
-Indexed artifact types: CLASS, INTERFACE, FUNCTION, METHOD. (WP-L2:
-INTERFACE added so TS/JS `implements`/`extends Interface` resolves to the
-actual INTERFACE node instead of falling through to EXTERNAL_SYMBOL —
-same priority tier as CLASS, since both are referable by bare name.)
+Indexed artifact types: CLASS, INTERFACE, FUNCTION, METHOD, STRUCT, ENUM,
+TRAIT. (WP-L2: INTERFACE added so TS/JS `implements`/`extends Interface`
+resolves to the actual INTERFACE node instead of falling through to
+EXTERNAL_SYMBOL — same priority tier as CLASS, since both are referable
+by bare name. WP-L3: STRUCT/ENUM/TRAIT added for the same reason — Rust's
+`Type::method()`/`impl Trait for Type` resolution needs the struct/enum/
+trait node itself indexed, not just its methods; this is the exact same
+class of gap WP-L2 hit, and this docstring plus `_PRIORITY` below are the
+two independent literals that must move together, or a new kind is
+silently invisible to lookup/lookup_in_file/lookup_global even though
+build_symbol_table's own membership check looks obviously complete.)
 """
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
 
-# FUNCTION/CLASS/INTERFACE are callable/referable by bare name; METHOD is
-# not, so it only matches when nothing else in the file has the name.
-_PRIORITY = {"CLASS": 0, "INTERFACE": 0, "FUNCTION": 0, "METHOD": 1}
+# FUNCTION/CLASS/INTERFACE/STRUCT/ENUM/TRAIT are callable/referable by
+# bare name; METHOD is not, so it only matches when nothing else in the
+# file has the name.
+_PRIORITY = {
+    "CLASS": 0, "INTERFACE": 0, "FUNCTION": 0, "METHOD": 1,
+    "STRUCT": 0, "ENUM": 0, "TRAIT": 0,
+}
 
 
 class SymbolTable:
@@ -83,14 +94,20 @@ class SymbolTable:
 # Builder Function
 # ----------------------------------------------------------------
 
+_INDEXED_TYPES = {
+    "CLASS", "INTERFACE", "FUNCTION", "METHOD", "STRUCT", "ENUM", "TRAIT",
+}
+
+
 def build_symbol_table(graph) -> SymbolTable:
-    """Build a SymbolTable from a RepoGraph (CLASS/INTERFACE/FUNCTION/METHOD)."""
+    """Build a SymbolTable from a RepoGraph (CLASS/INTERFACE/FUNCTION/
+    METHOD/STRUCT/ENUM/TRAIT — _INDEXED_TYPES)."""
     table = SymbolTable()
 
     for entity in graph.all_entities():
         artifact_type = entity.get("artifact_type")
 
-        if artifact_type in {"CLASS", "INTERFACE", "FUNCTION", "METHOD"}:
+        if artifact_type in _INDEXED_TYPES:
             name = entity.get("name")
             canonical_id = entity.get("canonical_id")
 
