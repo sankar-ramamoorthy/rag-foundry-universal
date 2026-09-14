@@ -153,22 +153,27 @@ Each language extractor is *only* responsible for producing correct IR. **All** 
 - [x] Rebuild determinism test passes
 
 ### WP-L3 — Rust extractor
+**Status:** Shipped (issue #130, PR #131). This section's checklist was
+never updated when the work merged (2026-09-14) — caught during a later
+README/status-doc pass; see `DOCS/status.md`.
 **Goal:** `.rs` files produce MODULE/STRUCT/ENUM/TRAIT/IMPL/FUNCTION/METHOD, `use`-based IMPORTS, CALL sites, TRAIT_IMPL edges.
 **Files:** `extractors/treesitter/rust.py` + queries.
 **Directions:** module map must encode Rust's file→module rules (`src/lib.rs` = crate root, `foo/mod.rs` ≡ `foo.rs`, path = crate::… within one crate; multi-crate workspaces: treat each `Cargo.toml` dir as a namespace prefix). `impl Type { fn m }` → symbol `Type.m`; `impl Trait for Type` → TRAIT_IMPL edge + methods under `Type.m`. Macros: skip bodies, record `macro_invocation` metadata counts.
 **Acceptance criteria:**
-- [ ] Fixture crate with `mod` tree, trait + impl, cross-module `use crate::…` produces expected golden snapshot
-- [ ] `Type::new()` and method-on-`self` call sites resolve to `Type.new` / enclosing type methods
-- [ ] Workspace with two crates: no canonical-ID collisions between same-named modules
-- [ ] Determinism test
+- [x] Fixture crate with `mod` tree, trait + impl, cross-module `use crate::…` produces expected golden snapshot (`tests/fixtures/rust_repo/`, `test_rust_repo_graph_golden.py`)
+- [x] `Type::new()` and method-on-`self` call sites resolve to `Type.new` / enclosing type methods
+- [x] Workspace with two crates: no canonical-ID collisions between same-named modules
+- [x] Determinism test
 
 ### WP-L4 — Java extractor
+**Status:** Shipped (issue #132, PR #133). Same doc-lag as WP-L3 above —
+checklist wasn't updated at merge time.
 **Goal:** `.java` files produce CLASS/INTERFACE/ENUM/RECORD/METHOD nodes, IMPORTS edges, EXTENDS/IMPLEMENTS, CALL sites.
 **Directions:** package decl + class name → module identity (still `canonical_id = relative_path#Outer.Inner.method` — the *path* remains the namespace per ADR-031; store `package.fqcn` in metadata for search). Overloads: single symbol_path, `metadata.overload_signatures=[…]`. Annotations → metadata like decorators.
 **Acceptance criteria:**
-- [ ] Fixture with packages, nested classes, interface implementation, overloads → golden snapshot
-- [ ] `import com.acme.Util` + `Util.calc()` resolves cross-file when `com/acme/Util.java` is in-repo, else EXTERNAL
-- [ ] Determinism test
+- [x] Fixture with packages, nested classes, interface implementation, overloads → golden snapshot (`tests/fixtures/java_repo/`, `test_java_repo_graph_golden.py`)
+- [x] `import com.acme.Util` + `Util.calc()` resolves cross-file when `com/acme/Util.java` is in-repo, else EXTERNAL
+- [x] Determinism test
 
 ### WP-L5 — Python on tree-sitter (parity migration, last)
 **Status:** Stage A + Stage B shipped (issue #134). `PythonTreeSitterExtractor`

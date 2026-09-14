@@ -34,8 +34,10 @@ document.
   for the rollback mechanism and parity evidence.
 - **TypeScript / JavaScript** — tree-sitter-based extraction, shipped
   (WP-L2, issue #83).
-- **Rust, Java** — not yet shipped (WP-L3/WP-L4 — planned, not started).
-  See `DOCS/audit/03-Multi-Language-Graph-Plan.md` for the plan.
+- **Rust** — tree-sitter-based extraction, shipped (WP-L3, issue #130,
+  [PR #131](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/131)).
+- **Java** — tree-sitter-based extraction, shipped (WP-L4, issue #132,
+  [PR #133](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/133)).
 - **Retrieval `language` filter** on graph-aware queries — shipped
   (WP-L6a, issue #85), pulled forward ahead of WP-L3/L4 to validate
   WP-L2 against a real mixed-language repo.
