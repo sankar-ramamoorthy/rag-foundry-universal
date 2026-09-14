@@ -100,10 +100,10 @@ See [[00-Audit-Overview]]'s 2026-08-30 status.
 
 - [x] [[03-Multi-Language-Graph-Plan#WP-L1 — IR + GraphAssembler refactor (the enabler)|WP-L1]] IR + GraphAssembler (absorbs Track A learnings) — done 2026-08-30, issue #81
 - [x] [[03-Multi-Language-Graph-Plan#WP-L2 — tree-sitter runtime + TypeScript/JavaScript extractor (first new language)|WP-L2]] TypeScript/JavaScript — done 2026-08-30, issue #83 (`specs/002-typescript-js-extractor/`)
-- [ ] [[03-Multi-Language-Graph-Plan#WP-L3 — Rust extractor|WP-L3]] Rust
-- [ ] [[03-Multi-Language-Graph-Plan#WP-L4 — Java extractor|WP-L4]] Java
+- [x] [[03-Multi-Language-Graph-Plan#WP-L3 — Rust extractor|WP-L3]] Rust — done 2026-09-14, issue #130, PR #131
+- [x] [[03-Multi-Language-Graph-Plan#WP-L4 — Java extractor|WP-L4]] Java — done 2026-09-14, issue #132, PR #133
 - [~] [[03-Multi-Language-Graph-Plan#WP-L6 — Query/UI awareness of language|WP-L6]] Language filters — **retrieval-filter half done** as WP-L6a (issue #85, 2026-08-31), pulled forward ahead of WP-L3/L4 to validate WP-L2 against a real mixed-language repo; Gradio dropdown half still open
-- [ ] [[03-Multi-Language-Graph-Plan#WP-L5 — Python on tree-sitter (parity migration, last)|WP-L5]] Python parity migration (can slip to Phase 5)
+- [x] [[03-Multi-Language-Graph-Plan#WP-L5 — Python on tree-sitter (parity migration, last)|WP-L5]] Python parity migration — done 2026-09-14, issue #134, PR #135
 
 **Exit criteria:** a polyglot fixture monorepo (py+ts+rs+java) ingests into one graph; language-filtered queries work; golden-file determinism suite green.
 
