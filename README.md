@@ -17,21 +17,11 @@ speculative (see [RAG Quality](#-rag-quality)).
 
 ---
 
-> **📝 Illustrative example — not a live transcript.** The stack isn't
-> running in this environment; the exchange below shows the shape of a real
-> query/response, not an actual recorded run.
+**Graph-Aware RAG Query in action** — real run against this repo
+(`sankar-ramamoorthy/rag-foundry-universal`), Gradio UI, remote Ollama
+(`Qwen3:4b`) over Tailscale, 2026-09-14:
 
-**Example query → answer**
-
-> **Query:** `"what calls GraphAssembler.build() and what edges does it produce?"`
->
-> **Answer:** `GraphAssembler.build()` is called from
-> `ingestion_service/src/pipeline/orchestrator.py` during repo ingestion. It
-> assembles the language-agnostic IR into the artifact graph, producing
-> `DEFINES` edges (module → class/function), `CALL` edges (resolved
-> call-site → callee), `IMPORTS` edges, and `INHERITS`/`OVERRIDES` edges for
-> class hierarchies. These are the edges the BFS graph-expansion step
-> traverses at query time.
+![Graph-Aware RAG Query example: "What calls GraphAssembler.assemble() and what edges does it produce?"](DOCS/assets/screenshots/graph-aware-rag-query-example.png)
 
 ---
 
