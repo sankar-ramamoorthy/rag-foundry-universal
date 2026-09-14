@@ -9,11 +9,8 @@ developer assistant.*
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sankar-ramamoorthy/rag-foundry-universal)
 [![CI](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml)
 
-**Project status:** CI-green on every PR and push to `main` · production
-releases are pinned to an exact Git SHA and go through an audited
-release process (see [Production deployments](#production-deployments)) ·
-retrieval architecture decisions (e.g. reranker) are evaluation-gated, not
-speculative (see [RAG Quality](#-rag-quality)).
+**Status:** see [`DOCS/status.md`](/DOCS/status.md) for current language
+support, shipped work, and known issues.
 
 ---
 
@@ -31,7 +28,7 @@ speculative (see [RAG Quality](#-rag-quality)).
 
 It enables you to:
 
-* Query code repositories with AST-extracted graph relationships
+* Query code repositories with graph relationships extracted from source
 * Query Markdown and other documents semantically with section-level context
 * Combine deterministic graph traversal with LLM reasoning
 * Ingest PDFs, DOCX, PPTX, XLSX, CSV, Markdown, and text using a universal preprocessor (Docling)
@@ -42,10 +39,10 @@ It enables you to:
 ## 🧩 Key Features
 
 * **Dual Ingestion Paths**: Git repositories (graph-aware) and uploaded files (Docling + chunking)
-* **Deterministic Artifact Graph**: AST-based extraction for Python, tree-sitter-based extraction for TypeScript/JavaScript (modules, classes, interfaces, functions, calls, imports, inheritance) — five edge types: `CALL`, `DEFINES`, `IMPORTS`, `INHERITS`, `OVERRIDES`. A `language` filter is available on graph-aware queries.
-* **Cross-linking of Markdown to Code**: DOCUMENTS relationships connect Markdown headings to the code they describe (ADR-048)
+* **Deterministic Artifact Graph**: tree-sitter-based extraction across supported languages (modules, classes, interfaces, functions, calls, imports, inheritance) — five edge types: `CALL`, `DEFINES`, `IMPORTS`, `INHERITS`, `OVERRIDES`. A `language` filter is available on graph-aware queries.
+* **Cross-linking of Markdown to Code**: DOCUMENTS relationships connect Markdown headings to the code they describe
 * **Vector Embeddings**: Ollama embedder, 1024 dimensions (mxbai-embed-large:latest), batched end-to-end (embedder batches + bulk vector writes)
-* **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — p95 ≈ 62 ms measured at Phase 1 benchmark scale (56k artifacts, see below). The "latency independent of corpus size" goal is a target for `DOCS/audit/04-Scalability-Plan.md`'s WP-S4 (<100 ms p95 at 1M+ chunk rows) — not yet measured at that scale.
+* **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — p95 ≈ 62 ms measured at Phase 1 benchmark scale (56k artifacts, see below). The "latency independent of corpus size" goal (<100 ms p95 at 1M+ chunk rows) is a target tracked in `DOCS/audit/04-Scalability-Plan.md` — not yet measured at that scale.
 * **Atomic Repo Rebuilds**: re-ingesting a repo replaces its whole graph in one transaction under a per-repo advisory lock — a failed or concurrent ingest can never corrupt or lose the previous graph
 * **RAG Query Paths**: Separate endpoints for code repo queries and document queries, combining vector similarity seeding with deterministic BFS graph expansion (empirically shown to matter — see RAG Quality below)
 * **OCR Support**: Tesseract for scanned PDFs/images
@@ -157,7 +154,7 @@ curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/j
 | ------------------- | --------------------------------- |
 | API / Orchestration | Python + FastAPI                  |
 | Database            | PostgreSQL + `pgvector`           |
-| Code Parsing        | Python AST; tree-sitter (TypeScript/JavaScript) |
+| Code Parsing        | tree-sitter (Python, TypeScript/JavaScript) |
 | Markdown Parsing    | `markdown-it-py`                  |
 | OCR                 | Tesseract                         |
 | Embeddings          | Ollama (1024d)                    |
@@ -172,7 +169,7 @@ curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/j
 
 | Content Type             | Path                        | Embeddings | Graph                   | Query           |
 | ------------------------ | --------------------------- | ---------- | ----------------------- | --------------- |
-| Python code              | AST + canonical graph       | ✅          | ✅ CALL, DEFINES, IMPORTS, INHERITS, OVERRIDES | Graph-aware RAG |
+| Python code              | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS, OVERRIDES | Graph-aware RAG |
 | TypeScript / JavaScript  | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS | Graph-aware RAG |
 | Markdown (repo)          | Section extraction          | ✅          | ✅ DEFINES               | Graph-aware RAG |
 | Markdown (upload)        | Section extraction          | ✅          | ✅ DEFINES               | Document RAG    |
@@ -247,7 +244,7 @@ in `DOCS/audit/`.
 ## 🎯 RAG Quality
 
 Retrieval and answer quality are evaluated empirically, not assumed. The
-WP-Q0 baseline (issue #49; full evidence in
+baseline (full evidence in
 `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) ran 10
 known-answer questions (5 code, 5 document) end-to-end through production
 `/v1/rag` and `/v1/rag/simple`:
@@ -262,18 +259,19 @@ known-answer questions (5 code, 5 document) end-to-end through production
 The 70%→90% gap is graph expansion recovering questions raw vector search
 alone missed — direct measured evidence for the graph-aware architecture,
 not just an architectural claim. The reranker decision is
-**evaluation-gated**: WP-Q0 found zero failures in the rank 8–20 band a
-reranker could address, so a reranker stays explicitly out of scope unless a
-future evaluation finds a non-trivial fraction of failures landing there and
-not already explained by a chunking or generation defect (full reversal
-criterion in `DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4).
+**evaluation-gated**: that baseline found zero failures in the rank 8–20
+band a reranker could address, so a reranker stays explicitly out of
+scope unless a future evaluation finds a non-trivial fraction of
+failures landing there and not already explained by a chunking or
+generation defect (full reversal criterion in
+`DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4).
 
-Retrieval-quality fixes and a follow-up evaluation round (issues #64, #65,
-#79, #89, #91) are tracked in
+Retrieval-quality fixes and a follow-up evaluation round are tracked in
 `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md` and
 `DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`,
-including a live-verified graph-expansion ranking fix (#89) and one
-still-open limitation around same-relation-type candidate overload (#91).
+including a live-verified graph-expansion ranking fix and one still-open
+limitation around same-relation-type candidate overload — see
+[`DOCS/status.md`](/DOCS/status.md) for the current ticket-level detail.
 See `DOCS/audit/00-Audit-Overview.md` for how these results gate further
 retrieval work.
 
@@ -283,9 +281,9 @@ retrieval work.
 
 * Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
 * Retrieval quality improvements driven by evidence, not speculation — see [RAG Quality](#-rag-quality) for the current evaluation-gated reranker decision
-* Multi-language codebase graphs beyond today's Python + TypeScript/JavaScript support — Phase 3 is in progress: `WP-L1` (issue #81) refactored ingestion onto a language-agnostic IR and a single `GraphAssembler` with zero behavior change; `WP-L2` (issue #83) shipped the TypeScript/JavaScript tree-sitter extractor; `WP-L6a` (issue #85) shipped a `language` filter on graph-aware queries, pulled forward to validate `WP-L2` against a real mixed-language repo. Rust and Java extractors (`WP-L3`/`WP-L4`) are next, see `DOCS/audit/03-Multi-Language-Graph-Plan.md`
+* Multi-language codebase graphs beyond today's Python and TypeScript/JavaScript support — Rust and Java extractors are next; see [`DOCS/status.md`](/DOCS/status.md) for current language support and `DOCS/audit/03-Multi-Language-Graph-Plan.md` for the full plan
 * Enhanced observability across ingestion and query pipelines
-* Free-tier LLM provider reliability — NVIDIA NIM is currently broken in the live deployment (issues #123, #124); see `DOCS/notes/20260913-free-provider-live-verification.md` for current provider status
+* Free-tier LLM provider reliability — see [`DOCS/status.md`](/DOCS/status.md) for current provider status
 
 ---
 
