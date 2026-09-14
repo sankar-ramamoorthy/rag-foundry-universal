@@ -161,10 +161,15 @@ def test_syntax_error_file_yields_partial_extraction(treesitter_enabled):
     assert "pkg/broken.py#good_after" in ids
 
 
-def test_syntax_error_file_ast_extractor_skips_whole_file():
+def test_syntax_error_file_ast_extractor_skips_whole_file(monkeypatch):
     """Documents PythonASTExtractor's existing (unchanged) behavior on the
     same fixture, for contrast with the tree-sitter test above — this is
-    the behavior WP-L5 improves on, not something it must preserve."""
+    the behavior WP-L5 improves on, not something it must preserve.
+    Explicitly forces PYTHON_TREESITTER_ENABLED=False (Stage B made
+    tree-sitter the default) so this test keeps exercising AST regardless
+    of that default."""
+    monkeypatch.setenv("PYTHON_TREESITTER_ENABLED", "false")
+    reset_settings_cache()
     graph = _build(SYNTAX_ERROR_FIXTURE_ROOT)
     ids = [e["canonical_id"] for e in graph.all_entities()]
     assert "pkg/broken.py#good_before" not in ids

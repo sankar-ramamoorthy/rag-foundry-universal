@@ -171,9 +171,11 @@ Each language extractor is *only* responsible for producing correct IR. **All** 
 - [ ] Determinism test
 
 ### WP-L5 — Python on tree-sitter (parity migration, last)
-**Status:** Stage A shipped (issue #134). `PythonTreeSitterExtractor` built
-alongside `PythonASTExtractor` (neither replaces the other);
-`PythonASTExtractor` remains the production default.
+**Status:** Stage A + Stage B shipped (issue #134). `PythonTreeSitterExtractor`
+built alongside `PythonASTExtractor` (neither replaces the other);
+`PythonTreeSitterExtractor` is now the production default
+(`PYTHON_TREESITTER_ENABLED=True`), with `PythonASTExtractor` retained
+indefinitely as the rollback target.
 **Goal:** retire stdlib-`ast` extractor; one framework everywhere; unlocks parsing Python files with syntax errors.
 **Directions:** build alongside; run **A/B parity harness** (ingest N repos with both, diff node/edge sets); cut over when diff = ∅ on the corpus; keep `ast` version one release as fallback flag.
 **Acceptance criteria:**
@@ -183,7 +185,7 @@ alongside `PythonASTExtractor` (neither replaces the other);
 **Implementation notes (issue #134):**
 - **Rollback mechanism** (the user's explicit ask — a config flag plus
   automatic fallback, not just "keep the old extractor around"):
-  `PYTHON_TREESITTER_ENABLED` (default `False` — Stage A) and
+  `PYTHON_TREESITTER_ENABLED` (default `True` as of Stage B) and
   `PYTHON_TREESITTER_AUTO_FALLBACK` (default `True`), both documented in
   `ingestion_service/src/core/config.py`. Dispatch lives in
   `repo_graph_builder.py`'s `_PythonExtractorProxy`, which (a) picks
@@ -194,24 +196,38 @@ alongside `PythonASTExtractor` (neither replaces the other);
   recover from a crash in production. **This only guards against parse
   exceptions, not silent semantic regressions** — that's the parity
   harness's job, run with auto-fallback forced off so a real bug can't
-  hide behind it.
-- **Rollout stages:** Stage A (this work, `PYTHON_TREESITTER_ENABLED=False`
-  default) ships tree-sitter as opt-in only. Stage B (a separate,
-  later PR) flips the default to `True` once more real-world evidence
-  accumulates; `PythonASTExtractor` is not deleted in Stage B — deletion
-  is a distinct future decision.
-- **Parity evidence gathered so far:** `tests/fixtures/python_repo_valid/`
-  (committed CI fixture, `test_python_parity_harness.py`) plus 6 real
-  service codebases in this monorepo run through
-  `scripts/python_parity_report.py` — `ingestion_service/src` (74
-  files), `rag_orchestrator`, `vector_store_service`, `llm_service`,
-  `shared`, `gradio` — all zero diff (structural + semantic) as of
-  2026-09-14. These are real, independently-authored codebases rather
-  than 5 separate external GitHub repos; running against external OSS
-  repos (e.g. a `requests`/`flask`/`django` clone) before flipping the
-  Stage B default is still recommended and is exactly what
-  `python_parity_report.py` is for.
-- **Bugs the parity harness caught before Stage A shipped** (this is
+  hide behind it. The two safeguards are deliberately distinct: the
+  parity harness protects against silent semantic regressions (and, as
+  the tree-sitter==0.26.0 finding below shows, against native/process-
+  level failures during testing, since a segfault leaves no exception
+  for the fallback to catch); the exception fallback protects only
+  against catchable runtime extractor failures in production.
+- **Rollout stages:**
+  - Stage A (issue #134, initial PR): shipped `PythonTreeSitterExtractor`
+    alongside `PythonASTExtractor` with `PYTHON_TREESITTER_ENABLED=False`
+    — tree-sitter opt-in only, AST the production default.
+  - Stage B (this change, same issue, separate commit): evidence gate
+    passed (see below) — flipped the default to
+    `PYTHON_TREESITTER_ENABLED=True`. `PythonASTExtractor` is **not**
+    deleted — it remains the permanent rollback target; the
+    tree-sitter==0.26.0 segfault finding is itself an argument for
+    keeping it around rather than removing it once tree-sitter looked
+    stable. Deleting it is a distinct, separate future decision.
+- **Parity evidence gathered (gate passed before the Stage B flip):**
+  `tests/fixtures/python_repo_valid/` (committed CI fixture,
+  `test_python_parity_harness.py`) plus 6 real service codebases in this
+  monorepo run through `scripts/python_parity_report.py` —
+  `ingestion_service/src` (74 files), `rag_orchestrator`,
+  `vector_store_service`, `llm_service`, `shared`, `gradio` — all zero
+  diff (structural + semantic) both before and after the Stage B flip,
+  as of 2026-09-14. These are real, independently-authored codebases
+  rather than 5 separate external GitHub repos; running against external
+  OSS repos (e.g. a `requests`/`flask`/`django` clone) remains a good
+  idea for future confidence-building and is exactly what
+  `python_parity_report.py` is for, but was not treated as a blocker for
+  this flip given the strength of the in-repo evidence (zero diff, 243
+  passing tests, 5 real discrepancies found and fixed).
+- **Bugs the parity harness caught before the Stage B flip** (this is
   the harness doing its job, not evidence against the approach):
   1. `tree-sitter==0.26.0` caused native access violations (segfaults —
      not catchable Python exceptions) on real-world files; pinned to

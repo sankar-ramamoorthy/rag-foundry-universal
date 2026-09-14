@@ -27,14 +27,21 @@ class Settings(BaseSettings):
     # back in production -- see repo_graph_builder.py's
     # _select_extractor / _PythonExtractorProxy for the rollback
     # mechanism this flag drives). NOTE: this fallback catches only parse
-    # exceptions -- it is a crash safety net, not proof of semantic
-    # equivalence. Semantic parity is established separately by the A/B
-    # parity harness (tests/codebase/test_python_parity_harness.py).
-    PYTHON_TREESITTER_ENABLED: bool = False   # Stage A default: opt-in.
-                                               # Flip to True as the Stage B
-                                               # default once the parity
-                                               # harness is green on >=5
-                                               # real repos.
+    # exceptions (e.g. a native crash bypasses it entirely -- see the
+    # tree-sitter==0.26.0 segfault finding in the WP-L5 doc section) -- it
+    # is a crash safety net, not proof of semantic equivalence. Semantic
+    # parity is established separately by the A/B parity harness
+    # (tests/codebase/test_python_parity_harness.py).
+    #
+    # Stage B (this default): PYTHON_TREESITTER_ENABLED=True is now the
+    # production default -- the parity harness is green (structural +
+    # semantic, zero diff) on the committed fixture and 6 real service
+    # codebases in this monorepo, and PYTHON_TREESITTER_AUTO_FALLBACK
+    # stays on indefinitely as the belt-and-suspenders safety net.
+    # PythonASTExtractor is NOT deleted -- it remains the rollback target;
+    # set PYTHON_TREESITTER_ENABLED=False to revert to it with no code
+    # change, no redeploy of anything but this env var.
+    PYTHON_TREESITTER_ENABLED: bool = True
     PYTHON_TREESITTER_AUTO_FALLBACK: bool = True  # When True, exceptions
                                                    # from the tree-sitter
                                                    # Python extractor are
@@ -42,8 +49,9 @@ class Settings(BaseSettings):
                                                    # PythonASTExtractor
                                                    # automatically; set
                                                    # False only to surface
-                                                   # raw failures during the
-                                                   # parity/rollout window.
+                                                   # raw failures, e.g. when
+                                                   # re-running the parity
+                                                   # harness.
 
     model_config = SettingsConfigDict(
         env_file=".env",
