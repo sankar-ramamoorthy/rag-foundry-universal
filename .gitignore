@@ -5,6 +5,10 @@ ms12_repo_delete.patch
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
+# Personal read-only DB forensic tool -- direct Postgres access for
+# one-off debugging, deliberately not a committed/shared script.
+scripts/db_inspect.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
