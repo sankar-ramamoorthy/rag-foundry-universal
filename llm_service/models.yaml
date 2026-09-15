@@ -63,6 +63,14 @@ models:
   # OpenRouter's free-tier roster rotates frequently -- verify this
   # slug still exists at openrouter.ai/models before relying on it.
   openrouter_free: openrouter/meta-llama/llama-3.3-70b-instruct:free
+  # issue #147: Z.ai's free-tier GLM Flash models. Requires litellm's
+  # first-class "zai" provider (present since litellm 1.93.0 -- verify
+  # if pinning an older version) and ZAI_API_KEY, env-only like every
+  # other credential in this file. Default api_base is Z.ai's standard
+  # API endpoint (https://api.z.ai/api/paas/v4); a coding-plan account
+  # needs a different endpoint and is not covered by this default.
+  zai_flash_4_5: zai/glm-4.5-flash
+  zai_flash_4_7: zai/glm-4.7-flash
 
 # Named inference endpoints: `model=<name>/<anything>` routes that model
 # string to the endpoint's api_base with its LiteLLM provider prefix.
@@ -128,6 +136,10 @@ fallbacks:
   # nvidia_nim/<any model> directly rather than the nim_fast/nim_smart
   # aliases.
   nvidia_nim: [local]
+  # issue #147: degrade to local instead of failing outright when
+  # ZAI_API_KEY is missing/invalid or Z.ai has an outage.
+  zai_flash_4_5: [local]
+  zai_flash_4_7: [local]
 
 # Per-alias request timeout in seconds; `default` applies to everything
 # without an explicit entry (falls back to LLM_TIMEOUT env, 120 s).
