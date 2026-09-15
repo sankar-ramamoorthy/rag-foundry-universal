@@ -46,6 +46,7 @@ async def rag_endpoint(rag_query: RAGQuery):
         provider=rag_query.provider,
         model=rag_query.model,
         language=rag_query.language,
+        rerank=rag_query.rerank,
         )
         return result
 
@@ -85,7 +86,8 @@ async def simple_rag_endpoint(simple_rag_query: SimpleRAGQuery):
         query=simple_rag_query.query,
         top_k=simple_rag_query.top_k,
         provider=simple_rag_query.provider,
-        model=simple_rag_query.model
+        model=simple_rag_query.model,
+        rerank=simple_rag_query.rerank,
         )
         return result
 

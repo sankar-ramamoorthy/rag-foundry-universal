@@ -73,6 +73,31 @@ class Settings(BaseSettings):
     })
 
     # -------------------------------------------------
+    # Optional cross-encoder reranker (WP-S8 stub, DOCS/audit/
+    # 04-Scalability-Plan.md; gate discussion: DOCS/audit/
+    # 08-RAG-Quality-Evaluation-Methodology.md #4)
+    # -------------------------------------------------
+    # Off by default -- this is a ranking/generation-input change, which
+    # this repo's Constitution gates on measured evaluation evidence
+    # before becoming the default (same precedent as
+    # DOC_TYPE_TIE_BREAK_ENABLED). Overridable per-request via
+    # RAGQuery.rerank / SimpleRAGQuery.rerank for A/B comparison without
+    # a redeploy.
+    RERANK_ENABLED: bool = False
+    # sentence-transformers CrossEncoder model ID. ms-marco-MiniLM-L-6-v2
+    # is small (~80MB), CPU-fast, and a standard general-purpose
+    # baseline -- not the "local bge-reranker" the scalability plan
+    # names, which is larger; swap via env var once/if a real evaluation
+    # says model choice matters here.
+    RERANK_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Chunks kept after reranking (WP-S8: "top-50 -> top-10"). The
+    # candidate pool reranked is whatever `agent_chunks` already is at
+    # that point in the pipeline (already bounded by MAX_TOTAL_CHUNKS
+    # above) -- this setting only controls the post-rerank cut, not a
+    # separate wider fetch.
+    RERANK_TOP_K: int = 10
+
+    # -------------------------------------------------
     # Service URLs (Docker service names)
     # -------------------------------------------------
     VECTOR_STORE_URL: str = "http://vector_store_service:8002"
