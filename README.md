@@ -1,5 +1,7 @@
 # rag-foundry-universal
 
+![Journey of Rags](DOCS/assets/banner/journey-of-rags-banner.jpg)
+
 **Graph-aware retrieval, measured: 70% → 90% Recall@5** over raw vector
 search alone, by combining vector similarity with deterministic graph
 traversal (BFS over CALL/DEFINES/IMPORTS/INHERITS/OVERRIDES/DOCUMENTS edges).
