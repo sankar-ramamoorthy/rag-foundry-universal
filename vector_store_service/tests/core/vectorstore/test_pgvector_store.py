@@ -90,6 +90,47 @@ class TestPgVectorStore:
         assert inserts[0].args[1][-1] is None
 
     @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_similarity_search_filtered_sets_iterative_scan(self, mock_connect):
+        """Issue #150: a filtered search (repo_id/doc_type/source_type/
+        language) must set hnsw.iterative_scan + hnsw.max_scan_tuples, or
+        the HNSW index scan can silently under-recall well below `k` once
+        the filter is selective relative to the whole (multi-repo) index."""
+        mock_cursor = _mock_cursor(mock_connect)
+        mock_cursor.fetchall.return_value = []
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+
+        store.similarity_search(
+            [0.1, 0.2],
+            k=20,
+            metadata_filter={"repo_id": "repo-1", "source_type": "code"},
+        )
+
+        set_stmts = [
+            str(call.args[0]) for call in mock_cursor.execute.call_args_list
+            if "SET LOCAL" in str(call.args[0])
+        ]
+        assert any("hnsw.iterative_scan" in s for s in set_stmts)
+        assert any("hnsw.max_scan_tuples" in s for s in set_stmts)
+
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_similarity_search_unfiltered_skips_iterative_scan(self, mock_connect):
+        """An unfiltered search has nothing to reject mid-traversal, so it
+        isn't affected by issue #150 -- no need for the extra settings."""
+        mock_cursor = _mock_cursor(mock_connect)
+        mock_cursor.fetchall.return_value = []
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+
+        store.similarity_search([0.1, 0.2], k=20, metadata_filter=None)
+
+        set_stmts = [
+            str(call.args[0]) for call in mock_cursor.execute.call_args_list
+            if "SET LOCAL" in str(call.args[0])
+        ]
+        assert any("hnsw.ef_search" in s for s in set_stmts)
+        assert not any("hnsw.iterative_scan" in s for s in set_stmts)
+        assert not any("hnsw.max_scan_tuples" in s for s in set_stmts)
+
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
     def test_delete_by_ingestion_id_purges_vector_chunks(self, mock_connect):
         """delete still purges vector_chunks (and the legacy table until a
         migration drops it)."""

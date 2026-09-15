@@ -19,6 +19,21 @@ class PgVectorStore(VectorStore):
     # better recall, slower query. 100 is comfortable for k <= 50.
     HNSW_EF_SEARCH = 100
 
+    # Issue #150: a filtered query (repo_id/doc_type/source_type/language)
+    # can silently return far fewer than `k` rows -- pgvector's HNSW index
+    # scan applies the filter *during* the approximate graph traversal and
+    # can give up before finding k filter-matching rows once the filter is
+    # selective relative to the whole (multi-repo, shared) index. Confirmed
+    # live: a repo_id-filtered LIMIT 200 query returned only 28 rows without
+    # these settings, vs. the correct 200 with them (~17-24ms, vs. ~5ms
+    # broken/incomplete or ~700ms with iterative_scan on but max_scan_tuples
+    # left unbounded) -- see
+    # DOCS/test_results/2026-09-15-hnsw-iterative-scan-issue-150.md.
+    # relaxed_order (not strict_order) is fine here: RAG retrieval needs a
+    # good candidate set, not byte-exact result ordering guarantees.
+    HNSW_ITERATIVE_SCAN = "relaxed_order"
+    HNSW_MAX_SCAN_TUPLES = 20000
+
     # WP-S4B (+ issue #64; WP-L6a added "language"): filter keys promoted
     # from JSONB to real indexed columns. The write path copies them out of
     # source_metadata, so filtering on the column and on the JSONB key are
@@ -176,8 +191,10 @@ class PgVectorStore(VectorStore):
                 limit=sql.Placeholder(),
             )
             params = [query_vector] + filter_values + [k]
+            use_iterative_scan = True
 
         else:
+            use_iterative_scan = False
             search_sql = sql.SQL("""
                 WITH query AS (SELECT {qvec}::vector AS qvec)
                 SELECT vc.vector, vc.ingestion_id, vc.chunk_id,
@@ -203,6 +220,20 @@ class PgVectorStore(VectorStore):
                         ef=sql.Literal(self.HNSW_EF_SEARCH)
                     )
                 )
+                if use_iterative_scan:
+                    # Issue #150: only a filtered search can under-recall
+                    # this way -- an unfiltered scan has nothing to reject
+                    # mid-traversal, so it's unaffected and left alone.
+                    cur.execute(
+                        sql.SQL("SET LOCAL hnsw.iterative_scan = {mode}").format(
+                            mode=sql.Literal(self.HNSW_ITERATIVE_SCAN)
+                        )
+                    )
+                    cur.execute(
+                        sql.SQL(
+                            "SET LOCAL hnsw.max_scan_tuples = {tuples}"
+                        ).format(tuples=sql.Literal(self.HNSW_MAX_SCAN_TUPLES))
+                    )
                 cur.execute(search_sql, params)
                 for row in cur.fetchall():
                     (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
