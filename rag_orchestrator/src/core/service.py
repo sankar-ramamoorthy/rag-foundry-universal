@@ -32,6 +32,7 @@ from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
 from rag_orchestrator.src.retrieval.codebase_utils import (
     canonical_id_from_metadata,
+    doc_type_from_metadata,
     extract_canonical_ids_from_chunks,
     dedupe_near_identical_chunks,
 )
@@ -298,6 +299,8 @@ def _add_chunks(
             # /search-by-doc response for expanded docs, or a
             # single-item list per seed chunk.
             chunk_index=index,
+            # Issue #142: for the doc-type-aware seed tie-break.
+            doc_type=doc_type_from_metadata(metadata),
         )
         added.append(chunk)
         retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
@@ -345,6 +348,68 @@ def _build_expansion_metadata(
     return expansion_metadata
 
 
+def _apply_doc_type_tie_break(
+    chunks: List[RetrievedChunk],
+    top_k: int,
+    epsilon: float,
+    implementation_doc_types: frozenset,
+) -> List[RetrievedChunk]:
+    """
+    Issue #142 (fix for #141): select the top_k seed chunks from a wider
+    candidate pool, preferring an "implementation" doc_type (python
+    source / rust source / etc.) over any other doc_type (chiefly
+    markdown_section / markdown_module) when their scores are within
+    `epsilon` of each other.
+
+    This is a near-tie preference, not a hard reorder or filter: a
+    documentation chunk that is unambiguously the best match (its score
+    margin over every implementation-doc_type candidate exceeds epsilon)
+    is left exactly where vector search ranked it, so a genuinely
+    documentation-seeking query is unaffected. It only corrects the
+    specific failure mode issue #141 demonstrated -- a near-verbatim
+    text match inflating a documentation chunk's score into a band where
+    it's statistically indistinguishable from the real answer.
+
+    `chunks` must already be sorted by score descending (vector search's
+    own order); this function does not re-sort by anything other than
+    the tie-break itself. Requires the caller to have over-fetched (see
+    settings.DOC_TYPE_TIE_BREAK_SEED_POOL_SIZE) when top_k < len(chunks)
+    is meant to matter -- if the pool is already == top_k, this is a
+    no-op by construction (nothing to promote from beyond the cut line).
+    """
+    if not chunks or top_k >= len(chunks):
+        return chunks
+
+    remaining = list(chunks)
+    selected: List[RetrievedChunk] = []
+    while remaining and len(selected) < top_k:
+        best = remaining[0]
+        best_score = best.score if best.score is not None else 0.0
+        chosen = best
+        for candidate in remaining[1:]:
+            candidate_score = candidate.score if candidate.score is not None else 0.0
+            if best_score - candidate_score > epsilon:
+                break  # remaining is score-sorted; nothing further qualifies
+            if (
+                candidate.doc_type in implementation_doc_types
+                and best.doc_type not in implementation_doc_types
+            ):
+                chosen = candidate
+                break
+        selected.append(chosen)
+        remaining.remove(chosen)
+    return selected
+
+
+def _seed_search_k(top_k: int, settings) -> int:
+    """Issue #142: over-fetch a wider candidate pool when the doc-type
+    tie-break is enabled -- see _apply_doc_type_tie_break's docstring for
+    why this is load-bearing, not cosmetic."""
+    if not settings.DOC_TYPE_TIE_BREAK_ENABLED:
+        return top_k
+    return max(top_k, settings.DOC_TYPE_TIE_BREAK_SEED_POOL_SIZE)
+
+
 async def hybrid_retrieve(
     query: str,
     repo_id: str,
@@ -389,7 +454,8 @@ async def hybrid_retrieve(
     seed_filter: Dict[str, Any] = {"source_type": "code", "repo_id": repo_id}
     if language:
         seed_filter["language"] = language
-    payload = {"query_vector": query_embedding, "k": top_k,
+    seed_k = _seed_search_k(top_k, settings)
+    payload = {"query_vector": query_embedding, "k": seed_k,
                 "metadata_filter": seed_filter}
 
     async with httpx.AsyncClient(timeout=200) as client:
@@ -426,6 +492,19 @@ async def hybrid_retrieve(
     # retrieved_chunks_by_document at this point — expansion below adds
     # more, untouched by this filter.
     seed_chunks = dedupe_near_identical_chunks(seed_chunks)
+
+    # Issue #142 (fix for #141): narrow the (possibly over-fetched) seed
+    # pool down to top_k, preferring implementation doc_types over
+    # documentation-about-implementation within a near-tie score band.
+    # A no-op when the flag is off (seed_k == top_k above, so there's
+    # nothing beyond the cut line to promote from).
+    seed_chunks = _apply_doc_type_tie_break(
+        seed_chunks,
+        top_k,
+        settings.DOC_TYPE_TIE_BREAK_EPSILON,
+        settings.IMPLEMENTATION_DOC_TYPES,
+    )
+
     kept_chunk_ids = {c.chunk_id for c in seed_chunks}
     retrieved_chunks_by_document = {
         doc_id: kept

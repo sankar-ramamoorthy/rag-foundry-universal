@@ -1,7 +1,7 @@
 """
 Utilities for hybrid vector+graph retrieval.
 """
-from typing import Set, Dict, List
+from typing import Set, Dict, List, Optional
 import logging
 import requests
 from .codebase_queries import CodebaseGraph, load_graph_for_repo
@@ -30,6 +30,24 @@ def canonical_id_from_metadata(metadata: dict) -> str:
         metadata.get("canonical_id")
         or metadata.get("source_metadata", {}).get("canonical_id")
         or ""
+    )
+
+
+def doc_type_from_metadata(metadata: dict) -> Optional[str]:
+    """
+    Issue #142 (fix for #141): single source of truth for pulling
+    document_nodes.doc_type out of a raw vector-search result's metadata
+    dict -- mirrors canonical_id_from_metadata's exact lookup shape
+    (checked flat, then nested under source_metadata, since that's the
+    vector store's search response shape). Not to be confused with
+    source_metadata["source_type"], a different, deliberately-untouched
+    field that only separates the /v1/rag vs /v1/rag/simple API paths
+    (issue #64) -- doc_type is the one that distinguishes python
+    source/rust source/markdown_section/etc.
+    """
+    metadata = metadata or {}
+    return metadata.get("doc_type") or metadata.get("source_metadata", {}).get(
+        "doc_type"
     )
 
 
