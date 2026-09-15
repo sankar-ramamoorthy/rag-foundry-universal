@@ -29,6 +29,7 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
     select_chunks_within_token_budget,
 )
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
+from src.core.reranker import rerank_chunks
 
 from rag_orchestrator.src.retrieval.codebase_utils import (
     canonical_id_from_metadata,
@@ -85,6 +86,10 @@ class RAGResult(BaseModel):
     # WP-T1b: one ID connecting every stage-event log line for this
     # request, for evidence-survival tracing.
     trace_id: Optional[str] = None
+    # Whether the optional cross-encoder reranker actually ran for this
+    # request (WP-S8) -- lets an A/B comparison confirm which arm a given
+    # response came from, independent of the flag's current default.
+    reranked: bool = False
 
 
 # ------------------------------------------------------------------
@@ -656,6 +661,7 @@ async def run_rag(
     chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
     language: Optional[str] = None,
     trace_canonical_ids: Optional[Set[str]] = None,
+    rerank: Optional[bool] = None,
 ) -> RAGResult:
 
     settings = get_settings()
@@ -723,6 +729,20 @@ async def run_rag(
         debug=True,
     )
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
+
+    # WP-S8: optional cross-encoder reranker, off by default. `rerank`
+    # (per-request) overrides settings.RERANK_ENABLED when explicitly
+    # passed, so the same deployment can serve A/B-compared requests
+    # without a redeploy.
+    rerank_active = settings.RERANK_ENABLED if rerank is None else rerank
+    if rerank_active:
+        agent_chunks = rerank_chunks(
+            query,
+            agent_chunks,
+            top_k=settings.RERANK_TOP_K,
+            model_name=settings.RERANK_MODEL,
+        )
+        _log_stage(trace_id, "rerank.applied", chunks_kept=len(agent_chunks))
 
     # WP-T1c: two genuinely distinct survival stages, both computed before
     # the LLM call so the evidence trace and retrieval_plan can report
@@ -825,4 +845,5 @@ async def run_rag(
         model_alias=result.get("model_alias"),
         fallback_from=result.get("fallback_from"),
         trace_id=trace_id,
+        reranked=rerank_active,
     )

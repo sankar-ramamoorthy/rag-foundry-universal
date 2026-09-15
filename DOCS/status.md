@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-09-14
+date: 2026-09-15
 type: status
 status: current
 tags: [status, overview]
@@ -47,14 +47,38 @@ document.
 - The WP-Q0 baseline (issue #49; full evidence in
   [`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`](/DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md))
   measured 70%→90% Recall@5 from graph expansion over raw vector search
-  alone. The reranker decision is **NO-GO**, evaluation-gated (see
-  [`DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md`](/DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md)
-  §4 for the reversal criterion).
+  alone.
 - Follow-up retrieval-quality fixes and a second evaluation round
   (issues #64, #65, #79, #89, #91) are tracked in that same test-results
   doc and
   [`DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`](/DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md).
   #91 (same-relation-type candidate overload) remains open.
+- **Doc-type-aware seed tie-break** (issue #142, fix for #141): a
+  self-ingested Markdown eval doc's near-verbatim question text could
+  outrank the real implementation it discussed badly enough to exclude
+  it from the seed search's `top_k` entirely. Fix is merged, flag-gated
+  off by default (`DOC_TYPE_TIE_BREAK_ENABLED`) — live re-verification
+  on 2026-09-15 found the original repro no longer reproduces post
+  corpus drift, so this stays `investigate`, not `validated`; see
+  [`DOCS/test_results/2026-09-14-doc-type-tie-break-issue-141.md`](/DOCS/test_results/2026-09-14-doc-type-tie-break-issue-141.md).
+- **HNSW post-filter under-recall** (issue #150): a `repo_id`-filtered
+  vector search could silently return far fewer rows than requested
+  (confirmed capped at ~28 regardless of `LIMIT`, once the shared
+  multi-repo `vector_chunks` index made the filter selective enough).
+  Fixed via pgvector iterative index scans
+  (`hnsw.iterative_scan=relaxed_order` + `max_scan_tuples=20000`),
+  restoring full recall at ~17-24ms — see
+  [`DOCS/test_results/2026-09-15-hnsw-iterative-scan-issue-150.md`](/DOCS/test_results/2026-09-15-hnsw-iterative-scan-issue-150.md).
+- **Optional cross-encoder reranker** (WP-S8, issue #152): implemented,
+  flag-gated off by default (`RERANK_ENABLED`), request-overridable
+  (`RAGQuery.rerank`/`SimpleRAGQuery.rerank`) for A/B comparison without
+  a redeploy. Built deliberately *ahead of* the reranker decision gate's
+  own evaluation requirement — see
+  [`DOCS/notes/20260915-reranker-built-ahead-of-evaluation-gate-decision.md`](/DOCS/notes/20260915-reranker-built-ahead-of-evaluation-gate-decision.md)
+  for why. **Not yet evaluated live** — the reranker decision in
+  [`DOCS/audit/09-Retrieval-Technique-Decision-Gates.md`](/DOCS/audit/09-Retrieval-Technique-Decision-Gates.md)
+  stays `deferred/NO-GO` as a *default* until a real on/off comparison
+  runs, now also accounting for issue #150's recall fix.
 
 ## Known issues
 

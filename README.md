@@ -256,17 +256,19 @@ known-answer questions (5 code, 5 document) end-to-end through production
 | End-to-end pass rate | 9/10 (90%) |
 | Recall@5 — raw vector search only | 70% |
 | Recall@5 — production path (incl. graph expansion) | 90% |
-| Reranker decision | **NO-GO** |
+| Reranker default | **off** (NO-GO as a default; implemented, flag-gated) |
 
 The 70%→90% gap is graph expansion recovering questions raw vector search
 alone missed — direct measured evidence for the graph-aware architecture,
 not just an architectural claim. The reranker decision is
 **evaluation-gated**: that baseline found zero failures in the rank 8–20
-band a reranker could address, so a reranker stays explicitly out of
-scope unless a future evaluation finds a non-trivial fraction of
-failures landing there and not already explained by a chunking or
-generation defect (full reversal criterion in
-`DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md` §4).
+band a reranker could address, so it stays off by default unless a
+future evaluation finds a non-trivial fraction of failures landing there
+and not already explained by a chunking or generation defect (full
+reversal criterion in `DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md`
+§4). An optional, flag-gated cross-encoder reranker now exists precisely
+to run that evaluation — see [`DOCS/status.md`](/DOCS/status.md) for
+current state; it changes no default behavior on its own.
 
 Retrieval-quality fixes and a follow-up evaluation round are tracked in
 `DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md` and

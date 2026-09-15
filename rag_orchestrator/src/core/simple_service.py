@@ -34,6 +34,7 @@ from rag_orchestrator.src.retrieval.traversal_planner import (
     expand_retrieval_plan,
     TraversalConstraints,
 )
+from src.core.reranker import rerank_chunks
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +46,10 @@ class SimpleRAGResult(BaseModel):
     model_used: Optional[str] = None
     model_alias: Optional[str] = None
     fallback_from: Optional[str] = None
+    # WP-S8: whether the optional cross-encoder reranker ran (see
+    # core/service.py's RAGResult.reranked for the full rationale --
+    # this is the non-graph document-RAG path's counterpart).
+    reranked: bool = False
 
 
 async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
@@ -55,6 +60,7 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     provider: str | None = None,
     model: str | None = None,
     chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
+    rerank: Optional[bool] = None,
 ) -> SimpleRAGResult:
 
     settings = get_settings()
@@ -234,6 +240,22 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
 
     # ------------------------------------------------------------------
+    # Step 8.5: optional cross-encoder reranker (WP-S8), off by default.
+    # See core/service.py's equivalent step for the full rationale --
+    # this is the non-graph path this feature is expected to matter most
+    # for, since there's no graph-expansion signal to fall back on here.
+    # ------------------------------------------------------------------
+    rerank_active = settings.RERANK_ENABLED if rerank is None else rerank
+    if rerank_active:
+        agent_chunks = rerank_chunks(
+            query,
+            agent_chunks,
+            top_k=settings.RERANK_TOP_K,
+            model_name=settings.RERANK_MODEL,
+        )
+        logger.info("Simple RAG: reranked to %d chunks", len(agent_chunks))
+
+    # ------------------------------------------------------------------
     # Step 9: Token budget enforcement
     # ------------------------------------------------------------------
     context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)
@@ -270,4 +292,5 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
         model_used=result.get("model"),
         model_alias=result.get("model_alias"),
         fallback_from=result.get("fallback_from"),
+        reranked=rerank_active,
     )
