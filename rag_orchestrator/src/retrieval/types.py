@@ -19,6 +19,10 @@ class RetrievedChunk:
     # /search-by-doc response for expanded docs), for chunk-index-level
     # evidence tracing.
     chunk_index: Optional[int] = None
+    # Issue #142 (fix for #141): document_nodes.doc_type (python source /
+    # markdown_section / etc.), for the doc-type-aware seed tie-break.
+    # None for chunks constructed without it (predates this field).
+    doc_type: Optional[str] = None
 
 
 @dataclass(frozen=True)
