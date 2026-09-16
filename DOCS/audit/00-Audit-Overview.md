@@ -34,6 +34,15 @@ aliases:
 
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
+> September 16 update: the historical release below remains valid evidence.
+> Current production blockers and delivery are tracked in the
+> [independent audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md),
+> [memory review](/DOCS/audit/2026-09-16-bounded-ingestion-memory-design-review.md),
+> and [WP-R1–R8 programme](/specs/005-production-correctness/spec.md).
+> See [current status](/DOCS/status.md) and
+> [handoff](/specs/005-production-correctness/HANDOFF.md) for implementation
+> versus verification state; the dated audit is not a live completion ledger.
+
 > [!tip] The first audited Docker Compose production release is complete. The
 > next major product-quality track is retrieval observability and
 > evidence-survival measurement, not another deployment-platform expansion.
