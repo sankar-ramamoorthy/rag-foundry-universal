@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-09-15
+date: 2026-09-16
 type: status
 status: current
 tags: [status, overview]
@@ -75,12 +75,23 @@ document.
   a redeploy. Built deliberately *ahead of* the reranker decision gate's
   own evaluation requirement — see
   [`DOCS/notes/20260915-reranker-built-ahead-of-evaluation-gate-decision.md`](/DOCS/notes/20260915-reranker-built-ahead-of-evaluation-gate-decision.md)
-  for why. **Not yet evaluated live** — the reranker decision in
+  for why. **Plumbing exercised live; quality benefit remains unvalidated** —
+  the [September 15 run](/DOCS/test_results/2026-09-15-wp-s8-rerank-evidence-survival-run.md)
+  was contaminated and had insufficient clean cases. The reranker decision in
   [`DOCS/audit/09-Retrieval-Technique-Decision-Gates.md`](/DOCS/audit/09-Retrieval-Technique-Decision-Gates.md)
-  stays `deferred/NO-GO` as a *default* until a real on/off comparison
-  runs, now also accounting for issue #150's recall fix.
+  stays `deferred/NO-GO` as a *default* pending clean, pinned, matched-budget
+  comparisons accounting for issue #150's recall fix.
 
 ## Known issues
+
+- The [September 16 architecture audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
+  identifies production blockers now tracked as
+  [WP-R1–R8](/specs/005-production-correctness/spec.md): #160 memory, #161
+  recovery/admission, #166 corpus lifecycle, #167 evidence delivery, #168
+  snapshot/cache freshness, #169 health/provenance, #170 blocking I/O, and
+  #171 current-release verification. At programme creation, these fixes are
+  **planned, not implemented or production validated**. Execution state is in
+  the [handoff](/specs/005-production-correctness/HANDOFF.md).
 
 - The NVIDIA NIM free-tier LLM provider is currently broken in the live
   deployment (issues #123, #124) — see

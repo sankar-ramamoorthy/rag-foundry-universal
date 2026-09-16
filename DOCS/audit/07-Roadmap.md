@@ -110,6 +110,34 @@ See [[00-Audit-Overview]]'s 2026-08-30 status.
 ## Phase 4 — Scale + operate (3–4 weeks, parallel with late Phase 3)
 *Theme: survives real repos and real ops.*
 
+### Production correctness priority track (2026-09-16)
+
+The [September 16 audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
+adds these release-blocking work packages. Their
+[specification](/specs/005-production-correctness/spec.md),
+[delivery plan](/specs/005-production-correctness/plan.md) and
+[handoff](/specs/005-production-correctness/HANDOFF.md) are the continuation
+entry points. Priority order is not a strict dependency chain; independent
+health/readiness corrections can ship while memory validation is prepared.
+
+- [ ] WP-R1 — bounded ingestion memory, [#160](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/160);
+  amended [004 spec](/specs/004-bounded-ingestion-memory/spec.md), planning PR #164.
+- [ ] WP-R2 — orphan recovery and admission, [#161](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/161).
+- [ ] WP-R3 — ingestion/delete/serving consistency, [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166), related #144.
+- [ ] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167), related #91/#141/#145/#149/#156.
+- [ ] WP-R5 — source pinning and generation-aware graph cache, [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168).
+- [ ] WP-R6 — healthcheck correctness and runtime provenance, [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169).
+- [ ] WP-R7 — bounded blocking-I/O isolation, [#170](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/170).
+- [ ] WP-R8 — current Linux full-lifecycle release validation, [#171](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/171).
+
+Each work package has its own implementation PR, acceptance evidence and KB
+updates. Code merged is not production validated. Do not mark this track
+complete until pinned memory, recovery, clean retrieval evaluation and current
+Linux ingest/query/delete/redeploy gates pass. September 12 was a successful
+controlled release; WP-R8 verifies the current revision, not a first-ever one.
+
+### Existing scale and operate work
+
 - [x] Production Docker Compose release discipline (unplanned operational
   hardening): `prod-2026-09-12` deployed from
   `202d91b34ee18e21c1dbb625d72acf9b82bce16d` with CI-green main SHA,

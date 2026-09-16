@@ -37,6 +37,14 @@ don't assume numeric order implies currency.
 
 ## Audit & Planning
 
+The active production-correctness programme is
+[WP-R1 through WP-R8](/specs/005-production-correctness/spec.md), with
+[delivery plan](/specs/005-production-correctness/plan.md),
+[execution handoff](/specs/005-production-correctness/HANDOFF.md), and
+[September 16 audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md).
+The [memory design review](/DOCS/audit/2026-09-16-bounded-ingestion-memory-design-review.md)
+informs the amended [004 specification](/specs/004-bounded-ingestion-memory/spec.md).
+
 Start at [[audit/00-Audit-Overview]] — the audit subtree's own index
 (codebase findings, scalability/platform/LLM-provider plans, the roadmap,
 and the RAG quality evaluation methodology).
