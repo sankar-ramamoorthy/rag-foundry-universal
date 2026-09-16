@@ -183,6 +183,58 @@ def list_complete_repos() -> List[Dict]:
         return results
 
 
+def list_ingestion_ids_for_repo(repo_id: str) -> List[str]:
+    """
+    Return every historical ingestion_id ever associated with repo_id.
+
+    Issue #158: this must be called (and its result held) *before* any
+    deletion — document_nodes.repo_id is the only place this mapping
+    exists (ingestion_requests has no repo_id column of its own), so
+    once document_nodes rows for this repo are deleted, the mapping is
+    gone. This intentionally does not filter by IngestionRequest.status
+    (unlike list_complete_repos): a repo delete should sweep every
+    ingestion_id document_nodes ever recorded for it.
+    """
+    with SessionLocal() as session:
+        rows = (
+            session.query(DocumentNode.ingestion_id)
+            .filter(DocumentNode.repo_id == repo_id)
+            .distinct()
+            .all()
+        )
+        ingestion_ids = [str(row[0]) for row in rows]
+        logger.info(
+            f"DB: {len(ingestion_ids)} historical ingestion_id(s) found for "
+            f"repo {repo_id[:8]}"
+        )
+        return ingestion_ids
+
+
+def delete_ingestion_requests(ingestion_ids: List[str]) -> int:
+    """
+    Delete ingestion_requests rows for the given ingestion_ids.
+
+    Issue #158: this is the *last* step of a repo delete — ingestion_requests
+    is the only durable record a retry could use to rediscover what still
+    needs cleaning up if an earlier step (vector or graph deletion) failed
+    partway, so it must not be removed until those steps have both
+    succeeded for every id in the list. Idempotent: deleting an id that's
+    already gone is a no-op, not an error.
+    """
+    if not ingestion_ids:
+        return 0
+
+    with SessionLocal() as session:
+        deleted = (
+            session.query(IngestionRequest)
+            .filter(IngestionRequest.ingestion_id.in_(ingestion_ids))
+            .delete(synchronize_session=False)
+        )
+        session.commit()
+        logger.info(f"DB: deleted {deleted} ingestion_requests row(s)")
+        return deleted
+
+
 # ==============================================================
 # GRAPH HELPERS
 # ==============================================================
