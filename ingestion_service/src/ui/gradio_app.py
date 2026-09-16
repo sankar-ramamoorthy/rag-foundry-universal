@@ -162,6 +162,50 @@ def refresh_repos():
         #return gr.update(choices=[], value=None)
         return gr.Dropdown(choices=[], value=None)
 
+def delete_repo(repo_id: str | None, confirmed: bool):
+    """
+    Delete a repository via DELETE /v1/repos/{repo_id} (issue #162,
+    exposes #158/PR #159's endpoint). Requires explicit confirmation
+    since this is destructive; the endpoint itself is idempotent, so a
+    repo_id with nothing left to delete is reported, not treated as an
+    error.
+
+    The returned dropdown is a fresh refresh_repos() snapshot, so a
+    deleted repo drops out of the choices — and out of the current
+    selection — in the same round trip, without a separate "clear
+    selection" output.
+
+    Returns (message, updated repo dropdown).
+    """
+    if not repo_id:
+        return "❌ Select a repository first.", gr.Dropdown()
+    if not confirmed:
+        return (
+            "⚠️ Check 'Confirm delete' before deleting — this is irreversible.",
+            gr.Dropdown(),
+        )
+
+    try:
+        response = requests.delete(
+            f"{API_BASE_URL}/v1/repos/{repo_id}", timeout=60
+        )
+        response.raise_for_status()
+        data = response.json()
+    except Exception as exc:
+        return f"❌ Delete failed: {exc}", gr.Dropdown()
+
+    if data.get("status") == "not_found":
+        message = f"ℹ️ Repository `{repo_id[:8]}...` was already gone."
+    else:
+        message = (
+            f"✅ Deleted repository `{repo_id[:8]}...` "
+            f"({data.get('nodes_deleted', 0)} graph node(s), "
+            f"{len(data.get('ingestion_ids', []))} ingestion(s))."
+        )
+
+    return message, refresh_repos()
+
+
 def refresh_models():
     """WP-M5: fetch the model-alias menu via the orchestrator passthrough."""
     try:
@@ -395,6 +439,17 @@ def build_ui():
             )
             refresh_repos_btn = gr.Button("🔄 Refresh Repos", variant="stop")  # type: ignore
 
+        with gr.Row():  # type: ignore
+            delete_confirm = gr.Checkbox(  # type: ignore
+                label="Confirm delete",
+                value=False,
+                info="Deletes vectors, graph, and ingestion records for the "
+                "selected repository. Cannot be undone.",
+            )
+            delete_repo_btn = gr.Button("🗑️ Delete Repo", variant="stop")  # type: ignore
+
+        delete_repo_output = gr.Textbox(label="Delete Result", lines=2)  # type: ignore
+
         rag_query = gr.Textbox(  # type: ignore
             label="❓ Question",
             placeholder="e.g. 'methods in math_utils.py', "
@@ -469,6 +524,15 @@ def build_ui():
         refresh_repos_btn.click(
             fn=refresh_repos,
             outputs=repo_dropdown,
+        )
+
+        delete_repo_btn.click(
+            fn=delete_repo,
+            inputs=[repo_dropdown, delete_confirm],
+            outputs=[delete_repo_output, repo_dropdown],
+        ).then(
+            fn=lambda: False,
+            outputs=delete_confirm,
         )
 
         rag_btn.click(
