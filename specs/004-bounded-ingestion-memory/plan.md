@@ -147,9 +147,9 @@ adding a column, keeping this a code-only change to `ingestion_service`.
   not introduced or worsened by this feature: this plan's changes are
   confined to `_embed_repo_artifacts`'s internal batching logic and a new
   persistence-layer read method, and do not add a new direct-construction
-  call site. Fixing it is out of scope here and should be tracked as its own
-  issue if the project wants it addressed — surfaced per Governance's
-  conflict-disclosure requirement, not silently resolved either way.
+  call site. Fixing it is out of scope here; tracked separately as issue
+  #165 — surfaced per Governance's conflict-disclosure requirement, not
+  silently resolved either way.
 
 ## Evaluation Plan
 
