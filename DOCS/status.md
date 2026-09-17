@@ -92,6 +92,9 @@ document.
   #171 current-release verification. At programme creation, these fixes are
   **planned, not implemented or production validated**. Execution state is in
   the [handoff](/specs/005-production-correctness/HANDOFF.md).
+  Planning PR #164 is merged. WP-R6/#169 healthcheck and runtime-provenance
+  implementation has [local verification evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md);
+  its implementation PR and Linux validation are pending. Other fixes remain planned.
 
 - The NVIDIA NIM free-tier LLM provider is currently broken in the live
   deployment (issues #123, #124) — see

@@ -8,7 +8,7 @@ Per-issue plans/acceptance/tasks: [issues](./issues/)
 - [x] P002 Create issues #166-#171 with problem, plan and acceptance gates.
 - [x] P003 Amend 004 spec/plan/tasks for audit M1-M8, including no-resume scope.
 - [x] P004 Link roadmap, status, KB indices and historical audit to programme.
-- [ ] P005 Validate docs/probes; commit/push amended #164; merge passing CI.
+- [x] P005 Validate docs/probes; commit/push amended #164; merge passing CI.
 - [ ] R001 Implement/test WP-R1 #160; commit/push/merge separate PR.
 - [ ] R002 Implement/test WP-R2 #161; commit/push/merge separate PR.
 - [ ] R003 Implement/test WP-R3 #166; include #144 serving state; separate PR.

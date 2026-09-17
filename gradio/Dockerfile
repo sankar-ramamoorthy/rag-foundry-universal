@@ -19,6 +19,10 @@ ARG GIT_SHA=unknown
 ARG BUILD_DATE=unknown
 ARG RELEASE_VERSION=dev
 
+ENV APP_GIT_SHA=${GIT_SHA} \
+    APP_BUILD_DATE=${BUILD_DATE} \
+    APP_RELEASE_VERSION=${RELEASE_VERSION}
+
 LABEL org.opencontainers.image.source="https://github.com/sankar-ramamoorthy/rag-foundry-universal" \
       org.opencontainers.image.url="https://github.com/sankar-ramamoorthy/rag-foundry-universal" \
       org.opencontainers.image.title="rag-foundry-universal" \

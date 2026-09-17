@@ -4,6 +4,7 @@ import logging
 
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
+from shared.runtime_provenance import install_version_route
 
 from src.api.v1.models import GenerateRequest
 from src.api.v1 import admin  # WP-M7: runtime model policy admin endpoints
@@ -21,6 +22,7 @@ from src.core.model_registry import (
 )
 
 app = FastAPI(title="LLM Service")
+install_version_route(app, "llm_service")
 
 # 🔥 MS7-IS2: Add summarize router FIRST (prefix=/v1/summarize)
 app.include_router(summarize.router)
