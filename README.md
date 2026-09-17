@@ -296,6 +296,11 @@ retrieval work.
 ## 📘 Acknowledgements
 
 * Used ChatGPT, Claude, and other publicly accessible LLMs to help with code, design, and documentation
+* **OpenAI Codex — AI-assisted contributor:** repository and architecture audits,
+  production-correctness specifications, implementation, regression tests, and
+  knowledge-base documentation. Human maintainers retain project ownership and
+  release responsibility. This acknowledgement is separate from GitHub's
+  automatically generated contributor listing.
 
 ---
 
