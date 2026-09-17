@@ -19,7 +19,7 @@ behavior does not satisfy the full objective.
 | Package | Issue | Contract/spec | Completion evidence |
 | --- | --- | --- | --- |
 | WP-R1 bounded ingestion memory | #160 | [004 spec](../004-bounded-ingestion-memory/spec.md) | Normalized parity, bounded buffers, PostgreSQL tests, pinned Linux/DocsGPT memory runs |
-| WP-R2 recovery/admission | #161 | Recovery contract below | Hard-death reconciliation, live-worker protection, bounded concurrent work |
+| WP-R2 recovery/admission | #161 | Recovery contract below; [implementation tasks](./issues/recovery.md) | Hard-death reconciliation, live-worker protection, bounded concurrent work |
 | WP-R3 corpus lifecycle | #166; related #144 | [lifecycle](./issues/lifecycle.md) | Durable attempt identity, retry cleanup, mutation exclusion and truthful serving state |
 | WP-R4 evidence delivery | #167; related #91/#141/#145/#149/#156 | [evidence](./issues/evidence.md) | Exact prompt/manifest agreement and pinned uncontaminated stage/quality evaluation |
 | WP-R5 snapshots/cache | #168 | [freshness](./issues/freshness.md) | Resolved commit, generation-consistent queries and bounded invalidated caches |

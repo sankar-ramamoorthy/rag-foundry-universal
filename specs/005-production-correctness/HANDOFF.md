@@ -16,6 +16,19 @@ This is execution state, not an alternative specification or completion claim.
 
 ## Authorization and full objective
 
+Latest update: owner resumed **R2** on September 17 and will wait to deploy.
+Branch `fix/161-ingestion-recovery-admission` starts from merged R1 main
+`12040f1`; handoff commit `4258ea0` carried forward as `cd17e54`.
+Read [R2 tasks/design review](./issues/recovery.md). Three file-setup exception
+regressions were reproduced failing and now pass locally. Ownership primitive
+and reconciliation helper added (not route/startup wired); terminal status
+resurrection blocked. Seven focused R2 unit tests and all 295 ingestion unit
+tests pass. PostgreSQL/process-kill tests added to CI, execution pending.
+Next: draft PR for early real-DB validation; finish design/ADR, integrate both
+routes and recovery trigger, ownership-loss work-boundary checks, HTTP tests,
+legacy maintenance procedure and real vector-write death test. R2 incomplete.
+This instruction supersedes the earlier pause below; R3 is not started.
+
 Latest owner instruction (September 17): **resume, but pause after R1**.
 Do not begin R2 or later implementation without a new instruction.
 Final R1 head `696476e7d27d675d3b69ae327f4e55329b37b94b` passed all four

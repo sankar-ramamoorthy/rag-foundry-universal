@@ -133,40 +133,36 @@ def background_ingest_file(  # noqa: C901 - refactor tracked by pipeline-factory
     *, ingestion_id: UUID, file_bytes: bytes,
     filename: str, content_type: str, metadata: dict
 ):
-    settings = get_settings()
-    provider = settings.EMBEDDING_PROVIDER
-    pipeline = _build_pipeline(provider)
-
-    ext = _get_extension(filename)
-
-    # IS4: file type classification
-    is_pdf      = filename.endswith(".pdf") or content_type == "application/pdf"
-    is_image    = content_type.startswith("image/") or \
-                  filename.lower().endswith((".png", ".jpg", ".jpeg", ".tiff"))
-    is_markdown = ext == ".md"
-    is_rich_doc = ext in RICH_DOC_EXTENSIONS   #  DOCX, PPTX, HTML, EPUB
-    is_tabular  = ext in TABULAR_EXTENSIONS    #  XLSX, CSV
-
-    # doc_type mapping
-    if is_pdf:
-        doc_type = "pdf"
-    elif is_image:
-        doc_type = "image"
-    elif is_markdown:
-        doc_type = "markdown_module"
-    elif is_rich_doc:
-        doc_type = "markdown_module"   # becomes structured markdown after Docling
-    elif is_tabular:
-        doc_type = "tabular"           #
-    else:
-        doc_type = "file"
-
-    ocr_provider = metadata.get("ocr_provider")
-
-    with SessionLocal() as session:
-        StatusManager(session).mark_running(ingestion_id)
-
     try:
+        # #161: setup and the first status write can fail too.
+        settings = get_settings()
+        provider = settings.EMBEDDING_PROVIDER
+        pipeline = _build_pipeline(provider)
+
+        ext = _get_extension(filename)
+        is_pdf = filename.endswith(".pdf") or content_type == "application/pdf"
+        is_image = content_type.startswith("image/") or filename.lower().endswith(
+            (".png", ".jpg", ".jpeg", ".tiff")
+        )
+        is_markdown = ext == ".md"
+        is_rich_doc = ext in RICH_DOC_EXTENSIONS
+        is_tabular = ext in TABULAR_EXTENSIONS
+
+        if is_pdf:
+            doc_type = "pdf"
+        elif is_image:
+            doc_type = "image"
+        elif is_markdown or is_rich_doc:
+            doc_type = "markdown_module"
+        elif is_tabular:
+            doc_type = "tabular"
+        else:
+            doc_type = "file"
+
+        ocr_provider = metadata.get("ocr_provider")
+        with SessionLocal() as session:
+            StatusManager(session).mark_running(ingestion_id)
+
         # ------------------------------------------------------------------
         # PDF — Docling primary, PyMuPDF fallback
         # ------------------------------------------------------------------

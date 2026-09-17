@@ -38,6 +38,7 @@ class StatusManager:
     # ---------------------------------------------------------
     def mark_running(self, ingestion_id: UUID) -> None:
         request = self._get_request(ingestion_id)
+        self._require_active(request)
         request.status = "running"
         # Use timezone-aware UTC timestamps (Python 3.12+ compliant)
         request.started_at = datetime.now(UTC)
@@ -45,6 +46,7 @@ class StatusManager:
 
     def mark_completed(self, ingestion_id: UUID) -> None:
         request = self._get_request(ingestion_id)
+        self._require_active(request)
         request.status = "completed"
         request.finished_at = datetime.now(UTC)
         self._set_progress_stage(request, "completed")
@@ -52,6 +54,9 @@ class StatusManager:
 
     def mark_failed(self, ingestion_id: UUID, *, error: str | None = None) -> None:
         request = self._get_request(ingestion_id)
+        if request.status not in ("accepted", "running"):
+            self._session.rollback()
+            return  # Preserve the first terminal outcome and recovery reason.
         request.status = "failed"
         request.finished_at = datetime.now(UTC)
         self._set_progress_stage(request, "failed")
@@ -65,6 +70,7 @@ class StatusManager:
 
     def update_embed_progress(self, ingestion_id: UUID, progress: dict) -> None:
         request = self._get_request(ingestion_id)
+        self._require_active(request)
         request.ingestion_metadata = {
             **(request.ingestion_metadata or {}), "embed_progress": dict(progress),
         }
@@ -81,10 +87,19 @@ class StatusManager:
     # ---------------------------------------------------------
     # Internal
     # ---------------------------------------------------------
+    @staticmethod
+    def _require_active(request: IngestionRequest) -> None:
+        if request.status not in ("accepted", "running"):
+            raise RuntimeError(
+                "Ingestion already terminal; refusing stale worker update",
+            )
+
     def _get_request(self, ingestion_id: UUID) -> IngestionRequest:
         request = (
             self._session.query(IngestionRequest)
             .filter_by(ingestion_id=ingestion_id)
+            .populate_existing()
+            .with_for_update()
             .first()
         )
 
