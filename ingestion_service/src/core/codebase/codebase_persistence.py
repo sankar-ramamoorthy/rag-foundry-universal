@@ -15,6 +15,7 @@ from typing import List, Optional
 from sqlalchemy import text, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
+from src.core.worker_context import check_ownership
 from sqlalchemy.exc import SQLAlchemyError
 import logging
 
@@ -158,6 +159,7 @@ class CodebaseGraphPersistence:
             )
 
         batch = self.BULK_BATCH_SIZE
+        check_ownership()
         try:
             with self._session.begin():
                 # Blocks a concurrent rebuild of the same repo until this
@@ -182,6 +184,7 @@ class CodebaseGraphPersistence:
                         .on_conflict_do_nothing(constraint="uq_document_relationship")
                     )
                     self._session.execute(stmt)
+                check_ownership()  # Fail/roll back before publishing after lock loss.
         except SQLAlchemyError:
             logger.exception(
                 f"Atomic graph persist failed for repo {repo_id}; "

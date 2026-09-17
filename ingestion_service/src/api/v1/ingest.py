@@ -2,7 +2,6 @@
 from uuid import uuid4, UUID
 import json
 import logging
-import threading
 from typing import Optional
 
 import httpx
@@ -12,6 +11,8 @@ from src.core.database_session import get_sessionmaker
 from src.core.models import IngestionRequest
 from src.core.pipeline import IngestionPipeline
 from src.core.status_manager import StatusManager
+from src.core.ingestion_jobs import submit_ingestion
+from src.core.ingestion_ownership import AdmissionBusy
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.config import get_settings
 from shared.embedders.factory import get_embedder
@@ -339,30 +340,28 @@ def ingest_file(
         parsed_metadata = json.loads(metadata) if metadata else {}
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Invalid metadata JSON") from exc
+    if not isinstance(parsed_metadata, dict):
+        raise HTTPException(status_code=400, detail="Metadata must be a JSON object")
 
     ingestion_id = uuid4()
-    file_bytes = file.file.read()
     filename = file.filename or "unknown"
     content_type = file.content_type or "application/octet-stream"
 
-    with SessionLocal() as session:
-        StatusManager(session).create_request(
-            ingestion_id=ingestion_id,
-            source_type="file",
-            metadata=parsed_metadata
-        )
-
-    threading.Thread(
-        target=background_ingest_file,
-        kwargs={
-            "ingestion_id": ingestion_id,
-            "file_bytes": file_bytes,
+    try:
+        submit_ingestion(
+            ingestion_id=ingestion_id, source_type="file", metadata=parsed_metadata,
+            target=background_ingest_file,
+            prepare=lambda: {
+            "file_bytes": file.file.read(),
             "filename": filename,
             "content_type": content_type,
             "metadata": parsed_metadata,
-        },
-        daemon=True,
-    ).start()
+            },
+        )
+    except AdmissionBusy as exc:
+        raise HTTPException(
+            status_code=503, detail=str(exc), headers={"Retry-After": "5"},
+        ) from exc
 
     return IngestResponse(ingestion_id=ingestion_id, status="accepted")
 

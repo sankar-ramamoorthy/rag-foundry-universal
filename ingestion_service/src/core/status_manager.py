@@ -8,6 +8,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from src.core.models import IngestionRequest
+from src.core.worker_context import check_ownership
 
 
 class StatusManager:
@@ -95,6 +96,7 @@ class StatusManager:
             )
 
     def _get_request(self, ingestion_id: UUID) -> IngestionRequest:
+        check_ownership()
         request = (
             self._session.query(IngestionRequest)
             .filter_by(ingestion_id=ingestion_id)

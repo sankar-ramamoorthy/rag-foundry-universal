@@ -1,6 +1,7 @@
 """#161 real PostgreSQL ownership, death and conservative legacy recovery."""
 
 import os
+from pathlib import Path
 import subprocess
 import sys
 from uuid import uuid4
@@ -130,6 +131,13 @@ time.sleep(60)
     child = subprocess.Popen(
         [sys.executable, "-c", program, str(attempt), str(running)],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        env={
+            **os.environ,
+            "PYTHONPATH": os.pathsep.join([
+                str(Path(__file__).resolve().parents[3]),
+                str(Path(__file__).resolve().parents[2]),
+            ]),
+        },
     )
     try:
         # Readiness uses a bounded wait even when the child fails before printing.

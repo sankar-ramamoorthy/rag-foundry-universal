@@ -29,6 +29,17 @@ routes and recovery trigger, ownership-loss work-boundary checks, HTTP tests,
 legacy maintenance procedure and real vector-write death test. R2 incomplete.
 This instruction supersedes the earlier pause below; R3 is not started.
 
+R2 continuation: draft PR #177, foundation fb9fce8. CI 35267843408 passed
+lint/unit/memory but ownership integration failed: this SQLAlchemy version
+requires dbapi_connection, not driver_connection. Corrected locally. Routes now
+use submit_ingestion; startup and 5-second sweeps reconcile managed attempts;
+context-bound guard checks protect status, embedding, vector dispatch and graph
+commit boundaries. Sixteen focused tests and 304 ingestion unit tests pass;
+new core modules pass focused pyright and repo lint. Pending: green real-DB CI,
+actual vector-write kill test, lifecycle/startup tests, legacy operator command,
+ADR/KB evidence, final review and merge. Do not claim distributed write fencing:
+already-dispatched HTTP writes can complete after lock loss; R3 remains separate.
+
 Latest owner instruction (September 17): **resume, but pause after R1**.
 Do not begin R2 or later implementation without a new instruction.
 Final R1 head `696476e7d27d675d3b69ae327f4e55329b37b94b` passed all four

@@ -30,7 +30,7 @@ def test_guard_detaches_connection_and_closes_on_exception():
     with pytest.raises(ValueError):
         with AdvisoryGuard(engine):
             connection.detach.assert_called_once()
-            assert connection.driver_connection.autocommit is True
+            assert connection.dbapi_connection.autocommit is True
             raise ValueError("work failed")
     connection.close.assert_called_once()
 

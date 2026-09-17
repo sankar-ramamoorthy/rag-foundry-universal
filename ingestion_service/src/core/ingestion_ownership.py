@@ -54,7 +54,7 @@ class AdvisoryGuard:
         self._connection.detach()
         # SQLAlchemy's pool proxy does not forward assignment to the driver.
         try:
-            self._connection.driver_connection.autocommit = True
+            self._connection.dbapi_connection.autocommit = True
         except BaseException:
             self._connection.close()
             raise

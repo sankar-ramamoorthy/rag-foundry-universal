@@ -1,5 +1,4 @@
 from uuid import uuid4, UUID
-import threading
 import logging
 from pathlib import Path
 import tempfile
@@ -13,6 +12,8 @@ from pydantic import BaseModel
 from src.core.database_session import get_sessionmaker
 from src.core.models import IngestionRequest
 from src.core.status_manager import StatusManager
+from src.core.ingestion_jobs import submit_ingestion
+from src.core.ingestion_ownership import AdmissionBusy
 from src.core.codebase.repo_graph_builder import RepoGraphBuilder
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 from src.core.pipeline import IngestionPipeline
@@ -292,24 +293,20 @@ def ingest_repo(
     metadata.update(
         {k: identity[k] for k in ("source_type", "name", "display_name")}
     )
-    with SessionLocal() as session:
-        StatusManager(session).create_request(
-            ingestion_id=ingestion_id,
-            source_type="repo",
-            metadata=metadata,
-        )
-
-    # Fire-and-forget background ingestion
-    threading.Thread(
-        target=_background_ingest_repo,
-        kwargs={
-            "ingestion_id": ingestion_id,
+    try:
+        submit_ingestion(
+            ingestion_id=ingestion_id, source_type="repo", metadata=metadata,
+            target=_background_ingest_repo,
+            prepare=lambda: {
             "git_url": git_url,
             "local_path": local_path,
             "provider": provider,
-        },
-        daemon=True,
-    ).start()
+            },
+        )
+    except AdmissionBusy as exc:
+        raise HTTPException(
+            status_code=503, detail=str(exc), headers={"Retry-After": "5"},
+        ) from exc
 
     return RepoIngestResponse(ingestion_id=ingestion_id, status="accepted")
 
