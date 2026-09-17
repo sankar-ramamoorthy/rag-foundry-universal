@@ -1,6 +1,6 @@
 # Handoff: red-star production correctness
 
-Updated: 2026-09-16
+Updated: 2026-09-17
 Tracking: #160, #161, #166-#171
 This is execution state, not an alternative specification or completion claim.
 
@@ -35,7 +35,10 @@ usable by a new session or Claude Code.
   buffer types passed; broader types still report baseline ORM/GitPython issues.
   First PostgreSQL CI: 3 paging tests passed; empty fixture used invalid UUID.
   Fixture corrected; fresh-session progress and real paging/status tests added.
-  Await latest CI. No memory benchmark or production release claim yet.
+  Follow-up 9edf84b passed full CI run 35219308277: nine real PostgreSQL tests,
+  including separate vector-service HTTP parity and durability. Query-plan
+  probe pushed at f9868f1; inspect latest CI. No RSS or production claim yet.
+  [Evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md).
 - PR #172 merged after lint/unit/PostgreSQL integration CI passed on
   36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
   Main merge: 2b198b6f96c3ce54c5f031cef11e9ebd2f306614.
@@ -55,10 +58,12 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Continue #160: inspect latest PR #175 PostgreSQL CI, fix any genuine failures.
-Capture EXPLAIN before deciding on a paging index. Add real DB/HTTP write
-interruption and normalized graph/vector output tests, plus isolated stage-aware
-RSS harness (N/4N, large-artifact) and raw evidence. Verify compiled limits and
+Continue #160: inspect latest PR #175 CI and PAGING_EXPLAIN output before
+deciding on a paging index. Real HTTP write-failure durability and stored vector
+parity now pass; hard-kill and full graph/topology parity still need coverage.
+Build isolated stage-aware Linux RSS harness (N/4N, large-artifact), using fresh
+processes, real SQL pages and vector-service HTTP, deterministic 1024-D embedder
+(no corpus-sized retained output), raw samples and stage markers. Verify limits and
 full-process/graph peak separately. Pinned DocsGPT and actual Linux ceiling are
 still unknown; operator target-host evidence required. Complete KB evidence and
 remaining tasks before making draft ready; retain unexecuted production gates.

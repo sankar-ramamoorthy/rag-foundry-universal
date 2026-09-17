@@ -10,13 +10,13 @@ Plan: [plan.md](./plan.md)
 - [x] T001 Validated page/count/byte/artifact settings and env/Compose examples.
 - [ ] T002 Skeletal 143-chunk-node, cross-buffer ordinal, byte/Unicode,
       normalized parity, whitespace/empty and oversized rejection tests.
-- [ ] T003 Real PostgreSQL generation-scoped page/count/disappearance tests,
+- [x] T003 Real PostgreSQL generation-scoped page/count/disappearance tests,
       explicitly included in CI integration selection.
 - [x] T004 Extract existing language-suffix helper without behavior change.
 
 ## Implementation
 
-- [ ] T005 Narrow keyset pages with repo_id+ingestion_id, byte preflight,
+- [x] T005 Narrow keyset pages with repo_id+ingestion_id, byte preflight,
       consistent inclusion and completion count checks.
 - [x] T006 Graph helper scope ends before embedding; prove no full references.
 - [x] T007 Optional explicit chunk_indices through pipeline/persistence,
@@ -24,13 +24,15 @@ Plan: [plan.md](./plan.md)
 - [x] T008 Count+byte bounded chunk buffers; persist before successor.
 - [x] T009 Remove canonical-map use from this embedding path.
 - [x] T010 Finite embedding transport deadline and failure propagation.
-- [ ] T011 Pre-allocation stages, fresh-JSON progress, 0/0 case and maxima.
+- [x] T011 Pre-allocation stages, fresh-JSON progress, 0/0 case and maxima.
 - [ ] T012 Verify WP-R2/R3 admission/mutation exclusion before deployment.
 
 ## Validation and delivery
 
 - [ ] T013 Normalized parity at 1/7/128; text/metadata/ordinals/canonical edges.
-- [ ] T014 DB interruption tests: prior writes survive; no false resume claim.
+- [x] T014 DB interruption tests: prior writes survive; no false resume claim.
+      Exception after acknowledged HTTP batches verified; hard-kill/recovery
+      remains a separate #161 production gate.
 - [ ] T015 Stage-aware RSS N/4N and large-artifact harness; record SC-002.
 - [ ] T016 Pinned DocsGPT under declared/recorded ceiling; full coverage/SC-001.
 - [ ] T017 Relevant service tests, lint, type checks and required CI.
