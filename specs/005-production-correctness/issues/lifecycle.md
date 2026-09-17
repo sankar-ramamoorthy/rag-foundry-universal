@@ -1,8 +1,8 @@
 # WP-R3: make repository rebuild and deletion lifecycle consistent
 
 Tracking issue: [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166)
-Status: Implemented on a dedicated branch, unit-tested locally; real
-PostgreSQL/CI evidence and merge pending. See
+Status: Implemented on PR #178, all four CI checks green including a new
+real-PostgreSQL suite; merge and Linux rollout evidence pending. See
 [ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md) (proposed)
 and [test-results evidence](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md).
 
@@ -42,11 +42,15 @@ Fault-inject after vector cleanup and before/after graph commit; retry fully rem
     rather than assuming a prior generation stays visible during rebuild.
   - Post-completion cleanup of superseded generations' vectors/requests
     (best-effort, non-fatal on failure).
-- [x] Run relevant unit/integration checks locally; record limitations
-  honestly — see evidence doc. Real-Postgres/CI run pending (this is a
-  local-only checkpoint at branch creation; run in CI before merge).
+- [x] Run relevant unit/integration checks; record limitations honestly —
+  see evidence doc. All four CI checks pass at head `ec5ada9` (run
+  35276251850), including the new real-PostgreSQL repository-lifecycle
+  suite (16 tests) — the integration-tests job's file allowlist had to be
+  extended to actually run it and the pre-existing
+  `test_db_utils_repo_delete.py`, neither of which CI executed before.
 - [x] Update OKF knowledge-base links, current status, roadmap, ADR-050,
   and evidence doc.
-- [ ] Commit, push, review CI, and merge the dedicated PR.
+- [x] Commit, push, review CI (green), PR #178 open — merge pending final
+  review/authorization.
 - [ ] Record deployment-specific gates (Linux/#171) separately from code
   completion.

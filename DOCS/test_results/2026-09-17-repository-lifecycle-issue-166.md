@@ -14,10 +14,15 @@ related:
 
 ## Scope and current result
 
-R3 is implemented on branch `fix/166-repo-lifecycle-consistency`, not yet
-merged or deployed. This checkpoint is local-only: unit suite and lint pass;
-the new real-PostgreSQL integration tests have not yet run in CI. No target
-Linux result is claimed.
+R3 is implemented on branch `fix/166-repo-lifecycle-consistency` (PR #178),
+not yet merged or deployed. All four CI checks pass at head `ec5ada9`
+(run [35276251850](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/35276251850)):
+lint, unit-tests, integration-tests (including the new real-PostgreSQL
+repository-lifecycle suite — 16 tests passed), bounded-memory. The
+integration-tests job's file allowlist did not include
+`test_repo_lifecycle.py` or the pre-existing `test_db_utils_repo_delete.py`
+until this PR's second commit wired them in; the first commit's "passing CI"
+was silently not exercising either suite. No target Linux result is claimed.
 
 ## Evidence ledger
 
@@ -36,8 +41,9 @@ Linux result is claimed.
   deterministically at accept time (same URL -> same `repo_id` across calls)
   and threaded into `submit_ingestion`; `RepositoryBusy` maps to a retryable
   409.
-- `tests/core/test_repo_lifecycle.py` (new, `integration`+`docker`, not yet
-  run — needs `docker-compose.test.yml` Postgres): repo_id survives graph
+- `tests/core/test_repo_lifecycle.py` (new, `integration`+`docker`, now
+  wired into CI's `integration-tests` job and passing against real
+  Postgres): repo_id survives graph
   deletion and enumerates an attempt that never wrote a node; generation
   resolution reports `unknown`/`building`/`ready`/`failed` correctly,
   including the specific case that motivated the redesign — a rebuild whose
@@ -50,9 +56,9 @@ Linux result is claimed.
 ## Acceptance coverage (against lifecycle.md's acceptance section)
 
 - "Retry fully removes attempts" — `repo_id` on `ingestion_requests` makes
-  this possible even after graph rows are gone; test written, CI pending.
+  this possible even after graph rows are gone; CI-validated.
 - "Concurrent ingest/delete" — repo-scope advisory lock plus an explicit
-  active-ingestion check on delete; test written, CI pending.
+  active-ingestion check on delete; CI-validated.
 - "Query rejection while rebuilding" — `generation_status`/
   `resolve_current_generation` return `building` and empty nodes/
   relationships rather than serving a not-yet-complete rebuild; this is
@@ -63,7 +69,11 @@ Linux result is claimed.
   generation-consistent-caching scope, not R3's.
 - "Test PostgreSQL transactions and migration/backfill, not mocks alone" —
   migration `20260917_add_repo_id_to_ingestion_requests` backfills from
-  `document_nodes`; not yet exercised against seeded legacy rows in CI.
+  `document_nodes` and runs for real in CI (`Apply migrations` step); the
+  backfill UPDATE itself is not separately exercised against seeded
+  pre-migration legacy rows (only against the fresh, always-empty CI
+  database), so its SQL is CI-applied but its actual backfill behavior on
+  historical data is unverified. This remains an honest gap.
 
 ## Known limitations, disclosed rather than silently fixed
 
@@ -86,6 +96,8 @@ Linux result is claimed.
 
 ## Remaining gates
 
-CI run against real PostgreSQL (integration/docker markers) for the new
-`test_repo_lifecycle.py` suite; final review; PR merge. Target Linux rollout
-evidence is recorded separately under #171, consistent with R1/R2's pattern.
+Final review and PR merge. Target Linux rollout evidence is recorded
+separately under #171, consistent with R1/R2's pattern. The migration
+backfill's behavior against real historical (pre-#166) data is unverified —
+noted above, not blocking merge since new rows are always populated
+correctly and the fallback path covers any row the backfill missed.

@@ -37,17 +37,21 @@ generation resolution corrects for that rather than assuming a prior
 generation stays visible during rebuild); best-effort superseded-generation
 vector/request cleanup after a successful rebuild. ADR-050 (proposed) and
 [evidence doc](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md)
-written. Local: 310 ingestion unit tests pass (up from 307), lint clean,
-focused pyright clean on touched files (one real `str | None` narrowing fixed
-in `ingest_repo`; remaining pyright noise is the same pre-existing import-
-resolution baseline as R1/R2). New `tests/core/test_repo_lifecycle.py`
-(integration+docker marker) has NOT yet run against real Postgres — no local
-Docker, same constraint as R1/R2; needs CI. Not yet committed to the branch as
-of this note. Next: commit, push, open PR, get CI green (including the new
-integration suite and existing `test_atomic_graph_persistence.py`/
-`test_db_utils_repo_delete.py` which must still pass unchanged), review, merge.
-rag_orchestrator's graph cache does not yet consult `generation_status` —
-disclosed as #168's scope, not folded into this PR.
+written. Local: 310 ingestion unit tests pass (up from 307), lint clean, focused
+pyright clean on touched files (one real `str | None` narrowing fixed in
+`ingest_repo`; remaining pyright noise is the same pre-existing
+import-resolution baseline as R1/R2). PR #178 open; all four CI checks green
+at head `ec5ada9` (run 35276251850): lint, unit-tests, integration-tests
+(including the new `test_repo_lifecycle.py` real-PostgreSQL suite — 16
+tests passed, alongside the pre-existing `test_db_utils_repo_delete.py`
+which CI's file-allowlist had never actually run before this PR extended
+it), bounded-memory. rag_orchestrator's graph cache does not yet consult
+`generation_status` — disclosed as #168's scope, not folded into this PR.
+Migration backfill SQL runs for real in CI but only ever against an empty
+fresh test DB, so its behavior on genuine pre-#166 historical rows remains
+unverified (disclosed in the evidence doc, not blocking merge since the
+document_nodes fallback covers any row it misses). Next: final review,
+merge only with authorization, then record Linux gates under #171.
 
 ## Start here in a new session
 
