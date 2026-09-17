@@ -16,10 +16,13 @@ known failures, pending gates and exact next actions; commit and push authorized
 changes without falsely marking incomplete work complete.
 
 Latest verified checkpoint: R2 code head 96952ce passed all four CI checks in
-run 35269164566 (lint, unit, integration, bounded-memory). PR #177 is still draft,
-not merged. Evidence/this handoff documentation follow-up needs its own checks.
-Next: final acceptance/ADR/task review, update PR body, verify latest exact-head
-CI and merge only with authorization. Do not deploy on the owner's behalf.
+run 35269164566 (lint, unit, integration, bounded-memory); the docs-only
+checkpoint bc17e46 re-passed all four in run 35269376898. Owner authorized
+closing out R2: recovery.md checklist and ADR-049 (now accepted) were brought
+in sync with the already-implemented/CI-validated state, PR #177 body was
+rewritten to match, and this docs-only commit is being pushed for a final
+exact-head CI check before un-drafting and merging. Do not deploy on the
+owner's behalf; Linux rollout evidence stays a separate #171 gate.
 
 ## Start here in a new session
 

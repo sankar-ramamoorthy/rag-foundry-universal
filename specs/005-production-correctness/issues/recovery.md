@@ -1,7 +1,8 @@
 # WP-R2: ingestion ownership, recovery and admission
 
 Tracking issue: [#161](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/161)
-Status: In progress; not deployment-ready.
+Status: Implemented and CI-validated on PR #177; merge pending final review.
+Linux/live deployment validation remains a separate #171 gate, not claimed here.
 Contract: [programme specification](../spec.md#recoveryadmission-contract-161)
 Related: [R3 lifecycle](./lifecycle.md), [R1 tasks](../../004-bounded-ingestion-memory/tasks.md)
 
@@ -47,21 +48,29 @@ is disclosed and not repaired incidentally by this work.
 
 - [x] Reproduce settings/pipeline/mark_running exceptions before the file worker
   failure handler; move setup into handler; three focused unit regressions pass.
-- [ ] Finalize ownership/admission/recovery design and issue-linked ADR.
-- [ ] Implement common ownership primitive and tests before route integration.
-- [ ] Integrate both entrypoints; handle upload-read, request-commit and thread-
-  launch failures; release capacity on every terminal path.
-- [ ] Implement recovery startup/ongoing trigger and legacy rollout handling.
-- [ ] Real PostgreSQL, separate processes: live owner survives competing startup;
+- [x] Finalize ownership/admission/recovery design and issue-linked ADR
+  (ADR-049, status: accepted).
+- [x] Implement common ownership primitive and tests before route integration.
+- [x] Integrate both entrypoints; handle upload-read, request-commit and thread-
+  launch failures; release capacity on every terminal path. (`submit_ingestion`
+  wired into `ingest.py` and `codebase_ingest.py`.)
+- [x] Implement recovery startup/ongoing trigger and legacy rollout handling.
+  (`reconcile_ingestions` on startup + 5-second sweep in `main.py`;
+  `scripts/reconcile_ingestions.py` for the explicit stopped-old-workers case.)
+- [x] Real PostgreSQL, separate processes: live owner survives competing startup;
   kill after acceptance/before launch and after acknowledged vector writes;
   recovery persists failed/error/timestamp/progress in fresh sessions.
-- [ ] Concurrent admission proves global capacity; saturation does not read the
+  (CI run 35269164566 at 96952ce/bc17e46.)
+- [x] Concurrent admission proves global capacity; saturation does not read the
   full upload, clone, create accepted rows or launch workers.
-- [ ] Verify connection-loss and late-completion races; failed cannot resurrect.
-- [ ] Keep R3 delete/ingest exclusion explicitly pending unless implemented and
+- [x] Verify connection-loss and late-completion races; failed cannot resurrect.
+- [x] Keep R3 delete/ingest exclusion explicitly pending unless implemented and
   verified together; do not equate R2 admission with full corpus consistency.
-- [ ] Service suites, lint, relevant types, real CI; record evidence and KB links.
-- [ ] Commit/push dedicated PR, inspect exact-head CI, merge; record Linux gates.
+  (Confirmed still separate; no R3 work folded in here.)
+- [x] Service suites, lint, relevant types, real CI; record evidence and KB links.
+  (See [evidence ledger](/DOCS/test_results/2026-09-17-ingestion-recovery-issue-161.md).)
+- [x] Commit/push dedicated PR, inspect exact-head CI, merge; record Linux gates.
+  (PR #177; Linux rollout evidence remains a separate #171 gate, not claimed here.)
 
 ## Current evidence
 

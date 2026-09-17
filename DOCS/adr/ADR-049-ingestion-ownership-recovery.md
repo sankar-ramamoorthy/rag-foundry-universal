@@ -2,7 +2,7 @@
 title: "ADR-049: Ingestion admission and database-session ownership"
 date: 2026-09-17
 type: adr
-status: proposed
+status: accepted
 tags: [ingestion, lifecycle, recovery, concurrency]
 related:
   - "[WP-R2 specification](/specs/005-production-correctness/issues/recovery.md)"
@@ -13,7 +13,9 @@ related:
 
 # ADR-049: Ingestion admission and database-session ownership
 
-Tracking: #161 / WP-R2, draft PR #177. Proposed until acceptance review/merge.
+Tracking: #161 / WP-R2, PR #177. Accepted: implemented, real-PostgreSQL
+CI-validated (run 35269164566 at 96952ce/bc17e46); Linux rollout evidence
+remains a separate #171 gate, not covered by this ADR's acceptance.
 
 ## Decision
 
