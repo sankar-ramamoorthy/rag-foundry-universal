@@ -1,7 +1,7 @@
 # Handoff: red-star production correctness
 
 Updated: 2026-09-17
-Tracking: #160, #161, #166-#171
+Tracking: #160, #161, #166-#171, #180, #181
 This is execution state, not an alternative specification or completion claim.
 
 ## Usage-limit checkpoint instruction
@@ -54,7 +54,30 @@ unverified (disclosed in the evidence doc, not blocking merge since the
 document_nodes fallback covers any row it misses). Issue #166 code/CI work
 is complete; the issue stays open pending Linux/live rollout evidence, a
 separate #171 gate — do not deploy on the owner's behalf and do not treat
-merged CI as production validation. R4+ (#167-#171) not started.
+merged CI as production validation.
+
+R5 (#168) SCOPE SPLIT, NOT IMPLEMENTED: owner asked for #168 to be
+reconstructed against current (post-R3) code before any implementation.
+Reconstruction confirmed: `rag_orchestrator`'s `_repo_graphs` cache
+(`retrieval/codebase_utils.py`) is process-global, unbounded, keyed only by
+`repo_id`, never reloaded — a warm worker keeps serving a stale graph after
+a repo is re-ingested, even though R3 already fixed the *data*-correctness
+half at the source (`/v1/graph/repos/{repo_id}` now returns one
+current-completed generation's nodes, plus a `generation_status` field the
+orchestrator currently discards). #168's original text bundled three
+unrelated concerns; owner asked for an explicit split rather than one PR
+spanning three domains. Split: #168 narrowed to generation-aware
+query/cache freshness only; new issue **#180** takes ingestion source-
+revision provenance (Git ref/resolved SHA/config fingerprint); new issue
+**#181** takes evaluation three-revision (runtime/corpus/ground-truth)
+provenance. `specs/005-production-correctness/issues/freshness.md` and
+`spec.md`'s tracking table rewritten to match; this is a docs-only PR
+(#168/#180/#181 issue bodies plus freshness.md/spec.md/status.md/log.md).
+No R5 (or #180/#181) implementation has started — owner explicitly said not
+to implement anything as part of this scoping change. Next: get explicit
+go-ahead on implementing #168's narrowed scope (expose generation id
+cheaply from ingestion_service, key/bound the orchestrator cache on
+`(repo_id, generation_id)`, pin a query to one generation at its start).
 
 ## Start here in a new session
 

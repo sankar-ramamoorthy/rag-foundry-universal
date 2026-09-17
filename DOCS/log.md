@@ -8,6 +8,17 @@ governed.
 
 ## 2026-09-17
 
+Split WP-R5/#168 into three separately-tracked issues after reconstructing
+it post-R3: #168 itself narrowed to generation-aware query/graph-cache
+freshness only, ingestion source-revision provenance (Git ref/resolved
+SHA/config fingerprint) moved to new issue #180, and evaluation
+three-revision (runtime/corpus/ground-truth) provenance moved to new issue
+#181. The original #168 text bundled all three under one acceptance list;
+they are different correctness domains with different owners and don't
+belong in one implementation unit. `specs/005-production-correctness/issues/
+freshness.md` and `spec.md`'s tracking table updated to match. No
+implementation for any of the three yet.
+
 Added proposed [ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md)
 for WP-R3 repository rebuild/delete lifecycle consistency (#166), linked to
 the programme's [acceptance and rollout tasks](/specs/005-production-correctness/issues/lifecycle.md).
