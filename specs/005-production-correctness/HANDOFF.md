@@ -25,7 +25,9 @@ usable by a new session or Claude Code.
 
 ## Current state
 
-- Branch: fix/169-healthchecks-provenance; implementation awaiting PR/CI.
+- Branch: fix/169-healthchecks-provenance; PR #172 open.
+  Initial CI caught root pytest console-script import-path setup; tests/conftest.py
+  now supplies repo root for both pytest invocation styles. Recheck latest CI.
 - Planning PR #164 merged with green unit and PostgreSQL integration CI.
   Main merge: 853b0e3814a228337028929109a44ed837f5fd2d.
 - Audit reports/probe were untracked at start; authored in the preceding audit

@@ -38,6 +38,11 @@ provider aliases (two failures); rerun with PYTHON_DOTENV_DISABLED=1 and empty
 LLM_DEFAULT_ALIAS, REMOTE_OLLAMA_BASE_URL, WINDOWS_OLLAMA_BASE_URL passed.
 User environment files were not modified.
 
+Initial Linux CI used the `pytest` console entrypoint (local checks used
+`python -m pytest`) and caught missing repo-root import setup. Added root test
+conftest to make both entrypoints resolve shared modules consistently; rerun
+CI on the corrected head before merging PR #172.
+
 New regression tests execute actual Compose argument vectors against real
 temporary loopback HTTP servers. Healthy responses succeed; HTTP 503, invalid
 JSON, wrong status, missing routes, unreachable endpoints and an accepted TCP
