@@ -7,6 +7,7 @@ import socket
 import subprocess
 import sys
 import time
+import json
 
 import pytest
 from sqlalchemy import event, text
@@ -394,3 +395,40 @@ def test_acknowledged_http_batches_survive_later_failure(corpus, vector_http_url
         assert request.status == "failed"
         progress = request.ingestion_metadata["embed_progress"]
         assert progress["chunks_persisted"] == 14 and progress["stage"] == "failed"
+
+
+def test_capture_real_paging_plan(corpus):
+    """Record actual planner behavior before proposing a new paging index."""
+    repo, attempt, factory = corpus
+    with factory() as session:
+        nodes = [
+            {
+                "canonical_id": f"p{i}.py",
+                "relative_path": f"p{i}.py",
+                "text": "def f(): return 1",
+                "ingestion_id": attempt,
+            }
+            for i in range(4000)
+        ]
+        CodebaseGraphPersistence(session).persist_graph(repo, nodes, [])
+        session.execute(text("ANALYZE ingestion_service.document_nodes"))
+        after = session.execute(
+            text("""
+            SELECT document_id FROM ingestion_service.document_nodes
+            WHERE repo_id = :repo ORDER BY document_id OFFSET 3000 LIMIT 1
+        """),
+            {"repo": repo},
+        ).scalar()
+        plan = session.execute(
+            text("""
+            EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+            SELECT document_id, canonical_id, relative_path, doc_type, text
+            FROM ingestion_service.document_nodes
+            WHERE repo_id = :repo AND ingestion_id = :attempt
+              AND document_id > :after AND coalesce(octet_length(text), 0) <= 1048576
+            ORDER BY document_id LIMIT 32
+        """),
+            {"repo": repo, "attempt": attempt, "after": after},
+        ).scalar()
+        print("PAGING_EXPLAIN=" + json.dumps(plan))
+        assert plan[0]["Plan"]["Actual Rows"] == 32
