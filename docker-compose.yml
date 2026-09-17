@@ -43,7 +43,7 @@ services:
       DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_db
       PYTHONPATH: /app:/app/src
     healthcheck:
-      test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8002/health').status_code==200 else exit(1)"]
+      test: ["CMD", "python3", "-m", "shared.healthcheck", "http://127.0.0.1:8000/health"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -68,7 +68,7 @@ services:
     environment:
       DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_db
     healthcheck:
-      test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8002/health').status_code==200 else exit(1)"]
+      test: ["CMD", "python3", "-m", "shared.healthcheck", "http://127.0.0.1:8002/health"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -95,7 +95,7 @@ services:
       PYTHONPATH: /app:/app/llm_service
       MODEL_POLICY_PATH: /runtime/model-policy.json
     healthcheck:
-      test: ["CMD-SHELL", "python3", "-c", "import requests; exit(0) if requests.get('http://localhost:8003/health').status_code==200 else exit(1)"]
+      test: ["CMD", "python3", "-m", "shared.healthcheck", "http://127.0.0.1:8000/health"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -119,6 +119,11 @@ services:
       - ./.env
     environment:
       PYTHONPATH: /app:/app/rag_orchestrator
+    healthcheck:
+      test: ["CMD", "python3", "-m", "shared.healthcheck", "http://127.0.0.1:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - ragnet
     depends_on:
@@ -142,6 +147,11 @@ services:
     environment:
       API_BASE_URL: http://ingestion_service:8000
       RAG_API_BASE_URL: http://rag_orchestrator:8000
+    healthcheck:
+      test: ["CMD", "python3", "-m", "shared.healthcheck", "http://127.0.0.1:7860/", "--html"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     depends_on:
       - ingestion_service
       - rag_orchestrator

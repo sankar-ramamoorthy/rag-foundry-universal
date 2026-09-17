@@ -25,26 +25,33 @@ usable by a new session or Claude Code.
 
 ## Current state
 
-- Branch: spec/004-bounded-ingestion-memory-issue-160; PR #164 open.
-- Starting HEAD: 308f0ac068fb0a8bdbb30ceba34cc6777abfb304.
+- Branch: fix/169-healthchecks-provenance; PR #172 open.
+  Initial CI caught root pytest console-script import-path setup; tests/conftest.py
+  now supplies repo root for both pytest invocation styles. Recheck latest CI.
+- Planning PR #164 merged with green unit and PostgreSQL integration CI.
+  Main merge: 853b0e3814a228337028929109a44ed837f5fd2d.
 - Audit reports/probe were untracked at start; authored in the preceding audit
   session and authorized to include in the planning PR.
 - #160 memory and #161 recovery already exist. #144 concerns rebuild visibility.
 - Created #166 lifecycle, #167 evidence, #168 freshness, #169 health,
   #170 blocking I/O, #171 current release.
 - 004 design files amended for M1-M8. Programme spec/plan/tasks and per-issue
-  bodies written. No production fix implemented or deployed yet.
+  bodies written. #169 healthcheck/provenance implementation locally tested;
+  no production fix deployed yet.
 - Root uv sync --frozen succeeded. Root .venv/Scripts/python.exe exists.
 - Local Docker daemon unavailable. Use CI for real Postgres tests until an
   isolated local/remote test stack is available; do not substitute mocks.
 
 ## Immediate next actions
 
-Finish KB/roadmap links and docs verification. Commit/push amended #164,
-replace its PR description with the amended final design and issue mapping,
-wait for required CI and merge. Then branch from updated main for #160.
-Independent #169 health work may proceed without waiting for memory benchmark
-infrastructure. Update this handoff before each meaningful transition.
+Commit/push #169, wait for required CI and merge exact green head. Keep #169
+open until Linux Docker health/image evidence is recorded. Then branch from
+updated main for #160; read its complete design and relevant ADRs first.
+Local #169 results and remaining gates:
+[evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).
+Use root .venv for service suites. For llm tests disable ambient personal
+dotenv: PYTHON_DOTENV_DISABLED=1 and empty LLM_DEFAULT_ALIAS,
+REMOTE_OLLAMA_BASE_URL, WINDOWS_OLLAMA_BASE_URL. Do not edit user .env.
 
 ## Important design decisions already made
 
@@ -77,7 +84,7 @@ OKF type/frontmatter and Markdown links. GitHub multiline bodies use --body-file
 
 ## Completion ledger
 
-Planning PR #164: open, amendment not yet committed/pushed.
-Implementation PRs: none yet.
+Planning PR #164: merged, 853b0e3814a228337028929109a44ed837f5fd2d.
+Implementation #169: local checks passed; PR/merge still pending.
 Mandatory live memory/recovery/quality/release gates: all pending.
 Do not close the overall objective until every requirement is evidenced.

@@ -1,7 +1,7 @@
 # WP-R6: correct production healthchecks and expose runtime provenance
 
 Tracking issue: [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169)
-Status: Planned; no implementation or production validation implied.
+Status: Implemented and locally tested; PR/CI and Linux validation pending.
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -21,9 +21,26 @@ Validate rendered base/prod Compose; execute probes against healthy and unavaila
 
 ## Delivery tasks
 
-- [ ] Finalize issue-linked specification, plan, contracts, and acceptance tests.
-- [ ] Implement scoped fix on a dedicated branch; preserve service ownership and model provenance.
-- [ ] Run relevant unit/integration/evaluation checks; record limitations honestly.
-- [ ] Update OKF knowledge-base links, current status, roadmap, ADRs where decisions change, and evidence.
+- [x] Finalize issue-linked specification, plan, contracts, and acceptance tests.
+- [x] Implement scoped fix on a dedicated branch; preserve service ownership and model provenance.
+- [x] Run relevant local checks; record limitations honestly (Linux integration pending).
+- [x] Update OKF knowledge-base links, current status, roadmap and evidence.
 - [ ] Commit, push, review CI, and merge the dedicated PR.
-- [ ] Record deployment-specific gates separately from code completion.
+- [x] Record deployment-specific gates separately from code completion.
+
+## Implemented contract
+
+All five app probes use exec-form `python3 -m shared.healthcheck` with a
+2-second socket timeout inside Docker's 3-second timeout. API probes require
+HTTP 200 and JSON `status=ok`; UI requires HTTP 200 with a nonempty body.
+Container ports are 8000 for ingestion/LLM/RAG, 8002 for vector store, 7860
+for Gradio. These are local HTTP liveness/startup gates, not proof of database,
+model or corpus readiness. Functional lifecycle checks remain mandatory.
+
+Four APIs expose read-only `GET /version`: service, git_sha, build_date,
+release_version. Values come from APP_* environment baked from existing build
+args; local defaults are unknown/unknown/dev. No Gradio version endpoint is
+claimed. Compare all five running image IDs/OCI labels with approved SHA;
+HTTP metadata alone is not image attestation and can be environment-overridden.
+
+[Local evidence and Linux gates](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).

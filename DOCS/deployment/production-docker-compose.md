@@ -151,6 +151,15 @@ deploys.
 
 ## Validation
 
+WP-R6/#169 adds exec-form probes on the container-local ports for all five
+applications and `GET /version` on the four APIs. The probe proves local HTTP
+liveness only, not database/model/corpus readiness. Check Docker health state
+as well as external HTTP; `depends_on: service_healthy` is only a startup gate.
+Compare `/version` fields `git_sha`, `build_date`, `release_version` with the
+approved build and running-image OCI labels. `unknown` is acceptable only for
+unlabelled local development, never a verified release. HTTP metadata is not
+image attestation. See [verification and outstanding Linux gates](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).
+
 Check health:
 
 ```bash

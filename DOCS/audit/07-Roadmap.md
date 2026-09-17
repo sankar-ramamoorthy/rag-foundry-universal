@@ -127,6 +127,8 @@ health/readiness corrections can ship while memory validation is prepared.
 - [ ] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167), related #91/#141/#145/#149/#156.
 - [ ] WP-R5 — source pinning and generation-aware graph cache, [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168).
 - [ ] WP-R6 — healthcheck correctness and runtime provenance, [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169).
+  Implementation locally verified; PR/CI and Linux gates pending:
+  [evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).
 - [ ] WP-R7 — bounded blocking-I/O isolation, [#170](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/170).
 - [ ] WP-R8 — current Linux full-lifecycle release validation, [#171](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/171).
 
