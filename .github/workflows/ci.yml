@@ -95,5 +95,13 @@ jobs:
           retention-days: 14
 
       - name: vector_store_service integration tests (ANN index usage)
+        id: ann-tests
         working-directory: vector_store_service
         run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_ann_index_usage.py -q
+
+      - name: Diagnose post-delete ANN failures with isolated-test vacuum
+        if: failure() && steps.ann-tests.outcome == 'failure'
+        working-directory: vector_store_service
+        run: |
+          ../.venv/bin/python -c 'import os, psycopg; c=psycopg.connect(os.environ["DATABASE_URL"], autocommit=True); assert c.info.dbname.endswith("_test"); c.execute("VACUUM (ANALYZE) ingestion_service.vector_chunks"); c.close()'
+          ../.venv/bin/python -m pytest tests/core/vectorstore/test_ann_index_usage.py -q
