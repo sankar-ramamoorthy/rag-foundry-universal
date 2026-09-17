@@ -88,8 +88,10 @@ document.
   identifies production blockers now tracked as
   [WP-R1–R8](/specs/005-production-correctness/spec.md): #160 memory, #161
   recovery/admission, #166 corpus lifecycle, #167 evidence delivery, #168
-  snapshot/cache freshness, #169 health/provenance, #170 blocking I/O, and
-  #171 current-release verification. At programme creation, these fixes are
+  generation-aware cache freshness (split 2026-09-17; source-revision
+  provenance now #180, eval-revision provenance now #181), #169
+  health/provenance, #170 blocking I/O, and #171 current-release
+  verification. At programme creation, these fixes are
   **planned, not implemented or production validated**. Execution state is in
   the [handoff](/specs/005-production-correctness/HANDOFF.md).
   Planning PR #164 is merged. WP-R6/#169 healthcheck and runtime-provenance
@@ -107,12 +109,17 @@ document.
   rebuild/delete lifecycle) is merged to main via PR #178 (`351dc56`), with
   real-PostgreSQL CI evidence (including a rebuild-in-progress generation
   test) in [its test-results doc](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md)
-  and [proposed ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md).
+  and [accepted ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md).
   Its migration's backfill SQL has not been verified against genuine
   pre-#166 historical rows (only against CI's always-empty fresh DB) — a
   disclosed, non-blocking gap. `rag_orchestrator`'s in-memory graph cache
   does not yet consult the new `generation_status` signal; that remains
-  #168's scope. Linux/live rollout validation is a separate, still-pending
+  #168's scope. #168 was reconstructed and split on 2026-09-17: it is now
+  scoped to generation-aware query/cache freshness only (not yet
+  implemented), with ingestion source-revision provenance split to #180 and
+  evaluation three-revision provenance split to #181 — see
+  [freshness](/specs/005-production-correctness/issues/freshness.md).
+  Linux/live rollout validation is a separate, still-pending
   #171 gate. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
