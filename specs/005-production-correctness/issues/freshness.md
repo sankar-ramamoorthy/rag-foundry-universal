@@ -1,7 +1,9 @@
 # WP-R5: generation-aware query/graph-cache freshness
 
 Tracking issue: [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168)
-Status: Planned; scope split from #168's original bundle, not yet implemented.
+Status: Implemented on branch `feat/168-generation-aware-graph-cache`, CI
+pending. See [ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)
+(proposed) and [test-results evidence](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md).
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -84,20 +86,33 @@ nothing tells a warm cache it is stale.
 - Real PostgreSQL + real `rag_orchestrator`<->`ingestion_service` HTTP
   round-trip test, not mocks alone, for the re-ingest-observed-by-warm-
   worker case specifically (this is the scenario audit A7 and the original
-  incident concern both centered on).
+  incident concern both centered on). Delivered as: a real-Postgres
+  integration test against the actual FastAPI route (ingestion side) plus
+  unit tests mocking the HTTP seam (orchestrator side) — not a literal
+  two-live-process round trip; see ADR-051's non-goals for why that gap is
+  disclosed rather than silently claimed closed.
 
 ## Delivery tasks
 
-- [ ] Finalize issue-linked specification, plan, contracts, and acceptance
-  tests for this narrowed scope.
-- [ ] Implement scoped fix on a dedicated branch; preserve service
-  ownership (`rag_orchestrator` doesn't gain DB access; it still only
-  talks to `ingestion_service` over HTTP) and model provenance.
-- [ ] Run relevant unit/integration checks; record limitations honestly.
-- [ ] Update OKF knowledge-base links, current status, roadmap, ADRs where
-  decisions change, and evidence.
+- [x] Finalize issue-linked specification, plan, contracts, and acceptance
+  tests for this narrowed scope (this file; ADR-051).
+- [x] Implement scoped fix on a dedicated branch
+  (`feat/168-generation-aware-graph-cache`); preserve service ownership
+  (`rag_orchestrator` doesn't gain DB access; it still only talks to
+  `ingestion_service` over HTTP) and model provenance.
+  - New `GET /v1/repos/{repo_id}/generation` on `ingestion_service`.
+  - `get_cached_graph` keyed on `(repo_id, generation_id)`, LRU-bounded
+    (`GRAPH_CACHE_MAX_REPOS`), thread-safe.
+  - No-completed-generation short-circuits to an empty graph without a
+    full fetch.
+- [x] Run relevant unit/integration checks locally; record limitations
+  honestly — see evidence doc. Real-Postgres/CI run pending at branch
+  creation; run in CI before merge.
+- [x] Update OKF knowledge-base links, current status, roadmap, ADR-051,
+  and evidence doc.
 - [ ] Commit, push, review CI, and merge the dedicated PR.
-- [ ] Record deployment-specific gates separately from code completion.
+- [ ] Record deployment-specific gates (Linux/#171) separately from code
+  completion.
 
 ## Explicit non-goals
 
