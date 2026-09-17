@@ -88,6 +88,14 @@ jobs:
         working-directory: ingestion_service
         run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q -s -k "not fresh_process_memory_scaling"
 
+      - name: ingestion_service integration tests (repository lifecycle, #166)
+        working-directory: ingestion_service
+        run: |
+          ../.venv/bin/python -m pytest \
+            tests/core/test_repo_lifecycle.py \
+            tests/core/test_db_utils_repo_delete.py \
+            -q
+
       - name: vector_store_service integration tests (ANN index usage)
         id: ann-tests
         working-directory: vector_store_service
