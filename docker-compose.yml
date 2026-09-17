@@ -42,6 +42,10 @@ services:
     environment:
       DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/ingestion_db
       PYTHONPATH: /app:/app/src
+      INGESTION_NODE_PAGE_SIZE: ${INGESTION_NODE_PAGE_SIZE:-32}
+      INGESTION_EMBED_BATCH_SIZE: ${INGESTION_EMBED_BATCH_SIZE:-128}
+      INGESTION_EMBED_MAX_BYTES: ${INGESTION_EMBED_MAX_BYTES:-262144}
+      INGESTION_MAX_ARTIFACT_BYTES: ${INGESTION_MAX_ARTIFACT_BYTES:-1048576}
     healthcheck:
       test: ["CMD", "python3", "-m", "shared.healthcheck", "http://127.0.0.1:8000/health"]
       interval: 5s

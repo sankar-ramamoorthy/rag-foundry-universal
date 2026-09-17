@@ -25,9 +25,17 @@ usable by a new session or Claude Code.
 
 ## Current state
 
-- Branch: fix/169-healthchecks-provenance; PR #172 open.
-  Initial CI caught root pytest console-script import-path setup; tests/conftest.py
-  now supplies repo root for both pytest invocation styles. Recheck latest CI.
+- Branch: fix/160-bounded-ingestion-memory; partial implementation, not release-ready.
+  T001/T007/T010 implemented. New embedding_buffer.py bounds chunks/UTF-8 bytes
+  and carries explicit document ordinals. CodebaseGraphPersistence has narrow
+  generation-scoped keyset paging with SQL byte preflight. Neither is wired
+  into the worker yet: current runtime still uses the whole-repo path.
+  42 focused tests pass (including existing batch tests); lint/focused types pass.
+  New PostgreSQL test_artifact_paging.py is selected in CI, not locally executed.
+  Preserve these tests; do not claim the buffer alone fixes #160.
+- PR #172 merged after lint/unit/PostgreSQL integration CI passed on
+  36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
+  Main merge: 2b198b6f96c3ce54c5f031cef11e9ebd2f306614.
 - Planning PR #164 merged with green unit and PostgreSQL integration CI.
   Main merge: 853b0e3814a228337028929109a44ed837f5fd2d.
 - Audit reports/probe were untracked at start; authored in the preceding audit
@@ -44,9 +52,17 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Commit/push #169, wait for required CI and merge exact green head. Keep #169
-open until Linux Docker health/image evidence is recorded. Then branch from
-updated main for #160; read its complete design and relevant ADRs first.
+Continue #160: extract suffix-language helper from graph_assembler unchanged;
+move graph build/persist into helper returning scalar stats. Wire paged reads
+and EmbeddingBuffer into _embed_repo_artifacts; remove nodes/map dependency.
+Count embeddable nodes with exact Python strip semantics in a bounded scan,
+initialize progress BEFORE allocation, and release page/graph references.
+Persist fresh-JSON progress and expose it in status; handle completed/failed/0/0.
+Replace obsolete whole-repo tests, add lifetime, parity and failure tests.
+Run PostgreSQL CI tests, including EXPLAIN before deciding on an index; add
+progress fresh-session/interruption tests and isolated RSS harness. Do not
+merge this partial implementation as a finished memory fix.
+Keep #169 open until Linux Docker health/image evidence is recorded.
 Local #169 results and remaining gates:
 [evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).
 Use root .venv for service suites. For llm tests disable ambient personal
@@ -85,6 +101,6 @@ OKF type/frontmatter and Markdown links. GitHub multiline bodies use --body-file
 ## Completion ledger
 
 Planning PR #164: merged, 853b0e3814a228337028929109a44ed837f5fd2d.
-Implementation #169: local checks passed; PR/merge still pending.
+Implementation #169: PR #172 merged; Linux host validation still pending.
 Mandatory live memory/recovery/quality/release gates: all pending.
 Do not close the overall objective until every requirement is evidenced.

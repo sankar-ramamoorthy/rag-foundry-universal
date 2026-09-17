@@ -7,7 +7,7 @@ Plan: [plan.md](./plan.md)
 
 ## Setup and tests
 
-- [ ] T001 Validated page/count/byte/artifact settings and env/Compose examples.
+- [x] T001 Validated page/count/byte/artifact settings and env/Compose examples.
 - [ ] T002 Skeletal 143-chunk-node, cross-buffer ordinal, byte/Unicode,
       normalized parity, whitespace/empty and oversized rejection tests.
 - [ ] T003 Real PostgreSQL generation-scoped page/count/disappearance tests,
@@ -19,11 +19,11 @@ Plan: [plan.md](./plan.md)
 - [ ] T005 Narrow keyset pages with repo_id+ingestion_id, byte preflight,
       consistent inclusion and completion count checks.
 - [ ] T006 Graph helper scope ends before embedding; prove no full references.
-- [ ] T007 Optional explicit chunk_indices through pipeline/persistence,
+- [x] T007 Optional explicit chunk_indices through pipeline/persistence,
       with cardinality and ordinal validation.
 - [ ] T008 Count+byte bounded chunk buffers; persist before successor.
 - [ ] T009 Remove canonical-map use from this embedding path.
-- [ ] T010 Finite embedding transport deadline and failure propagation.
+- [x] T010 Finite embedding transport deadline and failure propagation.
 - [ ] T011 Pre-allocation stages, fresh-JSON progress, 0/0 case and maxima.
 - [ ] T012 Verify WP-R2/R3 admission/mutation exclusion before deployment.
 

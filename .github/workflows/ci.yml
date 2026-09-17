@@ -80,6 +80,10 @@ jobs:
         working-directory: ingestion_service
         run: ../.venv/bin/python -m pytest tests/codebase/test_atomic_graph_persistence.py -q
 
+      - name: ingestion_service integration tests (bounded artifact paging)
+        working-directory: ingestion_service
+        run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q
+
       - name: vector_store_service integration tests (ANN index usage)
         working-directory: vector_store_service
         run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_ann_index_usage.py -q

@@ -11,6 +11,7 @@ from src.core.database_session import get_sessionmaker
 from src.core.crud.crud_document_node import create_document_node
 from src.core.crud.document_relationships import create_document_relationship
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
+from src.core.batch_contracts import validate_batch_identity
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -190,29 +191,28 @@ class IngestionPipeline:
         chunks: list[Chunk],
         ingestion_id: str,
         document_ids: list[str],
+        chunk_indices: list[int] | None = None,
     ) -> None:
         """
         Embed pre-chunked artifacts and bulk-persist them (F-08).
 
         Unlike _persist(), every chunk carries its own document_id, so one
-        call covers a whole repo's artifacts: embeddings happen in embedder
-        batches and persistence goes through the vector store's batch path.
+        call covers a caller-bounded buffer. Explicit document-local indices
+        preserve ordinals when one artifact spans several buffers (#160).
         """
-        if len(chunks) != len(document_ids):
-            raise ValueError(
-                f"embed_and_persist_batch mismatch: {len(chunks)} chunks, "
-                f"{len(document_ids)} document_ids"
-            )
+        validate_batch_identity(len(chunks), document_ids, chunk_indices)
         if not chunks:
             logger.debug("embed_and_persist_batch: no chunks to persist")
             return
 
         embeddings = self._embed(chunks)
+        index_args = {} if chunk_indices is None else {"chunk_indices": chunk_indices}
         self._vector_store.persist_batch(
             chunks=chunks,
             embeddings=embeddings,
             ingestion_id=ingestion_id,
             document_ids=document_ids,
+            **index_args,
         )
 
     def _validate(self, text: str) -> None:
