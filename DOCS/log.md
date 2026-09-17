@@ -8,11 +8,19 @@ governed.
 
 ## 2026-09-17
 
-Added proposed [ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md) for
+Added proposed [ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md)
+for WP-R3 repository rebuild/delete lifecycle consistency (#166), linked to
+the programme's [acceptance and rollout tasks](/specs/005-production-correctness/issues/lifecycle.md).
+It persists `repo_id` on `ingestion_requests` independently of graph rows,
+adds a repo-scope mutation lock, and corrects generation resolution to match
+`persist_graph`'s actual atomic-replace behavior rather than assuming a prior
+generation stays servable during a rebuild. Merge/CI validation pending.
+
+Accepted [ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md) for
 WP-R2 ingestion ownership/recovery (#161), linked to the programme's
 [acceptance and rollout tasks](/specs/005-production-correctness/issues/recovery.md).
 It distinguishes job ownership from R3 corpus consistency and records explicit
-legacy-worker rollout requirements. Acceptance/merge remains pending.
+legacy-worker rollout requirements. Merged via PR #177 (`12cf75d`).
 
 ## 2026-09-14
 

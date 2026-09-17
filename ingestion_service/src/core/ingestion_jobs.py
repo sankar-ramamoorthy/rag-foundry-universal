@@ -50,23 +50,26 @@ def _run_owned(
 
 def submit_ingestion(
     *, ingestion_id: UUID, source_type: str, metadata: dict,
-    target: Callable, prepare: Callable[[], dict],
+    target: Callable, prepare: Callable[[], dict], repo_id: str | None = None,
 ) -> None:
     """No upload read, accepted row or thread is created before reservation.
 
     A single owner connection transfers from request to worker only at start().
     The request must never use/close it after a successful thread launch.
+
+    repo_id (repository ingestion only, #166) also reserves the repo-scope
+    lock so a concurrent delete of the same repository cannot interleave.
     """
     engine = get_engine()
     reconcile_ingestions(engine)
-    guard = reserve_ingestion(engine, ingestion_id)
+    guard = reserve_ingestion(engine, ingestion_id, repo_id=repo_id)
     try:
         kwargs = prepare()
         guard.check()
         with Session(engine) as session:
             StatusManager(session).create_request(
                 ingestion_id=ingestion_id, source_type=source_type,
-                metadata=owned_metadata(metadata),
+                metadata=owned_metadata(metadata), repo_id=repo_id,
             )
         threading.Thread(
             target=_run_owned, args=(guard, ingestion_id, target, kwargs),

@@ -187,27 +187,74 @@ def list_ingestion_ids_for_repo(repo_id: str) -> List[str]:
     """
     Return every historical ingestion_id ever associated with repo_id.
 
-    Issue #158: this must be called (and its result held) *before* any
-    deletion — document_nodes.repo_id is the only place this mapping
-    exists (ingestion_requests has no repo_id column of its own), so
-    once document_nodes rows for this repo are deleted, the mapping is
-    gone. This intentionally does not filter by IngestionRequest.status
-    (unlike list_complete_repos): a repo delete should sweep every
-    ingestion_id document_nodes ever recorded for it.
+    #166: repo_id is now persisted directly on ingestion_requests (set at
+    HTTP accept time), so this is the primary source and — unlike the old
+    document_nodes-only lookup — still works after graph rows are gone
+    (retry after a delete that failed partway through, an attempt that
+    never wrote a single node). document_nodes.repo_id is kept as a
+    fallback union for historical rows predating the repo_id column that
+    the migration's backfill could not reach (should not happen post-
+    backfill, but costs nothing to keep as a second source of truth).
+    This intentionally does not filter by IngestionRequest.status: a repo
+    delete must sweep every ingestion_id ever recorded for it, active or not.
     """
     with SessionLocal() as session:
-        rows = (
+        from_requests = (
+            session.query(IngestionRequest.ingestion_id)
+            .filter(IngestionRequest.repo_id == repo_id)
+            .distinct()
+            .all()
+        )
+        from_nodes = (
             session.query(DocumentNode.ingestion_id)
             .filter(DocumentNode.repo_id == repo_id)
             .distinct()
             .all()
         )
-        ingestion_ids = [str(row[0]) for row in rows]
+        ingestion_ids = sorted({
+            str(row[0]) for row in (*from_requests, *from_nodes)
+        })
         logger.info(
             f"DB: {len(ingestion_ids)} historical ingestion_id(s) found for "
             f"repo {repo_id[:8]}"
         )
         return ingestion_ids
+
+
+def superseded_ingestion_ids_for_repo(
+    repo_id: str, current_ingestion_id: str,
+) -> List[str]:
+    """Every historical ingestion_id for repo_id other than current_ingestion_id.
+
+    #166: a successful rebuild's persist_graph atomically replaces
+    document_nodes for repo_id (DocumentNode enforces one row per
+    (repo_id, canonical_id), so two generations' graph rows can never
+    coexist) -- but vector_store_service has no such constraint and keeps
+    every ingestion_id's vectors until something explicitly deletes them.
+    Left alone, every rebuild leaks the previous generation's vectors:
+    they still match repo_id-filtered search after their document_ids have
+    been deleted from document_nodes, degrading retrieval with dead links
+    forever. Used only after the new generation is confirmed complete.
+    """
+    current = str(current_ingestion_id)
+    return [i for i in list_ingestion_ids_for_repo(repo_id) if i != current]
+
+
+def has_active_ingestion_for_repo(repo_id: str) -> bool:
+    """True if repo_id has an accepted/running ingestion_requests row (#166).
+
+    Used to reject a delete while a repository is actively being built, so
+    delete and ingest never mutate the same repository concurrently even
+    outside the advisory-lock race window (e.g. a delete arriving between
+    admission and the repo lock being taken is still visible here once the
+    accepted row is committed).
+    """
+    with SessionLocal() as session:
+        active = session.query(IngestionRequest.ingestion_id).filter(
+            IngestionRequest.repo_id == repo_id,
+            IngestionRequest.status.in_(("accepted", "running")),
+        ).first()
+        return active is not None
 
 
 def delete_ingestion_requests(ingestion_ids: List[str]) -> int:
@@ -239,15 +286,87 @@ def delete_ingestion_requests(ingestion_ids: List[str]) -> int:
 # GRAPH HELPERS
 # ==============================================================
 
+def _document_node_owner(session, repo_id: str) -> Optional[str]:
+    """The single ingestion_id currently reflected in document_nodes for
+    repo_id, or None if it has no graph rows right now.
+
+    persist_graph atomically deletes+replaces ALL of repo_id's document_nodes
+    inside one transaction (a transaction-scoped advisory lock keyed on
+    repo_id serializes concurrent rebuilds — see CodebaseGraphPersistence.
+    persist_graph), and DocumentNode enforces a unique (repo_id, canonical_id)
+    constraint. So at most one ingestion_id's rows can exist for repo_id at
+    any moment; there is no schema-level way for two generations to coexist.
+    """
+    return session.query(DocumentNode.ingestion_id).filter(
+        DocumentNode.repo_id == repo_id,
+    ).distinct().scalar()
+
+
+def resolve_current_generation(repo_id: str) -> Optional[str]:
+    """Return the ingestion_id to serve graph reads from for repo_id (#166),
+    or None if there is nothing safe to serve right now.
+
+    Critically, persist_graph's atomic replace runs at *graph-build* time,
+    well before embedding finishes and mark_completed is written — so
+    "document_nodes currently holds ingestion_id X" does NOT by itself mean
+    X's ingestion is complete (or even that X's vectors exist yet). Only
+    return an ingestion_id whose ingestion_requests.status is "completed";
+    a rebuild in flight (graph replaced, embedding still running, or the
+    attempt later failed) must not be served as if it were a stable
+    generation, even though its rows are the only ones physically present.
+    """
+    with SessionLocal() as session:
+        owner = _document_node_owner(session, repo_id)
+        if owner is None:
+            return None
+        status = session.query(IngestionRequest.status).filter(
+            IngestionRequest.ingestion_id == owner,
+        ).scalar()
+        return str(owner) if status == "completed" else None
+
+
+def generation_status(repo_id: str) -> str:
+    """"ready" (document_nodes hold a completed generation), "building" (an
+    ingestion is accepted/running for repo_id -- its document_nodes, if any,
+    may be a not-yet-embedded rebuild and must not be treated as stable),
+    "failed" (the most recent ingestion for repo_id failed and none is
+    currently active), or "unknown" (no ingestion_requests row for repo_id
+    at all, or the owner of its document_nodes has no matching row -- both
+    should not happen post-migration but are handled rather than assumed).
+    """
+    with SessionLocal() as session:
+        owner = _document_node_owner(session, repo_id)
+        if owner is not None:
+            status = session.query(IngestionRequest.status).filter(
+                IngestionRequest.ingestion_id == owner,
+            ).scalar()
+            if status == "completed":
+                return "ready"
+            if status in ("accepted", "running"):
+                return "building"
+        latest_status = session.query(IngestionRequest.status).filter(
+            IngestionRequest.repo_id == repo_id,
+        ).order_by(IngestionRequest.created_at.desc()).limit(1).scalar()
+        if latest_status in ("accepted", "running"):
+            return "building"
+        if latest_status == "failed":
+            return "failed"
+        return "unknown"
+
+
 def get_document_nodes_by_canonical_ids(
     repo_id: str,
     canonical_ids: List[str],
 ) -> List[DocumentNode]:
     """
-    Return DocumentNode rows for a repo and list of canonical_ids.
-    Used by graph lookup endpoint.
+    Return DocumentNode rows for a repo's *current completed generation*
+    and list of canonical_ids. Used by graph lookup endpoint.
     """
     if not canonical_ids:
+        return []
+
+    current_ingestion_id = resolve_current_generation(repo_id)
+    if current_ingestion_id is None:
         return []
 
     with SessionLocal() as session:
@@ -255,6 +374,7 @@ def get_document_nodes_by_canonical_ids(
             session.query(DocumentNode)
             .filter(
                 DocumentNode.repo_id == repo_id,
+                DocumentNode.ingestion_id == current_ingestion_id,
                 DocumentNode.canonical_id.in_(canonical_ids),
             )
             .all()
@@ -263,7 +383,7 @@ def get_document_nodes_by_canonical_ids(
         logger.info(
             f"DB: {len(nodes)} nodes found for "
             f"{len(canonical_ids)} canonical_ids "
-            f"in repo {repo_id[:8]}"
+            f"in repo {repo_id[:8]} generation {str(current_ingestion_id)[:8]}"
         )
 
         return nodes
@@ -271,18 +391,32 @@ def get_document_nodes_by_canonical_ids(
 
 def get_full_graph_for_repo(repo_id: str) -> Dict:
     """
-    Load nodes and relationships for a repo.
+    Load nodes and relationships for a repo's *current completed generation*
+    only (#166) — never a mix of an old generation and an in-flight rebuild's
+    partial rows, and never two completed generations at once.
     """
+    current_ingestion_id = resolve_current_generation(repo_id)
+    if current_ingestion_id is None:
+        return {
+            "nodes": {}, "relationships": {},
+            "generation_status": generation_status(repo_id),
+        }
+
     with SessionLocal() as session:
 
         nodes = (
             session.query(DocumentNode)
-            .filter(DocumentNode.repo_id == repo_id)
+            .filter(
+                DocumentNode.repo_id == repo_id,
+                DocumentNode.ingestion_id == current_ingestion_id,
+            )
             .all()
         )
 
         if not nodes:
-            return {"nodes": {}, "relationships": {}}
+            return {
+                "nodes": {}, "relationships": {}, "generation_status": "ready",
+            }
 
         node_data = {node.canonical_id: node for node in nodes}
         document_ids = {node.document_id for node in nodes}
@@ -315,4 +449,5 @@ def get_full_graph_for_repo(repo_id: str) -> Dict:
         return {
             "nodes": node_data,
             "relationships": rel_data,
+            "generation_status": "ready",
         }

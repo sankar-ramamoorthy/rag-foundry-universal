@@ -22,8 +22,36 @@ checkpoint (recovery.md checklist fully checked, ADR-049 flipped to accepted,
 PR body rewritten to match the already-implemented/CI-validated state). Issue
 #161 code/CI work is complete; the issue itself stays open pending Linux/live
 rollout evidence, which is a separate #171 gate — do not deploy on the owner's
-behalf and do not treat merged CI as production validation. R3 (#166) is not
-started.
+behalf and do not treat merged CI as production validation.
+
+R3 (#166) IN PROGRESS: branch `fix/166-repo-lifecycle-consistency` off main
+at `573b860`. Implemented: `repo_id` persisted on `ingestion_requests`
+(migration `20260917_add_repo_id_to_ingestion_requests`, backfilled from
+document_nodes); repo-scope advisory lock serializing ingest vs. delete;
+`list_ingestion_ids_for_repo` retry-safe via repo_id (document_nodes fallback
+kept); `resolve_current_generation`/`generation_status` gating graph reads on
+the actual document_nodes owner's ingestion status (discovered mid-
+implementation that `persist_graph` already atomically replaces all of a
+repo's document_nodes at graph-build time, before embedding/completion — so
+generation resolution corrects for that rather than assuming a prior
+generation stays visible during rebuild); best-effort superseded-generation
+vector/request cleanup after a successful rebuild. ADR-050 (proposed) and
+[evidence doc](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md)
+written. Local: 310 ingestion unit tests pass (up from 307), lint clean, focused
+pyright clean on touched files (one real `str | None` narrowing fixed in
+`ingest_repo`; remaining pyright noise is the same pre-existing
+import-resolution baseline as R1/R2). PR #178 open; all four CI checks green
+at head `ec5ada9` (run 35276251850): lint, unit-tests, integration-tests
+(including the new `test_repo_lifecycle.py` real-PostgreSQL suite — 16
+tests passed, alongside the pre-existing `test_db_utils_repo_delete.py`
+which CI's file-allowlist had never actually run before this PR extended
+it), bounded-memory. rag_orchestrator's graph cache does not yet consult
+`generation_status` — disclosed as #168's scope, not folded into this PR.
+Migration backfill SQL runs for real in CI but only ever against an empty
+fresh test DB, so its behavior on genuine pre-#166 historical rows remains
+unverified (disclosed in the evidence doc, not blocking merge since the
+document_nodes fallback covers any row it misses). Next: final review,
+merge only with authorization, then record Linux gates under #171.
 
 ## Start here in a new session
 

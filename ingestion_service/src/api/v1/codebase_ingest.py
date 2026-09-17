@@ -13,7 +13,7 @@ from src.core.database_session import get_sessionmaker
 from src.core.models import IngestionRequest
 from src.core.status_manager import StatusManager
 from src.core.ingestion_jobs import submit_ingestion
-from src.core.ingestion_ownership import AdmissionBusy
+from src.core.ingestion_ownership import AdmissionBusy, RepositoryBusy
 from src.core.codebase.repo_graph_builder import RepoGraphBuilder
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 from src.core.pipeline import IngestionPipeline
@@ -256,6 +256,38 @@ def _background_ingest_repo(
         StatusManager(session).mark_completed(ingestion_id)
         logger.info(f"✅ Repo ingestion completed: {ingestion_id}")
 
+        # #166: this generation's graph+vectors are both confirmed complete;
+        # any older ingestion_id for the same repo_id is now dead weight --
+        # its document_nodes were already atomically replaced by
+        # persist_graph, but its vectors survive until explicitly removed.
+        # Best-effort and non-fatal: a failure here leaves stale vectors
+        # (degraded recall, not incorrect data for the new generation) and
+        # is not grounds to mark an otherwise-complete ingestion failed.
+        try:
+            from src.core import db_utils
+
+            stale_ids = db_utils.superseded_ingestion_ids_for_repo(
+                repo_id, str(ingestion_id),
+            )
+            settings = get_settings()
+            vector_store = HttpVectorStore(
+                base_url=settings.VECTOR_STORE_SERVICE_URL,
+            )
+            for stale_id in stale_ids:
+                vector_store.delete_by_ingestion_id(stale_id)
+            db_utils.delete_ingestion_requests(stale_ids)
+            if stale_ids:
+                logger.info(
+                    f"[{ingestion_id}] Cleaned up {len(stale_ids)} superseded "
+                    f"generation(s) for repo {repo_id[:8]}"
+                )
+        except Exception:
+            logger.exception(
+                f"[{ingestion_id}] Superseded-generation cleanup failed for "
+                f"repo {repo_id[:8]}; stale vectors may remain (retry later "
+                "via DELETE /v1/repos/{repo_id} sweeping all historical ids)"
+            )
+
     except Exception as exc:
         logger.exception(f"❌ Repo ingestion failed: {ingestion_id}")
         session.rollback()
@@ -284,6 +316,7 @@ def ingest_repo(
         raise HTTPException(
             status_code=400, detail="Must provide either git_url or local_path"
         )
+    repo_id_url: str = git_url or local_path  # type: ignore[assignment]
 
     ingestion_id = uuid4()
     metadata = {"git_url": git_url, "local_path": local_path, "provider": provider}
@@ -293,6 +326,11 @@ def ingest_repo(
     metadata.update(
         {k: identity[k] for k in ("source_type", "name", "display_name")}
     )
+    # #166: repo_id is a pure function of the source URL/path, so it is
+    # known and persisted at accept time — before any clone — independent
+    # of document_nodes. This also lets delete_repo find/enumerate this
+    # attempt even if the worker never writes a single graph row.
+    repo_id = build_repo_id(repo_id_url)
     try:
         submit_ingestion(
             ingestion_id=ingestion_id, source_type="repo", metadata=metadata,
@@ -302,10 +340,15 @@ def ingest_repo(
             "local_path": local_path,
             "provider": provider,
             },
+            repo_id=repo_id,
         )
     except AdmissionBusy as exc:
         raise HTTPException(
             status_code=503, detail=str(exc), headers={"Retry-After": "5"},
+        ) from exc
+    except RepositoryBusy as exc:
+        raise HTTPException(
+            status_code=409, detail=str(exc), headers={"Retry-After": "5"},
         ) from exc
 
     return RepoIngestResponse(ingestion_id=ingestion_id, status="accepted")

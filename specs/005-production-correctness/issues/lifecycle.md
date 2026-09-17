@@ -1,7 +1,10 @@
 # WP-R3: make repository rebuild and deletion lifecycle consistent
 
 Tracking issue: [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166)
-Status: Planned; no implementation or production validation implied.
+Status: Implemented on PR #178, all four CI checks green including a new
+real-PostgreSQL suite; merge and Linux rollout evidence pending. See
+[ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md) (proposed)
+and [test-results evidence](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md).
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -21,9 +24,33 @@ Fault-inject after vector cleanup and before/after graph commit; retry fully rem
 
 ## Delivery tasks
 
-- [ ] Finalize issue-linked specification, plan, contracts, and acceptance tests.
-- [ ] Implement scoped fix on a dedicated branch; preserve service ownership and model provenance.
-- [ ] Run relevant unit/integration/evaluation checks; record limitations honestly.
-- [ ] Update OKF knowledge-base links, current status, roadmap, ADRs where decisions change, and evidence.
-- [ ] Commit, push, review CI, and merge the dedicated PR.
-- [ ] Record deployment-specific gates separately from code completion.
+- [x] Finalize issue-linked specification, plan, contracts, and acceptance
+  tests (ADR-050; this file).
+- [x] Implement scoped fix on a dedicated branch (`fix/166-repo-lifecycle-
+  consistency`); preserve service ownership and model provenance.
+  - `repo_id` persisted on `ingestion_requests` (migration + backfill),
+    computed deterministically at HTTP accept time.
+  - Repo-scope advisory lock serializes ingest vs. delete of the same
+    `repo_id`; delete additionally rejects outright while an ingestion is
+    active for that `repo_id`.
+  - `list_ingestion_ids_for_repo` now primarily sources `repo_id`, with a
+    `document_nodes` fallback — a retry after graph deletion (or an
+    attempt that never wrote a node) still completes.
+  - `resolve_current_generation`/`generation_status` gate graph reads on
+    the owning ingestion's actual status (`ready`/`building`/`failed`/
+    `unknown`), matching `persist_graph`'s real atomic-replace behavior
+    rather than assuming a prior generation stays visible during rebuild.
+  - Post-completion cleanup of superseded generations' vectors/requests
+    (best-effort, non-fatal on failure).
+- [x] Run relevant unit/integration checks; record limitations honestly —
+  see evidence doc. All four CI checks pass at head `ec5ada9` (run
+  35276251850), including the new real-PostgreSQL repository-lifecycle
+  suite (16 tests) — the integration-tests job's file allowlist had to be
+  extended to actually run it and the pre-existing
+  `test_db_utils_repo_delete.py`, neither of which CI executed before.
+- [x] Update OKF knowledge-base links, current status, roadmap, ADR-050,
+  and evidence doc.
+- [x] Commit, push, review CI (green), PR #178 open — merge pending final
+  review/authorization.
+- [ ] Record deployment-specific gates (Linux/#171) separately from code
+  completion.
