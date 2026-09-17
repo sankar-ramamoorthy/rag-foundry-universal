@@ -35,10 +35,13 @@ Plan: [plan.md](./plan.md)
       remains a separate #161 production gate.
 - [x] T015 Stage-aware RSS N/4N and large-artifact harness; record SC-002.
 - [ ] T016 Pinned DocsGPT under declared/recorded ceiling; full coverage/SC-001.
-- [ ] T017 Relevant service tests, lint, type checks and required CI.
+- [x] T017 Relevant service tests, lint, type checks and required CI.
+      Final head 696476e passed all four CI checks in run 35221220107.
+      Focused types pass; broader baseline type errors remain documented.
 - [x] T018 Update KB/current status/roadmap/evidence; distinguish implemented
       from production-validated and retain historical audit.
-- [ ] T019 Commit/push dedicated implementation PR; merge green checks.
+- [x] T019 Commit/push dedicated implementation PR; merge green checks.
+      PR #175 merged as 12040f133052bbb614b23bc1dcb6653dbd408c7d.
       Keep #160 open while mandatory memory evidence is missing.
 
 T002 before/alongside code. T007 precedes split-artifact persistence.

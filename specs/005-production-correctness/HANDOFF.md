@@ -16,6 +16,17 @@ This is execution state, not an alternative specification or completion claim.
 
 ## Authorization and full objective
 
+Latest owner instruction (September 17): **resume, but pause after R1**.
+Do not begin R2 or later implementation without a new instruction.
+Final R1 head `696476e7d27d675d3b69ae327f4e55329b37b94b` passed all four
+checks in CI run `35221220107` (lint, unit-tests, integration-tests,
+bounded-memory). After explicit owner approval and rechecking all four checks,
+PR #175 was squash-merged at `12040f133052bbb614b23bc1dcb6653dbd408c7d`
+on September 17 at 18:52:23 UTC; GitHub confirms MERGED. Issue #160 remains
+OPEN for T012 and T016. Work is now paused as requested; R2 has not started.
+This update supersedes the pre-merge execution history below. Handoff and
+task-checkbox updates are a separate documentation follow-up, not part of PR #175.
+
 User explicitly requests every red-star fix, issue/spec/plan/roadmap and KB
 updates, then commit, push and merge EACH scoped change. Do not stop at planning.
 No further approval is needed for routine branches, tests, issues, pushes or
@@ -23,7 +34,7 @@ green PR merges. No production SSH exists. Do not conflate code merged with
 Linux deployed/validated. User specifically requires session-independent plans
 usable by a new session or Claude Code.
 
-## Current state
+## Pre-merge execution history
 
 - Branch: fix/160-bounded-ingestion-memory; partial implementation, not release-ready.
   Draft PR #175. Worker now uses generation-scoped keyset pages and the
@@ -72,16 +83,18 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Finish #160 final review/checks and merge implementation PR #175 only at green
-head. Latest paging uses SQLAlchemy select/execute to avoid new ORM stub typing
+Pause after merged R1, per owner instruction. Do not start #161 or #166 until
+the owner resumes implementation. Latest paging uses SQLAlchemy select/execute to avoid new ORM stub typing
 errors; five pre-existing typing errors in persistence and missing root
 GitPython remain, documented (service dependency already declares GitPython).
-Keep #160 open for T012 admission/mutation protection and T016 DocsGPT. Next
-implement #161, then #166, with shared ownership design; see issue specs.
+Keep #160 open for T012 admission/mutation protection and T016 DocsGPT. When
+authorized to resume, implement #161, then #166, with shared ownership design;
+see issue specs. Current code is suitable for isolated validation, not an
+unrestricted production rollout: those mandatory deployment gates remain open.
 Do not treat #176 as fixed: preserve its controlled post-delete regression work
 for separate PR. Pinned DocsGPT and actual Linux ceiling are
-still unknown; operator target-host evidence required. Complete KB evidence and
-remaining tasks before making draft ready; retain unexecuted production gates.
+still unknown; operator target-host evidence required. Retain unexecuted
+production gates; merged code and synthetic acceptance do not satisfy them.
 GitHub upstream default main resolved on September 17 to
 fbcf320458386558906388c030b4149906ef3877; this is a potential NEW DocsGPT
 baseline, NOT the incident SHA. No clone/benchmark on that revision yet.
@@ -124,6 +137,8 @@ OKF type/frontmatter and Markdown links. GitHub multiline bodies use --body-file
 ## Completion ledger
 
 Planning PR #164: merged, 853b0e3814a228337028929109a44ed837f5fd2d.
+Implementation #160: PR #175 merged, 12040f133052bbb614b23bc1dcb6653dbd408c7d;
+synthetic acceptance passed; admission/mutation and pinned DocsGPT gates pending.
 Implementation #169: PR #172 merged; Linux host validation still pending.
 Mandatory live memory/recovery/quality/release gates: all pending.
 Do not close the overall objective until every requirement is evidenced.
