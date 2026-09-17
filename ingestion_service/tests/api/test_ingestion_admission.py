@@ -118,3 +118,20 @@ def test_work_boundary_checks_do_not_leak_between_threads():
     finally:
         ownership_check.reset(token)
     check_ownership()
+
+
+def test_lost_owner_cannot_commit_file_node():
+    from src.core.crud.crud_document_node import create_document_node
+
+    session = MagicMock()
+    token = ownership_check.set(MagicMock(side_effect=OwnershipLost("lost")))
+    try:
+        with pytest.raises(OwnershipLost):
+            create_document_node(
+                session, document_id=uuid4(), title="fixture", summary="fixture",
+                source="fixture", ingestion_id=uuid4(), doc_type="file",
+                canonical_id="fixture.txt", relative_path="fixture.txt",
+            )
+    finally:
+        ownership_check.reset(token)
+    session.commit.assert_not_called()

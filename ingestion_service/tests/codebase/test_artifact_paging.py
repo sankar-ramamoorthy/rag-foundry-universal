@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 import json
+from contextlib import contextmanager
 
 import pytest
 from sqlalchemy import event, text
@@ -85,7 +86,13 @@ def vector_http_url():
 
 @pytest.fixture
 def corpus():
-    repo, attempt = str(uuid.uuid4()), uuid.uuid4()
+    with _corpus() as value:
+        yield value
+
+
+@contextmanager
+def _corpus(repo=None):
+    repo, attempt = repo or str(uuid.uuid4()), uuid.uuid4()
     factory = get_sessionmaker()
     with factory() as session:
         StatusManager(session).create_request(
@@ -103,13 +110,15 @@ def corpus():
             for i, value in enumerate([None, "", "\t\n\u2003", "snow 雪", "code"])
         ]
         CodebaseGraphPersistence(session).persist_graph(repo, nodes, [])
-    yield repo, str(attempt), factory
-    with factory() as session:
-        session.query(DocumentNode).filter_by(repo_id=repo).delete(
-            synchronize_session=False
-        )
-        session.query(IngestionRequest).filter_by(ingestion_id=attempt).delete()
-        session.commit()
+    try:
+        yield repo, str(attempt), factory
+    finally:
+        with factory() as session:
+            session.query(DocumentNode).filter_by(repo_id=repo).delete(
+                synchronize_session=False
+            )
+            session.query(IngestionRequest).filter_by(ingestion_id=attempt).delete()
+            session.commit()
 
 
 def pages(persistence, repo, attempt, **kwargs):
@@ -367,11 +376,15 @@ def _real_embedding_fixture(corpus, vector_http_url, *, buffer_size, fail_after=
     return _stored_vectors(factory, attempt)
 
 
-def test_real_http_vector_writes_have_normalized_buffer_parity(corpus, vector_http_url):
-    outputs = [
-        _real_embedding_fixture(corpus, vector_http_url, buffer_size=size)
-        for size in (1, 7, 128)
-    ]
+def test_real_http_vector_writes_have_normalized_buffer_parity(vector_http_url):
+    # Each run is a fresh attempt, not resurrection of a completed job (#161).
+    repo = str(uuid.uuid4())
+    outputs = []
+    for size in (1, 7, 128):
+        with _corpus(repo) as fixture:
+            outputs.append(_real_embedding_fixture(
+                fixture, vector_http_url, buffer_size=size,
+            ))
     assert len(outputs[0]) == 144  # one short artifact + actual 143-chunk artifact
     assert outputs[0] == outputs[1] == outputs[2]
     indices = [row.chunk_index for row in outputs[0] if row.canonical_id == "4.py"]

@@ -6,6 +6,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from shared.models.document_node import DocumentNode
+from src.core.worker_context import check_ownership
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ def create_document_node(
     )
 
     session.add(node)
+    check_ownership()  # This helper commits internally, before pipeline's commit.
     session.commit()
     session.refresh(node)
 
