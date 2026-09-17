@@ -432,3 +432,79 @@ def test_capture_real_paging_plan(corpus):
         ).scalar()
         print("PAGING_EXPLAIN=" + json.dumps(plan))
         assert plan[0]["Plan"]["Actual Rows"] == 32
+
+
+@pytest.mark.skipif(sys.platform != "linux", reason="RSS probe requires Linux /proc")
+def test_fresh_process_memory_scaling(vector_http_url, tmp_path):
+    root = Path(__file__).resolve().parents[3]
+    destination = Path(os.environ.get("MEMORY_ARTIFACT_DIR", str(tmp_path)))
+    destination.mkdir(parents=True, exist_ok=True)
+    summaries = []
+    process_ids = []
+    for label, files, chars in (
+        ("N", 512, 1000),
+        ("4N", 2048, 1000),
+        ("large", 4, 128000),
+    ):
+        with (destination / f"{label}.jsonl").open("w", encoding="utf-8") as output:
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(root / "scripts/benchmark_bounded_ingestion.py"),
+                    "--files",
+                    str(files),
+                    "--payload-chars",
+                    str(chars),
+                    "--vector-url",
+                    vector_http_url,
+                ],
+                cwd=root,
+                stdout=output,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=300,
+                check=False,
+            )
+        assert result.returncode == 0, result.stderr[-5000:]
+        records = [
+            json.loads(line)
+            for line in (destination / f"{label}.jsonl").read_text().splitlines()
+        ]
+        environment = next(r for r in records if r["kind"] == "environment")
+        summary = next(r for r in records if r["kind"] == "summary")
+        process_ids.append(environment["pid"])
+        assert summary["terminal"] == "completed"
+        assert summary["chunks"] == summary["persisted"] > 0
+        assert (
+            summary["progress"]["max_buffer_chunks"]
+            <= environment["buffer_count_limit"]
+        )
+        assert (
+            summary["progress"]["max_buffer_bytes"] <= environment["buffer_byte_limit"]
+        )
+        assert summary["observed"]["max_page_nodes"] <= environment["page_limit"]
+        assert (
+            summary["observed"]["max_artifact_bytes"]
+            <= environment["artifact_limit_bytes"]
+        )
+        assert {"graph_build", "graph_persist", "embedding", "completed"} <= set(
+            summary["peak_rss_bytes"]
+        )
+        summaries.append(summary)
+    assert len(set(process_ids)) == 3
+    small, scaled, _ = summaries
+    # SC-002 preregistered criterion; do not loosen after observing results.
+    threshold = 1.5 * small["embedding_incremental_rss_bytes"] + 32 * 1024 * 1024
+    result = {
+        "criterion": "4N incremental RSS <= 1.5*N + 32 MiB",
+        "N_files": 512,
+        "4N_files": 2048,
+        "summaries": summaries,
+        "threshold_bytes": threshold,
+        "passed": scaled["embedding_incremental_rss_bytes"] <= threshold,
+        "scope": "synthetic graph/DB/HTTP with stub embedder; not DocsGPT/Ollama",
+        "phase": os.environ.get("MEMORY_MEASUREMENT_PHASE", "calibration"),
+    }
+    (destination / "comparison.json").write_text(json.dumps(result, indent=2))
+    print("MEMORY_COMPARISON=" + json.dumps(result))
+    assert result["passed"]

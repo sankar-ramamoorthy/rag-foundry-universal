@@ -67,6 +67,7 @@ jobs:
     env:
       DATABASE_URL: postgresql://ingestion_user:ingestion_pass@localhost:5433/ingestion_test
       CI_HAS_DB: "1"
+      MEMORY_ARTIFACT_DIR: ${{ github.workspace }}/artifacts/bounded-memory
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -83,6 +84,15 @@ jobs:
       - name: ingestion_service integration tests (bounded artifact paging)
         working-directory: ingestion_service
         run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q -s
+
+      - name: Preserve bounded-memory raw samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bounded-memory-evidence
+          path: artifacts/bounded-memory/
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: vector_store_service integration tests (ANN index usage)
         working-directory: vector_store_service
