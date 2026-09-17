@@ -37,7 +37,9 @@ usable by a new session or Claude Code.
   Fixture corrected; fresh-session progress and real paging/status tests added.
   Follow-up 9edf84b passed full CI run 35219308277: nine real PostgreSQL tests,
   including separate vector-service HTTP parity and durability. Query-plan
-  probe pushed at f9868f1; inspect latest CI. No RSS or production claim yet.
+  probe f9868f1 passed CI 35219461132: 10 integration tests, existing PK index,
+  32-row late page from 4000 nodes in 0.036ms. No new index from this fixture;
+  not proof of selective multi-repo scale. No RSS or production claim yet.
   [Evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md).
 - PR #172 merged after lint/unit/PostgreSQL integration CI passed on
   36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
@@ -58,8 +60,8 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Continue #160: inspect latest PR #175 CI and PAGING_EXPLAIN output before
-deciding on a paging index. Real HTTP write-failure durability and stored vector
+Continue #160: inspect latest PR #175 CI. Paging EXPLAIN captured; no index
+added without a demonstrated need. Real HTTP write-failure durability and stored vector
 parity now pass; hard-kill and full graph/topology parity still need coverage.
 Build isolated stage-aware Linux RSS harness (N/4N, large-artifact), using fresh
 processes, real SQL pages and vector-service HTTP, deterministic 1024-D embedder

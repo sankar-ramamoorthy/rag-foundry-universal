@@ -76,8 +76,13 @@ fixture attempt. No production corpus or model provider is accessed.
 
 ## Outstanding gates — not waived
 
-- Inspect actual keyset EXPLAIN (planner probe added after the passing run),
-  then decide on an index from evidence.
+- Paging EXPLAIN at f9868f1, CI run 35219461132: 4,000 fixture nodes,
+  late keyset page, 32 returned rows, existing document_nodes_pkey Index Scan,
+  0 rows removed by filter, 38 shared-hit blocks, 0.036 ms execution. Ten
+  integration tests passed. **No new index justified by this fixture**; it is
+  not a selective multi-repository workload, so revisit indexing if larger
+  mixed-corpus measurement shows excessive filtered scans. Raw plan is in
+  that run's bounded-artifact-paging step (`PAGING_EXPLAIN`).
 - Stage-aware Linux fresh-process N/4N and large-artifact RSS harness, raw
   samples and preregistered SC-002 acceptance; distinguish graph/full-run peak.
 - Full normalized graph/topology parity beyond existing golden tests.
