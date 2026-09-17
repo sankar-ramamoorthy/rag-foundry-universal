@@ -32,6 +32,11 @@ class FullGraphResponse(BaseModel):
     nodes: List[GraphNode]
     relationships: Dict
     total_nodes: int
+    # #166: "ready" (current completed generation returned), "building"
+    # (repo has an active ingestion, no completed generation to serve yet),
+    # or "unknown" (repo_id has no ingestion_requests row at all). Callers
+    # must not treat an empty "building" response as "repo has no nodes".
+    generation_status: str = "ready"
 
 # New models for document relationships endpoint
 class RelationshipItem(BaseModel):
@@ -168,13 +173,15 @@ async def get_full_graph(
     logger.info(
         f"Graph export: repo={repo_id[:8]} — "
         f"{len(nodes)} nodes, "
-        f"{len(graph_data['relationships'])} relationship groups"
+        f"{len(graph_data['relationships'])} relationship groups, "
+        f"generation_status={graph_data.get('generation_status', 'ready')}"
     )
 
     return FullGraphResponse(
         nodes=nodes,
         relationships=graph_data["relationships"],
         total_nodes=len(nodes),
+        generation_status=graph_data.get("generation_status", "ready"),
     )
 
 

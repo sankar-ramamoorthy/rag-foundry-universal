@@ -36,7 +36,11 @@ changes, structural migrations.
 don't assume numeric order implies currency.
 
 [ADR-049: ingestion ownership and recovery](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md)
-records the proposed WP-R2 admission/recovery decision and its R3 boundaries.
+records the accepted WP-R2 admission/recovery decision and its R3 boundaries.
+
+[ADR-050: repository lifecycle consistency](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md)
+records the proposed WP-R3 repo-identity/generation-resolution/delete-lock
+decision and its explicit non-goals (no zero-downtime staged publication).
 
 ## Audit & Planning
 

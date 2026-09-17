@@ -25,6 +25,10 @@ class AdmissionBusy(RuntimeError):
     """Another job or an unresolved legacy job occupies ingestion capacity."""
 
 
+class RepositoryBusy(RuntimeError):
+    """Another ingest or delete already owns this repo_id's mutation lock."""
+
+
 class OwnershipLost(RuntimeError):
     """The original lock-owning database session is no longer usable."""
 
@@ -92,12 +96,20 @@ class AdvisoryGuard:
         self.close()
 
 
-def reserve_ingestion(engine: Engine, ingestion_id: UUID) -> AdvisoryGuard:
+def reserve_ingestion(
+    engine: Engine, ingestion_id: UUID, *, repo_id: str | None = None,
+) -> AdvisoryGuard:
     """Reserve one global active job BEFORE reading upload bytes/creating a row.
 
     One slot intentionally matches the present single-GPU deployment. No
     per-process configurable capacities that could disagree across replicas.
     Historical active rows conservatively block new work until reconciled.
+
+    When repo_id is given (repository ingestion), also take the "repo" scope
+    lock so a concurrent delete of the same repo_id cannot interleave with
+    this attempt (#166). The lock is held on the same connection as the
+    attempt lock and is released together with it when the worker reaches a
+    terminal state.
     """
     guard = AdvisoryGuard(engine)
     try:
@@ -111,6 +123,29 @@ def reserve_ingestion(engine: Engine, ingestion_id: UUID) -> AdvisoryGuard:
                 raise AdmissionBusy("Active ingestion requires completion or recovery")
         if not guard.try_lock("attempt", str(ingestion_id)):
             raise AdmissionBusy("Ingestion attempt already owned")
+        if repo_id is not None and not guard.try_lock("repo", repo_id):
+            raise RepositoryBusy(
+                "Repository is being deleted or rebuilt; retry later"
+            )
+        return guard
+    except BaseException:
+        guard.close()
+        raise
+
+
+def reserve_repo_mutation(engine: Engine, repo_id: str) -> AdvisoryGuard:
+    """Serialize a repository delete against any concurrent ingest/delete (#166).
+
+    Held for the whole synchronous delete request. A repo currently being
+    ingested/rebuilt (holding the "repo" scope lock via reserve_ingestion)
+    cannot be deleted concurrently, and vice versa.
+    """
+    guard = AdvisoryGuard(engine)
+    try:
+        if not guard.try_lock("repo", repo_id):
+            raise RepositoryBusy(
+                "Repository has an active ingestion or delete in progress"
+            )
         return guard
     except BaseException:
         guard.close()

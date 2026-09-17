@@ -24,12 +24,14 @@ class StatusManager:
         ingestion_id: UUID,
         source_type: str,
         metadata: Dict[str, Any],
+        repo_id: str | None = None,
     ) -> None:
         request = IngestionRequest()
         request.ingestion_id = ingestion_id
         request.source_type = source_type
         request.ingestion_metadata = metadata
         request.status = "accepted"
+        request.repo_id = repo_id
 
         self._session.add(request)
         self._session.commit()

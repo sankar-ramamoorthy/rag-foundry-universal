@@ -103,7 +103,13 @@ document.
   CI evidence, [recovery/admission tasks and rollout](/specs/005-production-correctness/issues/recovery.md)
   and [accepted ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
   Linux/live rollout validation remains a separate, still-pending #171 gate;
-  do not treat merged CI as production deployment. Other fixes remain planned.
+  do not treat merged CI as production deployment. R3/#166 (repository
+  rebuild/delete lifecycle) is implemented on branch
+  `fix/166-repo-lifecycle-consistency` with local unit/lint evidence in
+  [its test-results doc](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md)
+  and [proposed ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md);
+  real-PostgreSQL CI and merge are still pending — not yet implemented in
+  production. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
 

@@ -9,8 +9,9 @@ from datetime import datetime
 
 from src.core import db_utils
 from src.core.config import get_settings
-from src.core.database_session import get_sessionmaker
+from src.core.database_session import get_engine, get_sessionmaker
 from src.core.http_vectorstore import HttpVectorStore
+from src.core.ingestion_ownership import RepositoryBusy, reserve_repo_mutation
 from src.core.repo_naming import derive_repo_identity
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 
@@ -97,10 +98,17 @@ async def delete_repo(repo_id: str):
     error, so a retry after a partial failure — or a duplicate call —
     is always safe to repeat.
 
+    #166: the whole operation holds the repo-scope advisory lock so it
+    cannot interleave with a concurrent ingest/rebuild of the same repo_id
+    (see ingestion_ownership.reserve_ingestion, which takes the same lock
+    scope for repository ingestion). A repo with an active accepted/running
+    ingestion is rejected outright rather than raced against.
+
     Order matters and is not arbitrary (see issue #158):
-      1. Enumerate every historical ingestion_id for repo_id *first* —
-         document_nodes.repo_id is the only place this mapping exists,
-         so it must be captured before step 3 deletes those rows.
+      1. Enumerate every historical ingestion_id for repo_id *first*, from
+         ingestion_requests.repo_id (primary, survives graph deletion) with
+         a document_nodes.repo_id fallback for pre-migration rows (#166) —
+         captured before step 3 deletes graph rows.
       2. Delete vectors per ingestion_id (dual-table purge, already
          idempotent).
       3. Delete graph nodes for repo_id (relationships cascade).
@@ -109,60 +117,80 @@ async def delete_repo(repo_id: str):
          clean up if step 2 or 3 fails partway, so they must not be
          removed until both have fully succeeded.
     """
-    ingestion_ids = db_utils.list_ingestion_ids_for_repo(repo_id)
-    if not ingestion_ids:
-        logger.info(f"delete_repo: nothing found for repo_id={repo_id[:8]}")
-        return RepoDeleteResponse(
-            status="not_found",
-            repo_id=repo_id,
-            ingestion_ids=[],
-            nodes_deleted=0,
-            ingestion_requests_deleted=0,
-        )
-
-    settings = get_settings()
-    vector_store = HttpVectorStore(base_url=settings.VECTOR_STORE_SERVICE_URL)
-
     try:
-        for ingestion_id in ingestion_ids:
-            vector_store.delete_by_ingestion_id(ingestion_id)
-    except Exception as e:
-        logger.error(f"delete_repo: vector cleanup failed for {repo_id[:8]}: {e}")
+        guard = reserve_repo_mutation(get_engine(), repo_id)
+    except RepositoryBusy as exc:
         raise HTTPException(
-            status_code=502,
-            detail=(
-                "Vector cleanup failed; nothing else was deleted yet. "
-                f"Safe to retry. Error: {e}"
-            ),
-        )
+            status_code=409, detail=str(exc), headers={"Retry-After": "5"},
+        ) from exc
 
     try:
-        with SessionLocal() as session:
-            nodes_deleted = CodebaseGraphPersistence(session=session).delete_repo_nodes(
-                repo_id
+        if db_utils.has_active_ingestion_for_repo(repo_id):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Repository has an active ingestion; wait for it to "
+                    "complete/fail (or recover it) before deleting."
+                ),
+                headers={"Retry-After": "5"},
             )
-    except Exception as e:
-        logger.error(f"delete_repo: graph cleanup failed for {repo_id[:8]}: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "Graph cleanup failed after vectors were already deleted. "
-                f"Safe to retry (vector deletion is idempotent). Error: {e}"
-            ),
+
+        ingestion_ids = db_utils.list_ingestion_ids_for_repo(repo_id)
+        if not ingestion_ids:
+            logger.info(f"delete_repo: nothing found for repo_id={repo_id[:8]}")
+            return RepoDeleteResponse(
+                status="not_found",
+                repo_id=repo_id,
+                ingestion_ids=[],
+                nodes_deleted=0,
+                ingestion_requests_deleted=0,
+            )
+
+        settings = get_settings()
+        vector_store = HttpVectorStore(base_url=settings.VECTOR_STORE_SERVICE_URL)
+
+        try:
+            for ingestion_id in ingestion_ids:
+                vector_store.delete_by_ingestion_id(ingestion_id)
+        except Exception as e:
+            logger.error(f"delete_repo: vector cleanup failed for {repo_id[:8]}: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=(
+                    "Vector cleanup failed; nothing else was deleted yet. "
+                    f"Safe to retry. Error: {e}"
+                ),
+            )
+
+        try:
+            with SessionLocal() as session:
+                nodes_deleted = CodebaseGraphPersistence(
+                    session=session
+                ).delete_repo_nodes(repo_id)
+        except Exception as e:
+            logger.error(f"delete_repo: graph cleanup failed for {repo_id[:8]}: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=(
+                    "Graph cleanup failed after vectors were already deleted. "
+                    f"Safe to retry (vector deletion is idempotent). Error: {e}"
+                ),
+            )
+
+        ingestion_requests_deleted = db_utils.delete_ingestion_requests(ingestion_ids)
+
+        logger.info(
+            f"delete_repo: repo_id={repo_id[:8]} deleted "
+            f"{len(ingestion_ids)} ingestion(s), {nodes_deleted} node(s), "
+            f"{ingestion_requests_deleted} ingestion_requests row(s)"
         )
 
-    ingestion_requests_deleted = db_utils.delete_ingestion_requests(ingestion_ids)
-
-    logger.info(
-        f"delete_repo: repo_id={repo_id[:8]} deleted "
-        f"{len(ingestion_ids)} ingestion(s), {nodes_deleted} node(s), "
-        f"{ingestion_requests_deleted} ingestion_requests row(s)"
-    )
-
-    return RepoDeleteResponse(
-        status="deleted",
-        repo_id=repo_id,
-        ingestion_ids=ingestion_ids,
-        nodes_deleted=nodes_deleted,
-        ingestion_requests_deleted=ingestion_requests_deleted,
-    )
+        return RepoDeleteResponse(
+            status="deleted",
+            repo_id=repo_id,
+            ingestion_ids=ingestion_ids,
+            nodes_deleted=nodes_deleted,
+            ingestion_requests_deleted=ingestion_requests_deleted,
+        )
+    finally:
+        guard.close()

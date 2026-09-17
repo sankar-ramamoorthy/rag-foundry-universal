@@ -26,6 +26,21 @@ def _run(coro):
     return asyncio.run(coro)
 
 
+@pytest.fixture(autouse=True)
+def _repo_lock_granted():
+    """#166: delete_repo now takes the repo-scope advisory lock and checks
+    for an active ingestion before doing anything else. These ordering/
+    idempotency tests are about what happens after that guard passes, so
+    grant it unconditionally here rather than repeating the same two
+    patches in every test.
+    """
+    guard = MagicMock()
+    with patch(
+        "src.api.v1.repos.reserve_repo_mutation", MagicMock(return_value=guard),
+    ), patch("src.api.v1.repos.get_engine", MagicMock()):
+        yield guard
+
+
 class TestDeleteRepoIdempotency:
     @patch("src.api.v1.repos.db_utils")
     def test_no_ingestion_ids_returns_not_found_without_touching_anything(
@@ -34,6 +49,7 @@ class TestDeleteRepoIdempotency:
         """Calling delete on an already-deleted (or never-existed) repo_id
         must be a safe no-op, not an error — issue #158's idempotency
         requirement."""
+        mock_db_utils.has_active_ingestion_for_repo.return_value = False
         mock_db_utils.list_ingestion_ids_for_repo.return_value = []
 
         result = _run(delete_repo("nonexistent-repo"))
@@ -43,6 +59,38 @@ class TestDeleteRepoIdempotency:
         assert result.nodes_deleted == 0
         assert result.ingestion_requests_deleted == 0
         mock_db_utils.delete_ingestion_requests.assert_not_called()
+
+
+class TestDeleteRepoLock:
+    @patch("src.api.v1.repos.get_engine", MagicMock())
+    def test_repo_busy_returns_409(self):
+        """A concurrent ingest (or another delete) holding the repo-scope
+        lock must reject this delete with a retryable 409, not race it."""
+        from src.core.ingestion_ownership import RepositoryBusy
+
+        with patch(
+            "src.api.v1.repos.reserve_repo_mutation",
+            MagicMock(side_effect=RepositoryBusy("busy")),
+        ):
+            with pytest.raises(HTTPException) as exc_info:
+                _run(delete_repo("repo-abc"))
+        assert exc_info.value.status_code == 409
+        assert exc_info.value.headers["Retry-After"] == "5"
+
+    @patch("src.api.v1.repos.db_utils")
+    def test_active_ingestion_returns_409_and_releases_lock(
+        self, mock_db_utils, _repo_lock_granted,
+    ):
+        """An active accepted/running ingestion for this repo_id must block
+        delete outright rather than deleting out from under a live worker."""
+        mock_db_utils.has_active_ingestion_for_repo.return_value = True
+
+        with pytest.raises(HTTPException) as exc_info:
+            _run(delete_repo("repo-abc"))
+
+        assert exc_info.value.status_code == 409
+        mock_db_utils.list_ingestion_ids_for_repo.assert_not_called()
+        _repo_lock_granted.close.assert_called_once()
 
 
 class TestDeleteRepoOrdering:
@@ -57,6 +105,7 @@ class TestDeleteRepoOrdering:
         must not be deleted until vector and graph cleanup have both
         succeeded, since they're the retry's only way to rediscover what
         needs cleaning up."""
+        mock_db_utils.has_active_ingestion_for_repo.return_value = False
         mock_db_utils.list_ingestion_ids_for_repo.return_value = ["ing-1", "ing-2"]
         mock_db_utils.delete_ingestion_requests.return_value = 2
 
@@ -103,6 +152,7 @@ class TestDeleteRepoOrdering:
     ):
         """Partial failure at the vector step: nothing downstream (graph,
         ingestion_requests) should be touched, so a retry starts clean."""
+        mock_db_utils.has_active_ingestion_for_repo.return_value = False
         mock_db_utils.list_ingestion_ids_for_repo.return_value = ["ing-1"]
 
         mock_vs = MagicMock()
@@ -126,6 +176,7 @@ class TestDeleteRepoOrdering:
         """Partial failure at the graph step (vectors already deleted):
         ingestion_requests must still survive for the retry, since it's
         the only remaining record of which ingestion_ids to re-check."""
+        mock_db_utils.has_active_ingestion_for_repo.return_value = False
         mock_db_utils.list_ingestion_ids_for_repo.return_value = ["ing-1"]
 
         mock_vs = MagicMock()
