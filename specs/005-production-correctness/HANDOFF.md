@@ -48,7 +48,10 @@ usable by a new session or Claude Code.
   Run 35220317090 passed ANN tests on repeat, so vacuum diagnostic was skipped;
   symptom intermittent, not resolved or proven vacuum-responsive.
   Memory acceptance moved to its own CI job/database (same fixture/criterion),
-  not a production fix for #176. No acceptance/DocsGPT/production claim yet.
+  not a production fix for #176. Separate synthetic acceptance passed run
+  35220643252 at c264325; archived raw samples in issue-160-acceptance-35220643252.
+  Full real rebuild graph/vector parity at 1/7/128 passed fb33c4b, run
+  35220823709. SC-002 passed; DocsGPT/production gates remain open.
   [Evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md).
 - PR #172 merged after lint/unit/PostgreSQL integration CI passed on
   36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
@@ -69,17 +72,19 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Continue #160: inspect latest PR #175 CI. Paging EXPLAIN captured; no index
-added without a demonstrated need. Real HTTP write-failure durability and stored vector
-parity now pass; hard-kill and full graph/topology parity still need coverage.
-RSS harness implemented, calibration raw data archived. First inspect #176
-vacuum diagnostic, record actual version/eligible rows, preserve new issue's
-regression. Isolate performance benchmark DB/job if needed, NOT as its production
-fix. Run distinct memory acceptance after calibration using the unchanged
-criterion; archive raw samples. Improve full-run high-water summary and verify
-full-process/graph peak separately. Pinned DocsGPT and actual Linux ceiling are
+Finish #160 final review/checks and merge implementation PR #175 only at green
+head. Latest paging uses SQLAlchemy select/execute to avoid new ORM stub typing
+errors; five pre-existing typing errors in persistence and missing root
+GitPython remain, documented (service dependency already declares GitPython).
+Keep #160 open for T012 admission/mutation protection and T016 DocsGPT. Next
+implement #161, then #166, with shared ownership design; see issue specs.
+Do not treat #176 as fixed: preserve its controlled post-delete regression work
+for separate PR. Pinned DocsGPT and actual Linux ceiling are
 still unknown; operator target-host evidence required. Complete KB evidence and
 remaining tasks before making draft ready; retain unexecuted production gates.
+GitHub upstream default main resolved on September 17 to
+fbcf320458386558906388c030b4149906ef3877; this is a potential NEW DocsGPT
+baseline, NOT the incident SHA. No clone/benchmark on that revision yet.
 Keep #169 open until Linux Docker health/image evidence is recorded.
 Local #169 results and remaining gates:
 [evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).

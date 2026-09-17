@@ -1,0 +1,313 @@
+{"kind": "environment", "runtime_sha": "12447724d8758cde05affb6748afa3c2d75b5622", "python": "3.12.3", "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39", "pid": 2815, "files": 512, "payload_chars": 1000, "embedder": "deterministic-1024d-stub", "fixture": "generated-python-v1", "page_limit": 32, "artifact_limit_bytes": 1048576, "buffer_count_limit": 128, "buffer_byte_limit": 262144, "cgroup_membership": "0::/system.slice/hosted-compute-agent.service\n", "cgroup_note": "Mount-root counters may include other processes; RSS is per PID"}
+{"kind": "sample", "seconds": 0.0038036250000175187, "stage": "startup", "rss_bytes": 251101184, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.004503311999997095, "stage": "fixture", "rss_bytes": 251121664, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.0243789000000163, "stage": "fixture", "rss_bytes": 251125760, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.048228681000011875, "stage": "fixture", "rss_bytes": 251404288, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.06643582500001344, "stage": "graph_build", "rss_bytes": 254926848, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.07156684700001392, "stage": "graph_build", "rss_bytes": 255414272, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.0936699560000136, "stage": "graph_build", "rss_bytes": 255418368, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.11471834400001057, "stage": "graph_build", "rss_bytes": 255426560, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.13627003199999876, "stage": "graph_build", "rss_bytes": 255426560, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.15779549200001952, "stage": "graph_build", "rss_bytes": 255426560, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.18015094200001158, "stage": "graph_build", "rss_bytes": 255467520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.1948128639999993, "stage": "graph_persist", "rss_bytes": 255954944, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.20139327300000787, "stage": "graph_persist", "rss_bytes": 255967232, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.22291934400001878, "stage": "graph_persist", "rss_bytes": 255967232, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.24339127499999336, "stage": "graph_persist", "rss_bytes": 255967232, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.2743767160000061, "stage": "graph_persist", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.2884551980000083, "stage": "embedding", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 0, "nodes_total": 0, "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0}
+{"kind": "sample", "seconds": 0.2952018070000122, "stage": "embedding", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33456, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33456, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33456, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33456, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.31584467800001903, "stage": "embedding", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33457, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33459, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33459, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33459, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33459, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33459, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.33631624900002066, "stage": "embedding", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33459, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.35679600500000674, "stage": "embedding", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 0, "nodes_total": 1024, "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 32, "nodes_total": 1024, "chunks_persisted": 0, "max_buffer_chunks": 32, "max_buffer_bytes": 33456}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.3774734910000177, "stage": "embedding", "rss_bytes": 255979520, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 64, "nodes_total": 1024, "chunks_persisted": 0, "max_buffer_chunks": 64, "max_buffer_bytes": 66908}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 96, "nodes_total": 1024, "chunks_persisted": 0, "max_buffer_chunks": 96, "max_buffer_bytes": 100362}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 128, "nodes_total": 1024, "chunks_persisted": 0, "max_buffer_chunks": 128, "max_buffer_bytes": 133816}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.4075995260000127, "stage": "embedding", "rss_bytes": 257368064, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.40787361799999644, "stage": "embedding", "rss_bytes": 257368064, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.47693395300001384, "stage": "embedding", "rss_bytes": 257454080, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.49736253300000044, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.5177873070000203, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.5382238619999953, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.5587432920000026, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.5792262550000089, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.5997475789999953, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.6202026090000174, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.6406160410000155, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.6610638669999958, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.6814730819999966, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.7019621249999943, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.7223491880000097, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.7427790110000103, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.7631833359999973, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.7835132630000032, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.8038654310000197, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.8242057660000057, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.8446899810000161, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 128, "nodes_total": 1024, "chunks_persisted": 128, "max_buffer_chunks": 128, "max_buffer_bytes": 133816}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 160, "nodes_total": 1024, "chunks_persisted": 128, "max_buffer_chunks": 128, "max_buffer_bytes": 133816}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.8660951960000034, "stage": "embedding", "rss_bytes": 257458176, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 192, "nodes_total": 1024, "chunks_persisted": 128, "max_buffer_chunks": 128, "max_buffer_bytes": 133816}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 224, "nodes_total": 1024, "chunks_persisted": 128, "max_buffer_chunks": 128, "max_buffer_bytes": 133816}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 256, "nodes_total": 1024, "chunks_persisted": 128, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 0.8952202210000166, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.8954621610000117, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.9635833439999999, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 0.9841007299999944, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.0045259190000024, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.024933276000013, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.045340452000005, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.0657358870000166, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.0860484270000086, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.1063856930000213, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.126761130999995, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.1471577279999963, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.1675520500000118, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.1878942660000007, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.2082830479999984, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.2287681100000043, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.2491551589999972, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.269537329000002, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.2899380839999992, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.3102859699999954, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.3323705040000107, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 256, "nodes_total": 1024, "chunks_persisted": 256, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 288, "nodes_total": 1024, "chunks_persisted": 256, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 320, "nodes_total": 1024, "chunks_persisted": 256, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 352, "nodes_total": 1024, "chunks_persisted": 256, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 384, "nodes_total": 1024, "chunks_persisted": 256, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "sample", "seconds": 1.3527754259999938, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 1.368418797000004, "stage": "embedding", "rss_bytes": 258048000, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.491243486000002, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.511748965999999, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.532151443999993, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.552580789000018, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.572899140000004, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.5933172299999967, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.6137592320000067, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.634125933000007, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.6545360350000067, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.6749426810000045, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.6953886699999998, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.7158601670000166, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.7362419260000195, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.7566740590000052, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.7770901229999936, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.7975425989999962, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.818039583000001, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.838553418999993, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.8589836440000056, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 384, "nodes_total": 1024, "chunks_persisted": 384, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 416, "nodes_total": 1024, "chunks_persisted": 384, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 1.879368889999995, "stage": "embedding", "rss_bytes": 258056192, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 448, "nodes_total": 1024, "chunks_persisted": 384, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 480, "nodes_total": 1024, "chunks_persisted": 384, "max_buffer_chunks": 128, "max_buffer_bytes": 133825}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 512, "nodes_total": 1024, "chunks_persisted": 384, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 1.9075557019999962, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.9078141210000013, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.9751075490000005, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 1.9955742360000102, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.0160230810000144, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.036542928000017, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.0570738360000007, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.0775670230000003, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.0980029140000056, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.1184782880000057, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.1389467190000175, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.1594270820000077, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.179916793000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.2003781820000086, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.220849288000011, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.241273045000014, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.2617709820000016, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.282266313000008, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.302771392000011, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.323283155000013, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.3437663130000033, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 512, "nodes_total": 1024, "chunks_persisted": 512, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 544, "nodes_total": 1024, "chunks_persisted": 512, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "sample", "seconds": 2.364169683, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 576, "nodes_total": 1024, "chunks_persisted": 512, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 608, "nodes_total": 1024, "chunks_persisted": 512, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 640, "nodes_total": 1024, "chunks_persisted": 512, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 2.393834506000019, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.3940367900000012, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.461157204000017, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.4816872110000077, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.502122380000003, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.522568867000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.5431089110000187, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.5635046069999987, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.5839947690000145, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.6044256899999993, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.6249399160000166, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.6452947150000057, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.6656433729999947, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.686012637999994, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.706347710000017, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.726736192000004, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.7471169389999943, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.767527795999996, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.787935905000012, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.8083478970000044, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.8289217450000024, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.8493025030000183, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.869822112999998, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 640, "nodes_total": 1024, "chunks_persisted": 640, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 672, "nodes_total": 1024, "chunks_persisted": 640, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 2.8912278250000156, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 704, "nodes_total": 1024, "chunks_persisted": 640, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 736, "nodes_total": 1024, "chunks_persisted": 640, "max_buffer_chunks": 128, "max_buffer_bytes": 133826}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 768, "nodes_total": 1024, "chunks_persisted": 640, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 2.9203326610000033, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.9205333410000094, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 2.987619472999995, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.0080964210000047, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.0284830190000207, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.04893992800001, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.0692930579999995, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.08956378000002, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.1098431980000214, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.130118999000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.150382508000007, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.170638421999996, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.190934190000007, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.2111839730000042, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.231515174000009, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.251847670000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.2721781140000132, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.292459715999996, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.312818547000006, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.3330785180000078, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.3533237930000155, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 768, "nodes_total": 1024, "chunks_persisted": 768, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 800, "nodes_total": 1024, "chunks_persisted": 768, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 3.3739150929999937, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 832, "nodes_total": 1024, "chunks_persisted": 768, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 864, "nodes_total": 1024, "chunks_persisted": 768, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 896, "nodes_total": 1024, "chunks_persisted": 768, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "sample", "seconds": 3.4000387000000103, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.400235373000015, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.466415361000003, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.4868371150000144, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.5071771359999957, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.527526796000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.547919866000001, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.568224291000007, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.588540948000002, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.6088834640000016, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.6292259100000024, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.6495608170000082, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.6699381990000006, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.6903261190000194, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.7108066330000042, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.731200795999996, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.7515923429999987, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.7719054739999933, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.792208837000004, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.8125600989999953, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.8329520970000033, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.855209816000013, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 896, "nodes_total": 1024, "chunks_persisted": 896, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 928, "nodes_total": 1024, "chunks_persisted": 896, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 960, "nodes_total": 1024, "chunks_persisted": 896, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 992, "nodes_total": 1024, "chunks_persisted": 896, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "page", "max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 1024, "nodes_total": 1024, "chunks_persisted": 896, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "sample", "seconds": 3.8759754220000104, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.892784058000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.9596954060000087, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 3.980109375000012, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.000455578000015, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.020862770999997, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.041250810999998, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.061588599000004, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.081858519000008, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.102129832000003, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.12240227700002, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.142766698000003, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.163113041000003, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.18342524000002, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.203724665999999, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.223989826999997, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.244256050000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.2645392050000055, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.284828762000018, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.3051022589999945, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.325350839999999, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 1024, "nodes_total": 1024, "chunks_persisted": 1024, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "sample", "seconds": 4.345782627999995, "stage": "embedding", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "progress", "stage": "embedding", "nodes_processed": 1024, "nodes_total": 1024, "chunks_persisted": 1024, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}
+{"kind": "sample", "seconds": 4.348314184000003, "stage": "completed", "rss_bytes": 258068480, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "summary", "terminal": "completed", "nodes": 1024, "chunks": 1024, "persisted": 1024, "progress": {"stage": "embedding", "nodes_processed": 1024, "nodes_total": 1024, "chunks_persisted": 1024, "max_buffer_chunks": 128, "max_buffer_bytes": 133835}, "observed": {"max_page_nodes": 32, "max_page_bytes": 33463, "max_artifact_bytes": 1046}, "baseline_rss_bytes": {"startup": 251101184, "fixture": 251121664, "graph_build": 254926848, "graph_persist": 255954944, "embedding": 255979520, "completed": 258068480}, "peak_rss_bytes": {"startup": 251101184, "fixture": 251404288, "graph_build": 255467520, "graph_persist": 255979520, "embedding": 258068480, "completed": 258068480}, "embedding_incremental_rss_bytes": 2088960, "elapsed_seconds": 4.3512715300000195}
+{"kind": "sample", "seconds": 4.360663135999999, "stage": "cleanup", "rss_bytes": 258072576, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.3660666240000126, "stage": "cleanup", "rss_bytes": 258072576, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.386375326999996, "stage": "cleanup", "rss_bytes": 258072576, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}
+{"kind": "sample", "seconds": 4.406636872000007, "stage": "cleanup", "rss_bytes": 258072576, "hwm_bytes": 262983680, "cgroup_mount_root": {"memory.current": null, "memory.peak": null, "memory.max": null}}

@@ -12,7 +12,7 @@ Requires:
 
 import uuid
 from typing import List, Optional
-from sqlalchemy import text, func
+from sqlalchemy import text, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -245,24 +245,24 @@ class CodebaseGraphPersistence:
         bind = self._session.get_bind()
 
         def assert_generation(session):
-            total, owned = session.query(
+            total, owned = session.execute(select(
                 func.count(DocumentNode.document_id),
                 func.count(DocumentNode.document_id).filter(
                     DocumentNode.ingestion_id == ingestion_id
                 ),
-            ).filter(DocumentNode.repo_id == repo_id).one()
+            ).where(DocumentNode.repo_id == repo_id)).one()
             if total != expected_nodes or owned != expected_nodes:
                 raise RuntimeError("Repository generation changed during embedding")
 
         with Session(bind=bind) as session:
             assert_generation(session)
-            oversize = session.query(
+            oversize = session.execute(select(
                 DocumentNode.canonical_id, func.octet_length(DocumentNode.text),
-            ).filter(
+            ).where(
                 DocumentNode.repo_id == repo_id,
                 DocumentNode.ingestion_id == ingestion_id,
                 func.octet_length(DocumentNode.text) > max_artifact_bytes,
-            ).first()
+            )).first()
             if oversize:
                 raise ValueError(
                     f"Artifact {oversize[0]} is {oversize[1]} UTF-8 bytes; "
@@ -273,19 +273,21 @@ class CodebaseGraphPersistence:
         seen = 0
         while True:
             with Session(bind=bind) as session:
-                query = session.query(
+                query = select(
                     DocumentNode.document_id, DocumentNode.canonical_id,
                     DocumentNode.relative_path, DocumentNode.doc_type,
                     DocumentNode.text,
-                ).filter(
+                ).where(
                     DocumentNode.repo_id == repo_id,
                     DocumentNode.ingestion_id == ingestion_id,
                     func.coalesce(func.octet_length(DocumentNode.text), 0)
                     <= max_artifact_bytes,
                 )
                 if after is not None:
-                    query = query.filter(DocumentNode.document_id > after)
-                rows = query.order_by(DocumentNode.document_id).limit(page_size).all()
+                    query = query.where(DocumentNode.document_id > after)
+                rows = session.execute(
+                    query.order_by(DocumentNode.document_id).limit(page_size)
+                ).all()
             if not rows:
                 break
             after = rows[-1].document_id

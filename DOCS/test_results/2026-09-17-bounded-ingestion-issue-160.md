@@ -112,6 +112,37 @@ pgvector-version and controlled-churn evidence remain #176 work. Subsequent
 memory acceptance uses its own CI job/database for reproducible isolation;
 this is explicitly **not** a production recall fix.
 
+## Separate synthetic acceptance
+
+After inspecting calibration, run 35220643252 used the same defaults, fixture
+sizes and criterion, with phase explicitly set to `acceptance` and its own
+test database. Measured synthetic merge SHA
+12447724d8758cde05affb6748afa3c2d75b5622 (PR head c264325).
+
+| Fixture | Embedding increment | Full-process VmHWM |
+| --- | --- | --- |
+| N | 2,088,960 bytes | 262,983,680 bytes |
+| 4N | 4,788,224 bytes | 188,796,928 bytes |
+| Large | 9,863,168 bytes | 180,305,920 bytes |
+
+4N increment is below the unchanged 36,687,872-byte threshold. All live limits
+and persisted counts passed. N's startup baseline was higher than the other
+fresh processes; retain that variation rather than substituting a shared
+baseline. Whole-process VmHWM is read independently from raw samples, not
+mislabelled as an embedding-stage peak. It includes imports and fixture setup.
+
+[Acceptance comparison](./data/issue-160-acceptance-35220643252/comparison.json),
+[N raw](./data/issue-160-acceptance-35220643252/N.jsonl),
+[4N raw](./data/issue-160-acceptance-35220643252/4N.jsonl),
+[large raw](./data/issue-160-acceptance-35220643252/large.jsonl).
+SC-002 synthetic acceptance is satisfied; SC-001 DocsGPT is **not**.
+
+Follow-up fb33c4b, CI run 35220823709, passed independent actual graph rebuilds
+at buffer sizes 1/7/128. Canonical node sets and CALL/other edge endpoints match
+the graph-builder reference, and normalized graph rows and persisted vector
+contents match across rebuilds, ignoring generated internal UUIDs. All four CI
+jobs passed, including independent memory acceptance.
+
 ## Outstanding gates — not waived
 
 - Paging EXPLAIN at f9868f1, CI run 35219461132: 4,000 fixture nodes,
@@ -121,9 +152,6 @@ this is explicitly **not** a production recall fix.
   not a selective multi-repository workload, so revisit indexing if larger
   mixed-corpus measurement shows excessive filtered scans. Raw plan is in
   that run's bounded-artifact-paging step (`PAGING_EXPLAIN`).
-- Stage-aware Linux fresh-process N/4N and large-artifact RSS harness, raw
-  samples and preregistered SC-002 acceptance; distinguish graph/full-run peak.
-- Full normalized graph/topology parity beyond existing golden tests.
 - Hard-kill durability/recovery under #161 and full-operation coordination
   under #166; existing exception test is insufficient for those requirements.
 - Pinned DocsGPT source SHA, runtime SHA, model and declared cgroup memory
@@ -131,4 +159,5 @@ this is explicitly **not** a production recall fix.
 - Target Linux GTX1080Ti lifecycle/redeployment evidence under #171. Tailscale
   HTTP access without SSH does not establish Docker/cgroup provenance.
 
-Keep #160 open and PR draft while implementation/validation work remains.
+Keep #160 open for production gates. Implementation PR may merge after final
+green checks, with the unexecuted deployment dependencies explicitly retained.

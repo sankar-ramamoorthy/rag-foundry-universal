@@ -8,7 +8,7 @@ Plan: [plan.md](./plan.md)
 ## Setup and tests
 
 - [x] T001 Validated page/count/byte/artifact settings and env/Compose examples.
-- [ ] T002 Skeletal 143-chunk-node, cross-buffer ordinal, byte/Unicode,
+- [x] T002 Skeletal 143-chunk-node, cross-buffer ordinal, byte/Unicode,
       normalized parity, whitespace/empty and oversized rejection tests.
 - [x] T003 Real PostgreSQL generation-scoped page/count/disappearance tests,
       explicitly included in CI integration selection.
@@ -29,14 +29,14 @@ Plan: [plan.md](./plan.md)
 
 ## Validation and delivery
 
-- [ ] T013 Normalized parity at 1/7/128; text/metadata/ordinals/canonical edges.
+- [x] T013 Normalized parity at 1/7/128; text/metadata/ordinals/canonical edges.
 - [x] T014 DB interruption tests: prior writes survive; no false resume claim.
       Exception after acknowledged HTTP batches verified; hard-kill/recovery
       remains a separate #161 production gate.
-- [ ] T015 Stage-aware RSS N/4N and large-artifact harness; record SC-002.
+- [x] T015 Stage-aware RSS N/4N and large-artifact harness; record SC-002.
 - [ ] T016 Pinned DocsGPT under declared/recorded ceiling; full coverage/SC-001.
 - [ ] T017 Relevant service tests, lint, type checks and required CI.
-- [ ] T018 Update KB/current status/roadmap/evidence; distinguish implemented
+- [x] T018 Update KB/current status/roadmap/evidence; distinguish implemented
       from production-validated and retain historical audit.
 - [ ] T019 Commit/push dedicated implementation PR; merge green checks.
       Keep #160 open while mandatory memory evidence is missing.
