@@ -4,6 +4,23 @@ Updated: 2026-09-17
 Tracking: #160, #161, #166-#171
 This is execution state, not an alternative specification or completion claim.
 
+## Usage-limit checkpoint instruction
+
+Owner requests a documented, committed checkpoint when either usage allowance
+reaches 5% remaining, so another session or Claude can resume. This session has
+no reliable account-quota percentage feed; do not confuse goal token accounting
+with daily/weekly allowance or claim to monitor an unavailable percentage.
+Checkpoint proactively at meaningful milestones and immediately on a surfaced
+low-quota warning or owner notification. Include branch/head, CI run/PR state,
+known failures, pending gates and exact next actions; commit and push authorized
+changes without falsely marking incomplete work complete.
+
+Latest verified checkpoint: R2 code head 96952ce passed all four CI checks in
+run 35269164566 (lint, unit, integration, bounded-memory). PR #177 is still draft,
+not merged. Evidence/this handoff documentation follow-up needs its own checks.
+Next: final acceptance/ADR/task review, update PR body, verify latest exact-head
+CI and merge only with authorization. Do not deploy on the owner's behalf.
+
 ## Start here in a new session
 
 1. Read CLAUDE.md and .specify/memory/constitution.md.
@@ -39,6 +56,15 @@ new core modules pass focused pyright and repo lint. Pending: green real-DB CI,
 actual vector-write kill test, lifecycle/startup tests, legacy operator command,
 ADR/KB evidence, final review and merge. Do not claim distributed write fencing:
 already-dispatched HTTP writes can complete after lock loss; R3 remains separate.
+
+Latest R2 CI: cc4fd70 / 35268896379 passed eight real PostgreSQL ownership tests
+and the real vector-write kill test (14 acknowledged vectors retained). One
+R1 parity fixture reused a completed attempt; 96952ce corrects it to fresh
+attempts, preserving parity assertions, and adds a guard before file CRUD's
+internal commit. Seventeen focused tests pass. 96952ce is pushed; await its CI.
+[Evidence ledger](/DOCS/test_results/2026-09-17-ingestion-recovery-issue-161.md).
+ADR-049 and legacy rollout command are written. Remaining: final green CI,
+review/KB checklist updates and merge; Linux evidence remains operator-owned.
 
 Latest owner instruction (September 17): **resume, but pause after R1**.
 Do not begin R2 or later implementation without a new instruction.
