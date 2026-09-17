@@ -6,12 +6,12 @@ Acceptance criteria covered:
 - vector-store HTTP calls scale with batches, not artifacts:
   ingesting N chunks issues ceil(N/500) POSTs to /v1/vectors/batch,
   asserted via a request counter on a test double;
-- exactly one canonical_id -> document_id query per repo ingest
-  (per-node get_node_by_canonical_id is no longer called);
+- generation-scoped paged artifacts, never a whole-repo canonical map;
 - OllamaEmbedder honors batch_size: one /api/embed POST per batch,
   order of embeddings preserved across batches.
 """
 from unittest.mock import patch, MagicMock
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,6 +20,7 @@ from shared.embedders.ollama import OllamaEmbedder
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.pipeline import IngestionPipeline
 from src.api.v1.codebase_ingest import _embed_repo_artifacts
+from src.core.config import Settings
 
 pytestmark = pytest.mark.unit
 
@@ -149,15 +150,34 @@ def test_persist_batch_empty_no_http():
 # ---------------------------------------------------------------------
 
 class CountingPersistence:
-    """Test double: one map query allowed, per-node lookups forbidden."""
+    """Bounded page test double; whole-repo maps/lookups forbidden."""
 
-    def __init__(self, mapping: dict):
+    def __init__(self, mapping: dict, nodes):
         self.mapping = mapping
+        self.nodes = nodes
         self.map_queries = 0
+        self.page_scans = 0
 
     def get_canonical_id_map(self, repo_id: str) -> dict:
-        self.map_queries += 1
-        return dict(self.mapping)
+        raise AssertionError("Whole-repo canonical map must not be loaded (#160)")
+
+    def iter_artifact_pages(self, repo_id, ingestion_id, *, page_size,
+                            max_artifact_bytes, expected_nodes):
+        self.page_scans += 1
+        assert repo_id == "repo-1" and ingestion_id == "ing-1"
+        assert expected_nodes == len(self.nodes)
+        for start in range(0, len(self.nodes), page_size):
+            page = []
+            for node in self.nodes[start:start + page_size]:
+                if node["canonical_id"] not in self.mapping:
+                    raise RuntimeError("Repository generation changed during embedding")
+                page.append(SimpleNamespace(
+                    document_id=self.mapping[node["canonical_id"]],
+                    canonical_id=node["canonical_id"], text=node.get("text"),
+                    relative_path=node.get("relative_path", ""),
+                    doc_type=node.get("doc_type", "code"),
+                ))
+            yield page
 
     def get_node_by_canonical_id(self, repo_id, canonical_id):
         raise AssertionError(
@@ -201,20 +221,22 @@ def _run_stage(nodes, mapping, batch_size=500):
     pipeline = IngestionPipeline(
         validator=NoOpValidator(), embedder=embedder, vector_store=store
     )
-    persistence = CountingPersistence(mapping)
+    persistence = CountingPersistence(mapping, nodes)
 
     counts = _embed_repo_artifacts(
         pipeline=pipeline,
         persistence=persistence,
         repo_id="repo-1",
         ingestion_id="ing-1",
-        nodes=nodes,
+        expected_nodes=len(nodes),
         provider="mock",
+        settings=Settings(_env_file=None, DATABASE_URL="unused"),
+        report_progress=lambda progress: None,
     )
     return counts, persistence, embedder, http_calls
 
 
-def test_embed_repo_artifacts_batches_and_single_map_query():
+def test_embed_repo_artifacts_batches_without_map_query():
     nodes = _make_nodes(30)
     mapping = {n["canonical_id"]: f"doc-{i}" for i, n in enumerate(nodes)}
 
@@ -222,7 +244,8 @@ def test_embed_repo_artifacts_batches_and_single_map_query():
         nodes, mapping
     )
 
-    assert persistence.map_queries == 1
+    assert persistence.map_queries == 0
+    assert persistence.page_scans == 2
     assert embedder.calls == 1  # one embed pass over all chunks
     assert skipped == 0
     assert chunk_count >= 30  # at least one chunk per node
@@ -243,7 +266,7 @@ def test_embed_repo_artifacts_http_calls_scale_with_batches():
     assert sum(http_calls) == chunk_count
 
 
-def test_embed_repo_artifacts_skips_textless_and_unmapped_nodes():
+def test_embed_repo_artifacts_skips_textless_but_fails_missing_nodes():
     nodes = _make_nodes(3)
     nodes.append({"canonical_id": "pkg/empty.py", "text": "   "})
     nodes.append(
@@ -256,9 +279,11 @@ def test_embed_repo_artifacts_skips_textless_and_unmapped_nodes():
     )
     mapping = {n["canonical_id"]: f"doc-{i}" for i, n in enumerate(nodes[:3])}
 
-    (chunk_count, skipped), _, embedder, http_calls = _run_stage(nodes, mapping)
-
-    assert skipped == 1  # ghost.py had no DB record
+    with pytest.raises(RuntimeError, match="generation changed"):
+        _run_stage(nodes, mapping)
+    mapping[nodes[3]["canonical_id"]] = "empty"
+    (chunk_count, skipped), _, _, http_calls = _run_stage(nodes[:4], mapping)
+    assert skipped == 0
     assert chunk_count >= 3
     assert sum(http_calls) == chunk_count
 
@@ -276,11 +301,13 @@ def test_embed_repo_artifacts_injects_canonical_metadata():
     )
     _embed_repo_artifacts(
         pipeline=pipeline,
-        persistence=CountingPersistence(mapping),
+        persistence=CountingPersistence(mapping, nodes),
         repo_id="repo-1",
         ingestion_id="ing-1",
-        nodes=nodes,
+        expected_nodes=len(nodes),
         provider="mock",
+        settings=Settings(_env_file=None, DATABASE_URL="unused"),
+        report_progress=lambda progress: None,
     )
 
     assert received

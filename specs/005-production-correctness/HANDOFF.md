@@ -26,13 +26,16 @@ usable by a new session or Claude Code.
 ## Current state
 
 - Branch: fix/160-bounded-ingestion-memory; partial implementation, not release-ready.
-  T001/T007/T010 implemented. New embedding_buffer.py bounds chunks/UTF-8 bytes
-  and carries explicit document ordinals. CodebaseGraphPersistence has narrow
-  generation-scoped keyset paging with SQL byte preflight. Neither is wired
-  into the worker yet: current runtime still uses the whole-repo path.
-  42 focused tests pass (including existing batch tests); lint/focused types pass.
-  New PostgreSQL test_artifact_paging.py is selected in CI, not locally executed.
-  Preserve these tests; do not claim the buffer alone fixes #160.
+  Draft PR #175. Worker now uses generation-scoped keyset pages and the
+  count/UTF-8-byte-bounded EmbeddingBuffer, with stable document ordinals.
+  Graph-build helper returns scalar stats; weakref tests prove graph/builder
+  lifetime ends before embedding, and page tests forbid predecessor retention.
+  Progress starts before reads; fresh JSON updates and terminal stages exposed
+  by status endpoint. 288 ingestion unit tests passed; lint passed. Focused
+  buffer types passed; broader types still report baseline ORM/GitPython issues.
+  First PostgreSQL CI: 3 paging tests passed; empty fixture used invalid UUID.
+  Fixture corrected; fresh-session progress and real paging/status tests added.
+  Await latest CI. No memory benchmark or production release claim yet.
 - PR #172 merged after lint/unit/PostgreSQL integration CI passed on
   36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
   Main merge: 2b198b6f96c3ce54c5f031cef11e9ebd2f306614.
@@ -52,16 +55,13 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Continue #160: extract suffix-language helper from graph_assembler unchanged;
-move graph build/persist into helper returning scalar stats. Wire paged reads
-and EmbeddingBuffer into _embed_repo_artifacts; remove nodes/map dependency.
-Count embeddable nodes with exact Python strip semantics in a bounded scan,
-initialize progress BEFORE allocation, and release page/graph references.
-Persist fresh-JSON progress and expose it in status; handle completed/failed/0/0.
-Replace obsolete whole-repo tests, add lifetime, parity and failure tests.
-Run PostgreSQL CI tests, including EXPLAIN before deciding on an index; add
-progress fresh-session/interruption tests and isolated RSS harness. Do not
-merge this partial implementation as a finished memory fix.
+Continue #160: inspect latest PR #175 PostgreSQL CI, fix any genuine failures.
+Capture EXPLAIN before deciding on a paging index. Add real DB/HTTP write
+interruption and normalized graph/vector output tests, plus isolated stage-aware
+RSS harness (N/4N, large-artifact) and raw evidence. Verify compiled limits and
+full-process/graph peak separately. Pinned DocsGPT and actual Linux ceiling are
+still unknown; operator target-host evidence required. Complete KB evidence and
+remaining tasks before making draft ready; retain unexecuted production gates.
 Keep #169 open until Linux Docker health/image evidence is recorded.
 Local #169 results and remaining gates:
 [evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).

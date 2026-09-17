@@ -4,6 +4,8 @@ import logging
 from pathlib import Path
 import tempfile
 import shutil
+from collections.abc import Callable
+from functools import partial
 
 from fastapi import APIRouter, HTTPException, Form, status
 from pydantic import BaseModel
@@ -20,6 +22,9 @@ from shared.embedders.factory import get_embedder
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.codebase.identity import build_repo_id
 from src.core.repo_naming import derive_repo_identity
+from src.core.codebase.embedding_buffer import EmbeddingBuffer
+from src.core.codebase.language import language_for_path
+from src.core.config import Settings
 # -----------------------------
 # Session and router
 # -----------------------------
@@ -71,6 +76,7 @@ class RepoIngestRequest(BaseModel):
 class RepoIngestResponse(BaseModel):
     ingestion_id: UUID
     status: str
+    embed_progress: dict | None = None
 
 
 # -----------------------------
@@ -81,58 +87,92 @@ def _embed_repo_artifacts(
     persistence: CodebaseGraphPersistence,
     repo_id: str,
     ingestion_id: str,
-    nodes: list[dict],
+    expected_nodes: int,
     provider: str,
+    settings: Settings,
+    report_progress: Callable[[dict], None],
 ) -> tuple[int, int]:
+    """Page persisted artifacts; bound chunk and vector state independently.
+
+    Missing/replaced nodes fail the attempt instead of silently losing evidence.
+    Return shape retains the legacy skipped counter, now necessarily zero.
     """
-    Chunk every embeddable node, then embed + persist the whole repo in
-    batches: one canonical_id→document_id query, embedder-batched Ollama
-    calls, and /v1/vectors/batch posts of bounded size.
+    progress: dict = {
+        "stage": "embedding", "nodes_processed": 0, "nodes_total": 0,
+        "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0,
+    }
+    report_progress(dict(progress))  # BEFORE preflight/count/page allocation.
 
-    Returns (chunks_persisted, nodes_skipped_missing_db_record).
-    """
-    canonical_to_document_id = persistence.get_canonical_id_map(repo_id)
+    def pages():
+        return persistence.iter_artifact_pages(
+            repo_id, ingestion_id, page_size=settings.INGESTION_NODE_PAGE_SIZE,
+            max_artifact_bytes=settings.INGESTION_MAX_ARTIFACT_BYTES,
+            expected_nodes=expected_nodes,
+        )
 
-    all_chunks = []
-    document_ids: list[str] = []
-    skipped_missing = 0
+    # A bounded scan preserves Python's exact Unicode strip semantics.
+    for page in pages():
+        progress["nodes_total"] += sum(bool((row.text or "").strip()) for row in page)
+        del page
+    report_progress(dict(progress))
 
-    for node in nodes:
-        text = node.get("text", "")
-        if not text.strip():
-            logger.debug(f"[{ingestion_id}] Skipping node without text")
-            continue
+    def acknowledged():
+        progress.update(
+            chunks_persisted=buffer.chunks_persisted,
+            max_buffer_chunks=buffer.max_buffer_chunks,
+            max_buffer_bytes=buffer.max_buffer_bytes,
+        )
+        report_progress(dict(progress))
 
-        canonical_id = node["canonical_id"]
-        document_id = canonical_to_document_id.get(canonical_id)
-        if document_id is None:
-            logger.warning(f"Skipping node without DB record: {canonical_id}")
-            skipped_missing += 1
-            continue
-
-        chunks = pipeline._chunk(text, "code", provider)
-        # Inject canonical_id into every chunk metadata here
-        # This is what extract_canonical_ids_from_chunks() reads in rag_orchestrator
-        for chunk in chunks:
-            chunk.metadata["canonical_id"] = canonical_id
-            chunk.metadata["repo_id"] = repo_id
-            chunk.metadata["relative_path"] = node.get("relative_path", "")
-            chunk.metadata["doc_type"] = node.get("doc_type", "code")
-            chunk.metadata["language"] = node.get("language")
-            chunk.metadata["source_metadata"] = {          # keep source_metadata too
-                **chunk.metadata.get("source_metadata", {}),
-                "canonical_id": canonical_id,
-            }
-
-        all_chunks.extend(chunks)
-        document_ids.extend([document_id] * len(chunks))
-
-    pipeline.embed_and_persist_batch(
-        chunks=all_chunks,
-        ingestion_id=ingestion_id,
-        document_ids=document_ids,
+    buffer = EmbeddingBuffer(
+        pipeline, ingestion_id, max_chunks=settings.INGESTION_EMBED_BATCH_SIZE,
+        max_bytes=settings.INGESTION_EMBED_MAX_BYTES, on_flush=acknowledged,
     )
-    return len(all_chunks), skipped_missing
+
+    def append_page(page):
+        # Frame exit drops the last artifact's text/chunk-list references.
+        for node in page:
+            if not (node.text or "").strip():
+                continue
+            chunks = pipeline._chunk(node.text, "code", provider)
+            for ordinal, chunk in enumerate(chunks):
+                chunk.metadata.update(
+                    canonical_id=node.canonical_id, repo_id=repo_id,
+                    relative_path=node.relative_path, doc_type=node.doc_type,
+                    language=language_for_path(node.relative_path),
+                    source_metadata={
+                        **chunk.metadata.get("source_metadata", {}),
+                        "canonical_id": node.canonical_id,
+                    },
+                )
+                buffer.append(chunk, str(node.document_id), ordinal)
+            progress["nodes_processed"] += 1
+            del chunks
+
+    for page in pages():
+        append_page(page)
+        del page  # Do not retain predecessor page during generator advancement.
+        acknowledged()
+    if progress["nodes_processed"] != progress["nodes_total"]:
+        raise RuntimeError("Embeddable artifact count changed during embedding")
+    buffer.flush()
+    acknowledged()
+    return buffer.chunks_persisted, 0
+
+
+def _build_and_persist_graph(
+    repo_path, repo_id, ingestion_id, persistence, report_stage,
+):
+    """Own all graph/IR references in a frame that ends before embedding."""
+    report_stage("graph_build")
+    builder = RepoGraphBuilder(
+        repo_root=Path(repo_path), ingestion_id=str(ingestion_id),
+    )
+    graph = builder.build()
+    report_stage("graph_persist")
+    return persistence.persist_graph(
+        repo_id=repo_id, nodes=graph.all_entities(), relationships=graph.relationships,
+    )
 
 
 # -----------------------------
@@ -149,10 +189,10 @@ def _background_ingest_repo(
     relationships, and embed code artifacts.
     """
     session = SessionLocal()
-    StatusManager(session).mark_running(ingestion_id)
 
     temp_dir = None
     try:
+        StatusManager(session).mark_running(ingestion_id)
         logger.debug(f"[{ingestion_id}] Starting background ingestion")
         logger.debug(
             f"[{ingestion_id}] git_url={git_url}, "
@@ -178,30 +218,16 @@ def _background_ingest_repo(
         )
         repo_id = build_repo_id(repo_id_url)
 
-        # --- Build Repo Graph ---
-        logger.debug(f"[{ingestion_id}] Building RepoGraph...")
-        builder = RepoGraphBuilder(
-            repo_root=Path(repo_path), ingestion_id=str(ingestion_id)
-        )
-        repo_graph = builder.build()
-        logger.debug(f"[{ingestion_id}] RepoGraph built successfully")
-
-        logger.debug(
-            f"[{ingestion_id}] Total entities: {len(repo_graph.all_entities())}"
-        )
-        # --- Persist Nodes & Relationships ---
         persistence = CodebaseGraphPersistence(session=session)
-        nodes = repo_graph.all_entities()  # ✅ CORRECT method
-        logger.debug(
-            f"[{ingestion_id}] Sample node keys: "
-            f"{nodes[0].keys() if nodes else 'NO NODES'}"
+        report_progress = partial(
+            StatusManager(session).update_embed_progress, ingestion_id,
         )
-        # F-09/F-06: delete + nodes + relationships in one transaction,
-        # serialized per repo by an advisory lock.
-        stats = persistence.persist_graph(
-            repo_id=repo_id,
-            nodes=nodes,
-            relationships=repo_graph.relationships,
+        stats = _build_and_persist_graph(
+            repo_path, repo_id, ingestion_id, persistence,
+            lambda stage: report_progress({
+                "stage": stage, "nodes_processed": 0, "nodes_total": 0,
+                "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0,
+            }),
         )
         logger.info(f"[{ingestion_id}] Graph persisted: {stats}")
 
@@ -210,14 +236,16 @@ def _background_ingest_repo(
         provider = settings.EMBEDDING_PROVIDER
         pipeline = _build_pipeline(provider)
 
-        # F-08: batch embedding + persistence (one map query, batched HTTP)
+        # #160: graph frame has ended; only bounded persisted pages feed embedding.
         chunk_count, skipped_missing = _embed_repo_artifacts(
             pipeline=pipeline,
             persistence=persistence,
             repo_id=repo_id,
             ingestion_id=str(ingestion_id),
-            nodes=nodes,
+            expected_nodes=stats["nodes"],
             provider=provider,
+            settings=settings,
+            report_progress=report_progress,
         )
         logger.info(
             f"[{ingestion_id}] Embedded {chunk_count} chunks "
@@ -229,6 +257,7 @@ def _background_ingest_repo(
 
     except Exception as exc:
         logger.exception(f"❌ Repo ingestion failed: {ingestion_id}")
+        session.rollback()
         StatusManager(session).mark_failed(ingestion_id, error=str(exc))
 
     finally:
@@ -305,5 +334,6 @@ def get_repo_ingest_status(ingestion_id: str) -> RepoIngestResponse:
             raise HTTPException(status_code=404, detail="Ingestion ID not found")
 
         return RepoIngestResponse(
-            ingestion_id=request.ingestion_id, status=request.status
+            ingestion_id=request.ingestion_id, status=request.status,
+            embed_progress=(request.ingestion_metadata or {}).get("embed_progress"),
         )

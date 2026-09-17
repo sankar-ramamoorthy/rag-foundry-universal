@@ -12,17 +12,17 @@ Plan: [plan.md](./plan.md)
       normalized parity, whitespace/empty and oversized rejection tests.
 - [ ] T003 Real PostgreSQL generation-scoped page/count/disappearance tests,
       explicitly included in CI integration selection.
-- [ ] T004 Extract existing language-suffix helper without behavior change.
+- [x] T004 Extract existing language-suffix helper without behavior change.
 
 ## Implementation
 
 - [ ] T005 Narrow keyset pages with repo_id+ingestion_id, byte preflight,
       consistent inclusion and completion count checks.
-- [ ] T006 Graph helper scope ends before embedding; prove no full references.
+- [x] T006 Graph helper scope ends before embedding; prove no full references.
 - [x] T007 Optional explicit chunk_indices through pipeline/persistence,
       with cardinality and ordinal validation.
-- [ ] T008 Count+byte bounded chunk buffers; persist before successor.
-- [ ] T009 Remove canonical-map use from this embedding path.
+- [x] T008 Count+byte bounded chunk buffers; persist before successor.
+- [x] T009 Remove canonical-map use from this embedding path.
 - [x] T010 Finite embedding transport deadline and failure propagation.
 - [ ] T011 Pre-allocation stages, fresh-JSON progress, 0/0 case and maxima.
 - [ ] T012 Verify WP-R2/R3 admission/mutation exclusion before deployment.

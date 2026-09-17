@@ -119,7 +119,7 @@ def test_empty_generation_has_no_pages(corpus):
         assert (
             list(
                 CodebaseGraphPersistence(session).iter_artifact_pages(
-                    "absent",
+                    str(uuid.uuid4()),
                     attempt,
                     page_size=2,
                     max_artifact_bytes=20,
@@ -128,3 +128,92 @@ def test_empty_generation_has_no_pages(corpus):
             )
             == []
         )
+
+
+@pytest.mark.parametrize("terminal", ["completed", "failed"])
+def test_progress_and_terminal_stage_visible_in_fresh_session(corpus, terminal):
+    _, attempt, factory = corpus
+    identifier = uuid.UUID(attempt)
+    with factory() as session:
+        manager = StatusManager(session)
+        manager.mark_running(identifier)
+        manager.update_embed_progress(
+            identifier,
+            {
+                "stage": "embedding",
+                "nodes_processed": 1,
+                "nodes_total": 2,
+                "chunks_persisted": 7,
+                "max_buffer_chunks": 7,
+                "max_buffer_bytes": 7000,
+            },
+        )
+        with factory() as observer:
+            row = (
+                observer.query(IngestionRequest)
+                .filter_by(ingestion_id=identifier)
+                .one()
+            )
+            assert row.status == "running"
+            assert row.ingestion_metadata["embed_progress"]["chunks_persisted"] == 7
+        if terminal == "failed":
+            manager.mark_failed(identifier, error="fixture interruption")
+        else:
+            manager.mark_completed(identifier)
+    with factory() as observer:
+        row = observer.query(IngestionRequest).filter_by(ingestion_id=identifier).one()
+        assert row.status == terminal and row.finished_at is not None
+        assert row.ingestion_metadata["embed_progress"]["stage"] == terminal
+        assert row.ingestion_metadata["embed_progress"]["chunks_persisted"] == 7
+        if terminal == "failed":
+            assert row.ingestion_metadata["error"] == "fixture interruption"
+
+
+def test_progress_status_contract_with_real_paging(corpus, monkeypatch):
+    from unittest.mock import Mock
+    from src.api.v1 import codebase_ingest as api
+    from src.core.config import Settings
+    from src.core.http_vectorstore import HttpVectorStore
+    from src.core.pipeline import IngestionPipeline
+
+    repo, attempt, factory = corpus
+    identifier = uuid.UUID(attempt)
+    monkeypatch.setattr(api, "SessionLocal", factory)
+    store = HttpVectorStore("http://unused")
+    store.add_vectors = Mock()
+    embedder = Mock()
+    embedder.embed.side_effect = lambda chunks: [[0.0]] * len(chunks)
+    pipeline = IngestionPipeline(
+        validator=Mock(), embedder=embedder, vector_store=store
+    )
+    with factory() as session:
+        manager = StatusManager(session)
+        manager.mark_running(identifier)
+
+        def report(progress):
+            manager.update_embed_progress(identifier, progress)
+            response = api.get_repo_ingest_status(attempt)
+            assert response.embed_progress == progress
+            assert response.status == "running"
+
+        count, skipped = api._embed_repo_artifacts(
+            pipeline,
+            CodebaseGraphPersistence(session),
+            repo,
+            attempt,
+            5,
+            "mock",
+            Settings(
+                _env_file=None,
+                DATABASE_URL="unused",
+                INGESTION_NODE_PAGE_SIZE=1,
+                INGESTION_EMBED_BATCH_SIZE=1,
+            ),
+            report,
+        )
+        assert count == 2 and skipped == 0
+        manager.mark_completed(identifier)
+    response = api.get_repo_ingest_status(attempt)
+    assert response.status == "completed"
+    assert response.embed_progress["nodes_processed"] == 2
+    assert response.embed_progress["stage"] == "completed"
