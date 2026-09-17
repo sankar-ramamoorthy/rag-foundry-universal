@@ -112,14 +112,20 @@ document.
   and [accepted ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md).
   Its migration's backfill SQL has not been verified against genuine
   pre-#166 historical rows (only against CI's always-empty fresh DB) — a
-  disclosed, non-blocking gap. `rag_orchestrator`'s in-memory graph cache
-  does not yet consult the new `generation_status` signal; that remains
-  #168's scope. #168 was reconstructed and split on 2026-09-17: it is now
-  scoped to generation-aware query/cache freshness only (not yet
-  implemented), with ingestion source-revision provenance split to #180 and
-  evaluation three-revision provenance split to #181 — see
+  disclosed, non-blocking gap. #168 was reconstructed and split on
+  2026-09-17 into #168 (generation-aware query/cache freshness, narrowed),
+  #180 (ingestion source-revision provenance), and #181 (evaluation
+  three-revision provenance) — see
   [freshness](/specs/005-production-correctness/issues/freshness.md).
-  Linux/live rollout validation is a separate, still-pending
+  #168's narrowed scope is implemented on branch
+  `feat/168-generation-aware-graph-cache` with local unit/lint evidence in
+  [its test-results doc](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md)
+  and [proposed ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md):
+  `rag_orchestrator`'s graph cache now keys on `(repo_id, generation_id)`
+  via a new cheap `GET /v1/repos/{repo_id}/generation` check, LRU-bounded.
+  Real-PostgreSQL CI and merge are still pending; no live two-service HTTP
+  round-trip test exists yet (disclosed in ADR-051). #180/#181 remain
+  unimplemented. Linux/live rollout validation is a separate, still-pending
   #171 gate. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.

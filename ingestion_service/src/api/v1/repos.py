@@ -78,6 +78,29 @@ async def list_repos():
     return result
 
 
+class RepoGenerationResponse(BaseModel):
+    repo_id: str
+    ingestion_id: Optional[str] = None
+    generation_status: str
+
+
+@router.get("/repos/{repo_id}/generation", response_model=RepoGenerationResponse)
+async def get_repo_generation(repo_id: str):
+    """
+    #168 (WP-R5): the cheap half of generation resolution -- callers that
+    only need to know "has this repo's servable generation changed" (e.g.
+    rag_orchestrator's graph cache) must not have to fetch the full graph
+    (GET /v1/graph/repos/{repo_id}) just to find out. Backed by the same
+    db_utils.resolve_current_generation/generation_status logic #166 added,
+    which is a single indexed lookup, not a full node/relationship export.
+    """
+    ingestion_id = db_utils.resolve_current_generation(repo_id)
+    status = db_utils.generation_status(repo_id)
+    return RepoGenerationResponse(
+        repo_id=repo_id, ingestion_id=ingestion_id, generation_status=status,
+    )
+
+
 class RepoDeleteResponse(BaseModel):
     status: str
     repo_id: str

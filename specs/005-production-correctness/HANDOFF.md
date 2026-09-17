@@ -56,28 +56,43 @@ is complete; the issue stays open pending Linux/live rollout evidence, a
 separate #171 gate — do not deploy on the owner's behalf and do not treat
 merged CI as production validation.
 
-R5 (#168) SCOPE SPLIT, NOT IMPLEMENTED: owner asked for #168 to be
-reconstructed against current (post-R3) code before any implementation.
-Reconstruction confirmed: `rag_orchestrator`'s `_repo_graphs` cache
-(`retrieval/codebase_utils.py`) is process-global, unbounded, keyed only by
-`repo_id`, never reloaded — a warm worker keeps serving a stale graph after
-a repo is re-ingested, even though R3 already fixed the *data*-correctness
-half at the source (`/v1/graph/repos/{repo_id}` now returns one
-current-completed generation's nodes, plus a `generation_status` field the
-orchestrator currently discards). #168's original text bundled three
-unrelated concerns; owner asked for an explicit split rather than one PR
-spanning three domains. Split: #168 narrowed to generation-aware
-query/cache freshness only; new issue **#180** takes ingestion source-
-revision provenance (Git ref/resolved SHA/config fingerprint); new issue
-**#181** takes evaluation three-revision (runtime/corpus/ground-truth)
-provenance. `specs/005-production-correctness/issues/freshness.md` and
-`spec.md`'s tracking table rewritten to match; this is a docs-only PR
-(#168/#180/#181 issue bodies plus freshness.md/spec.md/status.md/log.md).
-No R5 (or #180/#181) implementation has started — owner explicitly said not
-to implement anything as part of this scoping change. Next: get explicit
-go-ahead on implementing #168's narrowed scope (expose generation id
-cheaply from ingestion_service, key/bound the orchestrator cache on
-`(repo_id, generation_id)`, pin a query to one generation at its start).
+R5 (#168) SCOPE SPLIT: #168 reconstructed against current (post-R3) code at
+owner's request, before any implementation. Its original text bundled three
+unrelated concerns; split into #168 (generation-aware query/cache freshness,
+narrowed), #180 (ingestion source-revision provenance), #181 (evaluation
+three-revision provenance) — docs-only PR #182, merged. No #180/#181
+implementation has started.
+
+R5 (#168 narrowed) IMPLEMENTED, NOT MERGED: branch
+`feat/168-generation-aware-graph-cache` off main. Owner gave explicit
+go-ahead after the scope split. `rag_orchestrator`'s `_repo_graphs` cache
+was process-global, unbounded, keyed only by `repo_id`, never reloaded — a
+warm worker kept serving a stale graph after a repo was re-ingested, even
+though R3 already fixed the *data*-correctness half at the source
+(`/v1/graph/repos/{repo_id}` returns one current-completed generation's
+nodes, plus a `generation_status` field the orchestrator was discarding).
+Implemented: new cheap `GET /v1/repos/{repo_id}/generation` on
+`ingestion_service` (wraps #166's `resolve_current_generation`/
+`generation_status`, no full graph fetch); `get_cached_graph` now keys on
+`(repo_id, generation_id)`, LRU-bounded (`GRAPH_CACHE_MAX_REPOS`,
+thread-safe via a lock); no-completed-generation short-circuits to an empty
+graph without fetching or caching. `hybrid_retrieve` calls
+`get_cached_graph` exactly once per request, so resolving generation once
+per call structurally prevents mixing two generations within one query.
+ADR-051 (proposed) and [evidence doc](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md)
+written. Local: ingestion_service 314 unit tests pass (up from 310),
+rag_orchestrator 162 pass (up from 158), lint clean on all touched files,
+focused pyright clean (only pre-existing baseline import-resolution noise).
+New real-Postgres integration test
+(`ingestion_service/tests/api/test_repo_generation_integration.py`) not yet
+run locally (no local Docker) — needs this PR's CI. Disclosed non-goal: no
+live two-service HTTP round-trip test exists anywhere (unit tests mock the
+HTTP seam on the orchestrator side; the integration test exercises the real
+route against real Postgres on the ingestion side — both together, not an
+end-to-end process test). Vector-store search still filters by `repo_id`
+only, not generation — a residual gap noted in ADR-051, not closed here.
+Next: push, open PR, get CI green (including the new integration suite),
+review, merge.
 
 ## Start here in a new session
 

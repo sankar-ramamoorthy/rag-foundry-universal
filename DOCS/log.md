@@ -8,6 +8,14 @@ governed.
 
 ## 2026-09-17
 
+Added proposed [ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)
+for WP-R5's narrowed scope (#168): keys `rag_orchestrator`'s graph cache on
+`(repo_id, generation_id)` via a new cheap `GET /v1/repos/{repo_id}/generation`
+endpoint, LRU-bounds it, and records explicit non-goals (no vector-store
+generation filtering, no live two-service HTTP round-trip test). Linked to
+[freshness.md](/specs/005-production-correctness/issues/freshness.md).
+Merge/CI validation pending.
+
 Split WP-R5/#168 into three separately-tracked issues after reconstructing
 it post-R3: #168 itself narrowed to generation-aware query/graph-cache
 freshness only, ingestion source-revision provenance (Git ref/resolved

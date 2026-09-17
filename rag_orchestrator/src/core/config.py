@@ -104,6 +104,16 @@ class Settings(BaseSettings):
     LLM_SERVICE_URL: str = "http://llm_service:8000"
     INGESTION_SERVICE_URL: str = "http://ingestion_service:8000"
 
+    # -------------------------------------------------
+    # Graph cache (issue #168, WP-R5)
+    # -------------------------------------------------
+    # Max distinct repo_ids kept in the in-memory graph cache at once
+    # (LRU-evicted beyond this). Bounds total memory under repeated
+    # querying across many repositories -- unrelated to how many
+    # generations of one repo can be cached (always at most one: a
+    # generation change replaces that repo_id's entry outright).
+    GRAPH_CACHE_MAX_REPOS: int = 32
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
