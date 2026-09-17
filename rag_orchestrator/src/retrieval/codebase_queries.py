@@ -223,6 +223,41 @@ def get_nodes_by_canonical_ids_from_api(
         )
 
 
+def get_repo_generation(repo_id: str) -> tuple[Optional[str], str]:
+    """
+    #168 (WP-R5): cheap check of repo_id's current servable generation --
+    does not fetch nodes/relationships, only ingestion_service's
+    db_utils.resolve_current_generation/generation_status lookup (#166).
+    Used by the graph cache to detect a rebuild without paying for a full
+    graph re-fetch on every request.
+
+    Returns (ingestion_id, generation_status). ingestion_id is None unless
+    generation_status is "ready". A non-200 response (repo_id truly
+    unknown to this call, or a transient error) is treated the same as
+    "unknown" -- callers must not raise the whole retrieval request over a
+    freshness-check failure; graph expansion degrading to empty is
+    preferable to a hard failure on the vector-seed half of the answer.
+    """
+    url = f"{ingestion_service_url}/v1/repos/{repo_id}/generation"
+    try:
+        response = requests.get(url, timeout=5)
+    except requests.RequestException:
+        logger.warning(
+            f"Generation check failed for repo_id={repo_id[:8]}", exc_info=True,
+        )
+        return None, "unknown"
+
+    if response.status_code != 200:
+        logger.warning(
+            f"Generation check for repo_id={repo_id[:8]} returned "
+            f"{response.status_code}: {response.text}"
+        )
+        return None, "unknown"
+
+    body = response.json()
+    return body.get("ingestion_id"), body.get("generation_status", "unknown")
+
+
 def get_full_graph_from_api(repo_id: str) -> Dict:
     """
     Fetch the full graph (nodes and relationships) for a given repository
