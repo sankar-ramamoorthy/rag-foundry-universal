@@ -4,6 +4,26 @@ Updated: 2026-09-17
 Tracking: #160, #161, #166-#171
 This is execution state, not an alternative specification or completion claim.
 
+## Usage-limit checkpoint instruction
+
+Owner requests a documented, committed checkpoint when either usage allowance
+reaches 5% remaining, so another session or Claude can resume. This session has
+no reliable account-quota percentage feed; do not confuse goal token accounting
+with daily/weekly allowance or claim to monitor an unavailable percentage.
+Checkpoint proactively at meaningful milestones and immediately on a surfaced
+low-quota warning or owner notification. Include branch/head, CI run/PR state,
+known failures, pending gates and exact next actions; commit and push authorized
+changes without falsely marking incomplete work complete.
+
+Latest verified checkpoint: R2 code head 96952ce passed all four CI checks in
+run 35269164566 (lint, unit, integration, bounded-memory); the docs-only
+checkpoint bc17e46 re-passed all four in run 35269376898. Owner authorized
+closing out R2: recovery.md checklist and ADR-049 (now accepted) were brought
+in sync with the already-implemented/CI-validated state, PR #177 body was
+rewritten to match, and this docs-only commit is being pushed for a final
+exact-head CI check before un-drafting and merging. Do not deploy on the
+owner's behalf; Linux rollout evidence stays a separate #171 gate.
+
 ## Start here in a new session
 
 1. Read CLAUDE.md and .specify/memory/constitution.md.
@@ -16,6 +36,50 @@ This is execution state, not an alternative specification or completion claim.
 
 ## Authorization and full objective
 
+Latest update: owner resumed **R2** on September 17 and will wait to deploy.
+Branch `fix/161-ingestion-recovery-admission` starts from merged R1 main
+`12040f1`; handoff commit `4258ea0` carried forward as `cd17e54`.
+Read [R2 tasks/design review](./issues/recovery.md). Three file-setup exception
+regressions were reproduced failing and now pass locally. Ownership primitive
+and reconciliation helper added (not route/startup wired); terminal status
+resurrection blocked. Seven focused R2 unit tests and all 295 ingestion unit
+tests pass. PostgreSQL/process-kill tests added to CI, execution pending.
+Next: draft PR for early real-DB validation; finish design/ADR, integrate both
+routes and recovery trigger, ownership-loss work-boundary checks, HTTP tests,
+legacy maintenance procedure and real vector-write death test. R2 incomplete.
+This instruction supersedes the earlier pause below; R3 is not started.
+
+R2 continuation: draft PR #177, foundation fb9fce8. CI 35267843408 passed
+lint/unit/memory but ownership integration failed: this SQLAlchemy version
+requires dbapi_connection, not driver_connection. Corrected locally. Routes now
+use submit_ingestion; startup and 5-second sweeps reconcile managed attempts;
+context-bound guard checks protect status, embedding, vector dispatch and graph
+commit boundaries. Sixteen focused tests and 304 ingestion unit tests pass;
+new core modules pass focused pyright and repo lint. Pending: green real-DB CI,
+actual vector-write kill test, lifecycle/startup tests, legacy operator command,
+ADR/KB evidence, final review and merge. Do not claim distributed write fencing:
+already-dispatched HTTP writes can complete after lock loss; R3 remains separate.
+
+Latest R2 CI: cc4fd70 / 35268896379 passed eight real PostgreSQL ownership tests
+and the real vector-write kill test (14 acknowledged vectors retained). One
+R1 parity fixture reused a completed attempt; 96952ce corrects it to fresh
+attempts, preserving parity assertions, and adds a guard before file CRUD's
+internal commit. Seventeen focused tests pass. 96952ce is pushed; await its CI.
+[Evidence ledger](/DOCS/test_results/2026-09-17-ingestion-recovery-issue-161.md).
+ADR-049 and legacy rollout command are written. Remaining: final green CI,
+review/KB checklist updates and merge; Linux evidence remains operator-owned.
+
+Latest owner instruction (September 17): **resume, but pause after R1**.
+Do not begin R2 or later implementation without a new instruction.
+Final R1 head `696476e7d27d675d3b69ae327f4e55329b37b94b` passed all four
+checks in CI run `35221220107` (lint, unit-tests, integration-tests,
+bounded-memory). After explicit owner approval and rechecking all four checks,
+PR #175 was squash-merged at `12040f133052bbb614b23bc1dcb6653dbd408c7d`
+on September 17 at 18:52:23 UTC; GitHub confirms MERGED. Issue #160 remains
+OPEN for T012 and T016. Work is now paused as requested; R2 has not started.
+This update supersedes the pre-merge execution history below. Handoff and
+task-checkbox updates are a separate documentation follow-up, not part of PR #175.
+
 User explicitly requests every red-star fix, issue/spec/plan/roadmap and KB
 updates, then commit, push and merge EACH scoped change. Do not stop at planning.
 No further approval is needed for routine branches, tests, issues, pushes or
@@ -23,7 +87,7 @@ green PR merges. No production SSH exists. Do not conflate code merged with
 Linux deployed/validated. User specifically requires session-independent plans
 usable by a new session or Claude Code.
 
-## Current state
+## Pre-merge execution history
 
 - Branch: fix/160-bounded-ingestion-memory; partial implementation, not release-ready.
   Draft PR #175. Worker now uses generation-scoped keyset pages and the
@@ -72,16 +136,18 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Finish #160 final review/checks and merge implementation PR #175 only at green
-head. Latest paging uses SQLAlchemy select/execute to avoid new ORM stub typing
+Pause after merged R1, per owner instruction. Do not start #161 or #166 until
+the owner resumes implementation. Latest paging uses SQLAlchemy select/execute to avoid new ORM stub typing
 errors; five pre-existing typing errors in persistence and missing root
 GitPython remain, documented (service dependency already declares GitPython).
-Keep #160 open for T012 admission/mutation protection and T016 DocsGPT. Next
-implement #161, then #166, with shared ownership design; see issue specs.
+Keep #160 open for T012 admission/mutation protection and T016 DocsGPT. When
+authorized to resume, implement #161, then #166, with shared ownership design;
+see issue specs. Current code is suitable for isolated validation, not an
+unrestricted production rollout: those mandatory deployment gates remain open.
 Do not treat #176 as fixed: preserve its controlled post-delete regression work
 for separate PR. Pinned DocsGPT and actual Linux ceiling are
-still unknown; operator target-host evidence required. Complete KB evidence and
-remaining tasks before making draft ready; retain unexecuted production gates.
+still unknown; operator target-host evidence required. Retain unexecuted
+production gates; merged code and synthetic acceptance do not satisfy them.
 GitHub upstream default main resolved on September 17 to
 fbcf320458386558906388c030b4149906ef3877; this is a potential NEW DocsGPT
 baseline, NOT the incident SHA. No clone/benchmark on that revision yet.
@@ -124,6 +190,8 @@ OKF type/frontmatter and Markdown links. GitHub multiline bodies use --body-file
 ## Completion ledger
 
 Planning PR #164: merged, 853b0e3814a228337028929109a44ed837f5fd2d.
+Implementation #160: PR #175 merged, 12040f133052bbb614b23bc1dcb6653dbd408c7d;
+synthetic acceptance passed; admission/mutation and pinned DocsGPT gates pending.
 Implementation #169: PR #172 merged; Linux host validation still pending.
 Mandatory live memory/recovery/quality/release gates: all pending.
 Do not close the overall objective until every requirement is evidenced.

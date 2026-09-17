@@ -12,6 +12,7 @@ from src.core.crud.crud_document_node import create_document_node
 from src.core.crud.document_relationships import create_document_relationship
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
 from src.core.batch_contracts import validate_batch_identity
+from src.core.worker_context import check_ownership
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -89,6 +90,7 @@ class IngestionPipeline:
                 relative_path=relative_path,
                 repo_id=str(ingestion_id),
             )
+            check_ownership()
             session.commit()  #  CRITICAL: Commit BEFORE vectors
             logger.debug(
                 f"✅ MS6 run() DocumentNode COMMITTED {document_id} for {ingestion_id}"
@@ -160,6 +162,7 @@ class IngestionPipeline:
                 relative_path=relative_path,
                 repo_id=str(ingestion_id),
                 )
+            check_ownership()
             session.commit()  # 🔥 CRITICAL: Commit BEFORE vectors
             logger.debug(
                 f"✅ MS6 run_with_chunks() DocumentNode COMMITTED "
@@ -279,7 +282,9 @@ class IngestionPipeline:
         Validates that embedding count matches chunk count.
         """
         logger.debug(f"🔗 pipeline.py _embed() {len(chunks)} chunks")
+        check_ownership()
         embeddings = self._embedder.embed(chunks)
+        check_ownership()
 
         if len(embeddings) != len(chunks):
             raise ValueError(
@@ -368,6 +373,7 @@ class IngestionPipeline:
                     f"canonical={canonical_id[:40]} doc_id={document_id}"
                 )
 
+            check_ownership()
             session.commit()
             logger.debug(
                 f"✅  {len(artifacts)} DocumentNodes committed "
@@ -402,6 +408,7 @@ class IngestionPipeline:
                 )
                 rel_count += 1
 
+            check_ownership()
             session.commit()
             logger.debug(f"✅ MS6-IS3: {rel_count} DEFINES relationships committed")
 

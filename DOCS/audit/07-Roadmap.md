@@ -123,6 +123,8 @@ health/readiness corrections can ship while memory validation is prepared.
 - [ ] WP-R1 — bounded ingestion memory, [#160](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/160);
   amended [004 spec](/specs/004-bounded-ingestion-memory/spec.md), planning PR #164.
 - [ ] WP-R2 — orphan recovery and admission, [#161](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/161).
+  In progress in draft PR #177; [tasks/rollout](/specs/005-production-correctness/issues/recovery.md),
+  [ownership decision](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
 - [ ] WP-R3 — ingestion/delete/serving consistency, [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166), related #144.
 - [ ] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167), related #91/#141/#145/#149/#156.
   September 17 follow-up: [#176](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/176)

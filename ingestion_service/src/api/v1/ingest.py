@@ -2,7 +2,6 @@
 from uuid import uuid4, UUID
 import json
 import logging
-import threading
 from typing import Optional
 
 import httpx
@@ -12,6 +11,8 @@ from src.core.database_session import get_sessionmaker
 from src.core.models import IngestionRequest
 from src.core.pipeline import IngestionPipeline
 from src.core.status_manager import StatusManager
+from src.core.ingestion_jobs import submit_ingestion
+from src.core.ingestion_ownership import AdmissionBusy
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.config import get_settings
 from shared.embedders.factory import get_embedder
@@ -133,40 +134,36 @@ def background_ingest_file(  # noqa: C901 - refactor tracked by pipeline-factory
     *, ingestion_id: UUID, file_bytes: bytes,
     filename: str, content_type: str, metadata: dict
 ):
-    settings = get_settings()
-    provider = settings.EMBEDDING_PROVIDER
-    pipeline = _build_pipeline(provider)
-
-    ext = _get_extension(filename)
-
-    # IS4: file type classification
-    is_pdf      = filename.endswith(".pdf") or content_type == "application/pdf"
-    is_image    = content_type.startswith("image/") or \
-                  filename.lower().endswith((".png", ".jpg", ".jpeg", ".tiff"))
-    is_markdown = ext == ".md"
-    is_rich_doc = ext in RICH_DOC_EXTENSIONS   #  DOCX, PPTX, HTML, EPUB
-    is_tabular  = ext in TABULAR_EXTENSIONS    #  XLSX, CSV
-
-    # doc_type mapping
-    if is_pdf:
-        doc_type = "pdf"
-    elif is_image:
-        doc_type = "image"
-    elif is_markdown:
-        doc_type = "markdown_module"
-    elif is_rich_doc:
-        doc_type = "markdown_module"   # becomes structured markdown after Docling
-    elif is_tabular:
-        doc_type = "tabular"           #
-    else:
-        doc_type = "file"
-
-    ocr_provider = metadata.get("ocr_provider")
-
-    with SessionLocal() as session:
-        StatusManager(session).mark_running(ingestion_id)
-
     try:
+        # #161: setup and the first status write can fail too.
+        settings = get_settings()
+        provider = settings.EMBEDDING_PROVIDER
+        pipeline = _build_pipeline(provider)
+
+        ext = _get_extension(filename)
+        is_pdf = filename.endswith(".pdf") or content_type == "application/pdf"
+        is_image = content_type.startswith("image/") or filename.lower().endswith(
+            (".png", ".jpg", ".jpeg", ".tiff")
+        )
+        is_markdown = ext == ".md"
+        is_rich_doc = ext in RICH_DOC_EXTENSIONS
+        is_tabular = ext in TABULAR_EXTENSIONS
+
+        if is_pdf:
+            doc_type = "pdf"
+        elif is_image:
+            doc_type = "image"
+        elif is_markdown or is_rich_doc:
+            doc_type = "markdown_module"
+        elif is_tabular:
+            doc_type = "tabular"
+        else:
+            doc_type = "file"
+
+        ocr_provider = metadata.get("ocr_provider")
+        with SessionLocal() as session:
+            StatusManager(session).mark_running(ingestion_id)
+
         # ------------------------------------------------------------------
         # PDF — Docling primary, PyMuPDF fallback
         # ------------------------------------------------------------------
@@ -343,30 +340,28 @@ def ingest_file(
         parsed_metadata = json.loads(metadata) if metadata else {}
     except json.JSONDecodeError as exc:
         raise HTTPException(status_code=400, detail="Invalid metadata JSON") from exc
+    if not isinstance(parsed_metadata, dict):
+        raise HTTPException(status_code=400, detail="Metadata must be a JSON object")
 
     ingestion_id = uuid4()
-    file_bytes = file.file.read()
     filename = file.filename or "unknown"
     content_type = file.content_type or "application/octet-stream"
 
-    with SessionLocal() as session:
-        StatusManager(session).create_request(
-            ingestion_id=ingestion_id,
-            source_type="file",
-            metadata=parsed_metadata
-        )
-
-    threading.Thread(
-        target=background_ingest_file,
-        kwargs={
-            "ingestion_id": ingestion_id,
-            "file_bytes": file_bytes,
+    try:
+        submit_ingestion(
+            ingestion_id=ingestion_id, source_type="file", metadata=parsed_metadata,
+            target=background_ingest_file,
+            prepare=lambda: {
+            "file_bytes": file.file.read(),
             "filename": filename,
             "content_type": content_type,
             "metadata": parsed_metadata,
-        },
-        daemon=True,
-    ).start()
+            },
+        )
+    except AdmissionBusy as exc:
+        raise HTTPException(
+            status_code=503, detail=str(exc), headers={"Retry-After": "5"},
+        ) from exc
 
     return IngestResponse(ingestion_id=ingestion_id, status="accepted")
 

@@ -5,6 +5,7 @@ import logging
 
 from shared.chunks import Chunk
 from src.core.batch_contracts import validate_batch_identity
+from src.core.worker_context import check_ownership
 
 logger = logging.getLogger(__name__)
 
@@ -125,6 +126,7 @@ class HttpVectorStore:
 
     def add_vectors(self, records: List[dict]):
         """Send a batch of vectors to vector_store_service."""
+        check_ownership()
         url = f"{self.base_url}/v1/vectors/batch"
         resp = requests.post(url, json={"records": records},  timeout=90)
         resp.raise_for_status()
@@ -141,6 +143,7 @@ class HttpVectorStore:
 
     def delete_by_ingestion_id(self, ingestion_id: str):
         """Delete all vectors for an ingestion_id."""
+        check_ownership()
         url = f"{self.base_url}/v1/vectors/by-ingestion/{ingestion_id}"
         resp = requests.delete(url,  timeout=90)
         resp.raise_for_status()

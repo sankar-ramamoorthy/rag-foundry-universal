@@ -21,7 +21,7 @@ import pytest
 from sqlalchemy import event
 from sqlalchemy.exc import IntegrityError
 
-import src.core.models  # noqa: F401  (register IngestionRequest for FK metadata)
+from src.core.models import IngestionRequest
 from shared.models.document_node import DocumentNode
 from shared.models.document_relationship import DocumentRelationship
 from src.core.database_session import get_engine, get_sessionmaker
@@ -41,6 +41,9 @@ def ingestion_id():
             ingestion_id=ing, source_type="repo", metadata={}
         )
         yield str(ing)
+        # Do not strand an accepted fixture row for later admission tests.
+        s.query(IngestionRequest).filter_by(ingestion_id=ing).delete()
+        s.commit()
 
 
 @pytest.fixture()

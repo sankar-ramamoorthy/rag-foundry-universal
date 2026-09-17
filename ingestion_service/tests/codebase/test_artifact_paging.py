@@ -8,6 +8,7 @@ import subprocess
 import sys
 import time
 import json
+from contextlib import contextmanager
 
 import pytest
 from sqlalchemy import event, text
@@ -85,7 +86,13 @@ def vector_http_url():
 
 @pytest.fixture
 def corpus():
-    repo, attempt = str(uuid.uuid4()), uuid.uuid4()
+    with _corpus() as value:
+        yield value
+
+
+@contextmanager
+def _corpus(repo=None):
+    repo, attempt = repo or str(uuid.uuid4()), uuid.uuid4()
     factory = get_sessionmaker()
     with factory() as session:
         StatusManager(session).create_request(
@@ -103,13 +110,15 @@ def corpus():
             for i, value in enumerate([None, "", "\t\n\u2003", "snow 雪", "code"])
         ]
         CodebaseGraphPersistence(session).persist_graph(repo, nodes, [])
-    yield repo, str(attempt), factory
-    with factory() as session:
-        session.query(DocumentNode).filter_by(repo_id=repo).delete(
-            synchronize_session=False
-        )
-        session.query(IngestionRequest).filter_by(ingestion_id=attempt).delete()
-        session.commit()
+    try:
+        yield repo, str(attempt), factory
+    finally:
+        with factory() as session:
+            session.query(DocumentNode).filter_by(repo_id=repo).delete(
+                synchronize_session=False
+            )
+            session.query(IngestionRequest).filter_by(ingestion_id=attempt).delete()
+            session.commit()
 
 
 def pages(persistence, repo, attempt, **kwargs):
@@ -367,11 +376,15 @@ def _real_embedding_fixture(corpus, vector_http_url, *, buffer_size, fail_after=
     return _stored_vectors(factory, attempt)
 
 
-def test_real_http_vector_writes_have_normalized_buffer_parity(corpus, vector_http_url):
-    outputs = [
-        _real_embedding_fixture(corpus, vector_http_url, buffer_size=size)
-        for size in (1, 7, 128)
-    ]
+def test_real_http_vector_writes_have_normalized_buffer_parity(vector_http_url):
+    # Each run is a fresh attempt, not resurrection of a completed job (#161).
+    repo = str(uuid.uuid4())
+    outputs = []
+    for size in (1, 7, 128):
+        with _corpus(repo) as fixture:
+            outputs.append(_real_embedding_fixture(
+                fixture, vector_http_url, buffer_size=size,
+            ))
     assert len(outputs[0]) == 144  # one short artifact + actual 143-chunk artifact
     assert outputs[0] == outputs[1] == outputs[2]
     indices = [row.chunk_index for row in outputs[0] if row.canonical_id == "4.py"]
@@ -395,6 +408,88 @@ def test_acknowledged_http_batches_survive_later_failure(corpus, vector_http_url
         assert request.status == "failed"
         progress = request.ingestion_metadata["embed_progress"]
         assert progress["chunks_persisted"] == 14 and progress["stage"] == "failed"
+
+
+def test_hard_kill_after_vector_ack_retains_data_and_recovers(corpus, vector_http_url):
+    """#161: a real process dies after 14 acknowledged HTTP vector writes."""
+    import queue
+    import threading
+    from src.core.ingestion_ownership import reconcile_ingestions
+    from src.core.http_vectorstore import HttpVectorStore
+
+    _, attempt, factory = corpus
+    with factory() as session:
+        document = session.query(DocumentNode).filter_by(ingestion_id=attempt).first()
+        document_id = str(document.document_id)
+    program = """
+import sys, time
+from uuid import UUID, uuid4
+from src.core.database_session import get_engine, get_sessionmaker
+from src.core.ingestion_ownership import AdvisoryGuard, owned_metadata
+from src.core.models import IngestionRequest
+from src.core.status_manager import StatusManager
+from src.core.http_vectorstore import HttpVectorStore
+from src.core.worker_context import ownership_check
+attempt, document, url = sys.argv[1:]
+guard = AdvisoryGuard(get_engine())
+assert guard.try_lock('admission', 'global-single-job')
+assert guard.try_lock('attempt', attempt)
+ownership_check.set(guard.check)
+with get_sessionmaker()() as session:
+    request = session.get(IngestionRequest, UUID(attempt))
+    request.ingestion_metadata = owned_metadata(request.ingestion_metadata or {})
+    session.commit()
+    status = StatusManager(session)
+    status.mark_running(UUID(attempt))
+    store = HttpVectorStore(url)
+    for batch in range(2):
+        records = [{
+            'vector': [1.0] + [0.0] * 1023,
+            'metadata': {
+                'ingestion_id': attempt, 'document_id': document,
+                'chunk_id': str(uuid4()), 'chunk_index': batch * 7 + i,
+                'chunk_text': 'durable fixture', 'provider': 'mock',
+                'chunk_strategy': 'fixture', 'source_metadata': {},
+            },
+        } for i in range(7)]
+        store.add_vectors(records)
+        status.update_embed_progress(UUID(attempt), {
+            'stage': 'embedding', 'chunks_persisted': (batch + 1) * 7,
+        })
+print('ready', flush=True)
+time.sleep(60)
+"""
+    root = Path(__file__).resolve().parents[3]
+    child = subprocess.Popen(
+        [sys.executable, "-c", program, attempt, document_id, vector_http_url],
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+        env={**os.environ, "PYTHONPATH": os.pathsep.join([
+            str(root), str(root / "ingestion_service"),
+        ])},
+    )
+    try:
+        ready = queue.Queue()
+        threading.Thread(
+            target=lambda: ready.put(child.stdout.readline()), daemon=True,
+        ).start()
+        assert ready.get(timeout=20).strip() == "ready"
+        assert len(_stored_vectors(factory, attempt)) == 14
+        assert reconcile_ingestions(get_engine()) == 0
+        child.kill()
+        child.communicate(timeout=10)
+        assert reconcile_ingestions(get_engine()) == 1
+        assert len(_stored_vectors(factory, attempt)) == 14
+        with factory() as session:
+            request = session.get(IngestionRequest, uuid.UUID(attempt))
+            assert request.status == "failed" and request.finished_at is not None
+            assert request.ingestion_metadata["embed_progress"] == {
+                "stage": "failed", "chunks_persisted": 14,
+            }
+    finally:
+        if child.poll() is None:
+            child.kill()
+        child.communicate(timeout=10)
+        HttpVectorStore(vector_http_url).delete_by_ingestion_id(attempt)
 
 
 def test_capture_real_paging_plan(corpus):
