@@ -94,7 +94,13 @@ document.
   the [handoff](/specs/005-production-correctness/HANDOFF.md).
   Planning PR #164 is merged. WP-R6/#169 healthcheck and runtime-provenance
   implementation has [local verification evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md);
-  its implementation PR and Linux validation are pending. Other fixes remain planned.
+  PR #172 is merged with green CI; Linux validation remains pending.
+  #160 has an integrated worker in draft PR #175 with
+  [unit/real HTTP and PostgreSQL evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md);
+  synthetic Linux RSS and graph/vector parity passed; pinned DocsGPT and
+  admission/mutation gates remain open. Other fixes remain planned.
+  September 17 follow-up #176 tracks intermittent zero ANN results after bulk
+  deletion in CI; production impact and exact cause remain unverified.
 
 - The NVIDIA NIM free-tier LLM provider is currently broken in the live
   deployment (issues #123, #124) — see

@@ -19,6 +19,11 @@ Current execution: [HANDOFF.md](./HANDOFF.md)
 6. WP-R8 verifies the composed, merged system. Code completion and target-Linux
    acceptance are tracked independently; retain open issues for unmet gates.
 
+September 17 addition: #176 tracks post-delete ANN recall failure discovered
+by real #160 benchmark churn. Diagnose with exact-search/maintenance controls,
+then fix in a separate WP-R3/R4 PR; include post-delete query availability in
+WP-R8. [Plan and acceptance](./issues/post-delete-ann.md).
+
 Every implementation branch starts from updated main after prior PR merge.
 Avoid giant omnibus commits. A PR body states the concrete failure, final
 behavior, issue, validation and remaining deployment gates; no AI attribution.

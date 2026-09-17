@@ -12,7 +12,7 @@ Requires:
 
 import uuid
 from typing import List, Optional
-from sqlalchemy import text
+from sqlalchemy import text, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -226,6 +226,81 @@ class CodebaseGraphPersistence:
             .all()
         )
         return {canonical_id: str(document_id) for canonical_id, document_id in rows}
+
+    def iter_artifact_pages(
+        self, repo_id: str, ingestion_id: str, *, page_size: int,
+        max_artifact_bytes: int, expected_nodes: int,
+    ):
+        """Narrow keyset pages; never retain ORM nodes or a transaction over HTTP.
+
+        Preflight checks bytes in PostgreSQL before selecting any text. Every
+        page also guards the byte ceiling to fail closed if content changes.
+        Full-operation mutation exclusion is a separate release prerequisite
+        (#161/#166); these checks detect disappearance, not provide a lock.
+        """
+        if any(type(n) is not int or n <= 0 for n in (page_size, max_artifact_bytes)):
+            raise ValueError("Page and artifact limits must be positive integers")
+        if type(expected_nodes) is not int or expected_nodes < 0:
+            raise ValueError("Expected node count must be a nonnegative integer")
+        bind = self._session.get_bind()
+
+        def assert_generation(session):
+            total, owned = session.execute(select(
+                func.count(DocumentNode.document_id),
+                func.count(DocumentNode.document_id).filter(
+                    DocumentNode.ingestion_id == ingestion_id
+                ),
+            ).where(DocumentNode.repo_id == repo_id)).one()
+            if total != expected_nodes or owned != expected_nodes:
+                raise RuntimeError("Repository generation changed during embedding")
+
+        with Session(bind=bind) as session:
+            assert_generation(session)
+            oversize = session.execute(select(
+                DocumentNode.canonical_id, func.octet_length(DocumentNode.text),
+            ).where(
+                DocumentNode.repo_id == repo_id,
+                DocumentNode.ingestion_id == ingestion_id,
+                func.octet_length(DocumentNode.text) > max_artifact_bytes,
+            )).first()
+            if oversize:
+                raise ValueError(
+                    f"Artifact {oversize[0]} is {oversize[1]} UTF-8 bytes; "
+                    f"limit is {max_artifact_bytes}"
+                )
+
+        after = None
+        seen = 0
+        while True:
+            with Session(bind=bind) as session:
+                query = select(
+                    DocumentNode.document_id, DocumentNode.canonical_id,
+                    DocumentNode.relative_path, DocumentNode.doc_type,
+                    DocumentNode.text,
+                ).where(
+                    DocumentNode.repo_id == repo_id,
+                    DocumentNode.ingestion_id == ingestion_id,
+                    func.coalesce(func.octet_length(DocumentNode.text), 0)
+                    <= max_artifact_bytes,
+                )
+                if after is not None:
+                    query = query.where(DocumentNode.document_id > after)
+                rows = session.execute(
+                    query.order_by(DocumentNode.document_id).limit(page_size)
+                ).all()
+            if not rows:
+                break
+            after = rows[-1].document_id
+            seen += len(rows)
+            # Named column rows contain no ORM relationship collections.
+            yield rows
+            del rows  # Release this page before allocating its successor.
+        with Session(bind=bind) as session:
+            assert_generation(session)
+        if seen != expected_nodes:
+            raise RuntimeError(
+                "Repository artifacts disappeared or exceeded byte limit"
+            )
 
     def close(self):
         """Close the session if created internally."""

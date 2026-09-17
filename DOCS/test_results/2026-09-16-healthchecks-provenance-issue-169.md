@@ -41,7 +41,10 @@ User environment files were not modified.
 Initial Linux CI used the `pytest` console entrypoint (local checks used
 `python -m pytest`) and caught missing repo-root import setup. Added root test
 conftest to make both entrypoints resolve shared modules consistently; rerun
-CI on the corrected head before merging PR #172.
+CI on the corrected head before merging PR #172. Corrected head
+36a1a62d370fd94338f89243b200880d68bedd15 passed lint, unit and PostgreSQL
+integration jobs in run 35172556194. PR #172 merged as
+2b198b6f96c3ce54c5f031cef11e9ebd2f306614. Target-host gates below remain open.
 
 New regression tests execute actual Compose argument vectors against real
 temporary loopback HTTP servers. Healthy responses succeed; HTTP 503, invalid

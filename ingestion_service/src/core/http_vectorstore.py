@@ -4,6 +4,7 @@ from typing import List, Any, Optional
 import logging
 
 from shared.chunks import Chunk
+from src.core.batch_contracts import validate_batch_identity
 
 logger = logging.getLogger(__name__)
 
@@ -75,26 +76,37 @@ class HttpVectorStore:
         ingestion_id: str,
         document_ids: List[str],
         batch_size: Optional[int] = None,
+        *,
+        chunk_indices: list[int] | None = None,
     ) -> None:
         """
         Persist chunks belonging to many documents in one pass (F-08).
 
         Each chunk carries its own document_id; records are sent to
         /v1/vectors/batch in slices of `batch_size` so HTTP round-trips
-        scale with batches, not artifacts. chunk_index restarts per document.
+        scale with batches, not artifacts. Explicit chunk_indices preserve
+        document-local ordinals across calls. Legacy callers enumerate locally.
         """
-        if len(chunks) != len(document_ids):
+        validate_batch_identity(len(chunks), document_ids, chunk_indices)
+        if len(chunks) != len(embeddings):
             raise ValueError(
                 f"persist_batch mismatch: {len(chunks)} chunks, "
-                f"{len(document_ids)} document_ids"
+                f"{len(embeddings)} embeddings"
             )
         if batch_size is None:
             batch_size = self.PERSIST_BATCH_SIZE
+        if type(batch_size) is not int or batch_size <= 0:
+            raise ValueError("batch_size must be a positive integer")
 
         index_by_doc: dict = {}
         records = []
-        for chunk, embedding, document_id in zip(chunks, embeddings, document_ids):
-            chunk_index = index_by_doc.get(document_id, 0)
+        for position, (chunk, embedding, document_id) in enumerate(
+            zip(chunks, embeddings, document_ids)
+        ):
+            chunk_index = (
+                chunk_indices[position] if chunk_indices is not None
+                else index_by_doc.get(document_id, 0)
+            )
             index_by_doc[document_id] = chunk_index + 1
             records.append(
                 self._build_record(

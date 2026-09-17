@@ -47,19 +47,36 @@ class StatusManager:
         request = self._get_request(ingestion_id)
         request.status = "completed"
         request.finished_at = datetime.now(UTC)
+        self._set_progress_stage(request, "completed")
         self._session.commit()
 
     def mark_failed(self, ingestion_id: UUID, *, error: str | None = None) -> None:
         request = self._get_request(ingestion_id)
         request.status = "failed"
         request.finished_at = datetime.now(UTC)
+        self._set_progress_stage(request, "failed")
 
         if error:
-            meta = request.ingestion_metadata or {}
+            meta = dict(request.ingestion_metadata or {})
             meta["error"] = error
             request.ingestion_metadata = meta
 
         self._session.commit()
+
+    def update_embed_progress(self, ingestion_id: UUID, progress: dict) -> None:
+        request = self._get_request(ingestion_id)
+        request.ingestion_metadata = {
+            **(request.ingestion_metadata or {}), "embed_progress": dict(progress),
+        }
+        self._session.commit()
+
+    @staticmethod
+    def _set_progress_stage(request: IngestionRequest, stage: str) -> None:
+        meta = request.ingestion_metadata or {}
+        if "embed_progress" in meta:
+            request.ingestion_metadata = {
+                **meta, "embed_progress": {**meta["embed_progress"], "stage": stage},
+            }
 
     # ---------------------------------------------------------
     # Internal

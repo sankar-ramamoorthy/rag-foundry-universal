@@ -60,7 +60,11 @@ class OllamaEmbedder(BaseEmbedder):
                 batch = texts[start:start + self.batch_size]
                 payload = {"model": self.model, "input": batch}
 
-                response = requests.post(f"{self.base_url}/api/embed", json=payload)
+                # Finite connect/read deadlines; provider hangs must surface as
+                # ingestion failure. This is per HTTP batch, not a job deadline.
+                response = requests.post(
+                    f"{self.base_url}/api/embed", json=payload, timeout=(10, 120)
+                )
 
                 if response.status_code != 200:
                     raise RuntimeError(

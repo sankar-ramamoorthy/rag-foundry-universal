@@ -1,6 +1,7 @@
 # ingestion_service/src/core/config.py
 
 from functools import lru_cache
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,12 @@ class Settings(BaseSettings):
     OLLAMA_EMBED_MODEL: str = "mxbai-embed-large:latest"
     OLLAMA_BATCH_SIZE: int = 50
     VECTOR_DIMENSION: int = 1024
+
+    # #160: independent limits; a node page is not a chunk/memory bound.
+    INGESTION_NODE_PAGE_SIZE: int = Field(default=32, gt=0)
+    INGESTION_EMBED_BATCH_SIZE: int = Field(default=128, gt=0)
+    INGESTION_EMBED_MAX_BYTES: int = Field(default=262144, gt=0)
+    INGESTION_MAX_ARTIFACT_BYTES: int = Field(default=1048576, gt=0)
 
     # Universal feature
     DOCLING_ENABLED: bool = True   # When False → PyMuPDF fallback for PDF

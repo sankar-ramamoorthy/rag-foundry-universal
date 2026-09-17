@@ -80,6 +80,60 @@ jobs:
         working-directory: ingestion_service
         run: ../.venv/bin/python -m pytest tests/codebase/test_atomic_graph_persistence.py -q
 
+      - name: ingestion_service integration tests (bounded artifact paging)
+        working-directory: ingestion_service
+        run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q -s -k "not fresh_process_memory_scaling"
+
       - name: vector_store_service integration tests (ANN index usage)
+        id: ann-tests
         working-directory: vector_store_service
         run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_ann_index_usage.py -q
+
+      - name: Diagnose post-delete ANN failures with isolated-test vacuum
+        if: failure() && steps.ann-tests.outcome == 'failure'
+        working-directory: vector_store_service
+        run: |
+          ../.venv/bin/python -c 'import os, psycopg; c=psycopg.connect(os.environ["DATABASE_URL"], autocommit=True); assert c.info.dbname.endswith("_test"); c.execute("VACUUM (ANALYZE) ingestion_service.vector_chunks"); c.close()'
+          ../.venv/bin/python -m pytest tests/core/vectorstore/test_ann_index_usage.py -q
+
+  bounded-memory:
+    # Independent DB prevents benchmark churn from contaminating other suites.
+    # It does NOT fix the post-delete ANN regression, tracked separately in #176.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg15
+        env:
+          POSTGRES_USER: ingestion_user
+          POSTGRES_PASSWORD: ingestion_pass
+          POSTGRES_DB: ingestion_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U ingestion_user -d ingestion_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@localhost:5433/ingestion_test
+      CI_HAS_DB: "1"
+      MEMORY_ARTIFACT_DIR: ${{ github.workspace }}/artifacts/bounded-memory
+      MEMORY_MEASUREMENT_PHASE: acceptance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Apply migrations
+        run: uv run alembic upgrade head
+      - name: Fresh-process synthetic memory acceptance
+        working-directory: ingestion_service
+        run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q -s -k fresh_process_memory_scaling
+      - name: Preserve bounded-memory raw samples
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bounded-memory-evidence
+          path: artifacts/bounded-memory/
+          if-no-files-found: warn
+          retention-days: 14

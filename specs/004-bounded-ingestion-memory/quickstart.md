@@ -32,6 +32,36 @@ Node-count equality is never sufficient.
 
 ## Memory harness
 
+Implemented probe: `scripts/benchmark_bounded_ingestion.py`. Requires Linux,
+a migrated isolated database named `*_test`, and a loopback vector-service
+process configured for that same database. It refuses non-test databases and
+non-loopback vector URLs. It creates a fresh generated Python repository and
+unique ingestion/repo IDs, runs the actual graph builder, paged embedding worker
+and HTTP persistence, and cleans up only those fixture IDs/files. Embeddings
+are deterministic 1024-D Python float vectors, not Ollama output.
+
+From repository root (replace port with the isolated test service's port):
+
+```bash
+.venv/bin/python scripts/benchmark_bounded_ingestion.py --files 512 --vector-url http://127.0.0.1:18002
+.venv/bin/python scripts/benchmark_bounded_ingestion.py --files 2048 --vector-url http://127.0.0.1:18002
+.venv/bin/python scripts/benchmark_bounded_ingestion.py --files 4 --payload-chars 128000 --vector-url http://127.0.0.1:18002
+```
+
+Each invocation must be a fresh process. Capture JSONL stdout separately.
+`test_fresh_process_memory_scaling` starts the isolated vector service and runs
+all three cases against CI's test database, enforcing the preregistered SC-002
+threshold and observed limits. CI uploads `bounded-memory-evidence` containing
+N/4N/large raw JSONL and comparison.json (14-day retention). Archive accepted
+evidence in the KB before expiration. The first run defaults to phase
+`calibration`; set MEMORY_MEASUREMENT_PHASE=acceptance only after inspecting
+calibration, without silently changing the criterion.
+
+These runs exercise real graph/SQL/HTTP paths, but do not measure Ollama/GPU
+memory or replace the pinned DocsGPT gate. Cgroup mount-root counters can cover
+other processes; the JSON records membership and labels those counters, while
+the RSS comparison is exclusively for the benchmark PID.
+
 Sample current RSS and cgroup current/peak with timestamps. Emit graph/build/
 persist/embedding/completed markers BEFORE each stage allocates.
 VmHWM is supplementary, not an embedding-only peak. Record input bytes, nodes,

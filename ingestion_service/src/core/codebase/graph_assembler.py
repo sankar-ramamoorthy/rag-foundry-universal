@@ -17,7 +17,6 @@ from __future__ import annotations
 
 from collections import deque
 import logging
-from pathlib import PurePosixPath
 import re
 from typing import Dict, List, Optional, Tuple
 
@@ -26,6 +25,8 @@ from src.core.codebase.ir import CallSite, ExtractionResult, ImportRecord, Symbo
 from src.core.codebase.module_conventions import ModulePathConvention
 from src.core.codebase.repo_graph import RepoGraph
 from src.core.codebase.symbol_table import build_symbol_table
+from src.core.codebase.language import language_for_path as _language_for_path
+from src.core.codebase.language import LANGUAGE_BY_SUFFIX as LANGUAGE_BY_SUFFIX
 
 logger = logging.getLogger(__name__)
 
@@ -58,22 +59,6 @@ INHERITABLE_TYPES = {"CLASS", "INTERFACE", "STRUCT", "ENUM", "TRAIT", "RECORD"}
 # set for markdown/unrecognized suffixes or the empty relative_path on
 # EXTERNAL_MODULE/EXTERNAL_SYMBOL synthetic nodes — none of those are a
 # programming language.
-LANGUAGE_BY_SUFFIX = {
-    ".py": "python",
-    ".ts": "typescript",
-    ".tsx": "typescript",
-    ".js": "javascript",
-    ".jsx": "javascript",
-    ".mjs": "javascript",
-    ".cjs": "javascript",
-    ".rs": "rust",
-    ".java": "java",
-}
-
-
-def _language_for_path(relative_path: str) -> Optional[str]:
-    return LANGUAGE_BY_SUFFIX.get(PurePosixPath(relative_path).suffix)
-
 # F-04: receivers that are plain dotted names keep their context in
 # EXTERNAL_SYMBOL ids; anything else (subscripts, call results) doesn't.
 _DOTTED_NAME = re.compile(r"^[A-Za-z_]\w*(\.[A-Za-z_]\w*)*$")

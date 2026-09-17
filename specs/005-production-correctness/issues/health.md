@@ -1,7 +1,7 @@
 # WP-R6: correct production healthchecks and expose runtime provenance
 
 Tracking issue: [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169)
-Status: Implemented and locally tested; PR/CI and Linux validation pending.
+Status: Implementation merged in PR #172; CI passed; Linux host validation pending.
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -25,7 +25,7 @@ Validate rendered base/prod Compose; execute probes against healthy and unavaila
 - [x] Implement scoped fix on a dedicated branch; preserve service ownership and model provenance.
 - [x] Run relevant local checks; record limitations honestly (Linux integration pending).
 - [x] Update OKF knowledge-base links, current status, roadmap and evidence.
-- [ ] Commit, push, review CI, and merge the dedicated PR.
+- [x] Commit, push, review CI, and merge the dedicated PR (#172).
 - [x] Record deployment-specific gates separately from code completion.
 
 ## Implemented contract

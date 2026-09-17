@@ -1,6 +1,6 @@
 # Handoff: red-star production correctness
 
-Updated: 2026-09-16
+Updated: 2026-09-17
 Tracking: #160, #161, #166-#171
 This is execution state, not an alternative specification or completion claim.
 
@@ -25,9 +25,37 @@ usable by a new session or Claude Code.
 
 ## Current state
 
-- Branch: fix/169-healthchecks-provenance; PR #172 open.
-  Initial CI caught root pytest console-script import-path setup; tests/conftest.py
-  now supplies repo root for both pytest invocation styles. Recheck latest CI.
+- Branch: fix/160-bounded-ingestion-memory; partial implementation, not release-ready.
+  Draft PR #175. Worker now uses generation-scoped keyset pages and the
+  count/UTF-8-byte-bounded EmbeddingBuffer, with stable document ordinals.
+  Graph-build helper returns scalar stats; weakref tests prove graph/builder
+  lifetime ends before embedding, and page tests forbid predecessor retention.
+  Progress starts before reads; fresh JSON updates and terminal stages exposed
+  by status endpoint. 288 ingestion unit tests passed; lint passed. Focused
+  buffer types passed; broader types still report baseline ORM/GitPython issues.
+  First PostgreSQL CI: 3 paging tests passed; empty fixture used invalid UUID.
+  Fixture corrected; fresh-session progress and real paging/status tests added.
+  Follow-up 9edf84b passed full CI run 35219308277: nine real PostgreSQL tests,
+  including separate vector-service HTTP parity and durability. Query-plan
+  probe f9868f1 passed CI 35219461132: 10 integration tests, existing PK index,
+  32-row late page from 4000 nodes in 0.036ms. No new index from this fixture;
+  not proof of selective multi-repo scale.
+  Linux RSS harness added at d0b6603: calibration run 35220047904 passes SC-002
+  synthetic criterion and all observed bounds (N +7,991,296B; 4N +4,784,128B).
+  Raw JSONL archived under DOCS/test_results/data/issue-160-calibration-35220047904.
+  Entire CI fails after benchmark deletion: ANN tests return zero rows (#176).
+  5827b67 adds test-only VACUUM diagnostic retaining original failed gate.
+  Run 35220317090 passed ANN tests on repeat, so vacuum diagnostic was skipped;
+  symptom intermittent, not resolved or proven vacuum-responsive.
+  Memory acceptance moved to its own CI job/database (same fixture/criterion),
+  not a production fix for #176. Separate synthetic acceptance passed run
+  35220643252 at c264325; archived raw samples in issue-160-acceptance-35220643252.
+  Full real rebuild graph/vector parity at 1/7/128 passed fb33c4b, run
+  35220823709. SC-002 passed; DocsGPT/production gates remain open.
+  [Evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md).
+- PR #172 merged after lint/unit/PostgreSQL integration CI passed on
+  36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
+  Main merge: 2b198b6f96c3ce54c5f031cef11e9ebd2f306614.
 - Planning PR #164 merged with green unit and PostgreSQL integration CI.
   Main merge: 853b0e3814a228337028929109a44ed837f5fd2d.
 - Audit reports/probe were untracked at start; authored in the preceding audit
@@ -44,9 +72,20 @@ usable by a new session or Claude Code.
 
 ## Immediate next actions
 
-Commit/push #169, wait for required CI and merge exact green head. Keep #169
-open until Linux Docker health/image evidence is recorded. Then branch from
-updated main for #160; read its complete design and relevant ADRs first.
+Finish #160 final review/checks and merge implementation PR #175 only at green
+head. Latest paging uses SQLAlchemy select/execute to avoid new ORM stub typing
+errors; five pre-existing typing errors in persistence and missing root
+GitPython remain, documented (service dependency already declares GitPython).
+Keep #160 open for T012 admission/mutation protection and T016 DocsGPT. Next
+implement #161, then #166, with shared ownership design; see issue specs.
+Do not treat #176 as fixed: preserve its controlled post-delete regression work
+for separate PR. Pinned DocsGPT and actual Linux ceiling are
+still unknown; operator target-host evidence required. Complete KB evidence and
+remaining tasks before making draft ready; retain unexecuted production gates.
+GitHub upstream default main resolved on September 17 to
+fbcf320458386558906388c030b4149906ef3877; this is a potential NEW DocsGPT
+baseline, NOT the incident SHA. No clone/benchmark on that revision yet.
+Keep #169 open until Linux Docker health/image evidence is recorded.
 Local #169 results and remaining gates:
 [evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).
 Use root .venv for service suites. For llm tests disable ambient personal
@@ -85,6 +124,6 @@ OKF type/frontmatter and Markdown links. GitHub multiline bodies use --body-file
 ## Completion ledger
 
 Planning PR #164: merged, 853b0e3814a228337028929109a44ed837f5fd2d.
-Implementation #169: local checks passed; PR/merge still pending.
+Implementation #169: PR #172 merged; Linux host validation still pending.
 Mandatory live memory/recovery/quality/release gates: all pending.
 Do not close the overall objective until every requirement is evidenced.
