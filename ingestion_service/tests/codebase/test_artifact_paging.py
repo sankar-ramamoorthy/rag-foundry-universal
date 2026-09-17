@@ -1,9 +1,16 @@
 """#160 real PostgreSQL page isolation, input envelope and generation checks."""
 
 import uuid
+import os
+from pathlib import Path
+import socket
+import subprocess
+import sys
+import time
 
 import pytest
-from sqlalchemy import event
+from sqlalchemy import event, text
+import requests
 
 from shared.models.document_node import DocumentNode
 from src.core.models import IngestionRequest
@@ -13,6 +20,66 @@ from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 
 
 pytestmark = [pytest.mark.integration, pytest.mark.docker]
+
+
+@pytest.fixture(scope="module")
+def vector_http_url():
+    """Real service in a separate interpreter avoids ingestion's `src` imports."""
+    engine = get_engine()
+    assert engine.url.database and engine.url.database.endswith("_test"), (
+        "HTTP durability tests require an isolated *_test database"
+    )
+    root = Path(__file__).resolve().parents[3]
+    with socket.socket() as reserved:
+        reserved.bind(("127.0.0.1", 0))
+        port = reserved.getsockname()[1]
+    env = {
+        **os.environ,
+        "DATABASE_URL": engine.url.render_as_string(hide_password=False),
+        "PYTHONPATH": os.pathsep.join([str(root), str(root / "vector_store_service")]),
+        "EMBEDDING_PROVIDER": "mock",
+        "VECTOR_DIMENSION": "1024",
+        "PYTHON_DOTENV_DISABLED": "1",
+    }
+    process = subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "uvicorn",
+            "src.api.v1.main:app",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            str(port),
+        ],
+        cwd=root / "vector_store_service",
+        env=env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    url = f"http://127.0.0.1:{port}"
+    try:
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            assert process.poll() is None, (
+                "Isolated vector service exited during startup"
+            )
+            try:
+                if requests.get(url + "/health", timeout=0.5).status_code == 200:
+                    break
+            except requests.RequestException:
+                pass
+            time.sleep(0.1)
+        else:
+            pytest.fail("Isolated vector HTTP service failed to become healthy")
+        yield url
+    finally:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
 
 
 @pytest.fixture
@@ -217,3 +284,113 @@ def test_progress_status_contract_with_real_paging(corpus, monkeypatch):
     assert response.status == "completed"
     assert response.embed_progress["nodes_processed"] == 2
     assert response.embed_progress["stage"] == "completed"
+
+
+def _stored_vectors(factory, attempt):
+    with factory() as session:
+        return session.execute(
+            text("""
+            SELECT n.canonical_id, vc.chunk_index, vc.chunk_text,
+                   vc.source_metadata, vc.vector::text, vc.provider
+            FROM ingestion_service.vector_chunks vc
+            JOIN ingestion_service.document_nodes n ON n.document_id = vc.document_id
+            WHERE vc.ingestion_id = :attempt
+            ORDER BY n.canonical_id, vc.chunk_index
+        """),
+            {"attempt": attempt},
+        ).all()
+
+
+def _real_embedding_fixture(corpus, vector_http_url, *, buffer_size, fail_after=None):
+    from unittest.mock import Mock
+    from src.api.v1 import codebase_ingest as api
+    from src.core.config import Settings
+    from src.core.http_vectorstore import HttpVectorStore
+    from src.core.pipeline import IngestionPipeline
+
+    repo, attempt, factory = corpus
+    with factory() as session:
+        session.query(DocumentNode).filter_by(repo_id=repo, canonical_id="4.py").update(
+            {DocumentNode.text: "x" * 128000}
+        )
+        session.commit()
+    store = HttpVectorStore(vector_http_url)
+    store.delete_by_ingestion_id(attempt)
+    calls = 0
+    actual_write = store.add_vectors
+
+    def write(records):
+        nonlocal calls
+        if fail_after is not None and calls >= fail_after:
+            raise RuntimeError("injected failure after committed HTTP batches")
+        actual_write(records)
+        calls += 1
+        # A fresh DB session must see each HTTP acknowledgement immediately.
+        assert len(_stored_vectors(factory, attempt)) == calls * buffer_size or (
+            len(records) < buffer_size
+        )
+
+    store.add_vectors = write
+    embedder = Mock()
+    embedder.embed.side_effect = lambda chunks: [
+        [float(len(chunk.content))] + [0.0] * 1023 for chunk in chunks
+    ]
+    pipeline = IngestionPipeline(
+        validator=Mock(), embedder=embedder, vector_store=store
+    )
+    with factory() as session:
+        manager = StatusManager(session)
+        manager.mark_running(uuid.UUID(attempt))
+        try:
+            api._embed_repo_artifacts(
+                pipeline,
+                CodebaseGraphPersistence(session),
+                repo,
+                attempt,
+                5,
+                "mock",
+                Settings(
+                    _env_file=None,
+                    DATABASE_URL="unused",
+                    INGESTION_NODE_PAGE_SIZE=1,
+                    INGESTION_EMBED_BATCH_SIZE=buffer_size,
+                ),
+                lambda progress: manager.update_embed_progress(
+                    uuid.UUID(attempt), progress
+                ),
+            )
+        except RuntimeError as exc:
+            manager.mark_failed(uuid.UUID(attempt), error=str(exc))
+            raise
+        manager.mark_completed(uuid.UUID(attempt))
+    return _stored_vectors(factory, attempt)
+
+
+def test_real_http_vector_writes_have_normalized_buffer_parity(corpus, vector_http_url):
+    outputs = [
+        _real_embedding_fixture(corpus, vector_http_url, buffer_size=size)
+        for size in (1, 7, 128)
+    ]
+    assert len(outputs[0]) == 144  # one short artifact + actual 143-chunk artifact
+    assert outputs[0] == outputs[1] == outputs[2]
+    indices = [row.chunk_index for row in outputs[0] if row.canonical_id == "4.py"]
+    assert indices == list(range(143))
+
+
+def test_acknowledged_http_batches_survive_later_failure(corpus, vector_http_url):
+    _, attempt, factory = corpus
+    with pytest.raises(RuntimeError, match="injected failure"):
+        _real_embedding_fixture(corpus, vector_http_url, buffer_size=7, fail_after=2)
+    rows = _stored_vectors(factory, attempt)
+    assert len(rows) == 14
+    with factory() as observer:
+        request = (
+            observer.query(IngestionRequest)
+            .filter_by(
+                ingestion_id=uuid.UUID(attempt),
+            )
+            .one()
+        )
+        assert request.status == "failed"
+        progress = request.ingestion_metadata["embed_progress"]
+        assert progress["chunks_persisted"] == 14 and progress["stage"] == "failed"
