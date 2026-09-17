@@ -43,7 +43,7 @@ records the accepted WP-R3 repo-identity/generation-resolution/delete-lock
 decision and its explicit non-goals (no zero-downtime staged publication).
 
 [ADR-051: generation-aware graph cache](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)
-records the proposed WP-R5 (narrowed #168) decision keying
+records the accepted WP-R5 (narrowed #168) decision keying
 `rag_orchestrator`'s graph cache on `(repo_id, generation_id)` with LRU
 bounding, and its explicit non-goals (no vector-store generation filtering,
 no live two-service HTTP round-trip test yet).

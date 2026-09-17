@@ -117,16 +117,16 @@ document.
   #180 (ingestion source-revision provenance), and #181 (evaluation
   three-revision provenance) — see
   [freshness](/specs/005-production-correctness/issues/freshness.md).
-  #168's narrowed scope is implemented on branch
-  `feat/168-generation-aware-graph-cache` with local unit/lint evidence in
+  #168's narrowed scope is merged to main via PR #183 (`cb36220`), with
+  real-PostgreSQL CI evidence in
   [its test-results doc](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md)
-  and [proposed ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md):
+  and [accepted ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md):
   `rag_orchestrator`'s graph cache now keys on `(repo_id, generation_id)`
   via a new cheap `GET /v1/repos/{repo_id}/generation` check, LRU-bounded.
-  Real-PostgreSQL CI and merge are still pending; no live two-service HTTP
-  round-trip test exists yet (disclosed in ADR-051). #180/#181 remain
-  unimplemented. Linux/live rollout validation is a separate, still-pending
-  #171 gate. Other fixes remain planned.
+  No live two-service HTTP round-trip test exists yet (disclosed in
+  ADR-051); vector-store search still filters by `repo_id` only, not
+  generation. #180/#181 remain unimplemented. Linux/live rollout validation
+  is a separate, still-pending #171 gate. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
 

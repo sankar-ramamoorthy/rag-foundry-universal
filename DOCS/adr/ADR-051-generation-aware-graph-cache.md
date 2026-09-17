@@ -2,7 +2,7 @@
 title: "ADR-051: Generation-aware rag_orchestrator graph cache"
 date: 2026-09-17
 type: adr
-status: proposed
+status: accepted
 tags: [rag_orchestrator, caching, freshness, generation, repository]
 related:
   - "[WP-R5 specification](/specs/005-production-correctness/issues/freshness.md)"
@@ -13,7 +13,10 @@ related:
 
 # ADR-051: Generation-aware rag_orchestrator graph cache
 
-Tracking: #168 / WP-R5 (narrowed scope; split from #180/#181 on 2026-09-17).
+Tracking: #168 / WP-R5 (narrowed scope; split from #180/#181 on 2026-09-17),
+merged via PR #183 (`cb3622056cd58a08961e450c8b9c2383b47af6e1`).
+Accepted: real-PostgreSQL CI-validated (run 35281353921 at head `0adbb3b`).
+Linux rollout evidence remains a separate #171 gate, not covered here.
 
 ## Problem
 
