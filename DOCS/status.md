@@ -104,12 +104,16 @@ document.
   and [accepted ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
   Linux/live rollout validation remains a separate, still-pending #171 gate;
   do not treat merged CI as production deployment. R3/#166 (repository
-  rebuild/delete lifecycle) is implemented on branch
-  `fix/166-repo-lifecycle-consistency` with local unit/lint evidence in
-  [its test-results doc](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md)
-  and [proposed ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md);
-  real-PostgreSQL CI and merge are still pending — not yet implemented in
-  production. Other fixes remain planned.
+  rebuild/delete lifecycle) is merged to main via PR #178 (`351dc56`), with
+  real-PostgreSQL CI evidence (including a rebuild-in-progress generation
+  test) in [its test-results doc](/DOCS/test_results/2026-09-17-repository-lifecycle-issue-166.md)
+  and [proposed ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md).
+  Its migration's backfill SQL has not been verified against genuine
+  pre-#166 historical rows (only against CI's always-empty fresh DB) — a
+  disclosed, non-blocking gap. `rag_orchestrator`'s in-memory graph cache
+  does not yet consult the new `generation_status` signal; that remains
+  #168's scope. Linux/live rollout validation is a separate, still-pending
+  #171 gate. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
 

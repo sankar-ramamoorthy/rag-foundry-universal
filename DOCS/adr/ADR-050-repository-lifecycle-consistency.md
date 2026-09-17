@@ -2,7 +2,7 @@
 title: "ADR-050: Repository rebuild/delete lifecycle consistency"
 date: 2026-09-17
 type: adr
-status: proposed
+status: accepted
 tags: [ingestion, lifecycle, recovery, concurrency, repository]
 related:
   - "[WP-R3 specification](/specs/005-production-correctness/issues/lifecycle.md)"
@@ -13,7 +13,9 @@ related:
 
 # ADR-050: Repository rebuild/delete lifecycle consistency
 
-Tracking: #166 / WP-R3.
+Tracking: #166 / WP-R3, merged via PR #178 (`351dc56a66c6b6f06e31f9738baf2407d9446652`).
+Accepted: real-PostgreSQL CI-validated (run 35276463515 at head `f55ce5f`).
+Linux rollout evidence remains a separate #171 gate, not covered here.
 
 ## Problem
 
