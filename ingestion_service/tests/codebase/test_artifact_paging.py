@@ -508,3 +508,92 @@ def test_fresh_process_memory_scaling(vector_http_url, tmp_path):
     (destination / "comparison.json").write_text(json.dumps(result, indent=2))
     print("MEMORY_COMPARISON=" + json.dumps(result))
     assert result["passed"]
+
+
+def test_rebuild_graph_and_vector_parity_at_each_buffer_size(
+    corpus,
+    vector_http_url,
+    tmp_path,
+):
+    """Compare independent real graph rebuilds, normalizing generated DB UUIDs."""
+    from unittest.mock import Mock
+    from src.api.v1 import codebase_ingest as api
+    from src.core.config import Settings
+    from src.core.http_vectorstore import HttpVectorStore
+    from src.core.pipeline import IngestionPipeline
+    from src.core.codebase.repo_graph_builder import RepoGraphBuilder
+
+    (tmp_path / "a.py").write_text(
+        "def target():\n    value = '" + "x" * 128000 + "'\n    return value\n",
+    )
+    (tmp_path / "b.py").write_text(
+        "from a import target\n\ndef caller():\n    return target()\n",
+    )
+    repo, attempt, factory = corpus
+    reference = RepoGraphBuilder(repo_root=tmp_path, ingestion_id=attempt).build()
+    canonical_ids = {node["canonical_id"] for node in reference.all_entities()}
+    expected_edges = {
+        (rel["from_canonical_id"], rel["to_canonical_id"], rel["relation_type"])
+        for rel in reference.relationships
+        if rel["from_canonical_id"] in canonical_ids
+        and rel["to_canonical_id"] in canonical_ids
+    }
+    assert any(edge[2] == "CALL" for edge in expected_edges)
+    normalized_runs = []
+    for buffer_size in (1, 7, 128):
+        store = HttpVectorStore(vector_http_url)
+        embedder = Mock()
+        embedder.embed.side_effect = lambda chunks: [
+            [float(len(chunk.content))] + [0.0] * 1023 for chunk in chunks
+        ]
+        pipeline = IngestionPipeline(
+            validator=Mock(), embedder=embedder, vector_store=store
+        )
+        with factory() as session:
+            persistence = CodebaseGraphPersistence(session)
+            stats = api._build_and_persist_graph(
+                tmp_path,
+                repo,
+                attempt,
+                persistence,
+                lambda stage: None,
+            )
+            api._embed_repo_artifacts(
+                pipeline,
+                persistence,
+                repo,
+                attempt,
+                stats["nodes"],
+                "mock",
+                Settings(
+                    _env_file=None,
+                    DATABASE_URL="unused",
+                    INGESTION_EMBED_BATCH_SIZE=buffer_size,
+                ),
+                lambda progress: None,
+            )
+        with factory() as observer:
+            nodes = observer.execute(
+                text("""
+                SELECT canonical_id, relative_path, doc_type, text
+                FROM ingestion_service.document_nodes
+                WHERE repo_id = :repo ORDER BY canonical_id
+            """),
+                {"repo": repo},
+            ).all()
+            edges = observer.execute(
+                text("""
+                SELECT a.canonical_id, b.canonical_id, r.relation_type
+                FROM ingestion_service.document_relationships r
+                JOIN ingestion_service.document_nodes a
+                  ON a.document_id=r.from_document_id
+                JOIN ingestion_service.document_nodes b
+                  ON b.document_id=r.to_document_id
+                WHERE a.repo_id = :repo ORDER BY 1, 2, 3
+            """),
+                {"repo": repo},
+            ).all()
+        assert {node.canonical_id for node in nodes} == canonical_ids
+        assert set(map(tuple, edges)) == expected_edges
+        normalized_runs.append((nodes, edges, _stored_vectors(factory, attempt)))
+    assert normalized_runs[0] == normalized_runs[1] == normalized_runs[2]
