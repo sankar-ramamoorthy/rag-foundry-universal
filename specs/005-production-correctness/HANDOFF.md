@@ -63,9 +63,9 @@ narrowed), #180 (ingestion source-revision provenance), #181 (evaluation
 three-revision provenance) — docs-only PR #182, merged. No #180/#181
 implementation has started.
 
-R5 (#168 narrowed) IMPLEMENTED, NOT MERGED: branch
-`feat/168-generation-aware-graph-cache` off main. Owner gave explicit
-go-ahead after the scope split. `rag_orchestrator`'s `_repo_graphs` cache
+R5 (#168 narrowed) MERGED: PR #183 squash-merged to main at
+`cb3622056cd58a08961e450c8b9c2383b47af6e1` on September 17. Owner gave
+explicit go-ahead after the scope split. `rag_orchestrator`'s `_repo_graphs` cache
 was process-global, unbounded, keyed only by `repo_id`, never reloaded — a
 warm worker kept serving a stale graph after a repo was re-ingested, even
 though R3 already fixed the *data*-correctness half at the source
@@ -79,20 +79,26 @@ thread-safe via a lock); no-completed-generation short-circuits to an empty
 graph without fetching or caching. `hybrid_retrieve` calls
 `get_cached_graph` exactly once per request, so resolving generation once
 per call structurally prevents mixing two generations within one query.
-ADR-051 (proposed) and [evidence doc](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md)
+ADR-051 (accepted) and [evidence doc](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md)
 written. Local: ingestion_service 314 unit tests pass (up from 310),
 rag_orchestrator 162 pass (up from 158), lint clean on all touched files,
 focused pyright clean (only pre-existing baseline import-resolution noise).
-New real-Postgres integration test
-(`ingestion_service/tests/api/test_repo_generation_integration.py`) not yet
-run locally (no local Docker) — needs this PR's CI. Disclosed non-goal: no
-live two-service HTTP round-trip test exists anywhere (unit tests mock the
-HTTP seam on the orchestrator side; the integration test exercises the real
-route against real Postgres on the ingestion side — both together, not an
-end-to-end process test). Vector-store search still filters by `repo_id`
-only, not generation — a residual gap noted in ADR-051, not closed here.
-Next: push, open PR, get CI green (including the new integration suite),
-review, merge.
+Final pre-merge head `0adbb3b` passed all four CI checks (run 35281353921):
+lint, unit-tests, integration-tests (20 real-Postgres repository-lifecycle/
+generation tests — 16 from #166 plus 4 new), bounded-memory. One CI attempt
+at this same head hit the pre-existing known-flaky #176 ANN symptom
+(unrelated to this PR — confirmed by its own VACUUM-retry diagnostic step
+passing); a plain re-run of the failed job came back green, not treated as
+a regression. Disclosed non-goal: no live two-service HTTP round-trip test
+exists anywhere (unit tests mock the HTTP seam on the orchestrator side;
+the integration test exercises the real route against real Postgres on the
+ingestion side — both together, not an end-to-end process test).
+Vector-store search still filters by `repo_id` only, not generation — a
+residual gap noted in ADR-051, not closed here. Issue #168 code/CI work is
+complete; the issue stays open pending Linux/live rollout evidence, a
+separate #171 gate — do not deploy on the owner's behalf and do not treat
+merged CI as production validation. #180/#181 remain unimplemented,
+untouched by this PR.
 
 ## Start here in a new session
 
