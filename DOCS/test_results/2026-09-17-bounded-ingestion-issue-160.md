@@ -74,6 +74,44 @@ rejects databases whose name does not end in `_test`. It launches only a local
 test vector service, and only deletes vectors belonging to its generated
 fixture attempt. No production corpus or model provider is accessed.
 
+## Linux synthetic calibration (not acceptance)
+
+Run 35220047904, PR head d0b6603, measured synthetic merge SHA
+f3230ab9ae7af0d4843d57fded833f473513f7ae, Python 3.12.3 on Linux.
+Real generated Python graph builder, SQL pages and HTTP vector persistence;
+deterministic 1024-D Python-float embedder. Runtime defaults unchanged.
+
+| Fixture | Nodes/vectors | Embedding RSS baseline → peak | Increment |
+| --- | --- | --- | --- |
+| N: 512 files | 1,024 / 1,024 | 174,084,096 → 182,075,392 bytes | 7,991,296 bytes |
+| 4N: 2,048 files | 4,096 / 4,096 | 184,107,008 → 188,891,136 bytes | 4,784,128 bytes |
+| Large: 4 files, 128k payload | 8 / 1,144 | 170,426,368 → 180,322,304 bytes | 9,895,936 bytes |
+
+The unchanged SC-002 comparison passes (4N increment below 45,541,376-byte
+threshold). Graph/build peak increases with input size; retained allocator pages
+help explain why 4N's embedding increment is smaller. Do not infer zero graph
+cost or constant whole-process memory. All observed page/artifact/buffer limits
+hold. Cgroup mount-root files were unavailable, recorded as null, not a known
+memory ceiling. No GPU/provider memory was measured.
+
+Raw archived evidence: [comparison](./data/issue-160-calibration-35220047904/comparison.json),
+[N](./data/issue-160-calibration-35220047904/N.jsonl),
+[4N](./data/issue-160-calibration-35220047904/4N.jsonl),
+[large](./data/issue-160-calibration-35220047904/large.jsonl).
+These include raw timestamps, RSS/HWM, stage markers, limits, counts and runtime
+identity. Separate acceptance measurement still required after calibration.
+
+**The overall CI run failed:** ingestion's 11 tests passed, but after benchmark
+cleanup the existing ANN suite returned zero results in three tests despite
+its seeded rows. [#176 plan](/specs/005-production-correctness/issues/post-delete-ann.md)
+tracks this new lifecycle/retrieval evidence. A test-only vacuum diagnostic is
+added without suppressing the original failure. A repeat run 35220317090
+passed the original ANN tests, so the conditional vacuum diagnostic did not run:
+the symptom is intermittent, not proven vacuum-responsive. Exact-search,
+pgvector-version and controlled-churn evidence remain #176 work. Subsequent
+memory acceptance uses its own CI job/database for reproducible isolation;
+this is explicitly **not** a production recall fix.
+
 ## Outstanding gates — not waived
 
 - Paging EXPLAIN at f9868f1, CI run 35219461132: 4,000 fixture nodes,

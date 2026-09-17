@@ -23,6 +23,8 @@ Per-issue plans/acceptance/tasks: [issues](./issues/)
       write truthful release record and merge tooling/evidence PR.
 - [ ] R011 Audit every issue's acceptance evidence; close only satisfied issues,
       update status/roadmap/KB links and verify all requested merges remotely.
+- [ ] R012 Diagnose/fix #176 post-delete ANN recall; separate PR and measured
+      regression per [follow-up](./issues/post-delete-ann.md). Include in R010/R011.
 
 For EACH R001-R010: update issue-specific acceptance checklist, exact test
 results, PR link, current status and HANDOFF. Preserve outstanding gates.

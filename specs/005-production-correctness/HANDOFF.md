@@ -39,7 +39,16 @@ usable by a new session or Claude Code.
   including separate vector-service HTTP parity and durability. Query-plan
   probe f9868f1 passed CI 35219461132: 10 integration tests, existing PK index,
   32-row late page from 4000 nodes in 0.036ms. No new index from this fixture;
-  not proof of selective multi-repo scale. No RSS or production claim yet.
+  not proof of selective multi-repo scale.
+  Linux RSS harness added at d0b6603: calibration run 35220047904 passes SC-002
+  synthetic criterion and all observed bounds (N +7,991,296B; 4N +4,784,128B).
+  Raw JSONL archived under DOCS/test_results/data/issue-160-calibration-35220047904.
+  Entire CI fails after benchmark deletion: ANN tests return zero rows (#176).
+  5827b67 adds test-only VACUUM diagnostic retaining original failed gate.
+  Run 35220317090 passed ANN tests on repeat, so vacuum diagnostic was skipped;
+  symptom intermittent, not resolved or proven vacuum-responsive.
+  Memory acceptance moved to its own CI job/database (same fixture/criterion),
+  not a production fix for #176. No acceptance/DocsGPT/production claim yet.
   [Evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md).
 - PR #172 merged after lint/unit/PostgreSQL integration CI passed on
   36a1a62d370fd94338f89243b200880d68bedd15 (run 35172556194).
@@ -63,9 +72,11 @@ usable by a new session or Claude Code.
 Continue #160: inspect latest PR #175 CI. Paging EXPLAIN captured; no index
 added without a demonstrated need. Real HTTP write-failure durability and stored vector
 parity now pass; hard-kill and full graph/topology parity still need coverage.
-Build isolated stage-aware Linux RSS harness (N/4N, large-artifact), using fresh
-processes, real SQL pages and vector-service HTTP, deterministic 1024-D embedder
-(no corpus-sized retained output), raw samples and stage markers. Verify limits and
+RSS harness implemented, calibration raw data archived. First inspect #176
+vacuum diagnostic, record actual version/eligible rows, preserve new issue's
+regression. Isolate performance benchmark DB/job if needed, NOT as its production
+fix. Run distinct memory acceptance after calibration using the unchanged
+criterion; archive raw samples. Improve full-run high-water summary and verify
 full-process/graph peak separately. Pinned DocsGPT and actual Linux ceiling are
 still unknown; operator target-host evidence required. Complete KB evidence and
 remaining tasks before making draft ready; retain unexecuted production gates.

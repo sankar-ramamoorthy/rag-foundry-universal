@@ -1,0 +1,125 @@
+{
+  "criterion": "4N incremental RSS <= 1.5*N + 32 MiB",
+  "N_files": 512,
+  "4N_files": 2048,
+  "summaries": [
+    {
+      "kind": "summary",
+      "terminal": "completed",
+      "nodes": 1024,
+      "chunks": 1024,
+      "persisted": 1024,
+      "progress": {
+        "stage": "embedding",
+        "nodes_processed": 1024,
+        "nodes_total": 1024,
+        "chunks_persisted": 1024,
+        "max_buffer_chunks": 128,
+        "max_buffer_bytes": 133833
+      },
+      "observed": {
+        "max_page_nodes": 32,
+        "max_page_bytes": 33463,
+        "max_artifact_bytes": 1046
+      },
+      "baseline_rss_bytes": {
+        "startup": 159416320,
+        "fixture": 159444992,
+        "graph_build": 163950592,
+        "graph_persist": 167530496,
+        "embedding": 174084096,
+        "completed": 182075392
+      },
+      "peak_rss_bytes": {
+        "startup": 159416320,
+        "fixture": 159989760,
+        "graph_build": 166580224,
+        "graph_persist": 174080000,
+        "embedding": 182075392,
+        "completed": 182075392
+      },
+      "embedding_incremental_rss_bytes": 7991296,
+      "elapsed_seconds": 4.322334388000002
+    },
+    {
+      "kind": "summary",
+      "terminal": "completed",
+      "nodes": 4096,
+      "chunks": 4096,
+      "persisted": 4096,
+      "progress": {
+        "stage": "embedding",
+        "nodes_processed": 4096,
+        "nodes_total": 4096,
+        "chunks_persisted": 4096,
+        "max_buffer_chunks": 128,
+        "max_buffer_bytes": 133836
+      },
+      "observed": {
+        "max_page_nodes": 32,
+        "max_page_bytes": 33463,
+        "max_artifact_bytes": 1046
+      },
+      "baseline_rss_bytes": {
+        "startup": 159596544,
+        "fixture": 159617024,
+        "graph_build": 164245504,
+        "graph_persist": 177483776,
+        "embedding": 184107008,
+        "completed": 188891136
+      },
+      "peak_rss_bytes": {
+        "startup": 159596544,
+        "fixture": 163930112,
+        "graph_build": 177483776,
+        "graph_persist": 185155584,
+        "embedding": 188891136,
+        "completed": 188891136
+      },
+      "embedding_incremental_rss_bytes": 4784128,
+      "elapsed_seconds": 18.172582998000024
+    },
+    {
+      "kind": "summary",
+      "terminal": "completed",
+      "nodes": 8,
+      "chunks": 1144,
+      "persisted": 1144,
+      "progress": {
+        "stage": "embedding",
+        "nodes_processed": 8,
+        "nodes_total": 8,
+        "chunks_persisted": 1144,
+        "max_buffer_chunks": 128,
+        "max_buffer_bytes": 128000
+      },
+      "observed": {
+        "max_page_nodes": 8,
+        "max_page_bytes": 1024364,
+        "max_artifact_bytes": 128046
+      },
+      "baseline_rss_bytes": {
+        "startup": 159617024,
+        "fixture": 159637504,
+        "graph_build": 164130816,
+        "graph_persist": 166277120,
+        "embedding": 170426368,
+        "completed": 180322304
+      },
+      "peak_rss_bytes": {
+        "startup": 159617024,
+        "fixture": 164102144,
+        "graph_build": 164130816,
+        "graph_persist": 170409984,
+        "embedding": 180322304,
+        "completed": 180322304
+      },
+      "embedding_incremental_rss_bytes": 9895936,
+      "elapsed_seconds": 4.505964242000005
+    }
+  ],
+  "threshold_bytes": 45541376.0,
+  "passed": true,
+  "scope": "synthetic graph/DB/HTTP with stub embedder; not DocsGPT/Ollama",
+  "phase": "calibration"
+}

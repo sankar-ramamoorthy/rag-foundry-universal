@@ -125,6 +125,9 @@ health/readiness corrections can ship while memory validation is prepared.
 - [ ] WP-R2 — orphan recovery and admission, [#161](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/161).
 - [ ] WP-R3 — ingestion/delete/serving consistency, [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166), related #144.
 - [ ] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167), related #91/#141/#145/#149/#156.
+  September 17 follow-up: [#176](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/176)
+  tracks zero ANN results after bulk-delete churn reproduced in CI;
+  [plan](/specs/005-production-correctness/issues/post-delete-ann.md), production impact unverified.
 - [ ] WP-R5 — source pinning and generation-aware graph cache, [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168).
 - [ ] WP-R6 — healthcheck correctness and runtime provenance, [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169).
   Implementation merged in PR #172 with green CI; Linux gates pending:
