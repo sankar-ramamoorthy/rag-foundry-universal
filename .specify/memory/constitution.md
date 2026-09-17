@@ -1,4 +1,10 @@
 <!--
+ATTRIBUTION AMENDMENT — 2026-09-16, issue #173, version 1.1.0:
+Owner explicitly requested Codex contributor credit alongside Claude.
+Permit owner-requested, accurately identified AI co-author trailers; retain
+human authorship, forbid invented account identities, and do not rewrite
+merged history solely for attribution. README gives explicit Codex credit.
+
 SYNC IMPACT REPORT
 Version: 1.0.0 (pre-ratification correction pass — not yet ratified as of this
   revision; see Governance for the ratification date this version was approved).
@@ -139,9 +145,13 @@ or the other, never silently overridden in a spec.
 
 - **No direct commits to `main`.** All changes land via branch + pull request,
   including documentation-only changes.
-- **No AI attribution in commit trailers or PR bodies.** No `Co-Authored-By`
-  trailers, no "Generated with Claude Code" text — AI-assisted development is
-  credited in `README.md` instead.
+- **Accurate, owner-requested AI attribution.** Credit AI-assisted development
+  in `README.md`. When the owner requests commit-level credit, `Co-Authored-By`
+  trailers may identify the actual assisting tool using a verified attribution
+  name/email. Do not invent GitHub accounts or account-linked email addresses,
+  change the human author's identity, or promise GitHub contributor-avatar
+  display. Do not rewrite merged history solely to add credit. Keep PR bodies
+  focused on changes and evidence, without generated-by promotional footers.
 - **Amendments require the same verification discipline used to ratify this
   document.** A claim about "current system behavior" must be checked against
   code, config, or git history before being written into this constitution —
@@ -153,4 +163,4 @@ or the other, never silently overridden in a spec.
 - Complexity or an exception to any principle above must be justified
   explicitly in the spec or plan that introduces it, not silently absorbed.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-26 | **Last Amended**: 2026-08-26
+**Version**: 1.1.0 | **Ratified**: 2026-08-26 | **Last Amended**: 2026-09-16
