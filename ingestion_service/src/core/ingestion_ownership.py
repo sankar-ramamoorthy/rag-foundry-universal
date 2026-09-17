@@ -161,3 +161,21 @@ def reconcile_ingestions(engine: Engine, *, include_legacy: bool = False) -> int
                     )
                     recovered += 1
         last_id = ids[-1]
+
+
+def main():
+    """Explicit operator-only reconciliation for pre-ownership deployments."""
+    import argparse
+    from src.core.database_session import get_engine
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--confirm-old-workers-stopped", action="store_true", required=True,
+    )
+    parser.parse_args()
+    count = reconcile_ingestions(get_engine(), include_legacy=True)
+    print(f"Reconciled {count} interrupted ingestion(s); partial data retained.")
+
+
+if __name__ == "__main__":
+    main()

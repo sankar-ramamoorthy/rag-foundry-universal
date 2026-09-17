@@ -35,6 +35,9 @@ changes, structural migrations.
 `DOCS/adr/` — check each ADR's own `status` field before relying on it;
 don't assume numeric order implies currency.
 
+[ADR-049: ingestion ownership and recovery](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md)
+records the proposed WP-R2 admission/recovery decision and its R3 boundaries.
+
 ## Audit & Planning
 
 The active production-correctness programme is

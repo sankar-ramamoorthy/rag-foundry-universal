@@ -7,11 +7,12 @@ import sys
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine, delete
+from sqlalchemy import create_engine, delete, text
 from sqlalchemy.orm import Session
 
 from src.core.ingestion_ownership import (
-    AdmissionBusy, owned_metadata, reconcile_ingestions, reserve_ingestion,
+    AdmissionBusy, OwnershipLost, owned_metadata, reconcile_ingestions,
+    reserve_ingestion,
 )
 from src.core.models import IngestionRequest
 from src.core.status_manager import StatusManager
@@ -99,6 +100,77 @@ def test_terminal_recovery_cannot_be_overwritten_by_stale_worker(ownership_db):
         assert "database ownership is absent" in request.ingestion_metadata["error"]
 
 
+def test_application_startup_recovers_dead_owner_but_not_live_owner(ownership_db):
+    from fastapi.testclient import TestClient
+    from src.api.v1.main import app
+
+    engine, attempts = ownership_db
+    dead, live = uuid4(), uuid4()
+    attempts.extend([dead, live])
+    with reserve_ingestion(engine, live):
+        create_attempt(engine, live)
+        create_attempt(engine, dead)
+        with TestClient(app) as client:
+            assert client.get(f"/v1/ingest-repo/{dead}").json()["status"] == "failed"
+            assert client.get(f"/v1/ingest-repo/{live}").json()["status"] == "accepted"
+
+
+def test_database_owner_loss_blocks_later_vector_dispatch(ownership_db, monkeypatch):
+    from unittest.mock import Mock
+    from src.core.http_vectorstore import HttpVectorStore
+    from src.core.worker_context import ownership_check
+
+    engine, attempts = ownership_db
+    attempt = uuid4()
+    attempts.append(attempt)
+    with reserve_ingestion(engine, attempt) as guard:
+        create_attempt(engine, attempt)
+        with guard._connection.cursor() as cursor:
+            cursor.execute("SELECT pg_backend_pid()")
+            owner_pid = cursor.fetchone()[0]
+        # Terminate only this fixture's dedicated lock session, not the DB server.
+        with engine.connect() as connection:
+            assert connection.scalar(text("SELECT pg_terminate_backend(:pid)"), {
+                "pid": owner_pid,
+            })
+        post = Mock()
+        monkeypatch.setattr("src.core.http_vectorstore.requests.post", post)
+        token = ownership_check.set(guard.check)
+        try:
+            with pytest.raises(OwnershipLost):
+                HttpVectorStore("http://unused").add_vectors([])
+            post.assert_not_called()
+        finally:
+            ownership_check.reset(token)
+    assert reconcile_ingestions(engine) == 1
+
+
+def test_periodic_recovery_continues_after_an_error(monkeypatch):
+    from unittest.mock import Mock
+    import threading
+    from src.core import ingestion_jobs
+
+    stop = threading.Event()
+    calls = []
+
+    def sweep(engine):
+        calls.append(engine)
+        if len(calls) == 1:
+            raise RuntimeError("temporary database failure")
+        stop.set()
+
+    monkeypatch.setattr(ingestion_jobs, "get_engine", Mock(return_value="engine"))
+    monkeypatch.setattr(ingestion_jobs, "reconcile_ingestions", sweep)
+    worker = threading.Thread(
+        target=ingestion_jobs.recovery_loop,
+        args=(stop,), kwargs={"interval": 0.001}, daemon=True,
+    )
+    worker.start()
+    worker.join(timeout=2)
+    assert not worker.is_alive()
+    assert calls == ["engine", "engine"]
+
+
 @pytest.mark.parametrize("running", [False, True])
 def test_hard_process_death_releases_owner_and_retains_progress(ownership_db, running):
     engine, attempts = ownership_db
@@ -149,6 +221,8 @@ time.sleep(60)
         ).start()
         assert ready.get(timeout=15).strip() == "ready"
         assert reconcile_ingestions(engine) == 0
+        with pytest.raises(AdmissionBusy):
+            reserve_ingestion(engine, uuid4())  # Competing OS process is rejected.
         child.kill()
         child.communicate(timeout=10)
         assert reconcile_ingestions(engine) == 1

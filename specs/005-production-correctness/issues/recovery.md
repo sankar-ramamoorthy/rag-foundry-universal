@@ -84,3 +84,31 @@ not resurrect it. A vector HTTP request already in flight can finish, leaving
 partial data. R2 does not automatically retry/delete that data. Full same-repo
 write fencing and replacement/delete consistency remain R3; do not claim that
 the advisory primitive alone implements them.
+
+## Rollout
+
+Deployment is deferred until the R2 PR is merged and its exact-head checks pass.
+Use the current release's Compose files/env arguments for every command below.
+Back up data worth retaining. Stop ALL old ingestion containers/processes using
+this database; do not do a mixed-version rolling deployment. Keep Postgres up.
+Build/pull the reviewed new ingestion image before running the one-off command.
+
+```bash
+docker compose stop ingestion_service
+docker compose run --rm --no-deps ingestion_service uv run --directory /app/ingestion_service python -m src.core.ingestion_ownership --confirm-old-workers-stopped
+docker compose up -d ingestion_service
+```
+
+The bare Compose command is illustrative: preserve production override/env-file
+arguments from the existing release runbook. The explicit confirmation authorizes
+marking legacy accepted/running rows failed, not deleting any artifacts or vectors.
+It cannot prove old workers are stopped; the operator must verify that first.
+The script wrapper `scripts/reconcile_ingestions.py` provides the same operation
+from a checkout with the ingestion dependencies/environment configured.
+
+After startup verify health/version and the status of any pre-existing interrupted
+attempt. Run a small isolated ingestion, send a second while it is active (expect
+503 + Retry-After), verify completed/query behavior. In an isolated fixture only,
+kill the ingestion process, restart, and verify failed/error/finished_at plus
+retained partial writes. Do not expect automatic retry/resume or cleanup.
+Avoid concurrent delete/re-ingest until R3. Record Linux evidence in #171.

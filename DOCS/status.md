@@ -95,10 +95,13 @@ document.
   Planning PR #164 is merged. WP-R6/#169 healthcheck and runtime-provenance
   implementation has [local verification evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md);
   PR #172 is merged with green CI; Linux validation remains pending.
-  #160 has an integrated worker in draft PR #175 with
+  #160 has an integrated worker merged in PR #175 with
   [unit/real HTTP and PostgreSQL evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md);
   synthetic Linux RSS and graph/vector parity passed; pinned DocsGPT and
-  admission/mutation gates remain open. Other fixes remain planned.
+  admission/mutation gates remain open. R2/#161 is in draft PR #177 with
+  [recovery/admission tasks and rollout](/specs/005-production-correctness/issues/recovery.md)
+  and [proposed ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
+  It is not yet merged or Linux-validated. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
 

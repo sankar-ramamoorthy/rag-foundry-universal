@@ -6,6 +6,14 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-09-17
+
+Added proposed [ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md) for
+WP-R2 ingestion ownership/recovery (#161), linked to the programme's
+[acceptance and rollout tasks](/specs/005-production-correctness/issues/recovery.md).
+It distinguishes job ownership from R3 corpus consistency and records explicit
+legacy-worker rollout requirements. Acceptance/merge remains pending.
+
 ## 2026-09-14
 
 Added [`DOCS/status.md`](/DOCS/status.md) — a new top-level, single,
