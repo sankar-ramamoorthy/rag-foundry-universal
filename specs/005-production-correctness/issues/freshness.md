@@ -105,12 +105,14 @@ nothing tells a warm cache it is stale.
     (`GRAPH_CACHE_MAX_REPOS`), thread-safe.
   - No-completed-generation short-circuits to an empty graph without a
     full fetch.
-- [x] Run relevant unit/integration checks locally; record limitations
-  honestly — see evidence doc. Real-Postgres/CI run pending at branch
-  creation; run in CI before merge.
+- [x] Run relevant unit/integration checks; record limitations honestly —
+  see evidence doc. All four CI checks pass at head `ceabbe4` (run
+  35281171853), including 20 real-Postgres repository-lifecycle/generation
+  tests (16 from #166 plus 4 new for this endpoint).
 - [x] Update OKF knowledge-base links, current status, roadmap, ADR-051,
   and evidence doc.
-- [ ] Commit, push, review CI, and merge the dedicated PR.
+- [x] Commit, push, review CI (green), PR #183 open — merge pending final
+  review/authorization.
 - [ ] Record deployment-specific gates (Linux/#171) separately from code
   completion.
 

@@ -14,9 +14,13 @@ related:
 
 ## Scope and current result
 
-Implemented on branch `feat/168-generation-aware-graph-cache`, not yet
-merged or deployed. Local unit/lint results only as of this checkpoint; CI
-run pending. No target Linux result is claimed.
+Implemented on branch `feat/168-generation-aware-graph-cache` (PR #183),
+not yet merged or deployed. All four CI checks pass at head `ceabbe4`
+(run [35281171853](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/35281171853)):
+lint, unit-tests, integration-tests (20 real-Postgres repository-
+lifecycle/generation tests passed — 16 from #166 plus 4 new for the
+`/v1/repos/{repo_id}/generation` endpoint), bounded-memory. No target Linux
+result is claimed.
 
 ## Evidence ledger
 
@@ -31,22 +35,22 @@ run pending. No target Linux result is claimed.
   touched core/API modules surfaces only the same pre-existing baseline
   import-resolution noise documented since R1/R2/R3 (no per-service venv in
   this shell) — no new type errors.
-- New `ingestion_service/tests/api/test_repo_generation_integration.py`
-  (`integration`+`docker` marker, not yet run locally — no local Docker,
-  same constraint as R1-R3; needs CI) exercises the actual FastAPI route
-  against real Postgres: unknown repo, ready repo, rebuild-in-progress
-  (graph already replaced by the new attempt's `persist_graph`, not yet
-  completed), and the specific re-ingest-under-same-`repo_id` scenario
-  #168's acceptance criteria centers on.
+- `ingestion_service/tests/api/test_repo_generation_integration.py`
+  (`integration`+`docker` marker, now CI-validated against real Postgres —
+  see above) exercises the actual FastAPI route: unknown repo, ready repo,
+  rebuild-in-progress (graph already replaced by the new attempt's
+  `persist_graph`, not yet completed), and the specific
+  re-ingest-under-same-`repo_id` scenario #168's acceptance criteria
+  centers on.
 
 ## Acceptance coverage (against freshness.md's narrowed acceptance section)
 
 - "Re-ingest a changed edge under the same repo_id; a warm worker must
   observe the new graph" — proven at two levels: the new endpoint reports
   the new `ingestion_id` after a second completed ingestion under the same
-  `repo_id` (integration test, CI pending), and `get_cached_graph` reloads
-  when the resolved generation differs from its cached one (unit test,
-  passing).
+  `repo_id` (integration test, CI-validated), and `get_cached_graph`
+  reloads when the resolved generation differs from its cached one (unit
+  test, passing).
 - "Delete/recreate cannot reuse old cached content" — unit test
   (`test_delete_and_recreate_cannot_reuse_old_cached_content`) covers the
   cache side (deleted repo -> `unknown` -> empty graph -> recreate ->
@@ -91,6 +95,6 @@ run pending. No target Linux result is claimed.
 
 ## Remaining gates
 
-CI run against real PostgreSQL for the new integration test; final review;
-PR merge. Target Linux rollout evidence is recorded separately under #171,
+Final review and PR merge. Target Linux rollout evidence is recorded
+separately under #171,
 consistent with R1-R3's pattern.
