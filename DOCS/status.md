@@ -98,10 +98,12 @@ document.
   #160 has an integrated worker merged in PR #175 with
   [unit/real HTTP and PostgreSQL evidence](/DOCS/test_results/2026-09-17-bounded-ingestion-issue-160.md);
   synthetic Linux RSS and graph/vector parity passed; pinned DocsGPT and
-  admission/mutation gates remain open. R2/#161 is in draft PR #177 with
-  [recovery/admission tasks and rollout](/specs/005-production-correctness/issues/recovery.md)
-  and [proposed ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
-  It is not yet merged or Linux-validated. Other fixes remain planned.
+  admission/mutation gates remain open. R2/#161 (ownership/admission/recovery)
+  is merged to main via PR #177 (`12cf75d`), with real-PostgreSQL/process-kill
+  CI evidence, [recovery/admission tasks and rollout](/specs/005-production-correctness/issues/recovery.md)
+  and [accepted ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
+  Linux/live rollout validation remains a separate, still-pending #171 gate;
+  do not treat merged CI as production deployment. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
 

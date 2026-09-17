@@ -15,14 +15,15 @@ low-quota warning or owner notification. Include branch/head, CI run/PR state,
 known failures, pending gates and exact next actions; commit and push authorized
 changes without falsely marking incomplete work complete.
 
-Latest verified checkpoint: R2 code head 96952ce passed all four CI checks in
-run 35269164566 (lint, unit, integration, bounded-memory); the docs-only
-checkpoint bc17e46 re-passed all four in run 35269376898. Owner authorized
-closing out R2: recovery.md checklist and ADR-049 (now accepted) were brought
-in sync with the already-implemented/CI-validated state, PR #177 body was
-rewritten to match, and this docs-only commit is being pushed for a final
-exact-head CI check before un-drafting and merging. Do not deploy on the
-owner's behalf; Linux rollout evidence stays a separate #171 gate.
+R2 MERGED: PR #177 squash-merged to main at `12cf75d88b6f35c7e3ed7a251331f251d6883a80`
+on September 17. Final pre-merge head 7af4507 passed all four checks in CI run
+35270392032 (lint, unit, integration, bounded-memory) after the docs-only
+checkpoint (recovery.md checklist fully checked, ADR-049 flipped to accepted,
+PR body rewritten to match the already-implemented/CI-validated state). Issue
+#161 code/CI work is complete; the issue itself stays open pending Linux/live
+rollout evidence, which is a separate #171 gate — do not deploy on the owner's
+behalf and do not treat merged CI as production validation. R3 (#166) is not
+started.
 
 ## Start here in a new session
 
