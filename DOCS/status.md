@@ -129,6 +129,19 @@ document.
   is a separate, still-pending #171 gate. Other fixes remain planned.
   September 17 follow-up #176 tracks intermittent zero ANN results after bulk
   deletion in CI; production impact and exact cause remain unverified.
+  R7/#170 (blocking I/O) is merged to main via PR #185 (delete_repo +
+  vector-service routes, `0393d8d`) and PR #186 (query embedding,
+  reranker, #168/R5 graph-cache fetch, `372f82a`) — see their
+  [PR 1](/DOCS/test_results/2026-09-17-blocking-io-delete-vectors-issue-170.md)
+  and [PR 2](/DOCS/test_results/2026-09-17-blocking-io-query-path-issue-170.md)
+  test results. `main` at `372f82a` (including #170) was deployed to
+  production on 2026-09-18 via `scripts/prod-refresh.sh --deploy`
+  (release `prod-2026-09-17-2130pm`); see
+  [R8/#171 live evidence](/DOCS/test_results/2026-09-18-r8-live-deployment-evidence-issue-171.md)
+  for the HTTP-reachable baseline snapshot taken immediately after —
+  several fields (image IDs/labels, bind-mount absence, DB migration
+  head, the script's own generated release record) remain PENDING
+  operator input, and this snapshot is explicitly not #171 closure.
 
 - The NVIDIA NIM free-tier LLM provider is currently broken in the live
   deployment (issues #123, #124) — see
