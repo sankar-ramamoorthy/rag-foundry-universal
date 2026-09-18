@@ -2,18 +2,24 @@
 title: "ADR-052: Passage selection and final-context provenance"
 date: 2026-09-17
 type: adr
-status: proposed
+status: accepted
 tags: [retrieval, evidence, context, generation]
 related:
   - "[WP-R4 specification](/specs/005-production-correctness/issues/evidence.md)"
   - "[ADR-051 graph cache](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)"
-  - "[Verification record](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)"
+  - "[Mechanics verification](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)"
+  - "[Quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)"
 ---
 
 # Passage selection and final-context provenance
 
 Issue [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167).
-Implementation is on `fix/wp-r4-evidence-delivery`; acceptance and merge pending.
+Merged to main via PR #192 (2026-09-18), squash/merge commit on
+`fix/wp-r4-evidence-delivery`. Mechanics review found no defects; the
+frozen 8-question quality evaluation (run against the Tailscale
+production Ollama) found WP-R4 net positive vs. the legacy runtime, with
+no blocking findings. Production/deployment validation is a separate,
+still-open #171 gate, not claimed here.
 
 ## Decision under verification
 
