@@ -1,10 +1,62 @@
 # Handoff: red-star production correctness
 
-Updated: 2026-09-17
+Updated: 2026-09-18
 Tracking: #160, #161, #166-#171, #180, #181
 This is execution state, not an alternative specification or completion claim.
 
-## WP-R4 handoff ? owner requested checkpoint near usage limit
+## WP-R4 continuation session, 2026-09-18 — quality gate blocked by local infra
+
+Resumed from the 2026-09-17 checkpoint below (commit `cbb84d7`, unchanged
+this session — no code was modified). Did **not** reimplement R4.
+
+**Mechanics review: complete, no defects found.** Read the full diff
+against every ADR-052 clause and the WP-R4 spec's acceptance section;
+re-ran the full local suite fresh (173 rag_orchestrator + 28
+vector_store_service unit tests, root ruff, the real-PostgreSQL
+`test_wp_r4_passages.py` — all pass, identical to the 2026-09-17
+checkpoint's counts); re-verified all 8 frozen questions' premises
+against current code. Full detail in
+[the verification doc](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
+
+**Quality evaluation: attempted, did not complete.** Built an eval
+harness (`.wp-r4.tmp/run_eval.py`, `.wp-r4.tmp/run_clean_context.py`,
+scratchpad, not committed) and a worktree of the base revision at
+`../rag-foundry-legacy-r4-base` for the legacy-runtime comparison arm.
+Four consecutive attempts to (re-)ingest the frozen eval corpus into the
+isolated local database each hit a different local-infrastructure
+failure — real Postgres crash under write pressure, a misconfigured
+`VECTOR_STORE_SERVICE_URL` after restart, Ollama CPU-embedding batches
+exceeding the 120s read timeout, and finally Claude Code's own
+background-process memory-pressure guard killing both locally-launched
+services ("system is running low on memory") — see the verification
+doc's "Quality evaluation attempt" section for the full sequence. **No
+question in the frozen set was ever answered by any arm.** Per explicit
+instruction, the killed services were not relaunched.
+
+**All previously-running local processes/ports from the 2026-09-17
+checkpoint below (18011/18012, PIDs 24712/8980, and the even-older
+18001/18002 auxiliary pair) are gone** — either superseded by this
+session's restarts (all of which also eventually failed) or explicitly
+cleaned up as idle leftovers. Do not reuse any PID, port, ingestion_id,
+or job reference from the section below; none of it is live.
+
+**Outcome: do not merge.** No PR was opened. #167 stays open, quality
+acceptance unsatisfied, exactly as the prior checkpoint already said —
+this session did not change that, it just used up four attempts trying
+to and documented why each failed. Branch `fix/wp-r4-evidence-delivery`
+is otherwise unchanged from `cbb84d7`; only documentation
+(`DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md`,
+`specs/005-production-correctness/issues/evidence.md`, this file) was
+updated and committed this session.
+
+**Next session should not repeat the same four failure modes**: either
+run on a machine with more available memory, or point the eval harness
+at the Tailscale-reachable production Ollama (GPU) instead of local CPU
+Ollama for embedding/generation throughput, and keep `OLLAMA_BATCH_SIZE`
+small if staying local. See the verification doc's "Recommended next
+attempt" section.
+
+## WP-R4 handoff ? owner requested checkpoint near usage limit (2026-09-17, superseded above)
 
 Branch: `fix/wp-r4-evidence-delivery`. Base: `3ba6a2f4cec4d3e0724859d70aeff98bb7f7880f`.
 The checkpoint commit is the latest commit on that branch; inspect `git log -1`.

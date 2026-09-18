@@ -44,10 +44,14 @@ document.
 
 ## RAG quality
 
-WP-R4/#167 is in progress on `fix/wp-r4-evidence-delivery`: passage selection,
-final-context provenance and generation-scoped retrieval have local mechanics
-coverage. [Verification and open gates](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
-No quality acceptance, merge or deployment is claimed.
+WP-R4/#167 on `fix/wp-r4-evidence-delivery` (commit `cbb84d7`): passage
+selection, final-context provenance and generation-scoped retrieval are
+implemented and code-reviewed clean against ADR-052, with full local
+mechanics coverage. The mandatory quality-evaluation gate (frozen
+8-question set, baseline/clean/noisy comparisons) was attempted
+2026-09-18 and could not complete — local infrastructure failures, not a
+code defect. [Verification and open gates](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
+No quality acceptance, merge or deployment is claimed. No PR opened.
 
 
 

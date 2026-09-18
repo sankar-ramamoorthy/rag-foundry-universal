@@ -1,8 +1,16 @@
 # WP-R4: preserve retrieved passages, chunk identity, and final-context provenance
 
 Tracking issue: [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167)
-Status: Implementation in progress on `fix/wp-r4-evidence-delivery`; quality,
-CI/PR delivery and production validation remain open.
+Status: Implementation complete and code-reviewed clean against ADR-052 on
+`fix/wp-r4-evidence-delivery` (commit `cbb84d7`) — see
+[verification](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
+The mandatory quality-evaluation gate (frozen 8-question set,
+baseline/clean/noisy comparisons) was attempted 2026-09-18 and could not
+be completed — four consecutive local-infrastructure failures (Postgres
+crash, a misconfigured service URL, Ollama embedding timeouts, then the
+session's own memory-pressure guard killing the services), none in the
+code under review. **Quality acceptance, CI/PR delivery and production
+validation all remain open; do not close #167 or merge on this basis.**
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
