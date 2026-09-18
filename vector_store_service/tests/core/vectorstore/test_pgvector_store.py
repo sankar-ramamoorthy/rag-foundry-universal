@@ -146,6 +146,37 @@ class TestPgVectorStore:
         ]
         assert any("vector_chunks" in stmt for stmt in delete_stmts)
 
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_retag_ingestion_id_updates_vector_chunks(self, mock_connect):
+        """Issue #196 (FR-007b): retag issues an UPDATE against
+        vector_chunks, scoped by document_id, setting the new ingestion_id
+        -- no re-embedding, no delete/insert."""
+        mock_cursor = _mock_cursor(mock_connect)
+        mock_cursor.rowcount = 3
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+
+        count = store.retag_ingestion_id(["doc-1", "doc-2"], "ing-new")
+
+        assert count == 3
+        update_stmts = [
+            call for call in mock_cursor.execute.call_args_list
+            if "UPDATE" in str(call.args[0])
+        ]
+        assert len(update_stmts) == 1
+        stmt, params = update_stmts[0].args
+        assert "vector_chunks" in str(stmt)
+        assert params == ("ing-new", ["doc-1", "doc-2"])
+
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_retag_ingestion_id_empty_list_no_sql(self, mock_connect):
+        mock_cursor = _mock_cursor(mock_connect)
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+
+        count = store.retag_ingestion_id([], "ing-new")
+
+        assert count == 0
+        mock_cursor.execute.assert_not_called()
+
 
 @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
 def test_relaxed_ann_candidates_are_explicitly_sorted(mock_connect):

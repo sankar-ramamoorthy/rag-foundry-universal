@@ -354,6 +354,53 @@ def generation_status(repo_id: str) -> str:
         return "unknown"
 
 
+def file_content_hashes(
+    repo_id: str, ingestion_id: str,
+) -> Dict[str, Optional[str]]:
+    """{canonical_id: content_hash} for repo_id's file-level nodes owned by
+    ingestion_id (issue #196, R3/R6/T021).
+
+    File-level nodes are identified by symbol_path IS NULL (ADR-031: a
+    canonical_id with no #symbol suffix, one row per file). Read *before*
+    persist_graph runs for the new generation, since persist_graph's
+    upsert (R1) overwrites content_hash in place for changed files. A
+    NULL content_hash (pre-#196 row) is returned as None rather than
+    omitted, so snapshot_diff.classify() correctly reports it as
+    "changed" (never-matching None != a real hash) instead of "new" --
+    degrading safely per data-model.md, not making an incorrect reuse call.
+    """
+    with SessionLocal() as session:
+        rows = (
+            session.query(DocumentNode.canonical_id, DocumentNode.content_hash)
+            .filter(
+                DocumentNode.repo_id == repo_id,
+                DocumentNode.ingestion_id == ingestion_id,
+                DocumentNode.symbol_path.is_(None),
+            )
+            .all()
+        )
+        return dict(rows)
+
+
+def generation_config_versions(
+    ingestion_id: str,
+) -> tuple[Optional[str], Optional[str]]:
+    """(chunking_config_version, embedding_config_version) recorded for a
+    generation's ingestion_requests row (issue #196, R4/T021), or
+    (None, None) if the row is missing or predates #196 (both NULL).
+    """
+    with SessionLocal() as session:
+        row = (
+            session.query(
+                IngestionRequest.chunking_config_version,
+                IngestionRequest.embedding_config_version,
+            )
+            .filter(IngestionRequest.ingestion_id == ingestion_id)
+            .one_or_none()
+        )
+        return tuple(row) if row is not None else (None, None)
+
+
 def get_document_nodes_by_canonical_ids(
     repo_id: str,
     canonical_ids: List[str],

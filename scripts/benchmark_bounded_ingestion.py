@@ -191,7 +191,7 @@ def main():
                 )
                 manager.mark_running(attempt)
                 persistence = ObservedPersistence(session)
-                stats = _build_and_persist_graph(
+                stats, _current_hashes = _build_and_persist_graph(
                     directory,
                     repo,
                     attempt,

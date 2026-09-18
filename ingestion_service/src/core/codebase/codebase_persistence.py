@@ -77,6 +77,21 @@ class CodebaseGraphPersistence:
 
     BULK_BATCH_SIZE = 1000
 
+    # Every DocumentNode column except document_id (never re-assigned, so
+    # a reused row keeps its original primary key, R1) and repo_id/
+    # canonical_id (the ON CONFLICT target itself).
+    _UPSERT_UPDATE_COLUMNS = (
+        "relative_path",
+        "symbol_path",
+        "title",
+        "summary",
+        "source",
+        "ingestion_id",
+        "doc_type",
+        "text",
+        "content_hash",
+    )
+
     def persist_graph(
         self,
         repo_id: str,
@@ -84,23 +99,37 @@ class CodebaseGraphPersistence:
         relationships: List[dict],
     ) -> dict:
         """
-        Atomically replace a repo's graph (F-06/F-09, WP-S3).
+        Atomically upsert a repo's graph (F-06/F-09, WP-S3; R1/R2, issue #196).
 
-        Delete + node insert + relationship insert run in ONE transaction:
-        any failure rolls back everything, leaving the previous graph
-        intact. A transaction-scoped Postgres advisory lock keyed on
-        repo_id serializes concurrent rebuilds of the same repo, so two
-        ingests can never interleave delete/insert (F-11 mitigation).
+        Node persistence is an upsert-by-(repo_id, canonical_id): a
+        canonical_id whose row survives across generations keeps its
+        original document_id (R1) — this is what lets vectors/relationships
+        tied to that row survive a re-ingestion instead of being
+        cascade-deleted. Every row present in the new node set, reused or
+        not, is re-tagged to the new generation's ingestion_id.
+        canonical_ids absent from the new node set are explicitly deleted
+        (still cascades to their relationships/vectors, same as before).
+
+        Relationship persistence is a full repo-scoped replace (R2): all
+        of the repo's existing relationships are deleted and the freshly
+        resolved set is inserted, regardless of node reuse — a reused-
+        but-unchanged node's stale edges must not survive just because
+        the node itself wasn't deleted.
+
+        Delete + upsert + relationship replace run in ONE transaction: any
+        failure rolls back everything, leaving the previous graph intact.
+        A transaction-scoped Postgres advisory lock keyed on repo_id
+        serializes concurrent rebuilds of the same repo, so two ingests
+        can never interleave (F-11 mitigation).
 
         Relationship endpoints resolve through the in-memory
-        canonical_id -> document_id map of the nodes being inserted — no
+        canonical_id -> document_id map of the nodes being persisted — no
         per-edge queries. Edges referencing unknown endpoints are skipped
-        (same behavior as before); duplicate edges are absorbed by
-        ON CONFLICT DO NOTHING on uq_document_relationship.
+        (same behavior as before).
 
         Node dict fields are the same as the old upsert_nodes contract:
         relative_path, optional symbol_path/canonical_id, title, doc_type,
-        source, summary, text, ingestion_id.
+        source, summary, text, ingestion_id, optional content_hash.
 
         Relationship dict format:
         {
@@ -113,17 +142,18 @@ class CodebaseGraphPersistence:
         Returns {"deleted", "nodes", "relationships", "skipped_relationships"}.
         """
         node_rows: List[dict] = []
-        canonical_to_doc: dict = {}
+        canonical_ids: List[str] = []
         for node in nodes:
             relative_path = node.get("relative_path", "Unknown")
             canonical_id = node.get("canonical_id") or build_canonical_id(
                 relative_path, node.get("symbol_path")
             )
-            document_id = str(uuid.uuid4())
-            canonical_to_doc[canonical_id] = document_id
+            canonical_ids.append(canonical_id)
             node_rows.append(
                 {
-                    "document_id": document_id,
+                    # Only used for a brand-new row; ON CONFLICT DO UPDATE
+                    # never overwrites an existing row's document_id (R1).
+                    "document_id": str(uuid.uuid4()),
                     "repo_id": repo_id,
                     "canonical_id": canonical_id,
                     "relative_path": relative_path,
@@ -134,29 +164,21 @@ class CodebaseGraphPersistence:
                     "ingestion_id": str(node.get("ingestion_id")),
                     "doc_type": node.get("doc_type", "unknown"),
                     "text": node.get("text", ""),
+                    "content_hash": node.get("content_hash"),
                 }
             )
 
-        rel_rows: List[dict] = []
-        skipped_relationships = 0
-        for rel in relationships:
-            from_doc = canonical_to_doc.get(rel["from_canonical_id"])
-            to_doc = canonical_to_doc.get(rel["to_canonical_id"])
-            if not from_doc or not to_doc:
-                logger.warning(
-                    f"Skipping relationship: {rel['from_canonical_id']} -> "
-                    f"{rel['to_canonical_id']} (nodes missing)"
-                )
-                skipped_relationships += 1
-                continue
-            rel_rows.append(
-                {
-                    "from_document_id": from_doc,
-                    "to_document_id": to_doc,
-                    "relation_type": rel["relation_type"],
-                    "relationship_metadata": rel.get("relationship_metadata", {}),
-                }
-            )
+        # Endpoints resolve to document_ids after the upsert commits (a
+        # reused canonical_id's document_id isn't known until then, R1).
+        rel_rows: List[dict] = [
+            {
+                "from_canonical_id": rel["from_canonical_id"],
+                "to_canonical_id": rel["to_canonical_id"],
+                "relation_type": rel["relation_type"],
+                "relationship_metadata": rel.get("relationship_metadata", {}),
+            }
+            for rel in relationships
+        ]
 
         batch = self.BULK_BATCH_SIZE
         check_ownership()
@@ -168,19 +190,78 @@ class CodebaseGraphPersistence:
                     text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
                     {"key": f"repo_graph:{repo_id}"},
                 )
+
+                # 1) Upsert nodes: ON CONFLICT(repo_id, canonical_id) keeps
+                #    document_id for a surviving row (R1).
+                update_set = {
+                    col: getattr(pg_insert(DocumentNode.__table__).excluded, col)
+                    for col in self._UPSERT_UPDATE_COLUMNS
+                }
+                for start in range(0, len(node_rows), batch):
+                    stmt = (
+                        pg_insert(DocumentNode.__table__)
+                        .values(node_rows[start:start + batch])
+                        .on_conflict_do_update(
+                            constraint="uq_repo_canonical",
+                            set_=update_set,
+                        )
+                    )
+                    self._session.execute(stmt)
+
+                # 2) Delete canonical_ids genuinely absent from the new set
+                #    (FR-008) — still cascades to relationships/vectors.
                 deleted = (
                     self._session.query(DocumentNode)
                     .filter(DocumentNode.repo_id == repo_id)
+                    .filter(~DocumentNode.canonical_id.in_(canonical_ids))
+                    .delete(synchronize_session=False)
+                    if canonical_ids
+                    else self._session.query(DocumentNode)
+                    .filter(DocumentNode.repo_id == repo_id)
                     .delete(synchronize_session=False)
                 )
-                for start in range(0, len(node_rows), batch):
-                    self._session.bulk_insert_mappings(
-                        DocumentNode, node_rows[start:start + batch]
+
+                # 3) Resolve the definitive canonical_id -> document_id map
+                #    post-upsert (reused rows kept their original id).
+                rows = self._session.execute(
+                    select(DocumentNode.canonical_id, DocumentNode.document_id)
+                    .where(DocumentNode.repo_id == repo_id)
+                ).all()
+                canonical_to_doc = {r.canonical_id: r.document_id for r in rows}
+
+                # 4) Full repo-scoped relationship replace (R2) — a reused
+                #    node's stale edges must not survive just because the
+                #    node itself wasn't deleted.
+                self._session.query(DocumentRelationship).filter(
+                    DocumentRelationship.repo_id == repo_id
+                ).delete(synchronize_session=False)
+
+                resolved_rel_rows: List[dict] = []
+                skipped_relationships = 0
+                for rel in rel_rows:
+                    from_doc = canonical_to_doc.get(rel["from_canonical_id"])
+                    to_doc = canonical_to_doc.get(rel["to_canonical_id"])
+                    if not from_doc or not to_doc:
+                        logger.warning(
+                            f"Skipping relationship: {rel['from_canonical_id']} -> "
+                            f"{rel['to_canonical_id']} (nodes missing)"
+                        )
+                        skipped_relationships += 1
+                        continue
+                    resolved_rel_rows.append(
+                        {
+                            "repo_id": repo_id,
+                            "from_document_id": from_doc,
+                            "to_document_id": to_doc,
+                            "relation_type": rel["relation_type"],
+                            "relationship_metadata": rel["relationship_metadata"],
+                        }
                     )
-                for start in range(0, len(rel_rows), batch):
+
+                for start in range(0, len(resolved_rel_rows), batch):
                     stmt = (
                         pg_insert(DocumentRelationship.__table__)
-                        .values(rel_rows[start:start + batch])
+                        .values(resolved_rel_rows[start:start + batch])
                         .on_conflict_do_nothing(constraint="uq_document_relationship")
                     )
                     self._session.execute(stmt)
@@ -193,14 +274,14 @@ class CodebaseGraphPersistence:
             raise
 
         logger.info(
-            f"Repo {repo_id}: replaced {deleted} old nodes with "
-            f"{len(node_rows)} nodes / {len(rel_rows)} relationships "
+            f"Repo {repo_id}: upserted {len(node_rows)} nodes "
+            f"(deleted {deleted} removed), {len(resolved_rel_rows)} relationships "
             f"({skipped_relationships} edges skipped)"
         )
         return {
             "deleted": deleted,
             "nodes": len(node_rows),
-            "relationships": len(rel_rows),
+            "relationships": len(resolved_rel_rows),
             "skipped_relationships": skipped_relationships,
         }
     # -----------------------------

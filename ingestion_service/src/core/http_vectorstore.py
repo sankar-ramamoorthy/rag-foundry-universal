@@ -148,3 +148,27 @@ class HttpVectorStore:
         resp = requests.delete(url,  timeout=90)
         resp.raise_for_status()
         return resp.status_code == 200
+
+    RETAG_BATCH_SIZE = 1000
+
+    def retag_ingestion_id(
+        self, document_ids: List[str], new_ingestion_id: str,
+    ) -> int:
+        """Re-tag reused artifacts' vectors to the new generation's
+        ingestion_id, in place (issue #196, FR-007b) -- no re-embedding.
+        """
+        check_ownership()
+        if not document_ids:
+            return 0
+        url = f"{self.base_url}/v1/vectors/retag"
+        total = 0
+        for start in range(0, len(document_ids), self.RETAG_BATCH_SIZE):
+            batch = document_ids[start:start + self.RETAG_BATCH_SIZE]
+            resp = requests.post(
+                url,
+                json={"document_ids": batch, "new_ingestion_id": new_ingestion_id},
+                timeout=90,
+            )
+            resp.raise_for_status()
+            total += resp.json().get("count", 0)
+        return total

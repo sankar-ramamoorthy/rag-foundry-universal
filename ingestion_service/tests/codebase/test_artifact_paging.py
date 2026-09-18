@@ -258,6 +258,7 @@ def test_progress_status_contract_with_real_paging(corpus, monkeypatch):
     monkeypatch.setattr(api, "SessionLocal", factory)
     store = HttpVectorStore("http://unused")
     store.add_vectors = Mock()
+    store.delete_by_ingestion_id = Mock()
     embedder = Mock()
     embedder.embed.side_effect = lambda chunks: [[0.0]] * len(chunks)
     pipeline = IngestionPipeline(
@@ -646,7 +647,7 @@ def test_rebuild_graph_and_vector_parity_at_each_buffer_size(
         )
         with factory() as session:
             persistence = CodebaseGraphPersistence(session)
-            stats = api._build_and_persist_graph(
+            stats, _current_hashes = api._build_and_persist_graph(
                 tmp_path,
                 repo,
                 attempt,

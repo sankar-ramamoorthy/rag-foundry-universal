@@ -79,6 +79,41 @@ class StatusManager:
         }
         self._session.commit()
 
+    def record_generation_start(
+        self,
+        ingestion_id: UUID,
+        *,
+        parent_generation_id: str | None = None,
+        chunking_config_version: str | None = None,
+        embedding_config_version: str | None = None,
+    ) -> None:
+        """Issue #196 (T020/T025/R4/R6): record this generation's lineage
+        identity as soon as it's known, before graph build begins.
+
+        parent_generation_id is set whenever a prior generation existed for
+        this repo_id (resolve_current_generation), regardless of
+        force_full_rebuild -- it records lineage, not "was reused from"
+        (data-model.md). chunking/embedding_config_version are this run's
+        active config identity, compared against the prior generation's
+        recorded values by the FR-006 reuse gate.
+        """
+        request = self._get_request(ingestion_id)
+        self._require_active(request)
+        if parent_generation_id is not None:
+            request.parent_generation_id = parent_generation_id
+        request.chunking_config_version = chunking_config_version
+        request.embedding_config_version = embedding_config_version
+        self._session.commit()
+
+    def record_is_incremental(self, ingestion_id: UUID, is_incremental: bool) -> None:
+        """Issue #196 (T026): record whether FR-004's reuse classification
+        actually ran for this generation, once the run completes.
+        """
+        request = self._get_request(ingestion_id)
+        self._require_active(request)
+        request.is_incremental = is_incremental
+        self._session.commit()
+
     @staticmethod
     def _set_progress_stage(request: IngestionRequest, stage: str) -> None:
         meta = request.ingestion_metadata or {}

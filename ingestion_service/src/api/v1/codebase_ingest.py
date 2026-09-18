@@ -19,13 +19,16 @@ from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 from src.core.pipeline import IngestionPipeline
 
 from src.core.config import get_settings
+from shared.chunkers.selector import ChunkerFactory
 from shared.embedders.factory import get_embedder
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.codebase.identity import build_repo_id
+from src.core.codebase.snapshot_diff import classify as classify_snapshot_diff
 from src.core.repo_naming import derive_repo_identity
 from src.core.codebase.embedding_buffer import EmbeddingBuffer
 from src.core.codebase.language import language_for_path
 from src.core.config import Settings
+from src.core import db_utils
 # -----------------------------
 # Session and router
 # -----------------------------
@@ -72,12 +75,44 @@ class RepoIngestRequest(BaseModel):
     git_url: str | None = None
     local_path: str | None = None
     provider: str | None = None  # Embedding provider
+    # Issue #196 (FR-005a): bypass reuse classification, always full.
+    force_full_rebuild: bool = False
 
 
 class RepoIngestResponse(BaseModel):
     ingestion_id: UUID
     status: str
     embed_progress: dict | None = None
+
+
+def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) -> None:
+    """Chunk+embed one node not eligible for reuse (T024's re-embed path)."""
+    chunks = pipeline._chunk(node.text, "code", provider)
+    for ordinal, chunk in enumerate(chunks):
+        chunk.metadata.update(
+            canonical_id=node.canonical_id, repo_id=repo_id,
+            relative_path=node.relative_path, doc_type=node.doc_type,
+            language=language_for_path(node.relative_path),
+            source_metadata={
+                **chunk.metadata.get("source_metadata", {}),
+                "canonical_id": node.canonical_id,
+            },
+        )
+        buffer.append(chunk, str(node.document_id), ordinal)
+
+
+def _retag_reused_vectors(
+    pipeline: IngestionPipeline, document_ids: list[str], ingestion_id: str,
+) -> None:
+    """Issue #196 (FR-007b, T024): bulk-carry reused artifacts' existing
+    vectors forward to this generation's ingestion_id, no re-embedding."""
+    if not document_ids:
+        return
+    retagged = pipeline._vector_store.retag_ingestion_id(document_ids, ingestion_id)
+    logger.info(
+        f"Re-tagged {retagged} reused vector row(s) "
+        f"({len(document_ids)} artifact(s)) to ingestion {ingestion_id}"
+    )
 
 
 # -----------------------------
@@ -92,17 +127,38 @@ def _embed_repo_artifacts(
     provider: str,
     settings: Settings,
     report_progress: Callable[[dict], None],
+    eligible_relative_paths: frozenset = frozenset(),
 ) -> tuple[int, int]:
     """Page persisted artifacts; bound chunk and vector state independently.
 
     Missing/replaced nodes fail the attempt instead of silently losing evidence.
     Return shape retains the legacy skipped counter, now necessarily zero.
+
+    Issue #196 (FR-006/FR-007, T024): a node whose *file* is in
+    eligible_relative_paths skips chunk+embed entirely -- its existing
+    vectors (still valid, R1 keeps document_id stable) are bulk re-tagged
+    to this generation's ingestion_id instead, once, after paging
+    completes. Default empty set preserves today's exact full-ingestion
+    behavior (every node re-embedded) — required non-regression for the
+    no-prior-generation case.
     """
     progress: dict = {
         "stage": "embedding", "nodes_processed": 0, "nodes_total": 0,
         "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0,
     }
     report_progress(dict(progress))  # BEFORE preflight/count/page allocation.
+
+    # Issue #196 (R1): persist_graph now preserves document_id for a
+    # canonical_id whose node row survives across generations, instead of
+    # always minting a fresh one. Every node is still fully re-embedded
+    # here (no skip logic yet), so make this step idempotent per
+    # ingestion_id: clear any vectors already tagged with this run's
+    # ingestion_id before writing fresh ones. A no-op for the normal case
+    # (a fresh ingestion_id has no rows yet); guards a retried/duplicate
+    # invocation of the same generation against leaving stale vector rows
+    # behind for a reused document_id, where cascade-on-delete no longer
+    # fires because the node itself was never deleted.
+    pipeline._vector_store.delete_by_ingestion_id(ingestion_id)
 
     def pages():
         return persistence.iter_artifact_pages(
@@ -130,25 +186,21 @@ def _embed_repo_artifacts(
         max_bytes=settings.INGESTION_EMBED_MAX_BYTES, on_flush=acknowledged,
     )
 
+    retag_document_ids: list[str] = []
+
     def append_page(page):
         # Frame exit drops the last artifact's text/chunk-list references.
         for node in page:
             if not (node.text or "").strip():
                 continue
-            chunks = pipeline._chunk(node.text, "code", provider)
-            for ordinal, chunk in enumerate(chunks):
-                chunk.metadata.update(
-                    canonical_id=node.canonical_id, repo_id=repo_id,
-                    relative_path=node.relative_path, doc_type=node.doc_type,
-                    language=language_for_path(node.relative_path),
-                    source_metadata={
-                        **chunk.metadata.get("source_metadata", {}),
-                        "canonical_id": node.canonical_id,
-                    },
-                )
-                buffer.append(chunk, str(node.document_id), ordinal)
+            if node.relative_path in eligible_relative_paths:
+                # FR-006/FR-007: content + chunking + embedding config all
+                # match the prior generation -- carry the existing vectors
+                # forward instead of re-chunking/re-embedding.
+                retag_document_ids.append(str(node.document_id))
+            else:
+                _chunk_and_buffer_node(pipeline, buffer, node, repo_id, provider)
             progress["nodes_processed"] += 1
-            del chunks
 
     for page in pages():
         append_page(page)
@@ -158,22 +210,87 @@ def _embed_repo_artifacts(
         raise RuntimeError("Embeddable artifact count changed during embedding")
     buffer.flush()
     acknowledged()
+    _retag_reused_vectors(pipeline, retag_document_ids, ingestion_id)
     return buffer.chunks_persisted, 0
 
 
 def _build_and_persist_graph(
     repo_path, repo_id, ingestion_id, persistence, report_stage,
 ):
-    """Own all graph/IR references in a frame that ends before embedding."""
+    """Own all graph/IR references in a frame that ends before embedding.
+
+    Issue #196 (T023): also extracts this generation's file-level content
+    hashes from the graph before it goes out of scope, so the caller can
+    classify a snapshot diff without retaining the graph/builder past this
+    function (#160's memory discipline -- see
+    test_background_worker_releases_builder_and_graph_before_embedding).
+    """
     report_stage("graph_build")
     builder = RepoGraphBuilder(
         repo_root=Path(repo_path), ingestion_id=str(ingestion_id),
     )
     graph = builder.build()
+    current_file_hashes = {
+        entity["canonical_id"]: entity["content_hash"]
+        for entity in graph.all_entities()
+        if entity.get("content_hash") is not None
+    }
     report_stage("graph_persist")
-    return persistence.persist_graph(
+    stats = persistence.persist_graph(
         repo_id=repo_id, nodes=graph.all_entities(), relationships=graph.relationships,
     )
+    return stats, current_file_hashes
+
+
+def _resolve_reuse_eligibility(
+    session, ingestion_id: UUID, repo_id: str, force_full_rebuild: bool,
+) -> tuple[str | None, bool, dict, bool]:
+    """Issue #196 (T020/T021/T025/R4/R6): resolve this generation's lineage
+    and FR-006 reuse-gate identity, before cloning/graph build begins, and
+    record the lineage fields that are known immediately.
+
+    Returns (prior_generation_id, is_incremental, prior_file_hashes,
+    config_matches). prior_generation_id is set for lineage whenever a
+    prior generation existed, regardless of force_full_rebuild (data-
+    model.md) -- it is not itself a "reuse is possible" signal; only
+    is_incremental=True means FR-004's classification actually runs.
+    """
+    prior_generation_id = db_utils.resolve_current_generation(repo_id)
+    is_incremental = prior_generation_id is not None and not force_full_rebuild
+
+    settings = get_settings()
+    chunking_config_version = ChunkerFactory.VERSION
+    embedding_config_version = (
+        f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
+    )
+    StatusManager(session).record_generation_start(
+        ingestion_id,
+        parent_generation_id=prior_generation_id,
+        chunking_config_version=chunking_config_version,
+        embedding_config_version=embedding_config_version,
+    )
+
+    prior_hashes: dict = {}
+    config_matches = False
+    if is_incremental:
+        prior_hashes = db_utils.file_content_hashes(repo_id, prior_generation_id)
+        prior_chunking_version, prior_embedding_version = (
+            db_utils.generation_config_versions(prior_generation_id)
+        )
+        config_matches = (
+            prior_chunking_version == chunking_config_version
+            and prior_embedding_version == embedding_config_version
+        )
+        if not config_matches:
+            logger.info(
+                f"[{ingestion_id}] Chunking/embedding config changed since "
+                f"generation {prior_generation_id[:8]} "
+                f"({prior_chunking_version!r}/{prior_embedding_version!r} -> "
+                f"{chunking_config_version!r}/{embedding_config_version!r}); "
+                "every file will be re-embedded"
+            )
+
+    return prior_generation_id, is_incremental, prior_hashes, config_matches
 
 
 # -----------------------------
@@ -184,10 +301,16 @@ def _background_ingest_repo(
     git_url: str | None,
     local_path: str | None,
     provider: str | None,
+    force_full_rebuild: bool = False,
 ):
     """
     Clone or use local repo, build graph, persist nodes &
     relationships, and embed code artifacts.
+
+    Issue #196: automatically incremental (FR-004) when a valid prior
+    completed generation exists for this repo_id and force_full_rebuild is
+    not set (FR-005a) -- otherwise every file is treated as new, exactly
+    matching today's full-ingestion behavior (Required Non-Regression).
     """
     session = SessionLocal()
 
@@ -196,8 +319,23 @@ def _background_ingest_repo(
         StatusManager(session).mark_running(ingestion_id)
         logger.debug(f"[{ingestion_id}] Starting background ingestion")
         logger.debug(
-            f"[{ingestion_id}] git_url={git_url}, "
-            f"local_path={local_path}, provider={provider}"
+            f"[{ingestion_id}] git_url={git_url}, local_path={local_path}, "
+            f"provider={provider}, force_full_rebuild={force_full_rebuild}"
+        )
+
+        repo_id_url = git_url or local_path
+        if not repo_id_url:
+            raise ValueError("Either git_url or local_path must be provided")
+        repo_id = build_repo_id(repo_id_url)
+        logger.debug(f"build_repo_id({repo_id_url}) calculates repo_id = {repo_id}")
+
+        # T020/T021/T025/R6 (#196): resolve lineage + FR-006 reuse-gate
+        # identity before cloning -- repo_id is a pure function of the
+        # source URL/path, no checkout needed.
+        _prior_generation_id, is_incremental, prior_hashes, config_matches = (
+            _resolve_reuse_eligibility(
+                session, ingestion_id, repo_id, force_full_rebuild,
+            )
         )
 
         if git_url:
@@ -206,24 +344,15 @@ def _background_ingest_repo(
             logger.debug(f"Cloning {git_url} into {temp_dir}")
             git.Repo.clone_from(git_url, temp_dir)
             repo_path = temp_dir
-            repo_id_url = git_url
-        elif local_path:
+        else:
             repo_path = str(Path(local_path).resolve())
             logger.info(f"[{ingestion_id}] Using local repo path: {repo_path}")
-            repo_id_url = repo_path
-        else:
-            raise ValueError("Either git_url or local_path must be provided")
-        logger.debug(
-            f"build_repo_id({repo_id_url}) calculates "
-            f"repo_id = {build_repo_id(repo_id_url)}"
-        )
-        repo_id = build_repo_id(repo_id_url)
 
         persistence = CodebaseGraphPersistence(session=session)
         report_progress = partial(
             StatusManager(session).update_embed_progress, ingestion_id,
         )
-        stats = _build_and_persist_graph(
+        stats, current_hashes = _build_and_persist_graph(
             repo_path, repo_id, ingestion_id, persistence,
             lambda stage: report_progress({
                 "stage": stage, "nodes_processed": 0, "nodes_total": 0,
@@ -231,6 +360,19 @@ def _background_ingest_repo(
             }),
         )
         logger.info(f"[{ingestion_id}] Graph persisted: {stats}")
+
+        # T023 (#196): classify current vs. prior file fingerprints. A
+        # config mismatch collapses the eligible set to empty -- FR-006's
+        # all-or-nothing gate -- rather than calling classify() at all.
+        eligible_relative_paths: frozenset = frozenset()
+        if is_incremental and config_matches:
+            diff = classify_snapshot_diff(current_hashes, prior_hashes)
+            eligible_relative_paths = diff.unchanged
+            logger.info(
+                f"[{ingestion_id}] Snapshot diff: {len(diff.unchanged)} unchanged, "
+                f"{len(diff.changed)} changed, {len(diff.new)} new, "
+                f"{len(diff.deleted)} deleted"
+            )
 
         # --- Run embeddings via IngestionPipeline ---
         settings = get_settings()
@@ -247,12 +389,16 @@ def _background_ingest_repo(
             provider=provider,
             settings=settings,
             report_progress=report_progress,
+            eligible_relative_paths=eligible_relative_paths,
         )
         logger.info(
             f"[{ingestion_id}] Embedded {chunk_count} chunks "
             f"({skipped_missing} nodes had no DB record)"
         )
 
+        # T026 (#196): record whether reuse classification actually ran,
+        # before the terminal status transition.
+        StatusManager(session).record_is_incremental(ingestion_id, is_incremental)
         StatusManager(session).mark_completed(ingestion_id)
         logger.info(f"✅ Repo ingestion completed: {ingestion_id}")
 
@@ -264,8 +410,6 @@ def _background_ingest_repo(
         # (degraded recall, not incorrect data for the new generation) and
         # is not grounds to mark an otherwise-complete ingestion failed.
         try:
-            from src.core import db_utils
-
             stale_ids = db_utils.superseded_ingestion_ids_for_repo(
                 repo_id, str(ingestion_id),
             )
@@ -311,6 +455,7 @@ def ingest_repo(
     git_url: str | None = Form(default=None),
     local_path: str | None = Form(default=None),
     provider: str | None = Form(default=None),
+    force_full_rebuild: bool = Form(default=False),
 ) -> RepoIngestResponse:
     if not git_url and not local_path:
         raise HTTPException(
@@ -339,6 +484,7 @@ def ingest_repo(
             "git_url": git_url,
             "local_path": local_path,
             "provider": provider,
+            "force_full_rebuild": force_full_rebuild,
             },
             repo_id=repo_id,
         )

@@ -215,6 +215,7 @@ def _run_stage(nodes, mapping, batch_size=500):
     store = HttpVectorStore(base_url="http://vs")
     http_calls: list[int] = []
     store.add_vectors = lambda records: http_calls.append(len(records))
+    store.delete_by_ingestion_id = lambda ingestion_id: None
     store.PERSIST_BATCH_SIZE = batch_size  # instance attr shadows class default
 
     embedder = FakeEmbedder()
@@ -288,6 +289,44 @@ def test_embed_repo_artifacts_skips_textless_but_fails_missing_nodes():
     assert sum(http_calls) == chunk_count
 
 
+def test_embed_repo_artifacts_clears_stale_vectors_before_writing():
+    """Issue #196 (R1): persist_graph now preserves document_id for a node
+    reused across generations, so cascade-on-delete no longer wipes an old
+    generation's vector_chunks for it. _embed_repo_artifacts must clear
+    this ingestion_id's vectors before writing fresh ones, guarding a
+    retried/duplicate invocation of the same generation against leaving
+    stale vector rows behind for a reused document_id.
+    """
+    nodes = _make_nodes(2)
+    mapping = {n["canonical_id"]: f"doc-{i}" for i, n in enumerate(nodes)}
+
+    store = HttpVectorStore(base_url="http://vs")
+    deleted_for: list[str] = []
+    store.add_vectors = lambda records: None
+    store.delete_by_ingestion_id = lambda ingestion_id: deleted_for.append(
+        ingestion_id
+    )
+
+    pipeline = IngestionPipeline(
+        validator=NoOpValidator(), embedder=FakeEmbedder(), vector_store=store
+    )
+    _embed_repo_artifacts(
+        pipeline=pipeline,
+        persistence=CountingPersistence(mapping, nodes),
+        repo_id="repo-1",
+        ingestion_id="ing-1",
+        expected_nodes=len(nodes),
+        provider="mock",
+        settings=Settings(_env_file=None, DATABASE_URL="unused"),
+        report_progress=lambda progress: None,
+    )
+
+    assert deleted_for == ["ing-1"], (
+        "the embed step must clear this generation's ingestion_id before "
+        "writing new vectors, before any add_vectors call"
+    )
+
+
 def test_embed_repo_artifacts_injects_canonical_metadata():
     nodes = _make_nodes(2)
     mapping = {n["canonical_id"]: f"doc-{i}" for i, n in enumerate(nodes)}
@@ -295,6 +334,7 @@ def test_embed_repo_artifacts_injects_canonical_metadata():
     store = HttpVectorStore(base_url="http://vs")
     received: list[dict] = []
     store.add_vectors = lambda records: received.extend(records)
+    store.delete_by_ingestion_id = lambda ingestion_id: None
 
     pipeline = IngestionPipeline(
         validator=NoOpValidator(), embedder=FakeEmbedder(), vector_store=store

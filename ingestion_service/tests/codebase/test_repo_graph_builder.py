@@ -202,3 +202,51 @@ def test_mixed_python_and_typescript_repo(tmp_path):
     # No accidental edge between the two unrelated files/languages.
     assert ("main.py", "util.ts") not in imports_edges
     assert ("util.ts", "main.py") not in imports_edges
+
+
+# ---------------------------------------------------------------------
+# Issue #196 (R3/T022): per-file content_hash on file-level nodes.
+# ---------------------------------------------------------------------
+
+def test_file_level_node_gets_content_hash(tmp_path):
+    import hashlib
+
+    source = "def f():\n    return 1\n"
+    (tmp_path / "a.py").write_bytes(source.encode("utf-8"))
+
+    graph = RepoGraphBuilder(tmp_path, ingestion_id=str(uuid4())).build()
+
+    file_node = graph.get_entity("a.py")
+    assert file_node is not None
+    assert file_node["content_hash"] == hashlib.sha256(
+        source.encode("utf-8")
+    ).hexdigest()
+
+    # Symbol-level nodes are not file-level; content_hash is a per-file
+    # fingerprint only, per data-model.md.
+    symbol_node = graph.get_entity("a.py#f")
+    assert symbol_node is not None
+    assert "content_hash" not in symbol_node or symbol_node["content_hash"] is None
+
+
+def test_content_hash_changes_with_byte_content(tmp_path):
+    (tmp_path / "a.py").write_bytes(b"def f():\n    return 1\n")
+    hash_v1 = RepoGraphBuilder(
+        tmp_path, ingestion_id=str(uuid4())
+    ).build().get_entity("a.py")["content_hash"]
+
+    # Whitespace-only change: different bytes, must produce a different hash
+    # (spec Edge Cases -- no semantic hashing).
+    (tmp_path / "a.py").write_bytes(b"def f():\n    return 1 \n")
+    hash_v2 = RepoGraphBuilder(
+        tmp_path, ingestion_id=str(uuid4())
+    ).build().get_entity("a.py")["content_hash"]
+
+    assert hash_v1 != hash_v2
+
+    # Re-running against the unchanged file reproduces the same hash
+    # (deterministic, per-content, not per-ingestion_id).
+    hash_v2_again = RepoGraphBuilder(
+        tmp_path, ingestion_id=str(uuid4())
+    ).build().get_entity("a.py")["content_hash"]
+    assert hash_v2 == hash_v2_again
