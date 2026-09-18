@@ -6,6 +6,18 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-09-18
+
+Accepted [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)
+after WP-R4/#167 merged to main via PR #192. Added
+[the quality evaluation record](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md):
+the frozen 8-question set run against both WP-R4 and the legacy runtime,
+plus a clean-context control, found WP-R4 net positive with no blocking
+findings — resolved after switching the eval harness from a local CPU
+Ollama (which failed four times on real-PostgreSQL crashes, a
+misconfigured service URL, embedding timeouts, and a memory-pressure
+process kill) to the Tailscale-reachable production Ollama.
+
 ## 2026-09-17
 
 Added proposed [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)
