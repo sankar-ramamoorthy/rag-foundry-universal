@@ -136,14 +136,18 @@ a troubleshooting-only step.
   on a generation change was **not** exercised live here (would need a
   deliberate re-ingest, which is out of scope for a non-destructive
   baseline check).
-- **R3/#166** (repo lifecycle): live `DELETE`/rebuild behavior itself not
-  exercised end-to-end (destructive, out of scope for a baseline pass),
-  but the migration investigation above found R3's *code* was running
-  against a database missing the column it depends on
-  (`ingestion_requests.repo_id`) — i.e. `delete_repo` was actually broken
-  in production until the migration was applied 2026-09-18. Now schema-
-  correct and verified via the read-only query-shape check above; still
-  not verified via a real end-to-end delete.
+- **R3/#166** (repo lifecycle): the migration investigation above found
+  R3's *code* was running against a database missing the column it
+  depends on (`ingestion_requests.repo_id`) — i.e. `delete_repo` was
+  actually broken in production until the migration was applied
+  2026-09-18. Confirmed schema-correct via the read-only query-shape
+  check, and then confirmed end-to-end: the operator performed a real
+  production delete (`abenz1267/walker`, 1901 graph nodes, 1 ingestion)
+  through the deployed `DELETE /v1/repos/{repo_id}` path post-migration
+  — succeeded, closing the loop with actual functional evidence, not
+  just schema-level proof. See the release record's "Post-migration
+  functional validation." Rebuild-in-flight generation-switch behavior
+  (a different R3 code path from plain delete) remains unverified live.
 - **R1/#160** (bounded ingestion memory), **R2/#161** (orphan recovery):
   not exercised — both require triggering ingestion or simulating a
   worker crash, neither of which is safe to do against the live corpus
