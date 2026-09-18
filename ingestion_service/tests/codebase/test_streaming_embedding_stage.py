@@ -61,6 +61,7 @@ def run_stage(texts, *, batch_size=7, max_bytes=7000, fail_after=None):
         records.extend(batch)
 
     store.add_vectors = write
+    store.delete_by_ingestion_id = lambda ingestion_id: None
     embedder = Mock()
     embedder.embed.side_effect = lambda items: [[float(len(c.content))] for c in items]
     pipeline = IngestionPipeline(

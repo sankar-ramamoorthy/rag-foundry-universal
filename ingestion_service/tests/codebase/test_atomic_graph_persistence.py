@@ -19,7 +19,7 @@ import uuid
 
 import pytest
 from sqlalchemy import event
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.models import IngestionRequest
 from shared.models.document_node import DocumentNode
@@ -161,7 +161,13 @@ def test_failed_rebuild_preserves_previous_graph(repo_id, ingestion_id):
     poisoned = _nodes(ingestion_id, 3, "b")
     poisoned.append(dict(poisoned[0]))  # duplicate canonical_id -> uq violation
 
-    with pytest.raises(IntegrityError):
+    # Issue #196: persist_graph moved from plain bulk-insert to an
+    # ON CONFLICT DO UPDATE upsert (R1), so a duplicate canonical_id within
+    # the same batch now fails as a CardinalityViolation ("cannot affect
+    # row a second time") rather than a uq_repo_canonical IntegrityError —
+    # still a SQLAlchemyError, still rolled back; the invariant under test
+    # (previous graph left intact) is unchanged.
+    with pytest.raises(SQLAlchemyError):
         _persist(repo_id, poisoned, [])
 
     state, rel_count = _graph_state(repo_id)

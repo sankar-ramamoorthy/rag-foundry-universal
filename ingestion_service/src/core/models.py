@@ -1,6 +1,6 @@
 # ingestion_service/src/core/models.py (classic style - Pyright perfect)
 import uuid
-from sqlalchemy import Column, String, JSON, TIMESTAMP
+from sqlalchemy import Column, String, JSON, TIMESTAMP, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 
 from sqlalchemy.sql import text
@@ -22,3 +22,9 @@ class IngestionRequest(Base):
     created_at = Column(TIMESTAMP, server_default=text("NOW()"), nullable=False)
     started_at = Column(TIMESTAMP, nullable=True)
     finished_at = Column(TIMESTAMP, nullable=True)
+    # Incremental ingestion + snapshot lineage (issue #196).
+    commit_sha = Column(String, nullable=True)
+    parent_generation_id = Column(UUID(as_uuid=True), nullable=True)
+    is_incremental = Column(Boolean, nullable=False, server_default=text("false"))
+    chunking_config_version = Column(String, nullable=True)
+    embedding_config_version = Column(String, nullable=True)

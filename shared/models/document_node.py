@@ -128,6 +128,13 @@ class DocumentNode(Base):
         nullable=True,
         doc="Source code text of the artifact."
     )
+
+    content_hash: str = Column(
+        String,
+        nullable=True,
+        doc="SHA-256 hex digest of raw file bytes (file-level nodes only, "
+        "symbol_path IS NULL); NULL for symbol-level nodes.",
+    )
     # ------------------------------------------------------------------
     # Relationships
     # ------------------------------------------------------------------

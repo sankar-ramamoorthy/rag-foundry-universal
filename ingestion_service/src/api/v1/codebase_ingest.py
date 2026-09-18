@@ -104,6 +104,18 @@ def _embed_repo_artifacts(
     }
     report_progress(dict(progress))  # BEFORE preflight/count/page allocation.
 
+    # Issue #196 (R1): persist_graph now preserves document_id for a
+    # canonical_id whose node row survives across generations, instead of
+    # always minting a fresh one. Every node is still fully re-embedded
+    # here (no skip logic yet), so make this step idempotent per
+    # ingestion_id: clear any vectors already tagged with this run's
+    # ingestion_id before writing fresh ones. A no-op for the normal case
+    # (a fresh ingestion_id has no rows yet); guards a retried/duplicate
+    # invocation of the same generation against leaving stale vector rows
+    # behind for a reused document_id, where cascade-on-delete no longer
+    # fires because the node itself was never deleted.
+    pipeline._vector_store.delete_by_ingestion_id(ingestion_id)
+
     def pages():
         return persistence.iter_artifact_pages(
             repo_id, ingestion_id, page_size=settings.INGESTION_NODE_PAGE_SIZE,

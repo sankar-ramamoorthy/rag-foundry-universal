@@ -48,10 +48,10 @@ Alembic migration under `migrations/versions/`.
 new table (FR-011) — all new columns on existing tables, all nullable
 or defaulted, no data backfill required (data-model.md's opening note).
 
-- [ ] T001 Write additive Alembic migration in `migrations/versions/<timestamp>_incremental_ingestion_lineage.py`: `ingestion_requests` gains `commit_sha` (String, nullable), `parent_generation_id` (UUID, nullable), `is_incremental` (Boolean, not null, default `false`), `chunking_config_version` (String, nullable), `embedding_config_version` (String, nullable); `document_nodes` gains `content_hash` (String, nullable); `document_relationships` gains `repo_id` (String, not null) plus an index on it. Verify `alembic upgrade head` and `alembic downgrade -1` both run clean against the test DB (`docker-compose.test.yml`).
-- [ ] T002 [P] Add `commit_sha`, `parent_generation_id`, `is_incremental`, `chunking_config_version`, `embedding_config_version` columns to the `IngestionRequest` model in `ingestion_service/src/core/models.py`, matching T001 exactly.
-- [ ] T003 [P] Add `content_hash` column to `DocumentNode` in `shared/models/document_node.py`, matching T001 exactly.
-- [ ] T004 [P] Add `repo_id` column (and matching `Index`) to `DocumentRelationship` in `shared/models/document_relationship.py`, matching T001 exactly.
+- [X] T001 Write additive Alembic migration in `migrations/versions/<timestamp>_incremental_ingestion_lineage.py`: `ingestion_requests` gains `commit_sha` (String, nullable), `parent_generation_id` (UUID, nullable), `is_incremental` (Boolean, not null, default `false`), `chunking_config_version` (String, nullable), `embedding_config_version` (String, nullable); `document_nodes` gains `content_hash` (String, nullable); `document_relationships` gains `repo_id` (String, not null) plus an index on it. Verify `alembic upgrade head` and `alembic downgrade -1` both run clean against the test DB (`docker-compose.test.yml`).
+- [X] T002 [P] Add `commit_sha`, `parent_generation_id`, `is_incremental`, `chunking_config_version`, `embedding_config_version` columns to the `IngestionRequest` model in `ingestion_service/src/core/models.py`, matching T001 exactly.
+- [X] T003 [P] Add `content_hash` column to `DocumentNode` in `shared/models/document_node.py`, matching T001 exactly.
+- [X] T004 [P] Add `repo_id` column (and matching `Index`) to `DocumentRelationship` in `shared/models/document_relationship.py`, matching T001 exactly.
 
 **Checkpoint**: Schema exists and ORM models match it; nothing yet reads or writes the new columns.
 
@@ -68,18 +68,32 @@ boundary from design review, not an implementation convenience.
 
 ### Foundational Tests (write first — Constitution Principle VIII)
 
-- [ ] T005 [P] Integration test in `ingestion_service/tests/core/codebase/test_persist_graph_upsert.py` (real PostgreSQL, per `docker-compose.test.yml`): a `canonical_id` present in both an old and a new `persist_graph` call keeps the **same `document_id`** across the two calls (update-in-place, not delete-and-reinsert).
-- [ ] T006 [P] Same file: a `canonical_id` present in the old call but absent from the new call's node set is deleted, and its `document_relationships`/`vectors` rows are gone too (cascade still fires for genuine removals).
-- [ ] T007 [P] Same file: a `vectors` row created against a reused `document_id` from the first `persist_graph` call is still valid (FK intact, not cascade-deleted) after the second call updates that row's owning `document_nodes` row in place.
-- [ ] T008 [P] Same file: a `persist_graph` call that raises mid-transaction (simulate via a forced `SQLAlchemyError`) leaves the previous generation's `document_nodes`/`document_relationships` rows completely unchanged — same rollback guarantee the current docstring already claims, now verified against the upsert path specifically.
-- [ ] T009 [P] Integration test in `ingestion_service/tests/core/codebase/test_persist_graph_relationships.py`: a `document_relationships` row from a prior `persist_graph` call, touching a node that is *reused unchanged* in the next call, is removed and replaced by that call's freshly supplied relationship set (not left stale) — proves the `repo_id`-scoped relationship replace (research.md R2) doesn't rely on node-cascade to clean up edges.
+- [X] T005 [P] Integration test in `ingestion_service/tests/core/codebase/test_persist_graph_upsert.py` (real PostgreSQL, per `docker-compose.test.yml`): a `canonical_id` present in both an old and a new `persist_graph` call keeps the **same `document_id`** across the two calls (update-in-place, not delete-and-reinsert).
+- [X] T006 [P] Same file: a `canonical_id` present in the old call but absent from the new call's node set is deleted, and its `document_relationships`/`vectors` rows are gone too (cascade still fires for genuine removals).
+- [X] T007 [P] Same file: a `vectors` row created against a reused `document_id` from the first `persist_graph` call is still valid (FK intact, not cascade-deleted) after the second call updates that row's owning `document_nodes` row in place.
+- [X] T008 [P] Same file: a `persist_graph` call that raises mid-transaction (simulate via a forced `SQLAlchemyError`) leaves the previous generation's `document_nodes`/`document_relationships` rows completely unchanged — same rollback guarantee the current docstring already claims, now verified against the upsert path specifically.
+- [X] T009 [P] Integration test in `ingestion_service/tests/core/codebase/test_persist_graph_relationships.py`: a `document_relationships` row from a prior `persist_graph` call, touching a node that is *reused unchanged* in the next call, is removed and replaced by that call's freshly supplied relationship set (not left stale) — proves the `repo_id`-scoped relationship replace (research.md R2) doesn't rely on node-cascade to clean up edges.
 
 ### Foundational Implementation
 
-- [ ] T010 [US: none — shared] Rewrite the node-persistence step of `persist_graph` in `ingestion_service/src/core/codebase/codebase_persistence.py`: replace the unconditional `DELETE FROM document_nodes WHERE repo_id=...` + bulk-insert-with-fresh-UUIDs with `INSERT ... ON CONFLICT (repo_id, canonical_id) DO UPDATE SET <every column except document_id>` (upsert), plus an explicit `DELETE ... WHERE repo_id=... AND canonical_id NOT IN (<current canonical_ids>)` for genuinely removed rows. `ingestion_id` MUST be included in `DO UPDATE SET` on every row. Must satisfy T005-T008.
-- [ ] T011 Replace the relationship-persistence step in the same file: before inserting the freshly resolved relationship set, `DELETE FROM document_relationships WHERE repo_id = :repo_id` (using the new column from T004), then insert with `repo_id` populated on every row. Must satisfy T009. Depends on T010 (same transaction, same method).
-- [ ] T012 [P] Create `ingestion_service/src/core/codebase/snapshot_diff.py`: a focused module (not a framework) exposing one classification function taking the current checkout's file set + freshly computed content hashes, and the prior generation's file-level `(canonical_id -> content_hash)` map, returning four sets: unchanged, changed, new, deleted. No I/O of its own — pure function over data the caller already has.
-- [ ] T013 [P] Unit tests for `snapshot_diff.py` in `ingestion_service/tests/core/codebase/test_snapshot_diff.py`: empty prior-generation map classifies everything as new; a file present in both with matching hash classifies unchanged; mismatched hash classifies changed; a prior-generation `canonical_id` absent from the current set classifies deleted; whitespace-only content change still classifies changed (spec Edge Cases — no semantic hashing).
+- [X] T010 [US: none — shared] Rewrite the node-persistence step of `persist_graph` in `ingestion_service/src/core/codebase/codebase_persistence.py`: replace the unconditional `DELETE FROM document_nodes WHERE repo_id=...` + bulk-insert-with-fresh-UUIDs with `INSERT ... ON CONFLICT (repo_id, canonical_id) DO UPDATE SET <every column except document_id>` (upsert), plus an explicit `DELETE ... WHERE repo_id=... AND canonical_id NOT IN (<current canonical_ids>)` for genuinely removed rows. `ingestion_id` MUST be included in `DO UPDATE SET` on every row. Must satisfy T005-T008.
+- [X] T011 Replace the relationship-persistence step in the same file: before inserting the freshly resolved relationship set, `DELETE FROM document_relationships WHERE repo_id = :repo_id` (using the new column from T004), then insert with `repo_id` populated on every row. Must satisfy T009. Depends on T010 (same transaction, same method).
+- [X] T012 [P] Create `ingestion_service/src/core/codebase/snapshot_diff.py`: a focused module (not a framework) exposing one classification function taking the current checkout's file set + freshly computed content hashes, and the prior generation's file-level `(canonical_id -> content_hash)` map, returning four sets: unchanged, changed, new, deleted. No I/O of its own — pure function over data the caller already has.
+- [X] T013 [P] Unit tests for `snapshot_diff.py` in `ingestion_service/tests/core/codebase/test_snapshot_diff.py`: empty prior-generation map classifies everything as new; a file present in both with matching hash classifies unchanged; mismatched hash classifies changed; a prior-generation `canonical_id` absent from the current set classifies deleted; whitespace-only content change still classifies changed (spec Edge Cases — no semantic hashing).
+
+**Interim fix (discovered during Foundational verification, not in original task list)**:
+R1's document_id-stability change means a reused node's old `vector_chunks`
+rows are no longer cascade-cleaned between full rebuilds (previously
+"free" via delete-all). Until Phase 3's T023/T024 reuse-aware embed logic
+lands, `_embed_repo_artifacts` (`ingestion_service/src/api/v1/codebase_ingest.py`)
+now calls `vector_store.delete_by_ingestion_id(ingestion_id)` at the start
+of each embed pass — a no-op in the normal fresh-ingestion_id case, and a
+guard against duplicate vector rows on a retried/duplicate invocation of
+the same generation. Regression test:
+`test_embed_repo_artifacts_clears_stale_vectors_before_writing` in
+`ingestion_service/tests/codebase/test_batch_embedding.py`. Test doubles
+in `test_artifact_paging.py`/`test_batch_embedding.py`/
+`test_streaming_embedding_stage.py` updated to stub the new call.
 
 **Checkpoint**: `persist_graph` now supports document-identity-stable
 upserts and correctly-scoped relationship replacement, independently
