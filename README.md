@@ -46,6 +46,7 @@ It enables you to:
 * **Vector Embeddings**: Ollama embedder, 1024 dimensions (mxbai-embed-large:latest), batched end-to-end (embedder batches + bulk vector writes)
 * **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — p95 ≈ 62 ms measured at Phase 1 benchmark scale (56k artifacts, see below). The "latency independent of corpus size" goal (<100 ms p95 at 1M+ chunk rows) is a target tracked in `DOCS/audit/04-Scalability-Plan.md` — not yet measured at that scale.
 * **Atomic Repo Rebuilds**: re-ingesting a repo replaces its whole graph in one transaction under a per-repo advisory lock — a failed or concurrent ingest can never corrupt or lose the previous graph
+* **Repository Deletion**: hard-deletes every historical ingestion's vectors, graph nodes/relationships, and request records for a repo, serialized against concurrent ingests of the same repo via the same advisory-lock scope
 * **RAG Query Paths**: Separate endpoints for code repo queries and document queries, combining vector similarity seeding with deterministic BFS graph expansion (empirically shown to matter — see RAG Quality below)
 * **OCR Support**: Tesseract for scanned PDFs/images
 * **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default, switchable per-machine (Tailscale-reachable Ollama, Anthropic/OpenAI, or a free-tier endpoint) via a gitignored `.env` — no code changes; see `llm_service/models.yaml`, the live provider-verification notes in `DOCS/notes/20260913-free-provider-live-verification.md`, and the dynamic model catalog/admin-policy endpoints documented in [Service URLs](#-service-urls).
@@ -114,6 +115,8 @@ curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/j
    │ ├── /v1/ingest-repo  │ repo ingestion
    │ ├── /v1/summary      │ save summaries
    │ ├── /v1/repos        │ list repos
+   │ ├── DELETE /v1/repos/{id} │ hard-delete a repo (vectors+graph+requests)
+   │ ├── /v1/repos/{id}/generation │ current servable ingestion generation
    │ ├── /v1/graph/repos  │ get repo graph
    │ ├── /v1/graph/docs   │ document relationships
    │ └── /v1/chunks       │ chunk queries
@@ -142,7 +145,7 @@ curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/j
 
 | Service                | Port | Endpoint Examples                                                      |
 | ----------------------- | ---- | ------------------------------------------------------------------------ |
-| `ingestion_service`    | 8001 | `/v1/ingest/file`, `/v1/ingest-repo`, `/v1/graph/repos/{repo_id}`      |
+| `ingestion_service`    | 8001 | `/v1/ingest/file`, `/v1/ingest-repo`, `DELETE /v1/repos/{repo_id}`, `/v1/graph/repos/{repo_id}` |
 | `vector_store_service` | 8002 | `/v1/vectors/batch`, `/v1/vectors/search`, `/v1/vectors/search-by-doc` |
 | `llm_service`          | 8003 | `/generate`, `/v1/summarize/{ingestion_id}`, `GET /v1/models`, `PUT /v1/admin/policy/{slot}` |
 | `rag_orchestrator`     | 8004 | `/v1/rag`, `/v1/rag/simple`                                            |
@@ -199,6 +202,13 @@ application images, no production source bind mounts, preserved Postgres
 storage, running-image OCI provenance checks, health checks, and a known RAG
 smoke test — recorded per-release under `DOCS/releases/`. See the most recent
 release doc there for the current pinned SHA and deployment date.
+
+A production-correctness hardening pass (bounded ingestion memory, ownership/
+recovery for interrupted jobs, consistent rebuild/delete lifecycle,
+generation-aware caching, evidence-delivery and context-budget accuracy,
+corrected health checks, and non-blocking async I/O) has shipped across the
+services above — see [`DOCS/status.md`](/DOCS/status.md) for the current
+per-item evidence trail.
 
 ---
 
@@ -285,11 +295,29 @@ retrieval work.
 
 ## 🤖 Future Vision
 
-* Agentic RAG orchestrator with intermediate goals, conditional actions, observations, and feedback
-* Retrieval quality improvements driven by evidence, not speculation — see [RAG Quality](#-rag-quality) for the current evaluation-gated reranker decision
-* Language-aware UI (a Gradio `language` filter dropdown) and coverage beyond today's Python, TypeScript/JavaScript, Rust, and Java support; see [`DOCS/status.md`](/DOCS/status.md) for current language support and `DOCS/audit/03-Multi-Language-Graph-Plan.md` for the full plan
+Tracked as a prioritized roadmap, not just aspiration — see
+[`DOCS/audit/07-Roadmap.md`](/DOCS/audit/07-Roadmap.md) for the full
+sequencing and evidentiary bar each item has to clear before the next one
+starts:
+
+* Repository intelligence: a trustworthy structural inventory of a
+  repository (services, packages, entry points) and bounded call/impact
+  tracing, ahead of any general-purpose agent
+* Incremental ingestion with per-file/commit-SHA lineage, so re-ingesting
+  a repo only reprocesses what changed
+* Retrieval quality improvements driven by evidence, not speculation —
+  see [RAG Quality](#-rag-quality) for the current evaluation-gated
+  reranker decision
+* Language-aware UI (a Gradio `language` filter dropdown) and coverage
+  beyond today's Python, TypeScript/JavaScript, Rust, and Java support;
+  see [`DOCS/status.md`](/DOCS/status.md) for current language support
+  and `DOCS/audit/03-Multi-Language-Graph-Plan.md` for the full plan
 * Enhanced observability across ingestion and query pipelines
 * Free-tier LLM provider reliability — see [`DOCS/status.md`](/DOCS/status.md) for current provider status
+* An agentic repository investigator and team-product features
+  (auth, multi-tenancy, a richer UI) — deliberately last: deferred until
+  the deterministic foundation work above demonstrates what it can't do
+  on its own
 
 ---
 
