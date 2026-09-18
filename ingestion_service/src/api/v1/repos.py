@@ -1,5 +1,6 @@
 # ingestion_service/src/api/v1/repos.py
 
+import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -112,6 +113,15 @@ class RepoDeleteResponse(BaseModel):
 @router.delete("/repos/{repo_id}", response_model=RepoDeleteResponse)
 async def delete_repo(repo_id: str):
     """
+    Hard-delete a repository and everything derived from it (issue #158).
+    See _delete_repo_sync for the full behavior; this route only offloads
+    that synchronous work off the event loop (#170 / WP-R7).
+    """
+    return await asyncio.to_thread(_delete_repo_sync, repo_id)
+
+
+def _delete_repo_sync(repo_id: str) -> RepoDeleteResponse:
+    """
     Hard-delete a repository and everything derived from it: vectors
     (every historical ingestion, not just the latest), graph nodes/
     relationships, and ingestion_requests records (issue #158).
@@ -139,6 +149,14 @@ async def delete_repo(repo_id: str):
          durable trail a retry could use to rediscover what's left to
          clean up if step 2 or 3 fails partway, so they must not be
          removed until both have fully succeeded.
+
+    #170 (WP-R7): the whole body — advisory-lock acquisition, every
+    synchronous DB/HTTP call, and the guard's release — runs on a single
+    worker thread via asyncio.to_thread in the route above. The
+    AdvisoryGuard's raw DBAPI connection must be opened and closed on the
+    same thread it's used from; splitting acquisition (event loop) from
+    use/release (worker thread) would hand a connection across threads
+    mid-lifecycle, which is not what AdvisoryGuard is built for.
     """
     try:
         guard = reserve_repo_mutation(get_engine(), repo_id)
