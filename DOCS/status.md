@@ -136,12 +136,26 @@ document.
   and [PR 2](/DOCS/test_results/2026-09-17-blocking-io-query-path-issue-170.md)
   test results. `main` at `372f82a` (including #170) was deployed to
   production on 2026-09-18 via `scripts/prod-refresh.sh --deploy`
-  (release `prod-2026-09-17-2130pm`); see
-  [R8/#171 live evidence](/DOCS/test_results/2026-09-18-r8-live-deployment-evidence-issue-171.md)
-  for the HTTP-reachable baseline snapshot taken immediately after —
-  several fields (image IDs/labels, bind-mount absence, DB migration
-  head, the script's own generated release record) remain PENDING
-  operator input, and this snapshot is explicitly not #171 closure.
+  (release `prod-2026-09-17-2130pm`) — both deploy attempts hit a
+  previously-undiscovered healthcheck `start_period` readiness-gate
+  defect (containers marked unhealthy before they finished starting,
+  then converged healthy unattended/after manual `docker start`), filed
+  as #188 with fix PR #189 (CI-green, not yet merged). Separately, a
+  migration audit found production's DB one migration behind the
+  deployed code (`20260831_language_col` vs. repo head
+  `20260917_repo_id_on_requests`, #166) — `ingestion_requests.repo_id`
+  was missing, so `DELETE /v1/repos/{repo_id}` and `POST /v1/ingest-repo`
+  were both broken in production for an unknown window predating this
+  deploy. Applied and verified 2026-09-18 (`alembic upgrade head`,
+  confirmed head/column/indexes/backfill/query-shapes); the missing
+  release-process gate (no step compares repo vs. production migration
+  heads) is filed as #191. Full account in the completed
+  [release record](/DOCS/releases/2026-09-18-prod-2026-09-17-2130pm.md)
+  and [R8/#171 live evidence](/DOCS/test_results/2026-09-18-r8-live-deployment-evidence-issue-171.md)
+  — image IDs/OCI labels, bind-mount absence, and DB migration head are
+  now all confirmed. This is explicitly not #171 closure (that needs a
+  full pinned fixture ingest/query/delete/redeploy lifecycle test, not a
+  snapshot).
 
 - The NVIDIA NIM free-tier LLM provider is currently broken in the live
   deployment (issues #123, #124) — see

@@ -51,50 +51,75 @@ marked **PENDING (operator)** rather than guessed or omitted silently.
 | RAG smoke query (`POST /v1/rag`, self-repo) | pass — HTTP 200, real answer with graph-expansion evidence (`expanded_canonical_ids` populated via `hybrid_retrieve`/`get_cached_graph`), `reranked: false` (default off) |
 | Health responsiveness during a live ~57s RAG query on the same service | 8/8 concurrent `/health` polls returned in <50ms during the query. Caveat: `rag_orchestrator`'s `/health` is a plain sync route Starlette already threadpools independent of #170's fix, so this shows general responsiveness, not an isolated proof of the async-offload mechanism specifically |
 
-## Host-only checks — **PENDING (operator)**
+## Host-only checks — resolved 2026-09-18
 
-Not retrievable over the available HTTP surface (confirmed by the Sept 16
-audit; unchanged here). Needs the operator to run these on the host, in
-the repo checkout:
+The operator ran `prod-refresh.sh --deploy` twice more against this same
+SHA; both attempts hit the same failure (see "Startup-readiness false
+negative" below), so the container/mount provenance below was collected
+by manual `docker inspect`, not by the script's own post-deploy section
+(which never ran either time). **This manual collection is exceptional
+evidence for this one failed-readiness deployment, not a new standing
+release procedure** — once #188/PR #189 lands, a normal
+`prod-refresh.sh --deploy` run should produce this evidence
+automatically again, and manual `docker inspect` should go back to being
+a troubleshooting-only step.
 
-- **Running image IDs + OCI revision labels**, one row per container:
-  ```
-  for name in ingestion-service vector-store-service llm-service rag-orchestrator gradio-ui; do
-    echo "== $name =="
-    docker inspect "$name" --format 'image={{.Image}} revision={{ index .Config.Labels "org.opencontainers.image.revision" }}'
-  done
-  ```
-- **No application source bind mounts** on any running container:
-  ```
-  for name in ingestion-service vector-store-service llm-service rag-orchestrator gradio-ui; do
-    echo "== $name =="
-    docker inspect "$name" --format '{{json .Mounts}}'
-  done
-  ```
-  (both of the above are also checked internally by `prod-refresh.sh`
-  itself — `RUNNING_LABELS_CHECK` / `RUNNING_MOUNTS_CHECK` — so the
-  auto-generated release record below may already answer this)
-- **DB migration head**:
-  ```
-  docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-    exec -T ingestion_service alembic current
-  ```
-- **The `prod-refresh.sh`-generated release record itself**: the script
-  always writes one once `--deploy` starts (`write_release_summary`),
-  to `<repo-parent>/rag-foundry-release-records/<date>-prod-2026-09-17-2130pm.md`
-  by default. That file has the real `CONFIG_CHECK` / `BUILD_CHECK` /
-  `BUILT_LABELS_CHECK` / `RUNNING_LABELS_CHECK` / `RUNNING_MOUNTS_CHECK` /
-  `HEALTH_CHECK` / `CORPUS_CHECK` / `SMOKE_RESULT` outcomes from the
-  actual deploy run (more authoritative than this document's HTTP-only
-  re-checks), plus several **FILL IN** fields (DB migration, DB backup,
-  repo re-ingestion, graph rebuild, vector re-embedding, config change,
-  cadence, operator, rollback command tested, DB restore required,
-  notes) that need the operator's judgment. This is the "something after
-  deploy" step still outstanding — copying/completing that record and
-  landing it in `DOCS/releases/` via a normal branch + PR (per the
-  script's own comments; this is a deliberately manual, non-automated
-  step). Paste its contents back and I'll fold it into this record and
-  open that PR.
+- **Running image IDs + OCI revision labels** — pass, all five match the
+  approved SHA and release label:
+
+  | Container | Running image ID | OCI revision | Build date | Release version |
+  | --- | --- | --- | --- | --- |
+  | ingestion-service | `sha256:2e364d1e...` | `372f82a88b382e1682f9368d2d26bef54090c2d0` | `2026-09-18T01:50:58Z` | `prod-2026-09-17-2130pm` |
+  | vector-store-service | `sha256:db768834...` | `372f82a88b382e1682f9368d2d26bef54090c2d0` | `2026-09-18T01:50:58Z` | `prod-2026-09-17-2130pm` |
+  | llm-service | `sha256:238ed0a9...` | `372f82a88b382e1682f9368d2d26bef54090c2d0` | `2026-09-18T01:50:58Z` | `prod-2026-09-17-2130pm` |
+  | rag-orchestrator | `sha256:550cc9c1...` | `372f82a88b382e1682f9368d2d26bef54090c2d0` | `2026-09-18T01:50:58Z` | `prod-2026-09-17-2130pm` |
+  | gradio-ui | `sha256:1dbb206e...` | `372f82a88b382e1682f9368d2d26bef54090c2d0` | `2026-09-18T01:50:58Z` | `prod-2026-09-17-2130pm` |
+
+- **No application source bind mounts** — pass. Only bind mount across
+  all five containers is `llm-service`'s
+  `.../volumes/llm-runtime -> /runtime` (runtime model-policy state, not
+  application source — matches the intentional `docker-compose.prod.yml`
+  `volumes: !override` for exactly this path). `ingestion-service`,
+  `vector-store-service`, `rag-orchestrator`, `gradio-ui` have zero
+  mounts.
+- **DB migration head** — resolved, and this was not a documentation-only
+  gap: production's applied head (`20260831_language_col`) was one
+  migration behind the repo's actual head (`20260917_repo_id_on_requests`,
+  WP-R3/#166), which added `ingestion_requests.repo_id` — a column the
+  deployed application code unconditionally reads/writes. Consequence:
+  `DELETE /v1/repos/{repo_id}` and `POST /v1/ingest-repo` were both
+  raising `UndefinedColumn` in production. `alembic upgrade head` was run
+  against production (this session, explicit authorization) and verified:
+  head matches, column/indexes present, backfill correct, and the
+  previously-failing query shapes now execute. Filed as
+  [#191](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/191)
+  (a deployment schema-compatibility gate — no release step currently
+  compares repo vs. production migration heads). Full incident writeup
+  in the [release record](/DOCS/releases/2026-09-18-prod-2026-09-17-2130pm.md).
+- **Startup-readiness false negative** (new finding, not originally
+  requested here): both of the operator's last two `--deploy` attempts
+  against this SHA failed at `docker compose up -d` —
+  `ingestion-service`/`llm-service` were marked unhealthy at 34s/39s and
+  Compose aborted dependent startup, even though both later became
+  healthy unattended and stayed healthy. Filed as
+  [#188](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/188)
+  with full timing/`State.Health` evidence; fix (`start_period: 60s` on
+  the five app-service healthchecks) is
+  [#189](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/189),
+  CI-green, not yet merged. This means the script's own automated
+  release record for this SHA is `status: incomplete` — see the release
+  record below.
+- **The `prod-refresh.sh`-generated release record**: copied and
+  completed at
+  [`DOCS/releases/2026-09-18-prod-2026-09-17-2130pm.md`](/DOCS/releases/2026-09-18-prod-2026-09-17-2130pm.md).
+  Its `Deployment validation` section deliberately preserves what the
+  script itself actually recorded (`Running-container OCI revision
+  labels match`, `Application source bind mounts absent`, `Health
+  checks`, `Corpus persistence check`, `RAG smoke query` = `not run`,
+  since `--deploy` exited before that section ran) rather than being
+  overwritten with this session's independent post-hoc HTTP/`docker
+  inspect` results, which are recorded separately in that file as
+  "independent post-deploy verification (this session, not the script)."
 
 ## R1/R2/R3/R5/R6/R7 non-destructive live status
 
@@ -111,25 +136,34 @@ the repo checkout:
   on a generation change was **not** exercised live here (would need a
   deliberate re-ingest, which is out of scope for a non-destructive
   baseline check).
-- **R3/#166** (repo lifecycle): not exercised — would require a delete,
-  which is destructive to the current corpus and explicitly out of scope
-  for this baseline pass.
+- **R3/#166** (repo lifecycle): the migration investigation above found
+  R3's *code* was running against a database missing the column it
+  depends on (`ingestion_requests.repo_id`) — i.e. `delete_repo` was
+  actually broken in production until the migration was applied
+  2026-09-18. Confirmed schema-correct via the read-only query-shape
+  check, and then confirmed end-to-end: the operator performed a real
+  production delete (`abenz1267/walker`, 1901 graph nodes, 1 ingestion)
+  through the deployed `DELETE /v1/repos/{repo_id}` path post-migration
+  — succeeded, closing the loop with actual functional evidence, not
+  just schema-level proof. See the release record's "Post-migration
+  functional validation." Rebuild-in-flight generation-switch behavior
+  (a different R3 code path from plain delete) remains unverified live.
 - **R1/#160** (bounded ingestion memory), **R2/#161** (orphan recovery):
   not exercised — both require triggering ingestion or simulating a
   worker crash, neither of which is safe to do against the live corpus
   without a dedicated isolated smoke repo (per #171's own acceptance
   criteria — this is exactly the gap #171 exists to close, not something
   this snapshot substitutes for).
-- **R6/#169** (healthchecks/provenance): code merged via PR #172
-  (2026-09-17), and this deploy is on a commit after that merge, so the
-  fix should be live — but not confirmed here. `/version` (also #169's
-  work) is confirmed live above (all 4 services responded correctly).
-  The corrected Docker healthcheck definitions themselves (audit A8's
-  `CMD-SHELL` malformation and wrong internal ports) are not verifiable
-  over HTTP — external `/health` returning 200 says the *application* is
-  up, not that Docker's own internal healthcheck probe is now correctly
-  formed. Needs the operator's `docker inspect <container> --format
-  '{{json .State.Health}}'` output per container to close this out.
+- **R6/#169** (healthchecks/provenance): confirmed live 2026-09-18.
+  `docker inspect --format '{{json .Config.Healthcheck}}'` on
+  `ingestion-service`/`llm-service`/`rag-orchestrator` shows the CMD
+  argv form (`["CMD","python3","-m","shared.healthcheck",...]`) with the
+  correct internal port for each service — audit A8's `CMD-SHELL`/
+  wrong-port malformation is gone, PR #172's fix is live. `State.Health`
+  logs show 5 consecutive passing probes at ~0.1-0.2s each once the app
+  is actually serving. What A8/#169 did **not** cover — a `start_period`
+  grace window — is the separate gap this deploy surfaced; tracked as
+  #188/#189, see below.
 
 ## Explicitly still open (per current issue tracker state)
 
@@ -147,11 +181,18 @@ doc for actual code status. Genuinely unimplemented, confirmed open:
   provenance.
 - **#176** — intermittent zero-ANN-results after bulk deletion in CI;
   production impact unverified.
+- **#188** — healthcheck `start_period` false negative (fix: PR #189,
+  CI-green, not merged).
+- **#191** — deployment schema-compatibility gate (no release step
+  compares repo vs. production Alembic head; this is how #166's
+  migration went silently unapplied — see the release record).
 
 #169's code is merged (PR #172, 2026-09-17) and this deploy is on a
-commit after that merge, but the corrected Docker healthcheck
-definitions themselves have not been confirmed live (host-only check,
-see above) — so #169's Linux validation gate is also still open.
+commit after that merge, and the corrected Docker healthcheck
+definitions were confirmed live 2026-09-18 (`Config.Healthcheck` shows
+the CMD argv form with correct ports on all three checked services) —
+see R6/#169 above. #169's code is confirmed live; #188's separate
+`start_period` gap remains open.
 
 **Caveat for anyone treating this deploy as the current baseline**: it
 predates #180/#181, so it has full runtime-identity provenance
