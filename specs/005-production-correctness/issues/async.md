@@ -1,7 +1,11 @@
 # WP-R7: prevent blocking ingestion, vector, and retrieval operations from stalling async services
 
 Tracking issue: [#170](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/170)
-Status: Planned; no implementation or production validation implied.
+Status: Split into two PRs. PR 1 (delete_repo + vector-service routes)
+implemented on a dedicated branch, local unit evidence only — see
+[test results](/DOCS/test_results/2026-09-17-blocking-io-delete-vectors-issue-170.md).
+PR 2 (query embedding, optional reranker, #168/WP-R5 graph-cache fetch)
+not started. No production or Linux validation implied by either.
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 

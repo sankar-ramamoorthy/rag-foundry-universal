@@ -1,4 +1,5 @@
 # vector_store_service/src/api/v1/vectors.py
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
@@ -59,7 +60,9 @@ async def add_vectors(
                 VectorRecord(vector=api_record.vector, metadata=metadata)
             )
 
-        store.add(domain_records)
+        # #170 (WP-R7): store.add opens a synchronous psycopg connection;
+        # off the event loop so it can't stall unrelated concurrent requests.
+        await asyncio.to_thread(store.add, domain_records)
         logger.info(f"Added {len(domain_records)} vectors to store")
         return {"status": "ok", "count": len(domain_records)}
     except Exception as e:
@@ -74,7 +77,9 @@ async def similarity_search(
     """Search for similar vectors - MS6 RAG compatible."""
     try:
         logger.debug("similarity_search: searching vector store")
-        results = store.similarity_search(
+        # #170 (WP-R7): off the event loop (see add_vectors above).
+        results = await asyncio.to_thread(
+            store.similarity_search,
             request.query_vector,
             request.k,
             metadata_filter=request.metadata_filter,
@@ -109,7 +114,8 @@ async def delete_by_ingestion(
 ):
     """Delete all vectors for a given ingestion_id."""
     try:
-        store.delete_by_ingestion_id(ingestion_id)
+        # #170 (WP-R7): off the event loop (see add_vectors above).
+        await asyncio.to_thread(store.delete_by_ingestion_id, ingestion_id)
         logger.info(f"Deleted vectors for ingestion_id: {ingestion_id}")
         return {"status": "deleted", "ingestion_id": ingestion_id}
     except Exception as e:
@@ -124,7 +130,10 @@ async def search_by_document(
 ):
     """Return chunks for a specific document_id — used for graph expansion."""
     try:
-        results = store.get_chunks_by_document_id(request.document_id, request.k)
+        # #170 (WP-R7): off the event loop (see add_vectors above).
+        results = await asyncio.to_thread(
+            store.get_chunks_by_document_id, request.document_id, request.k,
+        )
         return {
             "results": [
                 {
