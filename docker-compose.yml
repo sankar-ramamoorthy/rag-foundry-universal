@@ -51,6 +51,13 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      # #188: uv run --directory resolves this service's environment at
+      # container start (#41), not build time -- observed live 25-90s
+      # before the health endpoint answers, though it's fast (~0.1-0.2s)
+      # once up. Without this, Compose's depends_on: service_healthy
+      # gate declared failure before containers that go on to become
+      # healthy unattended ever got the chance.
+      start_period: 60s
     depends_on:
       postgres:
         condition: service_healthy
@@ -76,6 +83,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 60s  # #188: see ingestion_service's healthcheck comment
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,6 +111,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 60s  # #188: see ingestion_service's healthcheck comment
     networks:
       - ragnet
     depends_on:
@@ -128,6 +137,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 60s  # #188: see ingestion_service's healthcheck comment
     networks:
       - ragnet
     depends_on:
@@ -156,6 +166,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+      start_period: 60s  # #188: see ingestion_service's healthcheck comment
     depends_on:
       - ingestion_service
       - rag_orchestrator
