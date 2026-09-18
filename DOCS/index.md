@@ -50,13 +50,21 @@ no live two-service HTTP round-trip test yet).
 
 ## Audit & Planning
 
-The active production-correctness programme is
-[WP-R1 through WP-R8](/specs/005-production-correctness/spec.md), with
+The production-correctness programme
+([WP-R1 through WP-R8](/specs/005-production-correctness/spec.md), with
 [delivery plan](/specs/005-production-correctness/plan.md),
 [execution handoff](/specs/005-production-correctness/HANDOFF.md), and
-[September 16 audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md).
-The [memory design review](/DOCS/audit/2026-09-16-bounded-ingestion-memory-design-review.md)
+[September 16 audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md))
+is substantially closed as of WP-R4/#167 (2026-09-18). The
+[memory design review](/DOCS/audit/2026-09-16-bounded-ingestion-memory-design-review.md)
 informs the amended [004 specification](/specs/004-bounded-ingestion-memory/spec.md).
+
+The active next tranche is **Phase 6** in
+[`07-Roadmap.md`](/DOCS/audit/07-Roadmap.md#phase-6--repository-intelligence-and-incremental-ingestion-foundation) —
+13 prioritized issues (#196-#208) covering incremental ingestion/snapshot
+lineage, repository intelligence (ORIENT/TRACE/IMPACT), provenance/source
+authority, and related foundation work, with items 1-2 (incremental
+ingestion, ORIENT) next up.
 
 Start at [[audit/00-Audit-Overview]] — the audit subtree's own index
 (codebase findings, scalability/platform/LLM-provider plans, the roadmap,

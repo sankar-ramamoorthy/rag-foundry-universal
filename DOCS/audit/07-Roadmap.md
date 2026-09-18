@@ -157,11 +157,11 @@ controlled release; WP-R8 verifies the current revision, not a first-ever one.
   predecessor `827c9cdc182073966f0b794968f90a7dc4388d18` is recorded as a failed
   promotion; issue #96 fixed the narrow `rag_orchestrator` image-packaging
   defect. Issue #41 remains deferred to Phase 5/WP-E2.
-- [ ] [[04-Scalability-Plan#WP-S5 — Job queue for ingestion|WP-S5]] Job queue (arq + Redis)
-- [ ] [[04-Scalability-Plan#WP-S6 — Incremental ingestion (the massive-repo unlock)|WP-S6]] Incremental ingestion + snapshot lineage
-- [ ] [[04-Scalability-Plan#WP-S7 — Bounded graph service instead of whole-graph-in-RAM|WP-S7]] Traverse endpoint, kill whole-graph RAM cache
+- [ ] [[04-Scalability-Plan#WP-S5 — Job queue for ingestion|WP-S5]] Job queue (arq + Redis) — see Phase 6 [#205](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/205)
+- [ ] [[04-Scalability-Plan#WP-S6 — Incremental ingestion (the massive-repo unlock)|WP-S6]] Incremental ingestion + snapshot lineage — now Phase 6 priority 1, [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)
+- [ ] [[04-Scalability-Plan#WP-S7 — Bounded graph service instead of whole-graph-in-RAM|WP-S7]] Traverse endpoint, kill whole-graph RAM cache — see Phase 6 [#206](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/206)
 - [ ] [[04-Scalability-Plan#WP-S8 — Retrieval quality/perf at scale|WP-S8]] Concurrent fetch, real tokenizer, reranker flag (reranker sub-task gated on Phase 2.75's eval — see above)
-- [ ] [[05-Enterprise-Platform-Plan#WP-E1 — Security baseline (do first, small)|WP-E1]] Security baseline *(can and should be pulled earlier if anything is network-exposed)*
+- [ ] [[05-Enterprise-Platform-Plan#WP-E1 — Security baseline (do first, small)|WP-E1]] Security baseline *(can and should be pulled earlier if anything is network-exposed)* — see Phase 6 [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
 - [ ] [[05-Enterprise-Platform-Plan#WP-E5 — Observability|WP-E5]] Observability
 - [ ] [[06-LLM-Provider-LiteLLM-Plan#WP-M3 — Streaming|WP-M3]] Streaming
 - [~] [[06-LLM-Provider-LiteLLM-Plan#WP-M4 — Cost & usage telemetry|WP-M4]] Cost & usage telemetry — per-request logging/response field shipped 2026-09-13; Grafana dashboard and persisted usage rows still depend on WP-E5/WP-E3
@@ -174,11 +174,57 @@ controlled release; WP-R8 verifies the current revision, not a first-ever one.
 *Theme: something a team can buy and log into.*
 
 - [ ] [[05-Enterprise-Platform-Plan#WP-E2 — Deployability images, config, CI|WP-E2 (deploy part)]] Helm/K8s deployment + reproducible builds (issue #41: bake each service's own `uv` env into the image at build time instead of re-resolving at container start; fix the malformed compose healthchecks)
-- [ ] [[05-Enterprise-Platform-Plan#WP-E3 — Identity & multi-tenancy|WP-E3]] OIDC + teams + repo grants + audit log
-- [ ] [[05-Enterprise-Platform-Plan#WP-E4 — Private git-host integration|WP-E4]] Private repos, then GitHub App + PR comments *(the vision-doc killer feature)*
-- [ ] [[05-Enterprise-Platform-Plan#WP-E6 — Product web UI (replace Gradio)|WP-E6]] React web UI with streaming + graph explorer
+- [ ] [[05-Enterprise-Platform-Plan#WP-E3 — Identity & multi-tenancy|WP-E3]] OIDC + teams + repo grants + audit log — see Phase 6 [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
+- [ ] [[05-Enterprise-Platform-Plan#WP-E4 — Private git-host integration|WP-E4]] Private repos, then GitHub App + PR comments *(the vision-doc killer feature)* — see Phase 6 [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
+- [ ] [[05-Enterprise-Platform-Plan#WP-E6 — Product web UI (replace Gradio)|WP-E6]] React web UI with streaming + graph explorer — see Phase 6 [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
 
 **Exit criteria:** demo flow — SSO login → connect private polyglot repo → nightly incremental ingest → PR opened → bot comments callers-of-changed-code → dev asks follow-ups in web UI with model of choice.
+
+## Phase 6 — Repository intelligence and incremental ingestion foundation
+*Theme: stop asking semantic top-k to reconstruct a repository, and stop
+re-processing what hasn't changed.*
+
+Numbered after Phase 5 in this document, but **priority-wise this phase's
+first two items slot in immediately after Phase 4's red-star track, ahead
+of most of Phase 5** — Phase 5 (enterprise product) has not started and
+nothing here is blocked on it. The red-star production-correctness track
+(WP-R1–R8 above) is substantially closed as of WP-R4/#167 (PR #192, ADR
+acceptance PR #193, 2026-09-18): mechanics review found no defects, and
+the frozen-question quality evaluation found WP-R4 net positive against
+the legacy runtime with no blocking findings. This phase supersedes
+[`specs/005-production-correctness/spec.md`](/specs/005-production-correctness/spec.md)'s
+old placeholder line ("the blue-star product work remains deferred") with
+an actual prioritized 13-item list, filed as GitHub issues #196-#208.
+
+Ordering and design rationale are not repeated here — see each issue for
+its problem statement, proposed direction, and prior-art links (the 2026-09-07
+[repository-intelligence architecture audit](/DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md),
+the [ORIENT/TRACE/IMPACT notes](/DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md),
+[WP-S6](/DOCS/audit/04-Scalability-Plan.md) for incremental ingestion, and
+[09-Retrieval-Technique-Decision-Gates](/DOCS/audit/09-Retrieval-Technique-Decision-Gates.md)
+for the evidence-gated retrieval-experiment discipline).
+
+1. [ ] **(next)** Incremental ingestion + repository/file snapshot lineage — [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)
+2. [ ] **(next)** ORIENT — repository intelligence / structural inventory foundation — [#197](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/197)
+3. [ ] TRACE / IMPACT bounded structural query modes — [#198](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/198)
+4. [ ] Source authority / subject / provenance model — [#199](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/199)
+5. [ ] Bounded evidence-sufficiency loop for structural workflows — [#200](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/200)
+6. [ ] Evidence-driven retrieval experiments (keep the decision-gate process current) — [#201](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/201)
+7. [ ] Context/evidence survival improvements beyond WP-R4 — [#202](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/202)
+8. [ ] Architecture facts and derived views — [#203](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/203)
+9. [ ] JIT OCR / selective heavy-parse escalation — [#204](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/204)
+10. [ ] Durable ingestion/work execution (beyond orphan recovery) — [#205](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/205)
+11. [ ] Bounded graph/query scaling — [#206](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/206)
+12. [ ] **(deferred, backlog slot only)** General agentic repository investigator — [#207](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/207)
+13. [ ] **(deferred, backlog slot only)** Enterprise/productization surface — [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
+
+**Exit criteria:** items 1-2 have shipped code plus the same evidentiary
+bar the red-star track used (mechanics review + measured evaluation, not
+unit tests alone) before item 3 seriously starts. Items 12-13 stay out of
+scope until items 2-5 and 7-8 have demonstrated concretely what bounded,
+deterministic workflows cannot do — "agentic" is not a substitute for
+fixing evidence quality, and productization is not what should dominate
+this tranche.
 
 ---
 
@@ -195,6 +241,8 @@ graph LR
   P275 --> P4[Phase 4<br/>Scale + Ops]
   P3 --> P5[Phase 5<br/>Enterprise]
   P4 --> P5
+  P4 --> P6[Phase 6<br/>Repo intelligence +<br/>incremental ingestion]
+  P6 -.priority, not sequence.-> P5
 ```
 
 > [!warning] Two rules that keep this roadmap honest
@@ -211,4 +259,5 @@ graph LR
 > 6. **RAG retrieval-quality follow-up, separate from the WP-Q0/reranker track (2026-09-06):** live diagnosis (`DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`) found graph expansion can correctly discover authoritative implementation evidence that then gets discarded by authority-blind ranking at the `MAX_EXPANDED_DOCS` cap. [Issue #89](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/89) fixed this with relation-type-aware expansion ranking (`traversal_selector.py`), **confirmed on live data** (PR #90: a truncated target's rank moved from 24 to 12 and it now reaches final context; zero regressions across the rest of the live baseline questions). A distinct, still-open limitation — same-relation-type candidate overload, where ranking alone isn't enough to beat the cap — is tracked separately as [issue #91](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/91). Next: characterize how often #91's pattern recurs before choosing an intervention (same discipline #89 used), and continue Phase 3 (`WP-L3` Rust or `WP-L4` Java next) independently — neither track blocks the other.
 > 7. **Production hardening completed (2026-09-12):** `prod-2026-09-12` is deployed and tagged at `202d91b34ee18e21c1dbb625d72acf9b82bce16d`; release evidence lives in `DOCS/releases/2026-09-12-prod-release.md`. The next recommended work is retrieval observability/evidence-survival tracing before choosing further retrieval interventions.
 > 8. **`WP-T1` done (2026-09-12):** [issue #100](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/100), planning doc [[WP-T1-retrieval-evidence-trace]] — extended the existing `evidence_trace.py` instrumentation (issue #89/PR #90) into a complete, automatic, query-level evidence trace (trace ID, chunk-index detail, token-budget stage, final-context manifest) across PRs #102-#105. `WP-T1e`'s first live run ([DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md)) found two clean cases of correct evidence reaching final context with generation still failing — the strongest signal yet that the next lever is generation reliability, not another retrieval-side fix — plus two follow-up issues, both now resolved: [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (a real canonical-lookup URL-length bug, fixed in PR #109) and [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106) (corpus self-contamination, resolved as a process decision — [DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md](/DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md)). Deliberately separate from Phase 4's `WP-E5 Observability` (generic ops tracing/metrics/logging) and from `08-RAG-Quality-Evaluation-Methodology`'s own `WP-Q1`/`Q2`/`Q3` naming (already used for chunking/retrieval/generation quality, executed as `WP-Q0`).
+> 9. **Red-star track substantially closed; Phase 6 opened (2026-09-18):** WP-R4/#167 merged (PR #192) and its ADR accepted (PR #193) with a net-positive frozen-question quality evaluation — see [the quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md). Its one non-blocking follow-up is tracked as [#194](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/194) (budget calibration — an evidence-gated experiment, explicitly not scheduled to run immediately). New Phase 6 above formalizes the 13-item post-R4 backlog as issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208), superseding `specs/005-production-correctness/spec.md`'s old "blue-star work remains deferred" placeholder. Next up: Phase 6 items 1-2 (incremental ingestion + snapshot lineage, ORIENT) — status/README updates are a separate, explicitly deferred follow-on task, not part of this update.
 
