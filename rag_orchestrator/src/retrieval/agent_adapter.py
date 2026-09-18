@@ -1,6 +1,8 @@
 # rag_orchestrator/src/retrieval/agent_adapter.py
 
 import logging
+import hashlib
+from dataclasses import dataclass
 from typing import List, Dict, Optional, Callable
 
 from .types import RetrievedContext, RetrievedChunk
@@ -52,26 +54,51 @@ def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
     return sources
 
 
+def conservative_token_count(text: str) -> int:
+    """UTF-8 bytes: conservative accounting, not a model tokenizer measurement."""
+    return len(text.encode("utf-8"))
+
+
+def _render_chunk(chunk: Dict[str, object]) -> str:
+    label = _source_label(chunk)
+    text = str(chunk["text"])
+    return f"[Source: {label}]\n{text}" if label else text
+
+
+@dataclass(frozen=True)
+class AssembledContext:
+    text: str
+    chunks: List[Dict[str, object]]
+    token_count: int
+
+
+def assemble_context(
+    agent_chunks: List[Dict[str, object]], max_total_tokens: int
+) -> AssembledContext:
+    """Select whole passages once, counting labels and separators as well.
+
+    Skip an oversized passage so it cannot suppress later usable evidence.
+    The budget is for context only; the caller reserves prompt/output space.
+    """
+    parts: List[str] = []
+    selected: List[Dict[str, object]] = []
+    used = 0
+    for chunk in agent_chunks:
+        part = _render_chunk(chunk)
+        cost = conservative_token_count(part) + (2 if parts else 0)
+        if used + cost > max_total_tokens:
+            continue
+        parts.append(part)
+        selected.append(chunk)
+        used += cost
+    return AssembledContext("\n\n".join(parts), selected, used)
+
+
 def select_chunks_within_token_budget(
     agent_chunks: List[Dict[str, object]], max_total_tokens: int
 ) -> List[Dict[str, object]]:
-    """
-    WP-T1c: the same word-count truncation decision build_labeled_context
-    makes, factored out so callers can learn exactly which chunks survive
-    the token budget (for evidence-survival tracing / a future
-    final-context manifest) without re-deriving the tokenization logic --
-    build_labeled_context is written in terms of this function, so the
-    two can never drift apart.
-    """
-    included: List[Dict[str, object]] = []
-    token_count = 0
-    for c in agent_chunks:
-        tokens = len(str(c["text"]).split())
-        if token_count + tokens > max_total_tokens:
-            break
-        included.append(c)
-        token_count += tokens
-    return included
+    """Compatibility wrapper around the single context selection pass."""
+    return assemble_context(agent_chunks, max_total_tokens).chunks
 
 
 def build_final_context_manifest(
@@ -99,10 +126,10 @@ def build_final_context_manifest(
     for c in chunks_in_final_context:
         text = str(c.get("text", ""))
         document_id = c.get("document_id")
-        meta = expansion_metadata.get(document_id) if document_id else None
+        meta = expansion_metadata.get(str(document_id)) if document_id else None
         if document_id in seed_document_ids:
             selection_reason = "seed"
-        elif meta is not None:
+        elif isinstance(meta, dict):
             selection_reason = (
                 f"expanded via {meta['relation_type']} "
                 f"from {meta['source_document_id']}"
@@ -119,7 +146,10 @@ def build_final_context_manifest(
                 "chunk_index": c.get("chunk_index"),
                 "source_label": _source_label(c),
                 "char_count": len(text),
-                "token_count": len(text.split()),
+                "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+                "token_count": conservative_token_count(_render_chunk(c)),
+                "token_count_method": "utf8_bytes_upper_estimate",
+                "fetch_position": c.get("fetch_position"),
                 "selection_reason": selection_reason,
             }
         )
@@ -137,14 +167,8 @@ def build_labeled_context(
     undifferentiated wall of text (WP-Q0 Q7 finding, issue tracked
     separately from #64/#65's retrieval-side fixes).
     """
-    context_parts: List[str] = []
-    token_count = 0
-    for c in select_chunks_within_token_budget(agent_chunks, max_total_tokens):
-        text = str(c["text"])
-        label = _source_label(c)
-        context_parts.append(f"[Source: {label}]\n{text}" if label else text)
-        token_count += len(text.split())
-    return "\n\n".join(context_parts), token_count
+    assembled = assemble_context(agent_chunks, max_total_tokens)
+    return assembled.text, assembled.token_count
 
 
 def prepare_chunks_for_agent(
@@ -225,6 +249,7 @@ def prepare_chunks_for_agent(
                 # WP-T1c: which chunk index (within its document's fetch)
                 # this is, for chunk-index-level evidence tracing.
                 "chunk_index": getattr(c, "chunk_index", None),
+                "fetch_position": getattr(c, "fetch_position", None),
                 # WP-T1d: first-class canonical_id, for the final-context
                 # manifest (previously only reachable via metadata digging).
                 "canonical_id": getattr(c, "canonical_id", None),

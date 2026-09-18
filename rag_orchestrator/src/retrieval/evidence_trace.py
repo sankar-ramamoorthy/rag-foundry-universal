@@ -129,6 +129,8 @@ def finalize_evidence_survival(
     partial: List[Dict[str, object]],
     chunk_limited_document_ids: Set[str],
     final_context_document_ids: Set[str],
+    *,
+    reranked_document_ids: Optional[Set[str]] = None,
 ) -> List[Dict[str, object]]:
     """
     Fill in survives_chunk_limits and reaches_final_context (WP-T1c), now
@@ -163,6 +165,9 @@ def finalize_evidence_survival(
         drop_reason = entry.get("drop_reason")
         if drop_reason is None and not survives_chunk_limits:
             drop_reason = DROP_CHUNK_LIMITS
+        elif (drop_reason is None and reranked_document_ids is not None
+              and doc_id not in reranked_document_ids):
+            drop_reason = "dropped_by_reranker"
         elif drop_reason is None and not reaches_final_context:
             drop_reason = DROP_TOKEN_BUDGET
         finalized.append(
@@ -170,6 +175,8 @@ def finalize_evidence_survival(
                 **entry,
                 "survives_chunk_limits": survives_chunk_limits,
                 "reaches_final_context": reaches_final_context,
+                "survives_rerank": (doc_id in reranked_document_ids
+                    if reranked_document_ids is not None else survives_chunk_limits),
                 "drop_reason": drop_reason,
             }
         )

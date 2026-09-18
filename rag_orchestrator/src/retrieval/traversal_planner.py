@@ -71,7 +71,7 @@ def expand_retrieval_plan(
                 _traverse(target_id, depth + 1)
 
     # Begin traversal from all seeds
-    for seed_id in plan.seed_document_ids:
+    for seed_id in sorted(plan.seed_document_ids):
         _traverse(seed_id, depth=1)
 
     return RetrievalPlan(

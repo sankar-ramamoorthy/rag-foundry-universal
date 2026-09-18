@@ -69,6 +69,10 @@ class FakeBackend:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
 
         if path == "/v1/vectors/search":
             return httpx.Response(
@@ -246,6 +250,10 @@ class MixedRelationBackend:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
 
         if path == "/v1/vectors/search":
             return httpx.Response(

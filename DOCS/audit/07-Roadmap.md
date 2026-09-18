@@ -127,6 +127,7 @@ health/readiness corrections can ship while memory validation is prepared.
   [ownership decision](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
 - [ ] WP-R3 — ingestion/delete/serving consistency, [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166), related #144.
 - [ ] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167), related #91/#141/#145/#149/#156.
+  Implementation in progress; [local verification and open quality gates](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
   September 17 follow-up: [#176](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/176)
   tracks zero ANN results after bulk-delete churn reproduced in CI;
   [plan](/specs/005-production-correctness/issues/post-delete-ann.md), production impact unverified.

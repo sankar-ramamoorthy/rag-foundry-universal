@@ -44,6 +44,20 @@ document.
 
 ## RAG quality
 
+WP-R4/#167 on `fix/wp-r4-evidence-delivery` (commit `cbb84d7`): passage
+selection, final-context provenance and generation-scoped retrieval are
+implemented and code-reviewed clean against ADR-052, with full local
+mechanics coverage. The frozen 8-question quality-evaluation gate
+completed 2026-09-18 against the Tailscale production Ollama with a net
+positive result (WP-R4 beat legacy 5/8 vs. 3/8; the one case WP-R4
+scored worse was root-caused to intended, documented budget-strictness
+behavior, not a defect) — see
+[mechanics](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md) and
+[quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md).
+No production/deployment validation is claimed (separate #171 gate).
+
+
+
 - The WP-Q0 baseline (issue #49; full evidence in
   [`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`](/DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md))
   measured 70%→90% Recall@5 from graph expansion over raw vector search

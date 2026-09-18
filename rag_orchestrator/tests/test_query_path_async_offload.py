@@ -94,10 +94,6 @@ def _patch_run_rag_pipeline(monkeypatch):
     monkeypatch.setattr(service, "hybrid_retrieve", fake_hybrid_retrieve)
     monkeypatch.setattr(service, "execute_retrieval_plan", lambda **kwargs: {})
     monkeypatch.setattr(service, "prepare_chunks_for_agent", lambda *a, **k: [])
-    monkeypatch.setattr(
-        service, "select_chunks_within_token_budget", lambda *a, **k: []
-    )
-    monkeypatch.setattr(service, "build_labeled_context", lambda *a, **k: ("", 0))
     monkeypatch.setattr(service, "build_final_context_manifest", lambda *a, **k: [])
     monkeypatch.setattr(service, "build_sources", lambda *a, **k: [])
     _patch_generate_call(monkeypatch)
@@ -175,6 +171,10 @@ class TestGraphCacheOffloaded:
         self, monkeypatch
     ):
         def search_handler(request: httpx.Request) -> httpx.Response:
+            if request.url.path.endswith("/generation"):
+                return httpx.Response(200, json={
+                    "ingestion_id": "generation-1", "generation_status": "ready",
+                })
             if request.url.path == "/v1/vectors/search":
                 return httpx.Response(
                     200,

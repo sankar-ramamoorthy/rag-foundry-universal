@@ -1,0 +1,114 @@
+{
+  "source_revision": "3ba6a2f4cec4d3e0724859d70aeff98bb7f7880f",
+  "corpus_manifest_sha256": "65bd423b22575441101eb4c0bc2cd4b90fc200bdb12ea669b7c60d83bb03fc48",
+  "questions": [
+    {
+      "id": "cache",
+      "query": "Why are _language_for, _parser_for and _compiled_query in ingestion_service/src/core/extractors/treesitter/base.py cached, and what is rebuilt without those caches?",
+      "canonical_ids": [
+        "ingestion_service/src/core/extractors/treesitter/base.py#_language_for",
+        "ingestion_service/src/core/extractors/treesitter/base.py#_parser_for",
+        "ingestion_service/src/core/extractors/treesitter/base.py#_compiled_query"
+      ],
+      "required_substrings": [
+        "Language",
+        "Parser",
+        "Query"
+      ],
+      "rubric": "Reuse Language/Parser per suffix and Query per language/source; removing caches reconstructs them on repeated calls."
+    },
+    {
+      "id": "drop",
+      "query": "In compute_partial_evidence_survival, which drop_reason wins when a graph-only target is capped out and also never fetched?",
+      "canonical_ids": [
+        "rag_orchestrator/src/retrieval/evidence_trace.py#compute_partial_evidence_survival"
+      ],
+      "required_substrings": [
+        "DROP_TRUNCATED_BY_CAP",
+        "elif"
+      ],
+      "rubric": "truncated_by_max_expanded_docs; the cap branch precedes fetch-empty in the elif chain."
+    },
+    {
+      "id": "chain",
+      "query": "After hybrid_retrieve finds seed canonical IDs, what steps select the expanded documents to fetch, and where can list position discard evidence?",
+      "canonical_ids": [
+        "rag_orchestrator/src/core/service.py#hybrid_retrieve"
+      ],
+      "required_substrings": [
+        "_rank_expanded_canonical_ids",
+        "canonical_to_document_map_http",
+        "MAX_EXPANDED_DOCS",
+        "_fetch_expanded_doc_chunks"
+      ],
+      "rubric": "Rank graph candidates; map canonical IDs to documents; deduplicate and exclude seed documents; slice at MAX_EXPANDED_DOCS before fetching."
+    },
+    {
+      "id": "ambiguous",
+      "query": "When GraphAssembler._link_docs_to_code finds an ambiguous Markdown heading matching multiple code symbols, which canonical ID wins and where is that rule implemented?",
+      "canonical_ids": [
+        "ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler._link_docs_to_code",
+        "ingestion_service/src/core/codebase/symbol_table.py#SymbolTable.lookup"
+      ],
+      "required_substrings": [
+        "symbol_table.lookup",
+        "min(bucket)"
+      ],
+      "rubric": "SymbolTable.lookup returns the lexicographically smallest canonical ID. The assembler calls it for heading then lowercase heading."
+    },
+    {
+      "id": "link",
+      "query": "What matching strategy does GraphAssembler._link_docs_to_code use to create DOCUMENTS edges? Does it use an LLM or fuzzy similarity?",
+      "canonical_ids": [
+        "ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler._link_docs_to_code"
+      ],
+      "required_substrings": [
+        "symbol_table.lookup",
+        "DOCUMENTS"
+      ],
+      "rubric": "Exact heading name through symbol table, lowercase fallback, deterministic doc-to-code DOCUMENTS edge; no LLM or fuzzy matching."
+    },
+    {
+      "id": "limits",
+      "query": "What are the defaults for MAX_EXPANDED_DOCS, EXPANDED_DOC_CHUNKS, MAX_TOTAL_CHUNKS and MAX_CONCURRENT_DOC_FETCHES in rag_orchestrator/src/core/config.py?",
+      "canonical_ids": [
+        "rag_orchestrator/src/core/config.py#Settings"
+      ],
+      "required_substrings": [
+        "MAX_EXPANDED_DOCS: int = 20",
+        "EXPANDED_DOC_CHUNKS: int = 3",
+        "MAX_TOTAL_CHUNKS: int = 50",
+        "MAX_CONCURRENT_DOC_FETCHES: int = 8"
+      ],
+      "rubric": "20, 3, 50, 8 respectively; these are defaults and environment may override them."
+    },
+    {
+      "id": "ties",
+      "query": "In execute_traversals_from_seeds_detailed, how are candidates ordered after equal strategy priority and seed-hit counts, and why can that disadvantage late alphabetical IDs under a cap?",
+      "canonical_ids": [
+        "rag_orchestrator/src/retrieval/traversal_selector.py#execute_traversals_from_seeds_detailed"
+      ],
+      "required_substrings": [
+        "best_strategy_index[cid]",
+        "-seed_hits[cid]",
+        "cid,"
+      ],
+      "rubric": "Ascending canonical ID breaks ties after strategy index then descending seed hits; late IDs may fall beyond MAX_EXPANDED_DOCS despite equal structural rank."
+    },
+    {
+      "id": "truncate",
+      "query": "What two truncation steps does shared/embedders/ollama.py _truncate apply before embedding, in what order and with what default limits?",
+      "canonical_ids": [
+        "shared/embedders/ollama.py#_truncate",
+        "shared/embedders/ollama.py"
+      ],
+      "required_substrings": [
+        "MAX_EMBEDDING_CHARS = 800",
+        "MAX_EMBEDDING_WORDS = 400",
+        "text[:MAX_EMBEDDING_CHARS]",
+        "words[:max_words]"
+      ],
+      "rubric": "First take the first 800 characters if needed, then limit the resulting text to 400 whitespace-separated words if needed."
+    }
+  ]
+}

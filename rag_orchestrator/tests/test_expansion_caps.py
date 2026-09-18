@@ -45,6 +45,10 @@ class FakeBackend:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
         if path == "/v1/vectors/search":
             self.search_calls += 1
             results = [
@@ -125,9 +129,9 @@ def test_expansion_fetches_are_capped(monkeypatch):
     chunks_by_doc, plan = _run_hybrid(monkeypatch, backend)
 
     cap = get_settings().MAX_EXPANDED_DOCS
-    assert backend.search_by_doc_calls == cap
+    assert backend.search_by_doc_calls == cap + 1
     # bounded number of vector-store calls: 1 seed search + capped fetches
-    assert backend.search_calls + backend.search_by_doc_calls == cap + 1
+    assert backend.search_calls + backend.search_by_doc_calls == cap + 2
 
     assert plan["expanded_docs_considered"] == N_EXPANDED
     assert plan["expanded_docs_used"] == cap

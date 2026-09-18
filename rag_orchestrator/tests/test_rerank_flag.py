@@ -49,10 +49,6 @@ def _patch_run_rag_pipeline(monkeypatch, rerank_spy):
     monkeypatch.setattr(
         service, "prepare_chunks_for_agent", lambda *a, **k: list(_FAKE_CHUNKS)
     )
-    monkeypatch.setattr(
-        service, "select_chunks_within_token_budget", lambda *a, **k: []
-    )
-    monkeypatch.setattr(service, "build_labeled_context", lambda *a, **k: ("", 0))
     monkeypatch.setattr(service, "build_final_context_manifest", lambda *a, **k: [])
     monkeypatch.setattr(service, "build_sources", lambda *a, **k: [])
     monkeypatch.setattr(service, "rerank_chunks", rerank_spy)
@@ -139,9 +135,6 @@ def _patch_run_simple_rag_pipeline(monkeypatch, rerank_spy):
     monkeypatch.setattr(simple_service, "execute_retrieval_plan", lambda **kwargs: {})
     monkeypatch.setattr(
         simple_service, "prepare_chunks_for_agent", lambda *a, **k: list(_FAKE_CHUNKS)
-    )
-    monkeypatch.setattr(
-        simple_service, "build_labeled_context", lambda *a, **k: ("", 0)
     )
     monkeypatch.setattr(simple_service, "build_sources", lambda *a, **k: [])
     monkeypatch.setattr(simple_service, "rerank_chunks", rerank_spy)

@@ -52,6 +52,10 @@ class FakeBackend:
 
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
 
         if path == "/v1/vectors/search":
             return httpx.Response(
@@ -81,6 +85,8 @@ class FakeBackend:
 
         if path == "/v1/vectors/search-by-doc":
             doc_id = json.loads(request.content)["document_id"]
+            if doc_id == "module-doc":
+                return httpx.Response(200, json={"results": []})
             return httpx.Response(
                 200,
                 json={
@@ -89,13 +95,15 @@ class FakeBackend:
                             "chunk_id": f"chunk-of-{doc_id}",
                             "text": "helper implementation text",
                             "score": 0.5,
-                            "metadata": {"canonical_id": "helper.py#helper"},
+                            "metadata": {
+                                "canonical_id": "helper.py#helper", "chunk_index": 17,
+                            },
                         },
                         {
                             "chunk_id": f"second-chunk-of-{doc_id}",
                             "text": "a second chunk for the same document",
                             "score": 0.4,
-                            "metadata": {},
+                            "metadata": {"chunk_index": 23},
                         },
                     ]
                 },
@@ -165,16 +173,17 @@ def test_hybrid_retrieve_reports_requested_and_returned_chunk_indices(monkeypatc
     _, plan = _run_hybrid(monkeypatch)
 
     requested = plan["chunks_requested_by_document"]["helper-doc"]
-    assert requested == list(range(get_settings().EXPANDED_DOC_CHUNKS))
+    assert requested == get_settings().EXPANDED_DOC_CHUNKS
 
     returned = plan["chunks_returned_by_document"]["helper-doc"]
-    assert returned == [0, 1]
+    assert returned == [17, 23]
 
 
 def test_retrieved_chunk_carries_its_index(monkeypatch):
     chunks_by_doc, _ = _run_hybrid(monkeypatch)
     helper_chunks = chunks_by_doc["helper-doc"]
-    assert [c.chunk_index for c in helper_chunks] == [0, 1]
+    assert [c.chunk_index for c in helper_chunks] == [17, 23]
+    assert [c.fetch_position for c in helper_chunks] == [0, 1]
 
 
 # ------------------------------------------------------------------

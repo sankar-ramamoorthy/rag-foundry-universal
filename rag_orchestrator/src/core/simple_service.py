@@ -26,7 +26,9 @@ from shared.embedders.factory import get_embedder
 from shared.retrieval.retrieval_plan import RetrievalPlan
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
 from rag_orchestrator.src.retrieval.agent_adapter import (
-    build_labeled_context,
+    assemble_context,
+    build_final_context_manifest,
+    conservative_token_count,
     build_sources,
     prepare_chunks_for_agent,
 )
@@ -36,6 +38,7 @@ from rag_orchestrator.src.retrieval.traversal_planner import (
     TraversalConstraints,
 )
 from src.core.reranker import rerank_chunks
+from rag_orchestrator.src.retrieval.codebase_utils import canonical_id_from_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +46,7 @@ logger = logging.getLogger(__name__)
 class SimpleRAGResult(BaseModel):
     answer: str
     sources: List[str]
+    final_context_manifest: List[Dict[str, Any]] = []
     # WP-M5: model actually used by llm_service (incl. WP-M2 fallbacks)
     model_used: Optional[str] = None
     model_alias: Optional[str] = None
@@ -120,6 +124,8 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
             text=r["text"],
             score=r.get("score"),
             metadata=r.get("metadata", {}),
+            chunk_index=r.get("metadata", {}).get("chunk_index"),
+            canonical_id=canonical_id_from_metadata(r.get("metadata", {})) or None,
         )
         retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)
 
@@ -158,7 +164,8 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
             logger.warning("Relationships fetch error for %s: %s", document_id[:8], e)
         return []
 
-    plan = expand_retrieval_plan(
+    plan = await asyncio.to_thread(
+        expand_retrieval_plan,
         plan=plan,
         list_outgoing_relationships=_list_outgoing,
         constraints=TraversalConstraints(
@@ -176,49 +183,19 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     # ------------------------------------------------------------------
     # Step 6: Fetch chunks for expanded docs not already retrieved
     # ------------------------------------------------------------------
-    if plan.expanded_document_ids:
-        missing_doc_ids = [
-            doc_id for doc_id in plan.expanded_document_ids
-            if doc_id not in retrieved_chunks_by_document
-        ]
+    from src.core.service import _add_chunks, _fetch_expanded_doc_chunks
 
-        if missing_doc_ids:
-            search_by_doc_url = (
-                f"{settings.VECTOR_STORE_URL}/v1/vectors/search-by-doc"
-            )
-            async with httpx.AsyncClient(timeout=60) as client:
-                for doc_id in missing_doc_ids:
-                    try:
-                        resp = await client.post(
-                            search_by_doc_url,
-                            json={"document_id": doc_id, "k": 3},
-                        )
-                        if resp.status_code == 200:
-                            for result in resp.json().get("results", []):
-                                chunk = RetrievedChunk(
-                                    document_id=doc_id,
-                                    chunk_id=result["chunk_id"],
-                                    text=result["text"],
-                                    score=result.get("score"),
-                                    metadata=result.get("metadata", {}),
-                                )
-                                retrieved_chunks_by_document.setdefault(
-                                    doc_id, []
-                                ).append(chunk)
-                        else:
-                            logger.warning(
-                                "search-by-doc failed: doc=%s status=%s",
-                                doc_id[:8], resp.status_code
-                            )
-                    except Exception as e:
-                        logger.warning(
-                            "search-by-doc error for %s: %s", doc_id[:8], e
-                        )
-
-            logger.info(
-                "Simple RAG: fetched chunks for %d expanded docs",
-                len(missing_doc_ids)
-            )
+    selected_expanded = sorted(plan.expanded_document_ids)[:settings.MAX_EXPANDED_DOCS]
+    passage_doc_ids = seed_document_ids + selected_expanded
+    fetched = await _fetch_expanded_doc_chunks(
+        passage_doc_ids, query_embedding=query_embedding,
+    )
+    seen_chunk_ids = {c.chunk_id for chunks in retrieved_chunks_by_document.values()
+                      for c in chunks}
+    for doc_id, results in fetched:
+        _add_chunks(doc_id, results, seen_chunk_ids, retrieved_chunks_by_document)
+    for chunks in retrieved_chunks_by_document.values():
+        chunks.sort(key=lambda c: (-(c.score or 0.0), c.chunk_id))
 
     # ------------------------------------------------------------------
     # Step 7: Execute RetrievalPlan
@@ -226,6 +203,7 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     retrieved_context = execute_retrieval_plan(
         plan=plan,
         retrieved_chunks_by_document=retrieved_chunks_by_document,
+        top_k_per_document=max_chunks_per_doc,
         debug=True,
     )
 
@@ -234,9 +212,9 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     # ------------------------------------------------------------------
     agent_chunks_raw = prepare_chunks_for_agent(
         retrieved_context,
-        document_order=seed_document_ids,
+        document_order=passage_doc_ids,
         max_chunks_per_doc=max_chunks_per_doc,
-        max_total_chunks=9999,
+        max_total_chunks=settings.MAX_TOTAL_CHUNKS,
         filter_chunk=chunk_filter_fn,
         debug=True,
     )
@@ -264,7 +242,11 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     # ------------------------------------------------------------------
     # Step 9: Token budget enforcement
     # ------------------------------------------------------------------
-    context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)
+    context_budget = min(max_total_tokens, max(0, settings.CONTEXT_WINDOW_TOKENS
+        - settings.PROMPT_RESERVE_TOKENS - settings.OUTPUT_RESERVE_TOKENS
+        - conservative_token_count(query)))
+    assembled = assemble_context(agent_chunks, context_budget)
+    context_str, token_count = assembled.text, assembled.token_count
     logger.info("Simple RAG: final context ~%d tokens", token_count)
 
     # ------------------------------------------------------------------
@@ -294,7 +276,14 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
         answer=result.get("response", ""),
         # Issue #30 Part 4: uploaded-file chunks also carry canonical_id/
         # relative_path metadata (pipeline.py), so labels beat raw UUIDs
-        sources=build_sources(agent_chunks),
+        sources=build_sources(assembled.chunks),
+        final_context_manifest=build_final_context_manifest(
+            assembled.chunks, seed_document_ids=set(seed_document_ids),
+            expansion_metadata={doc: {
+                "relation_type": meta.relation_type,
+                "source_document_id": meta.source_document_id,
+            } for doc, meta in plan.expansion_metadata.items()},
+        ),
         model_used=result.get("model"),
         model_alias=result.get("model_alias"),
         fallback_from=result.get("fallback_from"),
