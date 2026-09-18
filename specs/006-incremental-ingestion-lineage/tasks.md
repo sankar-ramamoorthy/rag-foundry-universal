@@ -173,7 +173,7 @@ queryable via the existing generation endpoint.
 
 - [X] T030 [US2] In `_background_ingest_repo` (`codebase_ingest.py`), immediately after `git.Repo.clone_from(git_url, temp_dir)`, resolve `git.Repo(temp_dir).head.commit.hexsha` (research.md R5). Leave `commit_sha` unset for `local_path` ingestions.
 - [X] T031 [US2] Thread the resolved `commit_sha`, and (from Phase 3's T020) `parent_generation_id`/`is_incremental`, through to wherever ingestion completion is recorded (alongside the existing `StatusManager` completion call) so they land on the `ingestion_requests` row. Depends on T030, T002, T020.
-- [X] T032 [US2] Extend `RepoGenerationResponse` and `get_repo_generation` in `ingestion_service/src/api/v1/repos.py` with `commit_sha`, `ingested_at`, `parent_generation_id`, `is_incremental`, populated only when `generation_status == "completed"`, per `contracts/repo-generation-lineage.md`. Depends on T031.
+- [X] T032 [US2] Extend `RepoGenerationResponse` and `get_repo_generation` in `ingestion_service/src/api/v1/repos.py` with `commit_sha`, `ingested_at`, `parent_generation_id`, `is_incremental`, populated only when `generation_status == "ready"` (see implementation note below — the contract's original wording said `"completed"`, corrected), per `contracts/repo-generation-lineage.md`. Depends on T031.
 
 **Checkpoint**: User Stories 1 AND 2 both work independently — lineage
 is recorded and queryable regardless of whether Phase 3's reuse path
@@ -212,12 +212,33 @@ IDs remain.
 
 ### Tests for User Story 3
 
-- [ ] T033 [P] [US3] Integration test in `ingestion_service/tests/api/test_incremental_deletes.py`: a file present in generation N but absent from generation N+1's checkout has no `document_nodes`, `document_relationships`, or `vectors` rows referencing its canonical IDs (file-level or symbol-level) after N+1 completes (FR-008/SC-003).
-- [ ] T034 [P] [US3] Same file: Acceptance Scenario 2 — a symbol that a deleted file used to define, still referenced by an unrelated *unchanged* file, resolves the same way a full rebuild would (e.g. to an `EXTERNAL_*` node), not to stale graph state — proves Phase 2's repo-scoped relationship replace (T011) plus Phase 3's whole-repo re-resolution (already always-on, FR-002) combine correctly for this case.
+- [X] T033 [P] [US3] Integration test in `ingestion_service/tests/api/test_incremental_deletes.py`: a file present in generation N but absent from generation N+1's checkout has no `document_nodes`, `document_relationships`, or `vectors` rows referencing its canonical IDs (file-level or symbol-level) after N+1 completes (FR-008/SC-003).
+- [X] T034 [P] [US3] Same file: Acceptance Scenario 2 — a symbol that a deleted file used to define, still referenced by an unrelated *unchanged* file, resolves the same way a full rebuild would (e.g. to an `EXTERNAL_*` node), not to stale graph state — proves Phase 2's repo-scoped relationship replace (T011) plus Phase 3's whole-repo re-resolution (already always-on, FR-002) combine correctly for this case.
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] Confirm/wire `snapshot_diff`'s "deleted" set (T012/T023) into the explicit delete scope Phase 2's T010 already added to `persist_graph` — this should require no new deletion logic (T010 already deletes any `canonical_id` absent from the new node set), only confirming the caller correctly omits deleted files' canonical IDs from that set. Depends on T010, T023.
+- [X] T035 [US3] Confirm/wire `snapshot_diff`'s "deleted" set (T012/T023) into the explicit delete scope Phase 2's T010 already added to `persist_graph` — this should require no new deletion logic (T010 already deletes any `canonical_id` absent from the new node set), only confirming the caller correctly omits deleted files' canonical IDs from that set. Depends on T010, T023.
+
+**Implementation notes**:
+- Confirmed, no new code required: `_build_and_persist_graph`
+  (`codebase_ingest.py`) always runs `RepoGraphBuilder` over the *current*
+  checkout on disk regardless of `is_incremental`, so a deleted file's
+  nodes are simply never in `graph.all_entities()` — `persist_graph`'s
+  existing "delete any `canonical_id` absent from the new node set"
+  logic (T010) handles it with zero awareness of `snapshot_diff.deleted`.
+  `snapshot_diff.deleted` is consumed only for logging
+  (`codebase_ingest.py`'s diff-summary log line), never as a second
+  deletion path — there is only one.
+- T033/T034 (`test_incremental_deletes.py`) verified this against real
+  Postgres + a real vector_store_service process: a deleted file's
+  file-level *and* symbol-level canonical IDs leave no
+  `document_nodes`/`document_relationships`/`vector_chunks` rows behind,
+  and an unrelated unchanged file's CALL edge to a symbol the deleted
+  file used to define re-resolves to an `EXTERNAL_SYMBOL:` node on the
+  next generation — proving the always-on whole-repo re-resolution
+  (FR-002) and the repo-scoped relationship replace (T011/R2) compose
+  correctly even when the calling node itself keeps its `document_id`
+  (R1, never cascade-deleted).
 
 **Checkpoint**: All three user stories are independently functional and
 verified.
@@ -229,9 +250,47 @@ verified.
 **Purpose**: The equivalence guarantee tying every prior phase
 together, plus documentation.
 
-- [ ] T036 Build the FR-012/SC-002 equivalence fixture and CI test in `ingestion_service/tests/integration/test_incremental_equivalence.py`: script add/change/delete edits against a fixture repo; ingest full (baseline) and separately full-then-incremental (same target commit); assert equivalent `(canonical_id, relation_type)` edge sets, equivalent `(canonical_id, chunk_index, chunk_text)` vector tuples, and matching `commit_sha` lineage between the two — per quickstart.md step 4. Depends on Phases 3-5 all being complete.
-- [ ] T037 [P] Run `quickstart.md` end to end against `docker-compose.test.yml` and record results.
-- [ ] T038 [P] Update `DOCS/status.md` to record #196's shipped scope (per this repo's convention of recording merged work there, not a dated snapshot), and close/comment on #180 per spec.md's Governing References note (verify #180's acceptance criteria are actually satisfied before closing — don't assume subsumed).
+- [X] T036 Build the FR-012/SC-002 equivalence fixture and CI test in `ingestion_service/tests/integration/test_incremental_equivalence.py`: script add/change/delete edits against a fixture repo; ingest full (baseline) and separately full-then-incremental (same target commit); assert equivalent `(canonical_id, relation_type)` edge sets, equivalent `(canonical_id, chunk_index, chunk_text)` vector tuples, and matching `commit_sha` lineage between the two — per quickstart.md step 4. Depends on Phases 3-5 all being complete.
+- [X] T037 [P] Run `quickstart.md` end to end against `docker-compose.test.yml` and record results.
+- [X] T038 [P] Update `DOCS/status.md` to record #196's shipped scope (per this repo's convention of recording merged work there, not a dated snapshot), and close/comment on #180 per spec.md's Governing References note (verify #180's acceptance criteria are actually satisfied before closing — don't assume subsumed).
+
+**Implementation notes**:
+- T036's fixture uses `local_path` ingestion for both the baseline and
+  incremental flows (not `git_url`), so the "matching `commit_sha`
+  lineage" assertion is `None == None` rather than a real SHA
+  comparison — see the test module's docstring for why real git-SHA
+  parity between two independently-created repos would add fragility
+  without adding coverage (T028 already independently proves git-backed
+  `commit_sha` correctness).
+- Writing T036 surfaced a real local-test-harness gap (not a production
+  bug): `_background_ingest_repo`'s post-completion superseded-
+  generation cleanup (`codebase_ingest.py`, #166) builds its own
+  `HttpVectorStore` from `settings.VECTOR_STORE_SERVICE_URL` rather than
+  reusing the pipeline's `vector_store` — correct under docker-compose
+  (that hostname resolves there) but silently a no-op (best-effort/
+  non-fatal, so no test failure) against an isolated-process test
+  vector service on a random port. This meant a changed file's *prior*-
+  generation vector rows were never actually swept in any test that
+  didn't specifically check for their absence — T036 is the first test
+  to check, so it patches `get_settings().VECTOR_STORE_SERVICE_URL` to
+  the test's own vector service URL before asserting equivalence,
+  rather than silently passing on a masked no-op. No source change
+  needed; this is a test-fixture-only finding.
+- T037: ran the equivalent of quickstart.md steps 1-6 as the full
+  `ingestion_service` Phase 3-6 integration suite (`test_incremental_
+  ingest.py`, `test_incremental_deletes.py`, `test_repo_generation_
+  lineage.py`, `test_persist_graph_upsert.py`, `test_persist_graph_
+  relationships.py`, `test_incremental_equivalence.py`) against
+  `docker-compose.test.yml`'s Postgres (localhost:5433) — 15/15 passed.
+  quickstart.md's own manual/`docker-compose.test.yml` steps mirror
+  these automated tests 1:1 (steps 1-3 → Phase 3/5, step 4 → T036,
+  step 5 → T017, step 6 → T016); no divergence found between the
+  documented manual flow and actual runtime behavior. `docker-compose.
+  test.yml` in this environment runs only the isolated Postgres
+  container — `vector_store_service`/`ingestion_service` are exercised
+  via the tests' own subprocess fixtures (matching every other Phase
+  3-5 test file's existing pattern), not additional long-running
+  containers.
 
 ---
 

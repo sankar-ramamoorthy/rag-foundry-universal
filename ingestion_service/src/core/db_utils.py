@@ -406,7 +406,7 @@ def generation_lineage(ingestion_id: str) -> Dict:
     {commit_sha, ingested_at, parent_generation_id, is_incremental}.
 
     Returns all-None/False if the row is missing. Callers gate this on
-    generation_status == "completed" (contracts/repo-generation-lineage.md)
+    generation_status == "ready" (contracts/repo-generation-lineage.md)
     -- this function itself does not check status.
     """
     with SessionLocal() as session:

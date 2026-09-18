@@ -84,7 +84,7 @@ class RepoGenerationResponse(BaseModel):
     ingestion_id: Optional[str] = None
     generation_status: str
     # Issue #196 (T032, contracts/repo-generation-lineage.md): snapshot
-    # lineage, populated only when generation_status == "completed".
+    # lineage, populated only when generation_status == "ready".
     commit_sha: Optional[str] = None
     ingested_at: Optional[datetime] = None
     parent_generation_id: Optional[str] = None

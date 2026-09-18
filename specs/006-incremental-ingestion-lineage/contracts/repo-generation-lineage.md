@@ -13,8 +13,11 @@ Existing fields (unchanged): `repo_id`, `ingestion_id`,
 `generation_status`.
 
 New fields, all `Optional`, populated only when `generation_status ==
-"completed"` (mirrors the existing field's own nullability pattern for
-a repository with no generation yet):
+"ready"` (the ADR-051 vocabulary `generation_status` actually returns —
+`ready`/`building`/`failed`/`unknown`; it never returns the literal
+string `"completed"`, which is instead `ingestion_requests.status`'s
+vocabulary at the DB layer). Mirrors the existing field's own
+nullability pattern for a repository with no generation yet.
 
 | Field | Type | Description |
 |---|---|---|
@@ -33,7 +36,7 @@ fingerprint data — only generation-level lineage. Per-file
 {
   "repo_id": "c2675711-53a7-5a62-8b1c-edb61c50a695",
   "ingestion_id": "649d038e-8d0f-43ea-8247-f491c2d4f90a",
-  "generation_status": "completed",
+  "generation_status": "ready",
   "commit_sha": "a1b2c3d4e5f6...",
   "ingested_at": "2026-09-18T14:32:07Z",
   "parent_generation_id": "12040f1c-...",

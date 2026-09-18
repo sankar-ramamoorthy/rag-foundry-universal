@@ -97,6 +97,60 @@ No production/deployment validation is claimed (separate #171 gate).
   stays `deferred/NO-GO` as a *default* pending clean, pinned, matched-budget
   comparisons accounting for issue #150's recall fix.
 
+## Incremental ingestion & snapshot lineage
+
+Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):
+re-ingesting a repository re-parses/re-resolves the whole graph every
+time (ADR-036's deterministic-rebuild guarantee, unchanged), but skips
+re-chunking/re-embedding files whose content hash is unchanged from the
+prior generation, and records queryable per-generation snapshot
+lineage. All three user stories (US1 fast reuse, US2 lineage query,
+US3 delete correctness) plus the cross-cutting equivalence proof are
+merged to main:
+
+- **US1 (fast re-ingestion) + Foundational persistence** — PR #212
+  (Phases 1-3): `persist_graph` upsert-by-`(repo_id, canonical_id)`
+  keeps a surviving node's `document_id` stable across generations
+  (R1), full repo-scoped relationship replace every generation (R2,
+  reused-but-unchanged nodes' stale edges don't survive on node-reuse
+  alone), and a content-hash-based `snapshot_diff` classifier gates
+  which files skip re-embedding (FR-006, all-or-nothing on a chunking/
+  embedding config-version match).
+- **US2 (lineage queryable)** — PR #213 (Phase 4): `GET /v1/repos/
+  {repo_id}/generation` extended with `commit_sha`, `ingested_at`,
+  `parent_generation_id`, `is_incremental` (`contracts/repo-generation-
+  lineage.md`), populated only when `generation_status == "ready"` (the
+  contract originally said the literal string `"completed"` — that
+  value never comes out of `db_utils.generation_status()`'s actual
+  ADR-051 vocabulary; corrected in the contract, quickstart, and source
+  comments alongside Phase 5/6 work, no runtime behavior change).
+- **US3 (deletions never orphaned) + equivalence proof** — Phase 5/6:
+  a deleted file's file-level *and* symbol-level canonical IDs leave no
+  `document_nodes`/`document_relationships`/`vector_chunks` rows behind,
+  and an unrelated unchanged caller's edge to a symbol the deleted file
+  used to define re-resolves to `EXTERNAL_SYMBOL:` on the next
+  generation, not stale graph state (`test_incremental_deletes.py`).
+  The FR-012/SC-002 acceptance bar — incremental ingestion's end state
+  equals a clean full rebuild's end state for the same target commit —
+  is proven automatically (`test_incremental_equivalence.py`):
+  equivalent `(canonical_id, relation_type)` edge sets and
+  `(canonical_id, chunk_index, chunk_text)` vector tuples between a
+  baseline full ingest and a full-then-incremental ingest reaching the
+  same target state via a scripted add/change/delete edit. 15/15 tests
+  green against real Postgres + a real `vector_store_service` process.
+  Not yet a merged PR as of this status update.
+- **#180** (ingestion source-revision provenance) is *not* closed by
+  #196 — verified against its acceptance criteria rather than assumed
+  subsumed (spec.md's explicit instruction): #196 satisfies only
+  "resolved SHA queryable"; pinned-ref admission/rejection, dirty-
+  `local_path` disclosure, and an exposed config fingerprint remain
+  open, see [issue #180 comment](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/180#issuecomment-5735599046).
+- SC-001 (a ~2,000-file fixture, 1 file changed, re-ingest completes
+  under 30s) has local evidence (`test_incremental_performance.py`,
+  opt-in `slow` marker) but no production-scale/Linux validation —
+  same disclosed gap pattern as the WP-R* production-correctness track
+  below.
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
