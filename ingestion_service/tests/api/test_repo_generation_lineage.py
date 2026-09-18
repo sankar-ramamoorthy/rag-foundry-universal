@@ -28,7 +28,6 @@ import uuid
 from pathlib import Path
 from unittest.mock import Mock
 
-import git
 import pytest
 import requests
 from fastapi import FastAPI
@@ -145,7 +144,14 @@ def _run_ingestion(
 
 
 def _init_git_fixture_repo(root: Path) -> str:
-    """A real local git repo with one commit; returns its resolved HEAD SHA."""
+    """A real local git repo with one commit; returns its resolved HEAD SHA.
+
+    Lazy import: GitPython is not installed in every environment that
+    collects this module (e.g. CI's unit-tests job, which never runs
+    this file's integration/docker-marked tests) -- matches the same
+    lazy-import pattern _background_ingest_repo itself already uses.
+    """
+    import git  # GitPython
     (root / "a.py").write_text("def f():\n    return 1\n", encoding="utf-8")
     repo = git.Repo.init(root)
     repo.git.config("user.email", "test@example.com")
