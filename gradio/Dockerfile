@@ -34,4 +34,7 @@ LABEL org.opencontainers.image.source="https://github.com/sankar-ramamoorthy/rag
 
 EXPOSE 7860
 
-CMD ["uv", "run", "python", "/app/gradio_app.py"]
+# Issue #41: invoke the venv baked at build time (RUN uv sync --no-dev
+# above) directly, instead of `uv run`, which re-verifies/resolves the
+# project on every container start/recreation.
+CMD ["/app/.venv/bin/python", "/app/gradio_app.py"]

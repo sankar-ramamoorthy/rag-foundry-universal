@@ -3,8 +3,24 @@ FROM astral/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
-# Copy dependency files
+# Root project: only used to put the `alembic` CLI on PATH (ingestion_service
+# is the only service that owns DB access/migrations). Not what the app
+# server runs -- see the service project below.
 COPY pyproject.toml uv.lock ./
+ENV UV_HTTP_TIMEOUT=120
+ENV PATH="/app/.venv/bin:$PATH"
+RUN uv sync --no-dev
+
+# Service project: this is what actually runs (Docling/torch/tree-sitter
+# live here, not in the root project above). Baked into the image at build
+# time and invoked directly by CMD below (issue #41) -- previously CMD ran
+# `uv run --directory /app/ingestion_service`, which resolved this project
+# from scratch on every container start/recreation, downloading multi-GB
+# Docling/torch/CUDA wheels each time. Copying just the dependency files
+# first (before the full service COPY below) keeps this layer cached
+# across code-only changes.
+COPY ingestion_service/pyproject.toml ingestion_service/uv.lock /app/ingestion_service/
+RUN cd /app/ingestion_service && uv sync --no-dev
 
 # Copy shared + service code
 COPY shared /app/shared
@@ -26,18 +42,6 @@ RUN apt-get update && \
         libgl1 \
         libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
-
-# IS2: Install Python dependencies
-# --no-dev excludes ruff/pre-commit/pyright (dev tools, not needed in image)
-# Note: this syncs the *root* project (repo-root pyproject.toml/uv.lock) into
-# /app/.venv, which the actual server (see CMD below) never uses — it runs
-# via `uv run --directory /app/ingestion_service`, resolving that service's
-# own pyproject.toml/uv.lock into a separate env at container start. The
-# CPU-only torch pin lives there now (see issue #57); this step is otherwise
-# unrelated to what actually ships/runs. Left as-is here (see issue #41).
-ENV UV_HTTP_TIMEOUT=120
-ENV PATH="/app/.venv/bin:$PATH"
-RUN uv sync --no-dev
 
 # Pre-download Docling models at build time
 # Avoids slow first-run download when a document is first ingested
@@ -74,6 +78,7 @@ LABEL org.opencontainers.image.source="https://github.com/sankar-ramamoorthy/rag
 
 EXPOSE 8000
 
-CMD ["uv", "run", "--directory", "/app/ingestion_service", \
-     "uvicorn", "src.api.v1.main:app", \
+WORKDIR /app/ingestion_service
+CMD ["/app/ingestion_service/.venv/bin/python", "-m", "uvicorn", \
+     "src.api.v1.main:app", \
      "--host", "0.0.0.0", "--port", "8000"]

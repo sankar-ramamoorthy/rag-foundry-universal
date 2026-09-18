@@ -49,6 +49,7 @@ dependencies = [
     { name = "docling", extra = ["ocrmac"], marker = "sys_platform == 'darwin'" },
     { name = "fastapi" },
     { name = "gitpython" },
+    { name = "httpx" },
     { name = "markdown-it-py" },
     { name = "markitdown", extra = ["all"] },
     { name = "pgvector" },
@@ -84,7 +85,6 @@ ui = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "pre-commit" },
     { name = "pyright" },
     { name = "ruff" },
@@ -98,6 +98,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.125.0" },
     { name = "gitpython", specifier = ">=3.1.43" },
     { name = "gradio", marker = "extra == 'ui'", specifier = ">=6.2.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "markdown-it-py", specifier = ">=3.0.0" },
     { name = "markitdown", extras = ["all"], specifier = ">=0.1.0" },
     { name = "pgvector", specifier = ">=0.4.2" },
@@ -131,7 +132,6 @@ provides-extras = ["ui"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pre-commit", specifier = ">=4.5.1" },
     { name = "pyright", specifier = ">=1.1.407" },
     { name = "ruff", specifier = ">=0.14.10" },

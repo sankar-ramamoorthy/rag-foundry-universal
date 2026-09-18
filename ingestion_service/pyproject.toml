@@ -40,6 +40,12 @@ dependencies = [
     "tree-sitter-python>=0.23.0",
     "GitPython>=3.1.43",
     "markdown-it-py>=3.0.0",
+    # Runtime dependency (src/api/v1/ingest.py posts to llm_service's
+    # summarize endpoint) -- not just a test dep. Previously only declared
+    # under [dependency-groups].dev below, which worked by accident because
+    # `uv run` (no --no-dev) at container start synced dev deps too (see
+    # issue #41); a build-time `uv sync --no-dev` image doesn't.
+    "httpx>=0.28.1",
 
     # ---- Docling + OCR ----
     "docling>=2.18.0,<3.0.0",
@@ -63,7 +69,6 @@ ui = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
     "pre-commit>=4.5.1",
     "pyright>=1.1.407",
     "ruff>=0.14.10",
