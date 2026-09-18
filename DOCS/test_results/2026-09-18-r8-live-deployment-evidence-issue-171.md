@@ -82,11 +82,20 @@ a troubleshooting-only step.
   `volumes: !override` for exactly this path). `ingestion-service`,
   `vector-store-service`, `rag-orchestrator`, `gradio-ui` have zero
   mounts.
-- **DB migration head** — still **PENDING (operator)**:
-  ```
-  docker compose -f docker-compose.yml -f docker-compose.prod.yml \
-    exec -T ingestion_service alembic current
-  ```
+- **DB migration head** — resolved, and this was not a documentation-only
+  gap: production's applied head (`20260831_language_col`) was one
+  migration behind the repo's actual head (`20260917_repo_id_on_requests`,
+  WP-R3/#166), which added `ingestion_requests.repo_id` — a column the
+  deployed application code unconditionally reads/writes. Consequence:
+  `DELETE /v1/repos/{repo_id}` and `POST /v1/ingest-repo` were both
+  raising `UndefinedColumn` in production. `alembic upgrade head` was run
+  against production (this session, explicit authorization) and verified:
+  head matches, column/indexes present, backfill correct, and the
+  previously-failing query shapes now execute. Filed as
+  [#191](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/191)
+  (a deployment schema-compatibility gate — no release step currently
+  compares repo vs. production migration heads). Full incident writeup
+  in the [release record](/DOCS/releases/2026-09-18-prod-2026-09-17-2130pm.md).
 - **Startup-readiness false negative** (new finding, not originally
   requested here): both of the operator's last two `--deploy` attempts
   against this SHA failed at `docker compose up -d` —
@@ -127,9 +136,14 @@ a troubleshooting-only step.
   on a generation change was **not** exercised live here (would need a
   deliberate re-ingest, which is out of scope for a non-destructive
   baseline check).
-- **R3/#166** (repo lifecycle): not exercised — would require a delete,
-  which is destructive to the current corpus and explicitly out of scope
-  for this baseline pass.
+- **R3/#166** (repo lifecycle): live `DELETE`/rebuild behavior itself not
+  exercised end-to-end (destructive, out of scope for a baseline pass),
+  but the migration investigation above found R3's *code* was running
+  against a database missing the column it depends on
+  (`ingestion_requests.repo_id`) — i.e. `delete_repo` was actually broken
+  in production until the migration was applied 2026-09-18. Now schema-
+  correct and verified via the read-only query-shape check above; still
+  not verified via a real end-to-end delete.
 - **R1/#160** (bounded ingestion memory), **R2/#161** (orphan recovery):
   not exercised — both require triggering ingestion or simulating a
   worker crash, neither of which is safe to do against the live corpus
@@ -163,11 +177,18 @@ doc for actual code status. Genuinely unimplemented, confirmed open:
   provenance.
 - **#176** — intermittent zero-ANN-results after bulk deletion in CI;
   production impact unverified.
+- **#188** — healthcheck `start_period` false negative (fix: PR #189,
+  CI-green, not merged).
+- **#191** — deployment schema-compatibility gate (no release step
+  compares repo vs. production Alembic head; this is how #166's
+  migration went silently unapplied — see the release record).
 
 #169's code is merged (PR #172, 2026-09-17) and this deploy is on a
-commit after that merge, but the corrected Docker healthcheck
-definitions themselves have not been confirmed live (host-only check,
-see above) — so #169's Linux validation gate is also still open.
+commit after that merge, and the corrected Docker healthcheck
+definitions were confirmed live 2026-09-18 (`Config.Healthcheck` shows
+the CMD argv form with correct ports on all three checked services) —
+see R6/#169 above. #169's code is confirmed live; #188's separate
+`start_period` gap remains open.
 
 **Caveat for anyone treating this deploy as the current baseline**: it
 predates #180/#181, so it has full runtime-identity provenance
