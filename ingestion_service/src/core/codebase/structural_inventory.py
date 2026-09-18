@@ -97,12 +97,21 @@ class StructuralInventory:
     gaps: list[GapNote]
 
     def summary_dict(self) -> dict:
-        """The generation-aggregate JSON blob persisted onto
-        IngestionRequest.structural_summary -- everything that doesn't have
-        its own graph-node identity (see structural_inventory design note
-        in the #197 plan: manifests/services DO get graph nodes and are
-        deliberately excluded here to avoid persisting the same facts
-        twice)."""
+        """The JSON blob persisted onto IngestionRequest.structural_summary
+        and read directly (no recomputation, no joins) by
+        GET /v1/repos/{repo_id}/orient.
+
+        Manifests and services are included here WITH their full detail,
+        not just as aggregate counts -- DocumentNode has no generic
+        per-node metadata column, so a SERVICE node's container_name/
+        entry_point can't be reconstructed later from the graph alone
+        without a fragile node/relationship reverse-join. This blob is the
+        single read path for all of ORIENT's display detail; the
+        FILE/MANIFEST/SERVICE nodes persisted separately by
+        inventory_to_graph_dicts exist for graph traversal (future TRACE/
+        IMPACT work), not as this endpoint's data source -- both are
+        derived once from the same walk, not two competing authorities.
+        """
         return {
             "languages": dict(sorted(self.languages.items())),
             "file_counts": {
@@ -110,6 +119,8 @@ class StructuralInventory:
                 "non_indexed": self.non_indexed_file_count,
                 "total": self.indexed_file_count + self.non_indexed_file_count,
             },
+            "manifests": [asdict(m) for m in self.manifests],
+            "services": [asdict(s) for s in self.services],
             "test_dirs": sorted(self.test_dirs),
             "docs_dirs": sorted(self.docs_dirs),
             "heuristic_fields": ["test_dirs", "docs_dirs"],

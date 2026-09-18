@@ -16,6 +16,10 @@ from src.core.ingestion_jobs import submit_ingestion
 from src.core.ingestion_ownership import AdmissionBusy, RepositoryBusy
 from src.core.codebase.repo_graph_builder import RepoGraphBuilder
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
+from src.core.codebase.structural_inventory import (
+    build_structural_inventory,
+    inventory_to_graph_dicts,
+)
 from src.core.pipeline import IngestionPipeline
 
 from src.core.config import get_settings
@@ -224,6 +228,14 @@ def _build_and_persist_graph(
     classify a snapshot diff without retaining the graph/builder past this
     function (#160's memory discipline -- see
     test_background_worker_releases_builder_and_graph_before_embedding).
+
+    Issue #197 (ORIENT): also builds the deterministic structural inventory
+    here, in the same scope as the symbol graph, BEFORE the one
+    persist_graph() call below -- not after it returns. persist_graph
+    deletes any canonical_id absent from the node set it's given, so the
+    symbol graph's nodes and the inventory's nodes/relationships MUST be
+    merged into that single call; two separate persist_graph calls would
+    have the second delete every node the first just wrote.
     """
     report_stage("graph_build")
     builder = RepoGraphBuilder(
@@ -235,11 +247,23 @@ def _build_and_persist_graph(
         for entity in graph.all_entities()
         if entity.get("content_hash") is not None
     }
+
+    report_stage("structural_inventory")
+    indexed_paths = set(graph.files.keys())
+    inventory = build_structural_inventory(
+        Path(repo_path), indexed_paths=indexed_paths,
+    )
+    inventory_nodes, inventory_relationships = inventory_to_graph_dicts(
+        str(ingestion_id), inventory, indexed_paths, Path(repo_path),
+    )
+
     report_stage("graph_persist")
     stats = persistence.persist_graph(
-        repo_id=repo_id, nodes=graph.all_entities(), relationships=graph.relationships,
+        repo_id=repo_id,
+        nodes=graph.all_entities() + inventory_nodes,
+        relationships=graph.relationships + inventory_relationships,
     )
-    return stats, current_file_hashes
+    return stats, current_file_hashes, inventory
 
 
 def _resolve_reuse_eligibility(
@@ -358,7 +382,7 @@ def _background_ingest_repo(
         report_progress = partial(
             StatusManager(session).update_embed_progress, ingestion_id,
         )
-        stats, current_hashes = _build_and_persist_graph(
+        stats, current_hashes, inventory = _build_and_persist_graph(
             repo_path, repo_id, ingestion_id, persistence,
             lambda stage: report_progress({
                 "stage": stage, "nodes_processed": 0, "nodes_total": 0,
@@ -401,6 +425,13 @@ def _background_ingest_repo(
             f"[{ingestion_id}] Embedded {chunk_count} chunks "
             f"({skipped_missing} nodes had no DB record)"
         )
+
+        # Issue #197 (ORIENT): record this generation's deterministic
+        # structural facts, same "finalize this generation's metadata"
+        # moment as the lineage recording below, before the terminal status
+        # transition -- so structural_summary is populated before the
+        # generation can ever be served as "ready".
+        db_utils.record_structural_summary(ingestion_id, inventory.summary_dict())
 
         # T026/T030/T031 (#196): record whether reuse classification
         # actually ran and the resolved commit SHA, before the terminal

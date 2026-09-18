@@ -28,3 +28,9 @@ class IngestionRequest(Base):
     is_incremental = Column(Boolean, nullable=False, server_default=text("false"))
     chunking_config_version = Column(String, nullable=True)
     embedding_config_version = Column(String, nullable=True)
+    # Deterministic repository structural inventory (issue #197, ORIENT).
+    # Generation-aggregate facts only (language counts, indexed/non-indexed
+    # counts, heuristic dirs, gaps) -- manifests/services get their own
+    # DocumentNode rows instead (see structural_inventory.py). NULL for any
+    # generation ingested before this feature shipped.
+    structural_summary = Column(JSON, nullable=True)

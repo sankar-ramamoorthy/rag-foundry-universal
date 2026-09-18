@@ -436,6 +436,31 @@ def generation_lineage(ingestion_id: str) -> Dict:
         }
 
 
+def record_structural_summary(ingestion_id: UUID, summary: Dict) -> None:
+    """Persist the generation-aggregate ORIENT facts (issue #197) onto this
+    generation's ingestion_requests row. Called once, at the same
+    "finalize this generation's metadata" point as record_completion_lineage
+    -- before mark_completed, so structural_summary is populated before the
+    generation can ever be served as "ready".
+    """
+    with SessionLocal() as session:
+        session.query(IngestionRequest).filter(
+            IngestionRequest.ingestion_id == ingestion_id,
+        ).update({"structural_summary": summary})
+        session.commit()
+
+
+def get_structural_summary(ingestion_id: str) -> Optional[Dict]:
+    """The generation-aggregate ORIENT facts recorded by
+    record_structural_summary, or None if this generation predates #197 (no
+    re-ingestion has happened yet) or the row doesn't exist.
+    """
+    with SessionLocal() as session:
+        return session.query(IngestionRequest.structural_summary).filter(
+            IngestionRequest.ingestion_id == ingestion_id,
+        ).scalar()
+
+
 def get_document_nodes_by_canonical_ids(
     repo_id: str,
     canonical_ids: List[str],

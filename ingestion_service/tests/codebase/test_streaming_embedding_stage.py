@@ -154,6 +154,7 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
 
     class Graph:
         relationships = []
+        files = {}
 
         def all_entities(self):
             return [{"text": "fixture"}]
@@ -174,10 +175,29 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
     monkeypatch.setattr(api, "CodebaseGraphPersistence", lambda session: persistence)
     monkeypatch.setattr(api, "RepoGraphBuilder", Builder)
     monkeypatch.setattr(api, "_build_pipeline", lambda provider: Mock())
+    # Issue #197 (ORIENT): this test verifies #160's memory discipline, not
+    # structural-inventory behavior -- stub both the (otherwise real
+    # filesystem-walking) inventory build and its DB write so no real I/O
+    # happens for a path this test doesn't exercise.
+    inventory_stub = Mock()
+    inventory_stub.summary_dict.return_value = {}
+    monkeypatch.setattr(
+        api,
+        "build_structural_inventory",
+        lambda repo_root, indexed_paths=None: inventory_stub,
+    )
+    monkeypatch.setattr(
+        api,
+        "inventory_to_graph_dicts",
+        lambda ingestion_id, inventory, indexed_paths, repo_root: ([], []),
+    )
+    monkeypatch.setattr(api.db_utils, "record_structural_summary", lambda *a, **k: None)
     # Issue #196: no prior generation, so no real DB access -- this test
     # verifies memory discipline (#160), not incremental-reuse behavior.
     monkeypatch.setattr(
-        api.db_utils, "resolve_current_generation", lambda repo_id: None,
+        api.db_utils,
+        "resolve_current_generation",
+        lambda repo_id: None,
     )
 
     def embed(**kwargs):
@@ -193,4 +213,4 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
     status.mark_completed.assert_called_once()
     assert [
         call.args[1]["stage"] for call in status.update_embed_progress.call_args_list
-    ] == ["graph_build", "graph_persist"]
+    ] == ["graph_build", "structural_inventory", "graph_persist"]

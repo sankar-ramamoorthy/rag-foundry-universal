@@ -194,6 +194,16 @@ def test_build_structural_inventory_summary_dict_has_no_silent_omissions(tmp_pat
     assert isinstance(summary["gaps"], list)
     assert summary["heuristic_fields"] == ["test_dirs", "docs_dirs"]
 
+    manifest_paths = {m["path"] for m in summary["manifests"]}
+    assert "pyproject.toml" in manifest_paths
+    service_names = {s["name"] for s in summary["services"]}
+    assert service_names == {"postgres", "ingestion_service", "gradio"}
+    ingestion_service_entry = next(
+        s for s in summary["services"] if s["name"] == "ingestion_service"
+    )
+    assert ingestion_service_entry["dockerfile"] == "ingestion_service/Dockerfile"
+    assert ingestion_service_entry["container_name"] == "ingestion-service"
+
 
 def test_inventory_to_graph_dicts_no_canonical_id_collision_with_symbol_graph(tmp_path):
     """The hard constraint from the #197 plan: an inventory node must never
