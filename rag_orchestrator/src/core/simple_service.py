@@ -11,6 +11,7 @@ Flow:
     → token budget
     → LLM
 """
+import asyncio
 import logging
 from typing import List, Optional, Callable, Dict, Any, cast
 
@@ -74,7 +75,9 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
         ollama_model=settings.OLLAMA_EMBED_MODEL,
         ollama_batch_size=settings.OLLAMA_BATCH_SIZE,
     )
-    query_embedding = embed_query(query, embedder)
+    # #170 (WP-R7): embed_query -> OllamaEmbedder.embed makes a synchronous
+    # requests.post; off the event loop.
+    query_embedding = await asyncio.to_thread(embed_query, query, embedder)
 
     # ------------------------------------------------------------------
     # Step 2: Vector search — exclude code chunks
@@ -247,7 +250,10 @@ async def run_simple_rag(  # noqa: C901 - decompose with WP-S8 retrieval work
     # ------------------------------------------------------------------
     rerank_active = settings.RERANK_ENABLED if rerank is None else rerank
     if rerank_active:
-        agent_chunks = rerank_chunks(
+        # #170 (WP-R7): CrossEncoder.predict is synchronous CPU/GPU work;
+        # off the event loop.
+        agent_chunks = await asyncio.to_thread(
+            rerank_chunks,
             query,
             agent_chunks,
             top_k=settings.RERANK_TOP_K,
