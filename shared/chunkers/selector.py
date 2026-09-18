@@ -8,6 +8,18 @@ from shared.chunkers.text import TextChunker
 class ChunkerFactory:
     """Selects chunker strategy dynamically (potentially LLM-driven)."""
 
+    # Issue #196 (R4): a stable identifier for the *selection heuristic and
+    # registry* as a whole, not a per-file resolved strategy name.
+    # choose_strategy() picks a strategy per file based on content length,
+    # so two different files in the same ingestion can legitimately resolve
+    # to different chunk_strategy values even though the config itself
+    # hasn't changed. The incremental-ingestion reuse gate needs a single,
+    # ingestion-wide "did the chunking config change" signal independent of
+    # any one file's content -- bump this whenever the heuristic thresholds
+    # or the registry (_registry) change in a way that could alter how an
+    # unchanged file gets chunked.
+    VERSION = "heuristic-v1"
+
     # Registry: name → instance
     _registry: dict[str, BaseChunker] = {
         "fixed_char": TextChunker(chunk_strategy="simple"),

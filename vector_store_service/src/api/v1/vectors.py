@@ -34,6 +34,11 @@ class VectorSearchRequest(BaseModel):
     k: int = 5
     metadata_filter: Optional[Dict[str, Any]] = None
 
+class VectorRetagRequest(BaseModel):
+    document_ids: List[str]
+    new_ingestion_id: str
+
+
 class VectorSearchByDocRequest(BaseModel):
     document_id: str
     k: int = Field(default=3, ge=1, le=100)
@@ -123,6 +128,26 @@ async def delete_by_ingestion(
         return {"status": "deleted", "ingestion_id": ingestion_id}
     except Exception as e:
         logger.error(f"Error deleting vectors: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/retag")
+async def retag_vectors(
+    request: VectorRetagRequest, store: PgVectorStore = Depends(get_vector_store)
+):
+    """Re-tag reused artifacts' vectors to a new ingestion_id (issue #196)."""
+    try:
+        # #170 (WP-R7): off the event loop (see add_vectors above).
+        count = await asyncio.to_thread(
+            store.retag_ingestion_id, request.document_ids, request.new_ingestion_id,
+        )
+        logger.info(
+            f"Retagged {count} vector row(s) to ingestion_id "
+            f"{request.new_ingestion_id}"
+        )
+        return {"status": "ok", "count": count}
+    except Exception as e:
+        logger.error(f"Error retagging vectors: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -67,6 +67,14 @@ def test_vectorstore_contract_with_minimal_implementation():
                 if r.metadata.ingestion_id != ingestion_id
             ]
 
+        def retag_ingestion_id(self, document_ids, new_ingestion_id: str) -> int:
+            count = 0
+            for r in self._records:
+                if r.metadata.document_id in document_ids:
+                    r.metadata.ingestion_id = new_ingestion_id
+                    count += 1
+            return count
+
     store = DummyVectorStore()
 
     metadata = VectorMetadata(

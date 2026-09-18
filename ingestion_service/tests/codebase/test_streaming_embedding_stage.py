@@ -174,6 +174,11 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
     monkeypatch.setattr(api, "CodebaseGraphPersistence", lambda session: persistence)
     monkeypatch.setattr(api, "RepoGraphBuilder", Builder)
     monkeypatch.setattr(api, "_build_pipeline", lambda provider: Mock())
+    # Issue #196: no prior generation, so no real DB access -- this test
+    # verifies memory discipline (#160), not incremental-reuse behavior.
+    monkeypatch.setattr(
+        api.db_utils, "resolve_current_generation", lambda repo_id: None,
+    )
 
     def embed(**kwargs):
         assert len(references) == 2 and all(ref() is None for ref in references)

@@ -269,6 +269,29 @@ class PgVectorStore(VectorStore):
                 with conn.cursor() as cur:
                     cur.execute(delete_sql, (ingestion_id,))
 
+    def retag_ingestion_id(
+        self, document_ids: List[str], new_ingestion_id: str,
+    ) -> int:
+        """Issue #196 (FR-007b, T024): re-tag reused artifacts' existing
+        vector_chunks rows to the new generation's ingestion_id, in place.
+
+        Scoped by document_id alone (not the prior ingestion_id): R1's
+        document_id-stability invariant means a reused document_id has at
+        most one generation's vectors alive at a time, so there is no
+        ambiguity about which rows "belong" to it.
+        """
+        if not document_ids:
+            return 0
+        update_sql = sql.SQL("""
+            UPDATE {schema}.vector_chunks
+            SET ingestion_id = %s
+            WHERE document_id = ANY(%s)
+        """).format(schema=sql.Identifier(self.SCHEMA))
+        with psycopg.connect(self._dsn) as conn:
+            with conn.cursor() as cur:
+                cur.execute(update_sql, (new_ingestion_id, document_ids))
+                return cur.rowcount
+
     def get_chunks_by_document_id(
         self, document_id: str, k: int = 3,
         query_vector: Optional[Sequence[float]] = None,

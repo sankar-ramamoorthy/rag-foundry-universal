@@ -116,26 +116,40 @@ re-embedded and the run completes within SC-001's bound.
 
 ### Tests for User Story 1
 
-- [ ] T014 [P] [US1] Integration test in `ingestion_service/tests/api/test_incremental_ingest.py`: re-ingesting with an unchanged file present reuses that file's `document_id` and `vectors` rows (no new embedding call made — assert on a mocked/counted embedder), and re-tags them to the new `ingestion_id` (FR-007b).
-- [ ] T015 [P] [US1] Same file: FR-006 reuse gate — a content-hash match with a *different* `chunking_config_version` or `embedding_config_version` than the prior generation forces re-embedding anyway.
-- [ ] T016 [P] [US1] Same file: FR-005 — a re-ingestion whose prior generation for the `repo_id` is `building` or `failed` (not `completed`) performs a full ingestion (every file re-embedded, `is_incremental: false`).
-- [ ] T017 [P] [US1] Same file: FR-005a — `force_full_rebuild: true` performs a full ingestion even with a valid prior `completed` generation, and still records `parent_generation_id`.
-- [ ] T018 [US1] Performance test per quickstart.md step 2 / SC-001, in `ingestion_service/tests/integration/test_incremental_performance.py` (may be marked slow/opt-in given fixture size): a ~2,000-file fixture repo with 1 file edited re-embeds only that file's artifacts and completes in under 30 seconds.
+- [X] T014 [P] [US1] Integration test in `ingestion_service/tests/api/test_incremental_ingest.py`: re-ingesting with an unchanged file present reuses that file's `document_id` and `vectors` rows (no new embedding call made — assert on a mocked/counted embedder), and re-tags them to the new `ingestion_id` (FR-007b).
+- [X] T015 [P] [US1] Same file: FR-006 reuse gate — a content-hash match with a *different* `chunking_config_version` or `embedding_config_version` than the prior generation forces re-embedding anyway.
+- [X] T016 [P] [US1] Same file: FR-005 — a re-ingestion whose prior generation for the `repo_id` is `building` or `failed` (not `completed`) performs a full ingestion (every file re-embedded, `is_incremental: false`).
+- [X] T017 [P] [US1] Same file: FR-005a — `force_full_rebuild: true` performs a full ingestion even with a valid prior `completed` generation, and still records `parent_generation_id`.
+- [X] T018 [US1] Performance test per quickstart.md step 2 / SC-001, in `ingestion_service/tests/integration/test_incremental_performance.py` (may be marked slow/opt-in given fixture size): a ~2,000-file fixture repo with 1 file edited re-embeds only that file's artifacts and completes in under 30 seconds.
 
 ### Implementation for User Story 1
 
-- [ ] T019 [US1] Add `force_full_rebuild: bool = False` to `RepoIngestRequest` and the multipart `Form(...)` parameters in `ingestion_service/src/api/v1/codebase_ingest.py`, per `contracts/ingest-repo.md`.
-- [ ] T020 [US1] In `_background_ingest_repo` (`codebase_ingest.py`), before cloning: call `db_utils.resolve_current_generation(repo_id)`/`generation_status(repo_id)` to determine whether a valid prior `completed` generation exists; combine with `force_full_rebuild` to decide `is_incremental` for this run (FR-004/FR-005/FR-005a). Depends on T019.
-- [ ] T021 [US1] When incremental: before `persist_graph` runs, read the prior generation's file-level `content_hash` values (query `document_nodes` filtered by `repo_id`, current owner `ingestion_id`, `symbol_path IS NULL`). Depends on T020, T003.
-- [ ] T022 [US1] In `RepoGraphBuilder`/`_walk_repo` (`ingestion_service/src/core/codebase/repo_graph_builder.py`), compute each file's SHA-256 content hash during the existing walk and attach it to the file-level node dict passed through to `persist_graph` (FR-003). Depends on T003.
-- [ ] T023 [US1] Wire `snapshot_diff.classify(...)` (T012) into `_background_ingest_repo` using T021's prior-hash map and T022's fresh hashes; pass the resulting changed/new/unchanged/deleted sets through to the persist and embed steps. Depends on T012, T021, T022.
-- [ ] T024 [US1] In the embedding step (`_embed_repo_artifacts` or equivalent in `codebase_ingest.py`), skip chunk+embed for files in the "unchanged and eligible" set from T023 (FR-006/FR-007); for their existing `vectors` rows, bulk `UPDATE ingestion_id` to the new generation's value instead (FR-007b vector half — no re-embedding). Depends on T023, T010.
-- [ ] T025 [US1] Record `chunking_config_version` (active `chunk_strategy`) and `embedding_config_version` (`settings.OLLAMA_EMBED_MODEL`) on the new `ingestion_requests` row at ingestion start (research.md R4). Depends on T002.
-- [ ] T026 [US1] Record `is_incremental` on the `ingestion_requests` row when the run completes. Depends on T020, T002.
+- [X] T019 [US1] Add `force_full_rebuild: bool = False` to `RepoIngestRequest` and the multipart `Form(...)` parameters in `ingestion_service/src/api/v1/codebase_ingest.py`, per `contracts/ingest-repo.md`.
+- [X] T020 [US1] In `_background_ingest_repo` (`codebase_ingest.py`), before cloning: call `db_utils.resolve_current_generation(repo_id)`/`generation_status(repo_id)` to determine whether a valid prior `completed` generation exists; combine with `force_full_rebuild` to decide `is_incremental` for this run (FR-004/FR-005/FR-005a). Depends on T019.
+- [X] T021 [US1] When incremental: before `persist_graph` runs, read the prior generation's file-level `content_hash` values (query `document_nodes` filtered by `repo_id`, current owner `ingestion_id`, `symbol_path IS NULL`). Depends on T020, T003.
+- [X] T022 [US1] In `RepoGraphBuilder`/`_walk_repo` (`ingestion_service/src/core/codebase/repo_graph_builder.py`), compute each file's SHA-256 content hash during the existing walk and attach it to the file-level node dict passed through to `persist_graph` (FR-003). Depends on T003.
+- [X] T023 [US1] Wire `snapshot_diff.classify(...)` (T012) into `_background_ingest_repo` using T021's prior-hash map and T022's fresh hashes; pass the resulting changed/new/unchanged/deleted sets through to the persist and embed steps. Depends on T012, T021, T022.
+- [X] T024 [US1] In the embedding step (`_embed_repo_artifacts` or equivalent in `codebase_ingest.py`), skip chunk+embed for files in the "unchanged and eligible" set from T023 (FR-006/FR-007); for their existing `vectors` rows, bulk `UPDATE ingestion_id` to the new generation's value instead (FR-007b vector half — no re-embedding). Depends on T023, T010.
+- [X] T025 [US1] Record `chunking_config_version` (active `chunk_strategy`) and `embedding_config_version` (`settings.OLLAMA_EMBED_MODEL`) on the new `ingestion_requests` row at ingestion start (research.md R4). Depends on T002.
+- [X] T026 [US1] Record `is_incremental` on the `ingestion_requests` row when the run completes. Depends on T020, T002.
 
 **Checkpoint**: User Story 1 is independently functional — re-ingestion
 of a mostly-unchanged repo skips embedding for unchanged files and
-completes fast, verified by T014-T018.
+completes fast, verified by T014-T018. All Phase 1-3 tests (Foundational
+control suite + new US1 suite + performance test) green together;
+Foundational tests unmodified except one exception-type generalization
+required by R1 itself (test_failed_rebuild_preserves_previous_graph now
+expects SQLAlchemyError, not the narrower IntegrityError, since ON
+CONFLICT DO UPDATE raises CardinalityViolation for the same fixture that
+used to raise a uq_repo_canonical IntegrityError — same invariant
+verified, different exception subtype).
+
+**Interim fix carried forward from Phase 2** (see that phase's note):
+`_embed_repo_artifacts` unconditionally cleared this ingestion_id's
+vectors before writing (idempotency guard). Superseded by T024's proper
+reuse-gate wiring for the normal case; the guard call still runs and
+remains a correct no-op/safety-net for retried invocations, now sitting
+alongside (not instead of) real reuse.
 
 ---
 

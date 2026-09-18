@@ -9,6 +9,7 @@ GraphAssembler changes.
 """
 
 from pathlib import Path
+import hashlib
 import logging
 import os
 import re
@@ -210,6 +211,12 @@ class RepoGraphBuilder:
 
     def build(self) -> RepoGraph:
         extracted_files: list[tuple[str, ExtractionResult]] = []
+        # Issue #196 (R3/T022): SHA-256 of each file's raw bytes, keyed by
+        # relative_path -- the incremental reuse gate's content fingerprint.
+        # Hashed independently of the decoded `source` used for extraction
+        # (read_text applies universal-newline translation), so the hash
+        # reflects the file's actual on-disk bytes, not a re-encoded copy.
+        content_hashes: dict[str, str] = {}
 
         for file_path in self._walk_repo():
             try:
@@ -222,16 +229,27 @@ class RepoGraphBuilder:
                 continue
 
             try:
+                raw_bytes = file_path.read_bytes()
                 source = file_path.read_text(encoding="utf-8")
                 result = extractor.extract(source)
             except Exception:
                 continue
 
+            content_hashes[relative_path] = hashlib.sha256(raw_bytes).hexdigest()
             extracted_files.append((relative_path, result))
 
-        return self.assembler.assemble(
+        graph = self.assembler.assemble(
             self.repo_root, self.ingestion_id, extracted_files
         )
+        # File-level nodes have canonical_id == relative_path (no #symbol
+        # suffix, ADR-031); not every file necessarily produces one (e.g. an
+        # extractor that emits no MODULE-kind entity), so a missing entry is
+        # skipped rather than treated as an error.
+        for relative_path, content_hash in content_hashes.items():
+            entity = graph.get_entity(relative_path)
+            if entity is not None:
+                entity["content_hash"] = content_hash
+        return graph
 
     # -----------------------------
     # Helpers
