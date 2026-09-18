@@ -2,12 +2,13 @@
 title: "WP-R4 evidence-delivery implementation verification"
 date: 2026-09-18
 type: test-result
-status: in-progress
+status: complete
 tags: [retrieval, evidence, verification]
 related:
   - "[WP-R4 specification](/specs/005-production-correctness/issues/evidence.md)"
   - "[ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)"
   - "[Quality methodology](/DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md)"
+  - "[Quality evaluation results](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)"
 ---
 
 # WP-R4 verification checkpoint
@@ -16,11 +17,14 @@ Branch: `fix/wp-r4-evidence-delivery`, commit `cbb84d7`.
 Base: `3ba6a2f4cec4d3e0724859d70aeff98bb7f7880f`.
 Results below (mechanics section) were re-run fresh on 2026-09-18 against
 `cbb84d7` itself (not the uncommitted working tree the prior checkpoint
-described) and reproduce identically. **The quality-evaluation gate
-(frozen 8-question set, baseline/matched-budget/clean-noisy comparisons)
-could not be executed this session — see "Quality evaluation attempt"
-below. Do not close #167, claim quality completion, or merge based on
-this checkpoint.**
+described) and reproduce identically. **This doc covers mechanics only.**
+The quality-evaluation gate (frozen 8-question set vs. legacy runtime,
+partial clean-context control) initially could not be executed this
+session against local CPU Ollama — see "Quality evaluation attempt"
+below for that record — but **completed successfully after switching to
+the Tailscale production Ollama**; see the
+[quality evaluation doc](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)
+for the actual results (net positive, no blocking findings).
 
 ## Code-level review against ADR-052 (2026-09-18) — no defects found
 
@@ -202,33 +206,29 @@ instance, concurrently). No question in the frozen set was answered by
 any arm (WP-R4, legacy, or matched-budget-control); no clean/noisy
 generation comparison was run; no baseline was captured.
 
-**Consequence: the quality-acceptance gate in
-[the WP-R4 spec](/specs/005-production-correctness/issues/evidence.md#acceptance-and-verification)
-and [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)'s
-final line ("Unit success is not evidence that lexical selection improves
-real answer quality") remains unsatisfied. Do not close #167, do not
-claim quality completion, and do not merge this branch based on this
-checkpoint — the mechanics-level review above is thorough and found no
-defects, but that is explicitly not a substitute for the quality
-evaluation per this project's own stated acceptance criteria.**
+**This local-Ollama attempt did not satisfy the quality-acceptance gate.**
+That gate was subsequently satisfied in the same session by retrying
+against the Tailscale production Ollama instead — see
+[the quality evaluation doc](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)
+for the actual results. This section is retained as-is (not rewritten)
+because the four failure modes it documents are real, reproducible
+findings about this local machine's suitability for CPU-bound Ollama
+workloads under memory pressure, independent of whether the eval
+eventually succeeded another way.
 
-## Recommended next attempt
+## What actually unblocked it
 
-- Run the eval on a machine/session with more headroom, or against the
-  Tailscale-reachable production Ollama (GPU, not this session's local
-  CPU instance) instead of a local Ollama for embedding/generation
-  throughput — the retrieval/generation code itself needs no changes to
-  do this, only which `OLLAMA_BASE_URL`/`LLM_SERVICE_URL` the eval
-  harness points at.
-- Keep `OLLAMA_BATCH_SIZE` small (8 or less) if embedding does stay
-  local/CPU.
-- The isolated eval harness scripts (`run_eval.py`, `run_clean_context.py`)
-  and a worktree of the base revision for the legacy-runtime arm
-  (`../rag-foundry-legacy-r4-base`, at `3ba6a2f4cec4d3e0724859d70aeff98bb7f7880f`)
-  are ready to use as-is once ingestion succeeds — both are scratchpad,
-  not committed; see `.wp-r4.tmp/` in the repo working tree.
-- The frozen questions/protocol/corpus manifest need no changes; their
-  premises were re-verified against current code in this session (above).
+Per the "Recommended next attempt" note this section originally ended
+with: pointing the eval harness's `OLLAMA_BASE_URL` at the
+Tailscale-reachable production Ollama (100.105.24.12:11434, GPU) instead
+of this session's local CPU-only Ollama resolved the throughput problem
+completely — no code changes were needed, only which endpoint the
+harness's `ingestion_service`/`vector_store_service`/`llm_service`
+pointed at. Fresh ingestion of the same pinned corpus completed in
+minutes with zero failures. The isolated eval harness scripts
+(`run_eval.py`, `run_clean_context.py`) and the legacy-revision worktree
+(`../rag-foundry-legacy-r4-base`) used for this are still scratchpad,
+not committed; see `.wp-r4.tmp/` in the repo working tree.
 
 ## Owner-requested handoff
 

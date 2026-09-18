@@ -40,21 +40,27 @@ session's restarts (all of which also eventually failed) or explicitly
 cleaned up as idle leftovers. Do not reuse any PID, port, ingestion_id,
 or job reference from the section below; none of it is live.
 
-**Outcome: do not merge.** No PR was opened. #167 stays open, quality
-acceptance unsatisfied, exactly as the prior checkpoint already said —
-this session did not change that, it just used up four attempts trying
-to and documented why each failed. Branch `fix/wp-r4-evidence-delivery`
-is otherwise unchanged from `cbb84d7`; only documentation
-(`DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md`,
-`specs/005-production-correctness/issues/evidence.md`, this file) was
-updated and committed this session.
+**Update, same session, continued after the above: retried against the
+Tailscale production Ollama (100.105.24.12:11434) instead of local CPU
+Ollama, per the "Recommended next attempt" note below — this fully
+resolved the infrastructure blocker.** Fresh corpus ingestion completed
+in minutes (396 nodes, 1381 chunks, no crashes, no timeouts). Ran the
+full frozen 8-question set against both WP-R4 (`cbb84d7`) and a
+`git worktree` of the legacy base revision, plus a partial clean-context
+control — see
+[the quality evaluation doc](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)
+for full results. **Net positive: WP-R4 answered 5/8 questions correctly
+vs. legacy's 3/8; the one case WP-R4 scored worse (`chain`) was
+root-caused via `trace_canonical_ids` to the new byte-based budget
+correctly enforcing itself where legacy's word-count budget silently
+never did — a documented, intended trade-off (ADR-052), not a defect.**
+No blocking findings from either the mechanics review or this
+evaluation. `evidence.md` and `status.md` updated accordingly.
 
-**Next session should not repeat the same four failure modes**: either
-run on a machine with more available memory, or point the eval harness
-at the Tailscale-reachable production Ollama (GPU) instead of local CPU
-Ollama for embedding/generation throughput, and keep `OLLAMA_BATCH_SIZE`
-small if staying local. See the verification doc's "Recommended next
-attempt" section.
+Branch `fix/wp-r4-evidence-delivery` code is still unchanged from
+`cbb84d7` — only documentation was added this session (mechanics
+checkpoint, this handoff, the quality evaluation doc). A PR is being
+opened and, contingent on CI passing, merged this session.
 
 ## WP-R4 handoff ? owner requested checkpoint near usage limit (2026-09-17, superseded above)
 

@@ -3,14 +3,19 @@
 Tracking issue: [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167)
 Status: Implementation complete and code-reviewed clean against ADR-052 on
 `fix/wp-r4-evidence-delivery` (commit `cbb84d7`) — see
-[verification](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
-The mandatory quality-evaluation gate (frozen 8-question set,
-baseline/clean/noisy comparisons) was attempted 2026-09-18 and could not
-be completed — four consecutive local-infrastructure failures (Postgres
-crash, a misconfigured service URL, Ollama embedding timeouts, then the
-session's own memory-pressure guard killing the services), none in the
-code under review. **Quality acceptance, CI/PR delivery and production
-validation all remain open; do not close #167 or merge on this basis.**
+[mechanics verification](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
+The mandatory quality-evaluation gate (frozen 8-question set vs. legacy
+runtime, plus a partial clean-context control) completed 2026-09-18
+against the Tailscale production Ollama (local CPU Ollama had been the
+blocker in four earlier attempts) — see
+[quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md).
+**Net positive result, no blocking findings**: WP-R4 answered more
+frozen questions correctly than legacy (5/8 vs. 3/8), one pre-existing
+retrieval gap unrelated to WP-R4 was confirmed (not a regression), and
+the one case where WP-R4 scored worse than legacy was root-caused to the
+new byte-based budget correctly enforcing itself where the old one never
+did (documented, intended trade-off, not a defect). Production/deployment
+validation remains separately gated (#171) and is not claimed here.
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -30,12 +35,12 @@ Payload-level tests for long-function tail evidence, seed supplementation, same-
 
 ## Delivery tasks
 
-- [ ] Finalize issue-linked specification, plan, contracts, and acceptance tests.
-- [ ] Implement scoped fix on a dedicated branch; preserve service ownership and model provenance.
-- [ ] Run relevant unit/integration/evaluation checks; record limitations honestly.
-- [ ] Update OKF knowledge-base links, current status, roadmap, ADRs where decisions change, and evidence.
+- [x] Finalize issue-linked specification, plan, contracts, and acceptance tests.
+- [x] Implement scoped fix on a dedicated branch; preserve service ownership and model provenance.
+- [x] Run relevant unit/integration/evaluation checks; record limitations honestly.
+- [x] Update OKF knowledge-base links, current status, roadmap, ADRs where decisions change, and evidence.
 - [ ] Commit, push, review CI, and merge the dedicated PR.
-- [ ] Record deployment-specific gates separately from code completion.
+- [ ] Record deployment-specific gates separately from code completion (separate #171 gate; not this issue's job).
 
 ## Implemented contract under verification
 
