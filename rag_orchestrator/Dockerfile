@@ -3,11 +3,16 @@ FROM astral/uv:python3.12-bookworm-slim
 
 WORKDIR /app
 
-# Copy dependency files first for better caching
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync
+# Service project: baked into the image at build time and invoked directly
+# by CMD below (issue #41) -- previously this synced the unrelated *root*
+# project here, then CMD ran `uv run --directory /app/rag_orchestrator`,
+# which resolved the real (rag_orchestrator) project -- including
+# sentence-transformers/torch -- from scratch on every container
+# start/recreation instead of using anything built into the image. Copying
+# just the dependency files first keeps this layer cached across code-only
+# changes.
+COPY rag_orchestrator/pyproject.toml rag_orchestrator/uv.lock /app/rag_orchestrator/
+RUN cd /app/rag_orchestrator && uv sync
 
 # Copy shared + service code
 COPY shared /app/shared
@@ -37,6 +42,7 @@ LABEL org.opencontainers.image.source="https://github.com/sankar-ramamoorthy/rag
 EXPOSE 8000
 
 # Run the FastAPI app
-CMD ["uv", "run", "--directory", "/app/rag_orchestrator", \
-     "uvicorn", "src.api.v1.main:app", \
+WORKDIR /app/rag_orchestrator
+CMD ["/app/rag_orchestrator/.venv/bin/python", "-m", "uvicorn", \
+     "src.api.v1.main:app", \
      "--host", "0.0.0.0", "--port", "8000"]
