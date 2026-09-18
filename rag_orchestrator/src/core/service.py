@@ -529,7 +529,12 @@ async def hybrid_retrieve(
         seed_docs=len(retrieved_chunks_by_document),
     )
 
-    ranking = _rank_expanded_canonical_ids(query, repo_id, seed_canonical_ids)
+    # #170 (WP-R7): _rank_expanded_canonical_ids -> get_cached_graph makes
+    # a synchronous generation check (#168/WP-R5) on every call plus, on a
+    # cache miss, a synchronous full-graph HTTP fetch; off the event loop.
+    ranking = await asyncio.to_thread(
+        _rank_expanded_canonical_ids, query, repo_id, seed_canonical_ids,
+    )
     expanded_ranked = ranking.expanded_ranked
     expanded_canonical_ids = set(expanded_ranked)
     _log_stage(
@@ -676,7 +681,9 @@ async def run_rag(
         ollama_model=settings.OLLAMA_EMBED_MODEL,
         ollama_batch_size=settings.OLLAMA_BATCH_SIZE,
     )
-    query_embedding = embed_query(query, embedder)
+    # #170 (WP-R7): embed_query -> OllamaEmbedder.embed makes a synchronous
+    # requests.post; off the event loop.
+    query_embedding = await asyncio.to_thread(embed_query, query, embedder)
 
     retrieved_chunks_by_document, retrieval_plan_dict = await hybrid_retrieve(
         query,
@@ -736,7 +743,10 @@ async def run_rag(
     # without a redeploy.
     rerank_active = settings.RERANK_ENABLED if rerank is None else rerank
     if rerank_active:
-        agent_chunks = rerank_chunks(
+        # #170 (WP-R7): CrossEncoder.predict is synchronous CPU/GPU work;
+        # off the event loop.
+        agent_chunks = await asyncio.to_thread(
+            rerank_chunks,
             query,
             agent_chunks,
             top_k=settings.RERANK_TOP_K,
