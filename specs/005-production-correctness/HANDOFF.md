@@ -4,6 +4,86 @@ Updated: 2026-09-17
 Tracking: #160, #161, #166-#171, #180, #181
 This is execution state, not an alternative specification or completion claim.
 
+## WP-R4 handoff ? owner requested checkpoint near usage limit
+
+Branch: `fix/wp-r4-evidence-delivery`. Base: `3ba6a2f4cec4d3e0724859d70aeff98bb7f7880f`.
+The checkpoint commit is the latest commit on that branch; inspect `git log -1`.
+**WP-R4 is not complete. Do not close #167 or merge based on this checkpoint.**
+No PR was opened and no quality questions or generation controls have run.
+
+Implemented and saved: query-aware exact per-artifact passage fetch with stable
+ordinal ties and optional repo/ingestion filters; seed supplementation; stored
+ordinal separate from fetch position; explicit relaxed ANN sorting; query-term
+canonical-ID preference within graph relation priority; generation-scoped seed
+and passage retrieval with post-retrieval generation check; single context
+selection returning text/chunks; final-only sources and manifest including
+content hashes; simple-document expansion inclusion; separate reranker loss.
+No embedding/reranker model defaults changed. See
+[ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md),
+[verification](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md), and
+[issue specification](/specs/005-production-correctness/issues/evidence.md).
+
+Latest checks: 173 orchestrator tests passed / 1 live A/B skipped; 28 vector
+unit tests passed / 13 deselected; 1 real PostgreSQL passage test passed;
+root ruff and diff whitespace checks passed. Focused pyright has baseline
+missing sentence_transformers and vector Settings DATABASE_URL diagnostics.
+New PostgreSQL test is explicitly added to CI. CI has not run on this branch.
+
+### Live local evaluation state ? poll before restarting
+
+A fresh, isolated database `wp_r4_741f14a1c7_test` exists in the test PostgreSQL
+container `ingestion-db-test`, port 5433, all migrations applied. It uses the
+credentials already specified in docker-compose.test.yml. Do not delete or
+re-ingest existing production corpora. The original `ingestion_test` DB had
+historical active rows blocking admission; no such rows were altered. The
+fresh evaluation DB avoids that unrelated historical state.
+
+Local HTTP services (real code, not mocks): ingestion `http://localhost:18011`,
+vector `http://localhost:18012`; embedding `http://localhost:11434` with existing
+`mxbai-embed-large:latest`. Ingestion job:
+`bc88625d-8168-40e5-8e99-4cfac38ae50f`; repo:
+`f6901107-aedc-562a-9709-956aa4e1e03e`.
+Last authoritative GET `/v1/ingest-repo/bc88625d-8168-40e5-8e99-4cfac38ae50f`
+returned `running`, stage embedding, nodes 27/396, chunks persisted 0,
+maximum buffer 110 chunks / 72789 bytes. This is a live job, not a completed
+corpus. Repeated unchanged counters alone do not prove death; poll the same
+job and inspect its process/logs. Do not restart solely for slow observation.
+Graph persistence reported 1284 nodes and 1950 relationships.
+
+Local ignored `.wp-r4.tmp/` contains exported corpus, full manifest, ingestion
+response, database connection configuration, PID records and stdout/stderr logs.
+It remains on this workspace but is not pushed. Exported files are reproducible
+from base SHA using the checked-in manifest and `git show SHA:path`.
+Process records: `.wp-r4.tmp/eval-processes.json` (launcher PIDs 15500/20008);
+uvicorn logs report vector PID 8980 and ingestion PID 24712. Earlier auxiliary
+services remain on ports 18001/18002 using `ingestion_test`, with launcher PIDs
+23252/3584 and server PIDs 20476/23452. Verify current command lines before any
+cleanup; never kill by name or reuse old PID numbers without checking.
+All launches were hidden. No evaluation runner is active.
+
+### Next actions
+
+1. Poll the exact ingestion job and inspect `.wp-r4.tmp/eval-ingestion_service.err`.
+   Resolve a reported failure if terminal; otherwise preserve the running job.
+2. Review conservative context budget/query/output headroom and passage-stage
+   trace completeness. Current budget is UTF-8 bytes including labels/separators,
+   with configured prompt/output allowances, not active-provider tokenization.
+   Generation output limit is not enforced by this patch. See ADR limitations.
+3. Finish evaluation harness using the frozen
+   [eight questions](/DOCS/evaluations/wp-r4-questions.json) and
+   [protocol](/DOCS/evaluations/2026-09-17-wp-r4-protocol.md). The corpus is 54 real
+   source-only Python files exported from base SHA; answer keys/tests/audits are
+   excluded. [Manifest](/DOCS/evaluations/wp-r4-corpus-manifest.json) pins every
+   file. No TS or real document quality coverage is implied by these questions.
+4. Pin runtime and ground-truth revisions independently. Run baseline,
+   WP-R4, matched-budget control, clean/noisy generation; retain exact prompts,
+   manifests, model/digest/fallback, stage traces and rubric grades. Local Ollama
+   and Linux LLM health responded, but no generation model has been selected.
+   Production deployment was not changed.
+5. Review results, correct demonstrated failures, refresh docs and tests,
+   push dedicated PR, inspect required CI, and follow authorized delivery flow.
+   Keep deployment acceptance distinct from code/quality completion.
+
 ## Usage-limit checkpoint instruction
 
 Owner requests a documented, committed checkpoint when either usage allowance

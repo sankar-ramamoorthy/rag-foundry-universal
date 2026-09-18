@@ -145,3 +145,16 @@ class TestPgVectorStore:
             if "DELETE FROM" in str(call.args[0])
         ]
         assert any("vector_chunks" in stmt for stmt in delete_stmts)
+
+
+@patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+def test_relaxed_ann_candidates_are_explicitly_sorted(mock_connect):
+    cursor = _mock_cursor(mock_connect)
+    cursor.fetchall.return_value = [
+        ([0.1], "ing", cid, 0, "test", "text", {}, "mock", "doc", score)
+        for cid, score in [("z", 0.2), ("b", 0.9), ("a", 0.9)]
+    ]
+    hits = PgVectorStore("mock", 1024).similarity_search(
+        [0.1], 3, {"repo_id": "repo"},
+    )
+    assert [hit.metadata.chunk_id for hit in hits] == ["a", "b", "z"]

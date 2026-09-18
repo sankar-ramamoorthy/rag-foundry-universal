@@ -33,6 +33,10 @@ def _build_graph() -> CodebaseGraph:
 
 
 def _search_response(request: httpx.Request) -> httpx.Response:
+    if request.url.path.endswith("/generation"):
+        return httpx.Response(200, json={
+            "ingestion_id": "generation-1", "generation_status": "ready",
+        })
     if request.url.path == "/v1/vectors/search":
         return httpx.Response(
             200,

@@ -97,6 +97,10 @@ jobs:
             tests/api/test_repo_generation_integration.py \
             -q
 
+      - name: vector_store_service integration tests (WP-R4 passages)
+        working-directory: vector_store_service
+        run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_wp_r4_passages.py -q
+
       - name: vector_store_service integration tests (ANN index usage)
         id: ann-tests
         working-directory: vector_store_service

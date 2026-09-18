@@ -70,10 +70,12 @@ def test_token_budget_still_truncates():
         chunk("one two three", canonical_id="a.py#f"),
         chunk("four five six", canonical_id="b.py#g"),
     ]
-    context_str, token_count = build_labeled_context(chunks, max_total_tokens=3)
+    context_str, token_count = build_labeled_context(
+        chunks, max_total_tokens=len("[Source: a.py#f]\none two three"),
+    )
     assert "a.py#f" in context_str
     assert "b.py#g" not in context_str
-    assert token_count == 3
+    assert token_count == len(context_str.encode("utf-8"))
 
 
 def test_empty_input():

@@ -39,7 +39,7 @@ class PgVectorStore(VectorStore):
     # source_metadata, so filtering on the column and on the JSONB key are
     # equivalent for every row.
     TYPED_FILTER_COLUMNS = frozenset(
-        {"repo_id", "doc_type", "source_type", "language"}
+        {"repo_id", "doc_type", "source_type", "language", "ingestion_id"}
     )
 
     def __init__(self, dsn: str, dimension: int, provider: str = "mock") -> None:
@@ -236,10 +236,10 @@ class PgVectorStore(VectorStore):
                     )
                 cur.execute(search_sql, params)
                 for row in cur.fetchall():
-                    (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
+                    (vector, row_ingestion_id, chunk_id, chunk_index, chunk_strategy,
                      chunk_text, source_metadata, provider, document_id, score) = row
                     metadata = VectorMetadata(
-                        ingestion_id=ingestion_id,
+                        ingestion_id=row_ingestion_id,
                         chunk_id=chunk_id,
                         chunk_index=chunk_index,
                         chunk_strategy=chunk_strategy,
@@ -250,6 +250,8 @@ class PgVectorStore(VectorStore):
                         score=score,
                     )
                     results.append(VectorRecord(vector=vector, metadata=metadata))
+        # relaxed_order HNSW does not guarantee distance order.
+        results.sort(key=lambda r: (-r.metadata.score, str(r.metadata.chunk_id)))
         return results
 
     def delete_by_ingestion_id(self, ingestion_id: str) -> None:
@@ -268,36 +270,58 @@ class PgVectorStore(VectorStore):
                     cur.execute(delete_sql, (ingestion_id,))
 
     def get_chunks_by_document_id(
-        self, document_id: str, k: int = 3
+        self, document_id: str, k: int = 3,
+        query_vector: Optional[Sequence[float]] = None,
+        ingestion_id: Optional[str] = None,
+        repo_id: Optional[str] = None,
     ) -> List[VectorRecord]:
-        """Fetch chunks for a specific document_id — no vector similarity needed."""
+        """Exact distance ordering within one artifact, with stable ordinal ties.
+
+        Materializing the scoped artifact avoids an approximate global ANN scan
+        losing its tail passages. Only k rows cross the service boundary.
+        """
+        conditions = [sql.SQL("document_id = %s")]
+        params: List[Any] = [document_id]
+        if ingestion_id is not None:
+            conditions.append(sql.SQL("ingestion_id = %s"))
+            params.append(ingestion_id)
+        if repo_id is not None:
+            conditions.append(sql.SQL("repo_id = %s"))
+            params.append(repo_id)
+        score = sql.SQL("0.0")
+        order = sql.SQL("chunk_index, chunk_id")
+        if query_vector is not None:
+            score = sql.SQL("1 - (vector <=> %s::vector)")
+            params.append(list(query_vector))
+            order = sql.SQL("score DESC, chunk_index, chunk_id")
         search_sql = sql.SQL("""
+            WITH passages AS MATERIALIZED (
+                SELECT * FROM {schema}.vector_chunks WHERE {conditions}
+            )
             SELECT vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
-                chunk_text, source_metadata, provider, document_id
-            FROM {schema}.vector_chunks
-            WHERE document_id = {doc_id}
-            LIMIT {limit}
+                   chunk_text, source_metadata, provider, document_id,
+                   {score} AS score
+            FROM passages
+            ORDER BY {order}
+            LIMIT %s
         """).format(
             schema=sql.Identifier(self.SCHEMA),
-            doc_id=sql.Placeholder(),
-            limit=sql.Placeholder(),
+            conditions=sql.SQL(" AND ").join(conditions),
+            score=score, order=order,
         )
+        params.append(k)
         results: List[VectorRecord] = []
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
-                cur.execute(search_sql, (document_id, k))
+                cur.execute(search_sql, params)
                 for row in cur.fetchall():
-                    (vector, ingestion_id, chunk_id, chunk_index, chunk_strategy,
-                    chunk_text, source_metadata, provider, document_id) = row
+                    (vector, row_ingestion_id, chunk_id, chunk_index, chunk_strategy,
+                     chunk_text, source_metadata, provider, document_id, score) = row
                     metadata = VectorMetadata(
-                        ingestion_id=ingestion_id,
-                        chunk_id=chunk_id,
-                        chunk_index=chunk_index,
-                        chunk_strategy=chunk_strategy,
-                        chunk_text=chunk_text,
-                        source_metadata=source_metadata,
-                        provider=provider,
-                        document_id=document_id,
+                        ingestion_id=row_ingestion_id, chunk_id=chunk_id,
+                        chunk_index=chunk_index, chunk_strategy=chunk_strategy,
+                        chunk_text=chunk_text, source_metadata=source_metadata,
+                        provider=provider, document_id=document_id, score=score,
                     )
                     results.append(VectorRecord(vector=vector, metadata=metadata))
         return results

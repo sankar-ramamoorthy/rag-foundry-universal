@@ -44,6 +44,13 @@ document.
 
 ## RAG quality
 
+WP-R4/#167 is in progress on `fix/wp-r4-evidence-delivery`: passage selection,
+final-context provenance and generation-scoped retrieval have local mechanics
+coverage. [Verification and open gates](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).
+No quality acceptance, merge or deployment is claimed.
+
+
+
 - The WP-Q0 baseline (issue #49; full evidence in
   [`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`](/DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md))
   measured 70%→90% Recall@5 from graph expansion over raw vector search

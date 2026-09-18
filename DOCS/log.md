@@ -8,6 +8,12 @@ governed.
 
 ## 2026-09-17
 
+Added proposed [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)
+and [WP-R4 verification record](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md),
+linking passage/context contracts to issue #167 and its uncompleted quality gates.
+
+
+
 Added proposed [ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)
 for WP-R5's narrowed scope (#168): keys `rag_orchestrator`'s graph cache on
 `(repo_id, generation_id)` via a new cheap `GET /v1/repos/{repo_id}/generation`

@@ -95,6 +95,12 @@ binding: [[proposals/sdd-spec-kit-adoption]],
 
 ## Evidence / Test Results
 
+[WP-R4 evidence delivery](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)
+tracks local mechanics verification and outstanding quality gates;
+[ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md) records the proposed contract.
+
+
+
 `DOCS/test_results/` — benchmark and verification records tied to specific
 audit findings.
 

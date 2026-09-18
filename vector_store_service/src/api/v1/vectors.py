@@ -1,7 +1,7 @@
 # vector_store_service/src/api/v1/vectors.py
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import logging
 
@@ -36,7 +36,10 @@ class VectorSearchRequest(BaseModel):
 
 class VectorSearchByDocRequest(BaseModel):
     document_id: str
-    k: int = 3
+    k: int = Field(default=3, ge=1, le=100)
+    query_vector: Optional[List[float]] = None
+    ingestion_id: Optional[str] = None
+    repo_id: Optional[str] = None
 
 @router.post("/batch")
 async def add_vectors(
@@ -133,6 +136,8 @@ async def search_by_document(
         # #170 (WP-R7): off the event loop (see add_vectors above).
         results = await asyncio.to_thread(
             store.get_chunks_by_document_id, request.document_id, request.k,
+            query_vector=request.query_vector,
+            ingestion_id=request.ingestion_id, repo_id=request.repo_id,
         )
         return {
             "results": [
@@ -140,8 +145,7 @@ async def search_by_document(
                     "chunk_id": r.metadata.chunk_id,
                     "text": r.metadata.chunk_text,
                     "document_id": r.metadata.document_id,
-                    # no similarity computed for doc fetch; treat as full match
-                    "score": 1.0,
+                    "score": r.metadata.score,
                     "metadata": {
                         "ingestion_id": r.metadata.ingestion_id,
                         "chunk_index": r.metadata.chunk_index,

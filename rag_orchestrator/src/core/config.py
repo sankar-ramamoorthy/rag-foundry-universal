@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     EXPANDED_DOC_CHUNKS: int = 3
     # Overall chunk cap handed to the agent adapter (was 9999).
     MAX_TOTAL_CHUNKS: int = 50
+    # Context allowance excludes conservative prompt/query and output reserves.
+    CONTEXT_WINDOW_TOKENS: int = 8192
+    PROMPT_RESERVE_TOKENS: int = 1024
+    OUTPUT_RESERVE_TOKENS: int = 2048
     # Concurrency of search-by-doc fetches for expanded docs.
     MAX_CONCURRENT_DOC_FETCHES: int = 8
 

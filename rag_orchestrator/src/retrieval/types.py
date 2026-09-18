@@ -14,11 +14,9 @@ class RetrievedChunk:
     # WP-T1a: first-class canonical_id instead of ad hoc metadata digging
     # (metadata["canonical_id"] or metadata["source_metadata"]["canonical_id"]).
     canonical_id: Optional[str] = None
-    # WP-T1c: 0-based position of this chunk within the results list it
-    # was fetched in (a single-item list for seed chunks; the ordered
-    # /search-by-doc response for expanded docs), for chunk-index-level
-    # evidence tracing.
+    # Stored ingestion ordinal, distinct from position in a ranked fetch.
     chunk_index: Optional[int] = None
+    fetch_position: Optional[int] = None
     # Issue #142 (fix for #141): document_nodes.doc_type (python source /
     # markdown_section / etc.), for the doc-type-aware seed tie-break.
     # None for chunks constructed without it (predates this field).

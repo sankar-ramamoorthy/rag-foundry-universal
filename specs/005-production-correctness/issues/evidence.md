@@ -1,7 +1,8 @@
 # WP-R4: preserve retrieved passages, chunk identity, and final-context provenance
 
 Tracking issue: [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167)
-Status: Planned; no implementation or production validation implied.
+Status: Implementation in progress on `fix/wp-r4-evidence-delivery`; quality,
+CI/PR delivery and production validation remain open.
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -27,3 +28,10 @@ Payload-level tests for long-function tail evidence, seed supplementation, same-
 - [ ] Update OKF knowledge-base links, current status, roadmap, ADRs where decisions change, and evidence.
 - [ ] Commit, push, review CI, and merge the dedicated PR.
 - [ ] Record deployment-specific gates separately from code completion.
+
+## Implemented contract under verification
+
+See [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md) for
+passage API ordering/scoping, stored ordinal versus fetch position, final
+context assembly and conservative budget semantics. Local mechanics evidence
+and remaining acceptance are in the [verification record](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md).

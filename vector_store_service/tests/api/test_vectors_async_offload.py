@@ -146,4 +146,6 @@ class TestVectorRoutesPreserveSemantics:
         result = asyncio.run(search_by_document(request, store=store))
 
         assert result["results"][0]["document_id"] == "d1"
-        store.get_chunks_by_document_id.assert_called_once_with("d1", 3)
+        store.get_chunks_by_document_id.assert_called_once_with(
+            "d1", 3, query_vector=None, ingestion_id=None, repo_id=None,
+        )

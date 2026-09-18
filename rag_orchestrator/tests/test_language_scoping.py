@@ -76,6 +76,10 @@ def _run_hybrid_with_empty_store(monkeypatch, language=None):
     search_payloads = []
 
     def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
         if request.url.path == "/v1/vectors/search":
             search_payloads.append(json.loads(request.content))
         return httpx.Response(200, json={"results": []})
@@ -105,6 +109,7 @@ def test_seed_search_is_language_scoped(monkeypatch, language):
     payloads = _run_hybrid_with_empty_store(monkeypatch, language=language)
 
     assert payloads[0]["metadata_filter"] == {
+        "ingestion_id": "generation-1",
         "source_type": "code",
         "repo_id": "repo-x",
         "language": language,
@@ -118,6 +123,7 @@ def test_seed_search_has_no_language_key_when_omitted(monkeypatch):
     payloads = _run_hybrid_with_empty_store(monkeypatch, language=None)
 
     assert payloads[0]["metadata_filter"] == {
+        "ingestion_id": "generation-1",
         "source_type": "code",
         "repo_id": "repo-x",
     }
@@ -130,7 +136,9 @@ def test_fallback_keeps_language_scope(monkeypatch):
     # empty first response triggers the fallback retry
     assert len(payloads) == 2
     fallback_filter = payloads[1]["metadata_filter"]
-    assert fallback_filter == {"repo_id": "repo-x", "language": "python"}
+    assert fallback_filter == {
+        "repo_id": "repo-x", "language": "python", "ingestion_id": "generation-1",
+    }
     assert "source_type" not in fallback_filter
 
 
@@ -141,5 +149,7 @@ def test_fallback_has_no_language_key_when_omitted(monkeypatch):
 
     assert len(payloads) == 2
     fallback_filter = payloads[1]["metadata_filter"]
-    assert fallback_filter == {"repo_id": "repo-x"}
+    assert fallback_filter == {
+        "repo_id": "repo-x", "ingestion_id": "generation-1",
+    }
     assert "language" not in fallback_filter

@@ -47,6 +47,7 @@ class SimpleRAGQuery(BaseModel):
     rerank: Optional[bool] = None
 
 class SimpleRAGResponse(BaseModel):  # Updated name
+    final_context_manifest: List[Dict[str, Any]] = []
     answer: str
     sources: List[str]
     # WP-M5: which model actually answered (incl. WP-M2 fallbacks)

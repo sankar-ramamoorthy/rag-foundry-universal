@@ -3,6 +3,7 @@
 
 import asyncio
 import logging
+import re
 import uuid
 from dataclasses import dataclass
 from typing import List, Optional, Callable, Dict, Any, Set, cast
@@ -23,10 +24,10 @@ from shared.retrieval.retrieval_plan import (
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
 from rag_orchestrator.src.retrieval.agent_adapter import (
     build_final_context_manifest,
-    build_labeled_context,
+    assemble_context,
+    conservative_token_count,
     build_sources,
     prepare_chunks_for_agent,
-    select_chunks_within_token_budget,
 )
 from rag_orchestrator.src.retrieval.types import RetrievedChunk
 from src.core.reranker import rerank_chunks
@@ -229,6 +230,15 @@ def _rank_expanded_canonical_ids(
     candidates = execute_traversals_from_seeds_detailed(
         graph, seed_canonical_ids, strategies
     )
+    # Preserve relation priority; within a relation prefer query-matching
+    # symbols over arbitrary alphabetical truncation under the document cap.
+    terms = set(re.findall(r"[a-z0-9]+", query.lower()))
+    candidates.sort(key=lambda candidate: (
+        candidate.strategy_index,
+        -len(terms & set(re.findall(
+            r"[a-z0-9]+", candidate.node.canonical_id.lower(),
+        ))),
+    ))
     expanded_ranked: List[str] = []
     relation_type_by_cid: Dict[str, str] = {}
     source_seed_by_cid: Dict[str, str] = {}
@@ -244,6 +254,10 @@ def _rank_expanded_canonical_ids(
 
 async def _fetch_expanded_doc_chunks(
     expanded_doc_ids: List[str],
+    *,
+    query_embedding: Optional[List[float]] = None,
+    repo_id: Optional[str] = None,
+    ingestion_id: Optional[str] = None,
 ) -> List[tuple[str, List[Dict[str, Any]]]]:
     """
     Fetch chunks for the capped expanded docs concurrently (bounded by
@@ -264,6 +278,9 @@ async def _fetch_expanded_doc_chunks(
                         json={
                             "document_id": doc_id,
                             "k": settings.EXPANDED_DOC_CHUNKS,
+                            "query_vector": query_embedding,
+                            "repo_id": repo_id,
+                            "ingestion_id": ingestion_id,
                         },
                     )
                     if resp.status_code == 200:
@@ -300,10 +317,9 @@ def _add_chunks(
             score=r.get("score"),
             metadata=metadata,
             canonical_id=canonical_id_from_metadata(metadata) or None,
-            # WP-T1c: position within this results list -- the ordered
-            # /search-by-doc response for expanded docs, or a
-            # single-item list per seed chunk.
-            chunk_index=index,
+            # Preserve persisted identity; fetch order is separate provenance.
+            chunk_index=metadata.get("chunk_index"),
+            fetch_position=index,
             # Issue #142: for the doc-type-aware seed tie-break.
             doc_type=doc_type_from_metadata(metadata),
         )
@@ -415,6 +431,32 @@ def _seed_search_k(top_k: int, settings) -> int:
     return max(top_k, settings.DOC_TYPE_TIE_BREAK_SEED_POOL_SIZE)
 
 
+async def _query_generation(repo_id: str) -> str:
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/generation"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+    except httpx.HTTPError as exc:
+        raise HTTPException(503, "Repository generation unavailable; retry") from exc
+    generation = data.get("ingestion_id")
+    if data.get("generation_status") != "ready" or not generation:
+        raise HTTPException(503, "Repository is not ready; retry")
+    return str(generation)
+
+
+async def _verify_generation(repo_id: str, expected: str) -> None:
+    if await _query_generation(repo_id) != expected:
+        raise HTTPException(409, "Repository generation changed; retry")
+
+
+def _sort_passages(chunks_by_document: Dict[str, List[RetrievedChunk]]) -> None:
+    for chunks in chunks_by_document.values():
+        chunks.sort(key=lambda c: (-(c.score or 0.0), c.chunk_id))
+
+
 async def hybrid_retrieve(
     query: str,
     repo_id: str,
@@ -456,7 +498,10 @@ async def hybrid_retrieve(
     logger.info(f"🔄 Hybrid retrieval | repo={repo_id[:8]} | q='{query[:50]}...'")
 
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
-    seed_filter: Dict[str, Any] = {"source_type": "code", "repo_id": repo_id}
+    generation_id = await _query_generation(repo_id)
+    seed_filter: Dict[str, Any] = {
+        "source_type": "code", "repo_id": repo_id, "ingestion_id": generation_id,
+    }
     if language:
         seed_filter["language"] = language
     seed_k = _seed_search_k(top_k, settings)
@@ -472,7 +517,9 @@ async def hybrid_retrieve(
             # sparsely-populated scope silently answer from outside it
             # (issue #30 Part 1; WP-L6a extends the same reasoning to
             # language).
-            fallback_filter: Dict[str, Any] = {"repo_id": repo_id}
+            fallback_filter: Dict[str, Any] = {
+                "repo_id": repo_id, "ingestion_id": generation_id,
+            }
             if language:
                 fallback_filter["language"] = language
             payload["metadata_filter"] = fallback_filter
@@ -569,15 +616,15 @@ async def hybrid_retrieve(
         expanded_docs_used=len(expanded_doc_ids),
     )
 
-    fetched = await _fetch_expanded_doc_chunks(expanded_doc_ids)
-    # WP-T1c: chunk indices requested (always range(EXPANDED_DOC_CHUNKS),
-    # the k passed to /search-by-doc) vs. actually returned (post
-    # cross-document chunk_id dedup, so a chunk already seen as a seed or
-    # via another expanded doc is excluded here even if the store
-    # returned it).
-    chunks_requested_by_document: Dict[str, List[int]] = {
-        doc_id: list(range(settings.EXPANDED_DOC_CHUNKS)) for doc_id in expanded_doc_ids
-    }
+    passage_doc_ids = list(retrieved_chunks_by_document) + expanded_doc_ids
+    fetched = await _fetch_expanded_doc_chunks(
+        passage_doc_ids, query_embedding=query_embedding, repo_id=repo_id,
+        ingestion_id=generation_id,
+    )
+    # Requests specify a count, not stored ordinal ranges.
+    chunks_requested_by_document = dict.fromkeys(
+        passage_doc_ids, settings.EXPANDED_DOC_CHUNKS,
+    )
     chunks_returned_by_document: Dict[str, List[int]] = {}
     for doc_id, doc_results in fetched:
         added = _add_chunks(
@@ -586,6 +633,7 @@ async def hybrid_retrieve(
         chunks_returned_by_document[doc_id] = [
             c.chunk_index for c in added if c.chunk_index is not None
         ]
+    _sort_passages(retrieved_chunks_by_document)
     _log_stage(
         trace_id,
         "chunks.fetch.completed",
@@ -602,7 +650,10 @@ async def hybrid_retrieve(
         retrieved_chunks_by_document=retrieved_chunks_by_document,
     )
 
+    await _verify_generation(repo_id, generation_id)
+
     retrieval_plan_dict = {
+        "generation_id": generation_id,
         # WP-T1b: one ID connecting every stage-event log line above for
         # this request.
         "trace_id": trace_id,
@@ -721,6 +772,7 @@ async def run_rag(
     retrieved_context = execute_retrieval_plan(
         plan=plan,
         retrieved_chunks_by_document=retrieved_chunks_by_document,
+        top_k_per_document=max_chunks_per_doc,
         debug=True,
     )
 
@@ -736,6 +788,8 @@ async def run_rag(
         debug=True,
     )
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
+
+    chunk_limited_document_ids = {str(c["document_id"]) for c in agent_chunks}
 
     # WP-S8: optional cross-encoder reranker, off by default. `rerank`
     # (per-request) overrides settings.RERANK_ENABLED when explicitly
@@ -762,19 +816,19 @@ async def run_rag(
     #      limits -- this is `agent_chunks` as-is.
     #   2. reaches_final_context: of those, which also survive
     #      build_labeled_context's token-budget truncation.
-    chunk_limited_document_ids = {
-        cast(str, c["document_id"]) for c in agent_chunks
-    }
+    reranked_document_ids = {str(c["document_id"]) for c in agent_chunks}
     _log_stage(
         trace_id,
         "chunks.limit.applied",
         agent_chunks=len(agent_chunks),
         documents=len(chunk_limited_document_ids),
     )
-    tokens_before_budget = sum(len(str(c["text"]).split()) for c in agent_chunks)
-    chunks_in_final_context = select_chunks_within_token_budget(
-        agent_chunks, max_total_tokens
-    )
+    tokens_before_budget = assemble_context(agent_chunks, 2**63).token_count
+    context_budget = min(max_total_tokens, max(0, settings.CONTEXT_WINDOW_TOKENS
+        - settings.PROMPT_RESERVE_TOKENS - settings.OUTPUT_RESERVE_TOKENS
+        - conservative_token_count(query)))
+    assembled = assemble_context(agent_chunks, context_budget)
+    chunks_in_final_context = assembled.chunks
     final_context_document_ids = {
         cast(str, c["document_id"]) for c in chunks_in_final_context
     }
@@ -792,10 +846,13 @@ async def run_rag(
             evidence_trace_partial,
             chunk_limited_document_ids,
             final_context_document_ids,
+            reranked_document_ids=reranked_document_ids,
         )
 
     # Token budget
-    context_str, token_count = build_labeled_context(agent_chunks, max_total_tokens)
+    context_str, token_count = assembled.text, assembled.token_count
+    retrieval_plan_dict["token_count_method"] = "utf8_bytes_upper_estimate"
+    retrieval_plan_dict["context_budget"] = context_budget
     retrieval_plan_dict["tokens_before_budget"] = tokens_before_budget
     retrieval_plan_dict["tokens_after_budget"] = token_count
     logger.info(f"Final context: ~{token_count} tokens from {len(agent_chunks)} chunks")
@@ -837,7 +894,7 @@ async def run_rag(
     )
 
     # Issue #30 Part 4: canonical IDs / paths, deduplicated, seeds first
-    sources = build_sources(agent_chunks)
+    sources = build_sources(chunks_in_final_context)
 
     _log_stage(
         trace_id,

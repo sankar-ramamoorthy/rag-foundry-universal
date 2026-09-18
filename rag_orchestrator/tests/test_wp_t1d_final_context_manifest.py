@@ -38,6 +38,10 @@ def _build_graph():
 class FakeBackend:
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        if path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
 
         if path == "/v1/vectors/search":
             return httpx.Response(
@@ -67,6 +71,8 @@ class FakeBackend:
 
         if path == "/v1/vectors/search-by-doc":
             doc_id = json.loads(request.content)["document_id"]
+            if doc_id == "module-doc":
+                return httpx.Response(200, json={"results": []})
             return httpx.Response(
                 200,
                 json={
@@ -75,7 +81,9 @@ class FakeBackend:
                             "chunk_id": f"chunk-of-{doc_id}",
                             "text": "helper implementation text",
                             "score": 0.5,
-                            "metadata": {"canonical_id": "helper.py#helper"},
+                            "metadata": {
+                                "canonical_id": "helper.py#helper", "chunk_index": 17,
+                            },
                         }
                     ]
                 },
@@ -132,7 +140,7 @@ def test_final_context_manifest_lists_seed_and_expanded_entries(monkeypatch):
         "expanded via DEFINES from module-doc"
     )
     assert by_doc["helper-doc"]["canonical_id"] == "helper.py#helper"
-    assert by_doc["helper-doc"]["chunk_index"] == 0
+    assert by_doc["helper-doc"]["chunk_index"] == 17
 
 
 def test_manifest_entries_have_char_and_token_counts(monkeypatch):

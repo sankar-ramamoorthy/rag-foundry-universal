@@ -130,6 +130,10 @@ def _run_hybrid_capturing_search_payloads(monkeypatch, top_k: int):
     search_payloads = []
 
     def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/generation"):
+            return httpx.Response(200, json={
+                "ingestion_id": "generation-1", "generation_status": "ready",
+            })
         if request.url.path == "/v1/vectors/search":
             search_payloads.append(json.loads(request.content))
         return httpx.Response(200, json={"results": []})
