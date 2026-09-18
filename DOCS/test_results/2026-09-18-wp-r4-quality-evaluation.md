@@ -201,8 +201,9 @@ disclosed review item), not a regression to fix.
 No demonstrated failure meets the "fix only failures demonstrated by
 validation" bar from a code-defect standpoint — everything found is
 either a pre-existing gap (`limits`) or the correct, specified behavior
-of the new stricter budget (`chain`). The one substantive follow-up
-worth opening as its own issue, not blocking this merge: **the default
+of the new stricter budget (`chain`). The one substantive follow-up,
+filed as [#194](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/194),
+not blocking this merge: **the default
 `CONTEXT_WINDOW_TOKENS`/`max_total_tokens=4096` combination may be too
 tight for questions whose legitimate candidate set is large** (`chain`'s
 was 24,004 bytes before budgeting) — a tuning question, separate from
