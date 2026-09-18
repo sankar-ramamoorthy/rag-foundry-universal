@@ -19,8 +19,9 @@ snapshot of what's currently shipped, in progress, and known-broken —
 language/codebase-graph support, RAG quality evaluation results, and
 known issues. `README.md` links here rather than embedding ADR/issue/PR
 numbers itself. Not to be confused with `DOCS/log.md` (documentation-
-structure governance) or `../status/` (an abandoned dated-snapshot
-convention, see "Historical" below).
+structure governance) or the old top-level `status/` directory (an
+abandoned dated-snapshot convention, archived 2026-09-18 — see
+"Historical" below).
 
 ## Documentation Standard
 
@@ -132,7 +133,15 @@ this-repo decision records):
 
 ## Historical (non-authoritative)
 
-`../docs-archive/`, `../status/` — do not treat as current source of truth.
+`../docs-archive/` — do not treat as current source of truth, including
+its `status-snapshots-2025-2026/` subdirectory (dated pre-rename project
+notes, formerly a top-level `status/` directory — consolidated 2026-09-18
+since it had been untouched since the repository's first commit and
+duplicated `DOCS/status.md`'s purpose).
 [[../README_VISION|README_VISION.md]] — March 2026 external vision/design-intent
 writeup, now annotated (2026-08-27) distinguishing what shipped from what's
 still only envisioned; not a current-state reference.
+
+For **current** project status, see [`status.md`](/DOCS/status.md) above
+this section — it's the single, continuously-updated status document;
+nothing else in the repo should be treated as an alternative to it.

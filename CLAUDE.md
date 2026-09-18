@@ -86,11 +86,14 @@ new or substantially-edited knowledge-bearing docs under `DOCS/` follow
 `DOCS/standards/okf-documentation.md` (OKF v0.2-based frontmatter +
 linking). Summary:
 
+- `DOCS/status.md` — the single, continuously-updated current-state
+  snapshot (shipped/in-progress/known-broken). Update it in place; never
+  create a dated copy. `README.md` links here rather than embedding
+  ADR/issue/PR detail itself.
 - `DOCS/adr/` — architecture decision records; check each ADR's status before relying on it, and read the relevant one before changing graph/identity/embedding/persistence behavior.
 - `DOCS/audit/` — codebase audit findings, scalability/platform/LLM-provider plans, and the roadmap; start at `DOCS/audit/00-Audit-Overview.md`.
 - `DOCS/architecture/` — diagrams and deep-dives (e.g. codebase ingestion flow, repo query ASCII flow, extraction hierarchy model).
 - `DOCS/proposals/` — process/tooling proposals under discussion (not yet binding).
 - `DOCS/test_results/` — benchmark/verification evidence tied to specific audit findings.
 - `DOCS/notes/` — ad hoc working notes.
-- `docs-archive/` — superseded design docs from earlier project phases (`rag-foundry`, `docgraph`) — historical context only, not current source of truth.
-- `status/` — dated snapshots of project status; useful for recent history but not authoritative for current behavior (check code/ADRs first).
+- `docs-archive/` — superseded design docs from earlier project phases (`rag-foundry`, `docgraph`, and pre-rename dated status snapshots under `status-snapshots-2025-2026/`) — historical context only, not current source of truth.

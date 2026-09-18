@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-09-16
+date: 2026-09-18
 type: status
 status: current
 tags: [status, overview]
@@ -14,10 +14,13 @@ related:
 
 Single evolving snapshot of what's currently shipped, in progress, and
 known-broken. **Update this file in place** on substantial changes —
-don't create a dated copy of it (that's the abandoned `status/`
-directory convention; see `DOCS/index.md`'s "Historical" section) and
-don't confuse it with [`DOCS/log.md`](/DOCS/log.md), which tracks
-documentation-*structure* governance changes, not feature/project status.
+don't create a dated copy of it (that was the old top-level `status/`
+directory convention, archived 2026-09-18 into
+`docs-archive/status-snapshots-2025-2026/` since it had been abandoned
+since the repository's first commit; see `DOCS/index.md`'s "Historical"
+section) and don't confuse it with [`DOCS/log.md`](/DOCS/log.md), which
+tracks documentation-*structure* governance changes, not feature/project
+status.
 
 This is where ADR/issue/PR-numbered detail belongs — `README.md` links
 here rather than embedding it, so the README stays a stable reference
@@ -55,8 +58,6 @@ behavior, not a defect) — see
 [mechanics](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md) and
 [quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md).
 No production/deployment validation is claimed (separate #171 gate).
-
-
 
 - The WP-Q0 baseline (issue #49; full evidence in
   [`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`](/DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md))
@@ -97,6 +98,16 @@ No production/deployment validation is claimed (separate #171 gate).
   comparisons accounting for issue #150's recall fix.
 
 ## Known issues
+
+**Production-correctness track (WP-R1–R8) is substantially closed.**
+R1/#160, R2/#161, R3/#166, R4/#167, R5/#168, R6/#169, and R7/#170 are all
+merged to main; only R8/#171 (full pinned-lifecycle Linux validation) and
+two narrow follow-ups (#176 post-delete ANN, #191 migration-gate
+tooling) remain open. Full per-item detail is below, kept for its
+issue/PR-numbered evidence trail. **What comes next is tracked as a new
+roadmap tranche, not restated here** — see
+[`07-Roadmap.md`'s Phase 6](/DOCS/audit/07-Roadmap.md#phase-6--repository-intelligence-and-incremental-ingestion-foundation)
+and issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208).
 
 - The [September 16 architecture audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
   identifies production blockers now tracked as

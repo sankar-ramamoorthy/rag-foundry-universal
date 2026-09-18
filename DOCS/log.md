@@ -18,6 +18,20 @@ Ollama (which failed four times on real-PostgreSQL crashes, a
 misconfigured service URL, embedding timeouts, and a memory-pressure
 process kill) to the Tailscale-reachable production Ollama.
 
+Added a new Phase 6 roadmap tranche to
+[`07-Roadmap.md`](/DOCS/audit/07-Roadmap.md) (13 prioritized issues,
+#196-#208) superseding `spec.md`'s old "blue-star work remains deferred"
+placeholder.
+
+Consolidated project-status tracking to a single location: archived the
+top-level `status/` directory (10 dated pre-rename snapshot files,
+untouched since the repository's first commit) into
+`docs-archive/status-snapshots-2025-2026/`. `DOCS/status.md` was already
+documented as the single continuously-updated status doc (see the
+2026-09-14 entry below); this closes the gap between that stated intent
+and the file tree. Updated `CLAUDE.md`'s documentation map and
+`DOCS/index.md`'s Status/Historical sections accordingly.
+
 ## 2026-09-17
 
 Added proposed [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)
