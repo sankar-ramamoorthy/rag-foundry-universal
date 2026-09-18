@@ -401,6 +401,41 @@ def generation_config_versions(
         return tuple(row) if row is not None else (None, None)
 
 
+def generation_lineage(ingestion_id: str) -> Dict:
+    """Snapshot lineage for a single generation (issue #196, T032):
+    {commit_sha, ingested_at, parent_generation_id, is_incremental}.
+
+    Returns all-None/False if the row is missing. Callers gate this on
+    generation_status == "completed" (contracts/repo-generation-lineage.md)
+    -- this function itself does not check status.
+    """
+    with SessionLocal() as session:
+        row = (
+            session.query(
+                IngestionRequest.commit_sha,
+                IngestionRequest.finished_at,
+                IngestionRequest.parent_generation_id,
+                IngestionRequest.is_incremental,
+            )
+            .filter(IngestionRequest.ingestion_id == ingestion_id)
+            .one_or_none()
+        )
+        if row is None:
+            return {
+                "commit_sha": None, "ingested_at": None,
+                "parent_generation_id": None, "is_incremental": False,
+            }
+        commit_sha, ingested_at, parent_generation_id, is_incremental = row
+        return {
+            "commit_sha": commit_sha,
+            "ingested_at": ingested_at,
+            "parent_generation_id": (
+                str(parent_generation_id) if parent_generation_id else None
+            ),
+            "is_incremental": bool(is_incremental),
+        }
+
+
 def get_document_nodes_by_canonical_ids(
     repo_id: str,
     canonical_ids: List[str],

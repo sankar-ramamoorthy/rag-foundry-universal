@@ -105,13 +105,23 @@ class StatusManager:
         request.embedding_config_version = embedding_config_version
         self._session.commit()
 
-    def record_is_incremental(self, ingestion_id: UUID, is_incremental: bool) -> None:
-        """Issue #196 (T026): record whether FR-004's reuse classification
-        actually ran for this generation, once the run completes.
+    def record_completion_lineage(
+        self,
+        ingestion_id: UUID,
+        *,
+        is_incremental: bool,
+        commit_sha: str | None = None,
+    ) -> None:
+        """Issue #196 (T026/T030/T031): record lineage fields only known
+        once the run has (almost) completed -- whether FR-004's reuse
+        classification actually ran, and the resolved source commit SHA
+        for a git-backed ingestion (None for local_path, R5).
         """
         request = self._get_request(ingestion_id)
         self._require_active(request)
         request.is_incremental = is_incremental
+        if commit_sha is not None:
+            request.commit_sha = commit_sha
         self._session.commit()
 
     @staticmethod

@@ -83,6 +83,12 @@ class RepoGenerationResponse(BaseModel):
     repo_id: str
     ingestion_id: Optional[str] = None
     generation_status: str
+    # Issue #196 (T032, contracts/repo-generation-lineage.md): snapshot
+    # lineage, populated only when generation_status == "completed".
+    commit_sha: Optional[str] = None
+    ingested_at: Optional[datetime] = None
+    parent_generation_id: Optional[str] = None
+    is_incremental: bool = False
 
 
 @router.get("/repos/{repo_id}/generation", response_model=RepoGenerationResponse)
@@ -94,11 +100,22 @@ async def get_repo_generation(repo_id: str):
     (GET /v1/graph/repos/{repo_id}) just to find out. Backed by the same
     db_utils.resolve_current_generation/generation_status logic #166 added,
     which is a single indexed lookup, not a full node/relationship export.
+
+    Issue #196: also surfaces snapshot lineage (commit_sha, ingested_at,
+    parent_generation_id, is_incremental) for the current generation, only
+    when it is actually "completed" -- resolve_current_generation already
+    returns None otherwise, so lineage naturally stays unpopulated for a
+    repo with no stable generation to describe.
     """
     ingestion_id = db_utils.resolve_current_generation(repo_id)
     status = db_utils.generation_status(repo_id)
+    lineage = (
+        db_utils.generation_lineage(ingestion_id) if ingestion_id is not None
+        else {}
+    )
     return RepoGenerationResponse(
         repo_id=repo_id, ingestion_id=ingestion_id, generation_status=status,
+        **lineage,
     )
 
 

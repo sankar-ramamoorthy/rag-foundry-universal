@@ -80,6 +80,9 @@ def test_unknown_repo_reports_unknown(client, repo_id):
     body = response.json()
     assert body == {
         "repo_id": repo_id, "ingestion_id": None, "generation_status": "unknown",
+        # Issue #196: lineage fields stay unpopulated with no generation.
+        "commit_sha": None, "ingested_at": None,
+        "parent_generation_id": None, "is_incremental": False,
     }
 
 
