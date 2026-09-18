@@ -338,11 +338,17 @@ def _background_ingest_repo(
             )
         )
 
+        # T030 (#196/R5): resolved only for a git-backed ingestion; stays
+        # None for local_path (spec Non-Goals -- non-git sources are out
+        # of scope for commit identity).
+        commit_sha: str | None = None
         if git_url:
             import git  # GitPython
             temp_dir = tempfile.mkdtemp()
             logger.debug(f"Cloning {git_url} into {temp_dir}")
-            git.Repo.clone_from(git_url, temp_dir)
+            cloned = git.Repo.clone_from(git_url, temp_dir)
+            commit_sha = cloned.head.commit.hexsha
+            cloned.close()  # release the git process/pack-file handles
             repo_path = temp_dir
         else:
             repo_path = str(Path(local_path).resolve())
@@ -396,9 +402,12 @@ def _background_ingest_repo(
             f"({skipped_missing} nodes had no DB record)"
         )
 
-        # T026 (#196): record whether reuse classification actually ran,
-        # before the terminal status transition.
-        StatusManager(session).record_is_incremental(ingestion_id, is_incremental)
+        # T026/T030/T031 (#196): record whether reuse classification
+        # actually ran and the resolved commit SHA, before the terminal
+        # status transition.
+        StatusManager(session).record_completion_lineage(
+            ingestion_id, is_incremental=is_incremental, commit_sha=commit_sha,
+        )
         StatusManager(session).mark_completed(ingestion_id)
         logger.info(f"✅ Repo ingestion completed: {ingestion_id}")
 
@@ -439,7 +448,18 @@ def _background_ingest_repo(
 
     finally:
         if temp_dir:
-            shutil.rmtree(temp_dir)
+            try:
+                shutil.rmtree(temp_dir)
+            except OSError:
+                # A lingering git-process/pack-file handle (observed on
+                # Windows) must not mask an otherwise-successful ingestion
+                # by raising out of this finally block -- best-effort,
+                # matches the superseded-generation cleanup pattern above.
+                logger.warning(
+                    f"[{ingestion_id}] Could not remove temp clone dir "
+                    f"{temp_dir}; leaving it for OS temp cleanup",
+                    exc_info=True,
+                )
         session.close()
 
 

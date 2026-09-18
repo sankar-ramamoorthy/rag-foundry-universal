@@ -165,19 +165,39 @@ queryable via the existing generation endpoint.
 
 ### Tests for User Story 2
 
-- [ ] T027 [P] [US2] Contract test in `ingestion_service/tests/api/test_repo_generation_lineage.py`: response shape matches `contracts/repo-generation-lineage.md` — `commit_sha`, `ingested_at`, `parent_generation_id`, `is_incremental` present and `None`/`false`-appropriate for a repo's first-ever (non-incremental) generation.
-- [ ] T028 [P] [US2] Same file: for a git-backed ingestion, `commit_sha` matches the fixture repo's actual resolved HEAD SHA at clone time (not a placeholder).
-- [ ] T029 [P] [US2] Same file: for a `local_path` ingestion, `commit_sha` is `None` (spec Non-Goals — non-git sources out of scope for commit identity).
+- [X] T027 [P] [US2] Contract test in `ingestion_service/tests/api/test_repo_generation_lineage.py`: response shape matches `contracts/repo-generation-lineage.md` — `commit_sha`, `ingested_at`, `parent_generation_id`, `is_incremental` present and `None`/`false`-appropriate for a repo's first-ever (non-incremental) generation.
+- [X] T028 [P] [US2] Same file: for a git-backed ingestion, `commit_sha` matches the fixture repo's actual resolved HEAD SHA at clone time (not a placeholder).
+- [X] T029 [P] [US2] Same file: for a `local_path` ingestion, `commit_sha` is `None` (spec Non-Goals — non-git sources out of scope for commit identity).
 
 ### Implementation for User Story 2
 
-- [ ] T030 [US2] In `_background_ingest_repo` (`codebase_ingest.py`), immediately after `git.Repo.clone_from(git_url, temp_dir)`, resolve `git.Repo(temp_dir).head.commit.hexsha` (research.md R5). Leave `commit_sha` unset for `local_path` ingestions.
-- [ ] T031 [US2] Thread the resolved `commit_sha`, and (from Phase 3's T020) `parent_generation_id`/`is_incremental`, through to wherever ingestion completion is recorded (alongside the existing `StatusManager` completion call) so they land on the `ingestion_requests` row. Depends on T030, T002, T020.
-- [ ] T032 [US2] Extend `RepoGenerationResponse` and `get_repo_generation` in `ingestion_service/src/api/v1/repos.py` with `commit_sha`, `ingested_at`, `parent_generation_id`, `is_incremental`, populated only when `generation_status == "completed"`, per `contracts/repo-generation-lineage.md`. Depends on T031.
+- [X] T030 [US2] In `_background_ingest_repo` (`codebase_ingest.py`), immediately after `git.Repo.clone_from(git_url, temp_dir)`, resolve `git.Repo(temp_dir).head.commit.hexsha` (research.md R5). Leave `commit_sha` unset for `local_path` ingestions.
+- [X] T031 [US2] Thread the resolved `commit_sha`, and (from Phase 3's T020) `parent_generation_id`/`is_incremental`, through to wherever ingestion completion is recorded (alongside the existing `StatusManager` completion call) so they land on the `ingestion_requests` row. Depends on T030, T002, T020.
+- [X] T032 [US2] Extend `RepoGenerationResponse` and `get_repo_generation` in `ingestion_service/src/api/v1/repos.py` with `commit_sha`, `ingested_at`, `parent_generation_id`, `is_incremental`, populated only when `generation_status == "completed"`, per `contracts/repo-generation-lineage.md`. Depends on T031.
 
 **Checkpoint**: User Stories 1 AND 2 both work independently — lineage
 is recorded and queryable regardless of whether Phase 3's reuse path
 was exercised.
+
+**Implementation notes**:
+- `db_utils.generation_status()` returns the established ADR-051
+  vocabulary (`ready`/`building`/`failed`/`unknown`), never the literal
+  string `"completed"` — the contract's "populated only when
+  generation_status == completed" is satisfied by gating on
+  `resolve_current_generation(repo_id) is not None` (already exactly
+  the "ready" condition), not a string comparison against `"completed"`.
+- `StatusManager.record_is_incremental` (Phase 3) was extended in place
+  to `record_completion_lineage(..., is_incremental=..., commit_sha=...)`
+  rather than adding a second near-duplicate completion-time write.
+- Found and fixed a real, independent bug while writing T028's git-backed
+  test: `_background_ingest_repo`'s `finally` block called
+  `shutil.rmtree(temp_dir)` unguarded — a lingering git-process/pack-file
+  handle (observed on Windows; not exercised by any prior test since none
+  used a real `git_url` clone) raised `PermissionError` there, which
+  would propagate out of the *whole* worker and could mark an otherwise-
+  successfully-completed ingestion as failed. Now caught and logged,
+  matching the existing best-effort cleanup pattern already used for
+  superseded-generation cleanup in the same function.
 
 ---
 
