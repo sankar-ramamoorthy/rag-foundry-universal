@@ -165,6 +165,19 @@ class EvidenceRequest(BaseModel):
     explanation_query: Optional[str] = None
     provider: Optional[str] = None
     model: Optional[str] = None
+    # Issue #200 (Stage C, follow-up to #199): TRACE/IMPACT only, rejected
+    # for ORIENT. Omitted (default) -> no authority assessment computed,
+    # response identical to before this field existed. See
+    # evidence_authority.py; never gates or replaces the mechanical
+    # `assessment`.
+    claim_type: Optional[
+        Literal[
+            "implemented_behavior",
+            "design_rationale",
+            "test_contract",
+            "repository_overview",
+        ]
+    ] = None
 
 
 class EvidenceItemModel(BaseModel):
@@ -196,6 +209,24 @@ class EvidenceStepModel(BaseModel):
     outcome: str
 
 
+class AuthorityFindingModel(BaseModel):
+    canonical_id: Optional[str] = None
+    chunk_id: Optional[str] = None
+    concerns: List[str]
+
+
+class AuthorityAssessmentModel(BaseModel):
+    policy_version: str
+    claim_type: Optional[str] = None
+    status: Literal[
+        "authority_qualified",
+        "authority_unqualified",
+        "authority_unknown",
+        "not_evaluated",
+    ]
+    findings: List[AuthorityFindingModel]
+
+
 class EvidenceResponse(BaseModel):
     repo_id: str
     mode: str
@@ -203,3 +234,4 @@ class EvidenceResponse(BaseModel):
     steps: List[EvidenceStepModel]
     stop_reason: str
     explanation: Optional[ExplanationModel] = None
+    authority: Optional[AuthorityAssessmentModel] = None

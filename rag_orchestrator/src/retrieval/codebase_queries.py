@@ -18,10 +18,20 @@ class Node:
     Represents a single artifact node in the graph.
     """
 
-    def __init__(self, canonical_id: str, file_path: str, lineno: Optional[int] = None):
+    def __init__(
+        self,
+        canonical_id: str,
+        file_path: str,
+        lineno: Optional[int] = None,
+        provenance: Optional[dict] = None,
+    ):
         self.canonical_id = canonical_id
         self.file_path = file_path
         self.lineno = lineno
+        # Issue #199 (ADR-053, Stage C prerequisite): transport only, from
+        # the graph API's GraphNode.provenance. None for a pre-B1 row or a
+        # Node constructed without it (e.g. every existing test fixture).
+        self.provenance = provenance
         self.out_edges: Dict[str, Set["Node"]] = defaultdict(
             set
         )  # relation_type -> set of target nodes
@@ -332,6 +342,7 @@ def load_graph_for_repo(repo_id: str) -> CodebaseGraph:
             canonical_id=node["canonical_id"],
             file_path=node.get("relative_path"),
             lineno=node.get("lineno"),
+            provenance=node.get("provenance"),
         )
         graph.add_node(new_node)
 

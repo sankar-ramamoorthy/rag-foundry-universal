@@ -383,8 +383,36 @@ composite score).
 - **Not yet done**: a fuller B3 pass against a fixture/test/design-rich
   corpus (production already has the full self-repo ingested, which
   would exercise every rule — this pass used only the small local
-  `shared/` corpus). Stage C (`#200` authority-aware sufficiency)
-  should wait for that fuller pass, not start from this alone.
+  `shared/` corpus).
+
+## Stage C: authority-aware sufficiency (`#200` follow-up to `#199`) — done, scoped
+
+Reuses Stage B3's exact rules (no new policy) applied to TRACE/IMPACT
+evidence instead of `/v1/rag`'s manifest. Closed a real prerequisite gap
+first: Stage B2 only transported provenance into the vector-retrieval
+path, not the separate in-memory graph TRACE/IMPACT/ORIENT consume —
+`GraphNode` (ingestion_service) and `Node` (rag_orchestrator) both gained
+a `provenance` field, mirroring B2's pattern, no new I/O added.
+
+`evidence_authority.py::assess_authority` is opt-in via `claim_type` on
+`POST /v1/repos/{repo_id}/evidence` (TRACE/IMPACT only; ORIENT rejects
+it, 400 — its facets aren't individually-sourced artifacts this model
+attaches to). Never gates, filters, or replaces Stage A's mechanical
+`assessment` — both are always visible together (or `authority` is
+`null` when omitted). **Live-verified, both halves of the handoff's
+exact Stage C acceptance criterion**: `smoke_repo/dogs.py#Dog` (a real
+fixture) mechanically `satisfied` but `authority_unqualified` under
+`claim_type=implemented_behavior`; the same fixture `authority_qualified`
+under `claim_type=test_contract` (an explicit, example-appropriate
+claim). See
+[test results](/DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md)
+for the full case table and explicit scope limits (only 2 of the
+handoff's 7 obligation-table rows implemented so far: subject fit,
+claim-relative role fit + declared validity for `implemented_behavior`/
+`repository_overview`; `design_rationale`/`test_contract` still have no
+rules by design). 9 new pure tests (`test_evidence_authority.py`) + 4
+new route-level tests; full `-m unit` suite (297 passed), `ruff`/
+`pyright` clean.
 
 ## Known issues
 
