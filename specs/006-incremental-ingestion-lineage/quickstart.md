@@ -16,7 +16,7 @@ Wait for `status: completed`. Then:
 GET /v1/repos/{repo_id}/generation
 ```
 
-Expect: `generation_status: "completed"`, `is_incremental: false`,
+Expect: `generation_status: "ready"`, `is_incremental: false`,
 `parent_generation_id: null`, `commit_sha` set to the fixture repo's
 resolved HEAD SHA at clone time.
 
@@ -80,7 +80,7 @@ comparisons programmatically.
 POST /v1/ingest-repo  {"git_url": "<fixture repo>", "force_full_rebuild": true}
 ```
 
-Expect: `is_incremental: false` even though a valid prior `completed`
+Expect: `is_incremental: false` even though a valid prior `ready`
 generation existed; every file re-embedded (confirm via new
 `document_id`s for every node, including files that didn't change);
 `parent_generation_id` still set to the immediately prior generation
