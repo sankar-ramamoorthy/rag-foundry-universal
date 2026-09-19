@@ -23,7 +23,12 @@ def _fixture_graph() -> CodebaseGraph:
         ("target.py#fn", "target.py"),
     ]:
         graph.add_node(Node(canonical_id=cid, file_path=path))
-    graph.add_edge("caller.py#outer", "mid.py#helper", "CALL")
+    graph.add_edge(
+        "caller.py#outer",
+        "mid.py#helper",
+        "CALL",
+        metadata={"confidence": 1.0, "call_sites": [7]},
+    )
     graph.add_edge("mid.py#helper", "target.py#fn", "CALL")
     return graph
 
@@ -56,6 +61,10 @@ def test_trace_success(monkeypatch):
     ]
     assert body["truncated"] is False
     assert body["gaps"] == []
+    # Issue #220: the first hop's edge metadata survives the HTTP layer.
+    assert body["hops"][0]["metadata"] == {"confidence": 1.0, "call_sites": [7]}
+    # The second edge was added with no metadata -- {} by default, not missing.
+    assert body["hops"][1]["metadata"] == {}
 
 
 def test_trace_404_unresolvable_start(monkeypatch):

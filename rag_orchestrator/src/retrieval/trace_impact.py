@@ -24,7 +24,7 @@ exists past that point.
 """
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from src.retrieval.codebase_queries import CodebaseGraph, Node
 
@@ -56,6 +56,11 @@ class Hop:
     hop_index: int  # BFS depth from the resolved start, 1-indexed
     relation_type: str
     parent_canonical_id: str
+    # Issue #220: confidence/call_sites/bases/etc, when the underlying
+    # edge carried relationship_metadata (CALL/IMPORTS/INHERITS all do;
+    # DEFINES never does). {} when nothing was recorded for this edge --
+    # absence of evidence, not evidence of a weak edge.
+    metadata: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -80,6 +85,11 @@ class ImpactBasis:
     relation_type: str
     hop_distance: int
     path: list[str]  # canonical_ids, start -> candidate
+    # Issue #220: the metadata of the single edge one hop away from the
+    # candidate along `path` (i.e. the edge that most directly connects
+    # this candidate to the rest of the path) -- not the whole path's
+    # evidence, just this basis's own immediate edge.
+    metadata: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -135,10 +145,12 @@ def resolve_start_symbol(
 
 
 def _record_hop(
+    graph: CodebaseGraph,
     neighbor: Node,
     relation_type: str,
     parent: Node,
     new_depth: int,
+    direction: str,
     hops: list[Hop],
     gaps: list[GapNote],
     queue: "deque[tuple[Node, int]]",
@@ -146,6 +158,15 @@ def _record_hop(
     """Append one Hop and either enqueue the neighbor for further
     expansion or, if it's an unresolved external sink, record a gap
     instead -- there's nothing further the graph knows past that node."""
+    # The directed edge actually stored by add_edge is (parent, neighbor)
+    # for a forward walk (we're following parent.out_edges), but
+    # (neighbor, parent) for a reverse walk (we're following
+    # parent.in_edges, so the real edge runs neighbor -> parent).
+    if direction == "forward":
+        edge_from, edge_to = parent.canonical_id, neighbor.canonical_id
+    else:
+        edge_from, edge_to = neighbor.canonical_id, parent.canonical_id
+
     hops.append(
         Hop(
             canonical_id=neighbor.canonical_id,
@@ -153,6 +174,7 @@ def _record_hop(
             hop_index=new_depth,
             relation_type=relation_type,
             parent_canonical_id=parent.canonical_id,
+            metadata=graph.get_edge_metadata(edge_from, edge_to, relation_type),
         )
     )
     if neighbor.canonical_id.startswith(_EXTERNAL_PREFIXES):
@@ -217,7 +239,15 @@ def traced_path(
                     break
                 visited.add(neighbor.canonical_id)
                 _record_hop(
-                    neighbor, relation_type, current_node, depth + 1, hops, gaps, queue
+                    graph,
+                    neighbor,
+                    relation_type,
+                    current_node,
+                    depth + 1,
+                    direction,
+                    hops,
+                    gaps,
+                    queue,
                 )
             if truncated:
                 break
@@ -297,6 +327,7 @@ def assess_impact(
                 relation_type=relation_type,
                 hop_distance=hop.hop_index,
                 path=_reconstruct_path(hops_by_cid, start_node.canonical_id, hop),
+                metadata=hop.metadata,
             )
             existing = candidates.get(hop.canonical_id)
             if existing is None:
