@@ -1,14 +1,29 @@
 # api.py
 
+from dataclasses import asdict
 import logging
 
 import httpx
 
-from src.api.v1.models import RAGQuery, RAGResponse, SimpleRAGQuery,SimpleRAGResponse
+from src.api.v1.models import (
+    RAGQuery,
+    RAGResponse,
+    SimpleRAGQuery,
+    SimpleRAGResponse,
+    TraceResponse,
+    ImpactResponse,
+)
 from src.core.config import get_settings
-from src.core.service import run_rag#, search_documents
+from src.core.service import run_rag  # , search_documents
 from fastapi import APIRouter, HTTPException
 from src.core.simple_service import run_simple_rag  # new - no graph
+from src.retrieval.trace_impact import (
+    AmbiguousStart,
+    assess_impact,
+    resolve_start_symbol,
+    traced_path,
+)
+
 router = APIRouter()
 
 # Set up logging configuration
@@ -17,8 +32,8 @@ logger = logging.getLogger(__name__)
 
 
 # /search endpoint to get vector search results without invoking the LLM
-#@router.post("/search")
-#async def search_endpoint(query: SearchQuery):
+# @router.post("/search")
+# async def search_endpoint(query: SearchQuery):
 #    logger.debug(f"Received search query: {query}")
 #
 #    try:
@@ -40,13 +55,13 @@ async def rag_endpoint(rag_query: RAGQuery):
 
     try:
         result = await run_rag(
-        query=rag_query.query,
-        repo_id=rag_query.repo_id,
-        top_k=rag_query.top_k,
-        provider=rag_query.provider,
-        model=rag_query.model,
-        language=rag_query.language,
-        rerank=rag_query.rerank,
+            query=rag_query.query,
+            repo_id=rag_query.repo_id,
+            top_k=rag_query.top_k,
+            provider=rag_query.provider,
+            model=rag_query.model,
+            language=rag_query.language,
+            rerank=rag_query.rerank,
         )
         return result
 
@@ -111,6 +126,90 @@ async def get_repo_orient(repo_id: str):
     raise HTTPException(502, "ingestion_service returned an unexpected error")
 
 
+@router.get("/repos/{repo_id}/trace", response_model=TraceResponse)
+async def trace_endpoint(
+    repo_id: str,
+    start: str,
+    relation_types: str = "CALL",
+    direction: str = "forward",
+    max_depth: int | None = None,
+):
+    """Issue #198: ordered, per-hop-evidenced path from a resolved
+    starting symbol -- computed fresh from the already-cached full-repo
+    graph (no vector search, no LLM, nothing persisted). Fails clearly
+    (404/409/400) rather than silently truncating or guessing."""
+    settings = get_settings()
+    if direction not in ("forward", "reverse"):
+        raise HTTPException(400, "direction must be 'forward' or 'reverse'")
+
+    effective_depth = max_depth if max_depth is not None else settings.TRACE_MAX_DEPTH
+    if effective_depth > settings.TRACE_MAX_DEPTH:
+        raise HTTPException(
+            400,
+            f"max_depth {effective_depth} exceeds the configured cap "
+            f"({settings.TRACE_MAX_DEPTH})",
+        )
+
+    from src.retrieval.codebase_utils import get_cached_graph
+
+    graph = get_cached_graph(repo_id)
+    resolved = resolve_start_symbol(graph, start)
+    if resolved is None:
+        raise HTTPException(404, f"No symbol resolves for start={start!r}")
+    if isinstance(resolved, AmbiguousStart):
+        raise HTTPException(
+            409,
+            f"start={start!r} is ambiguous; matching canonical_ids: "
+            f"{resolved.candidates}",
+        )
+
+    result = traced_path(
+        graph,
+        resolved.canonical_id,
+        relation_types={r.strip() for r in relation_types.split(",") if r.strip()},
+        direction=direction,
+        max_depth=effective_depth,
+        max_nodes=settings.TRACE_MAX_NODES,
+    )
+    return TraceResponse(repo_id=repo_id, **asdict(result))
+
+
+@router.get("/repos/{repo_id}/impact", response_model=ImpactResponse)
+async def impact_endpoint(repo_id: str, start: str, max_depth: int | None = None):
+    """Issue #198: candidate-affected-set (reverse CALL/IMPORTS/INHERITS/
+    OVERRIDES) from a resolved starting symbol -- a candidate set, not a
+    guarantee of breakage. Same fail-clearly bar as /trace."""
+    settings = get_settings()
+    effective_depth = max_depth if max_depth is not None else settings.IMPACT_MAX_DEPTH
+    if effective_depth > settings.IMPACT_MAX_DEPTH:
+        raise HTTPException(
+            400,
+            f"max_depth {effective_depth} exceeds the configured cap "
+            f"({settings.IMPACT_MAX_DEPTH})",
+        )
+
+    from src.retrieval.codebase_utils import get_cached_graph
+
+    graph = get_cached_graph(repo_id)
+    resolved = resolve_start_symbol(graph, start)
+    if resolved is None:
+        raise HTTPException(404, f"No symbol resolves for start={start!r}")
+    if isinstance(resolved, AmbiguousStart):
+        raise HTTPException(
+            409,
+            f"start={start!r} is ambiguous; matching canonical_ids: "
+            f"{resolved.candidates}",
+        )
+
+    result = assess_impact(
+        graph,
+        resolved.canonical_id,
+        max_depth=effective_depth,
+        max_candidates=settings.IMPACT_MAX_CANDIDATES,
+    )
+    return ImpactResponse(repo_id=repo_id, **asdict(result))
+
+
 @router.post("/rag/simple", response_model=SimpleRAGResponse)
 async def simple_rag_endpoint(simple_rag_query: SimpleRAGQuery):
     """Simple RAG for regular documents - no graph traversal."""
@@ -118,11 +217,11 @@ async def simple_rag_endpoint(simple_rag_query: SimpleRAGQuery):
 
     try:
         result = await run_simple_rag(
-        query=simple_rag_query.query,
-        top_k=simple_rag_query.top_k,
-        provider=simple_rag_query.provider,
-        model=simple_rag_query.model,
-        rerank=simple_rag_query.rerank,
+            query=simple_rag_query.query,
+            top_k=simple_rag_query.top_k,
+            provider=simple_rag_query.provider,
+            model=simple_rag_query.model,
+            rerank=simple_rag_query.rerank,
         )
         return result
 

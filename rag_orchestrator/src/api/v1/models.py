@@ -3,6 +3,7 @@ from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel
 
+
 class RAGQuery(BaseModel):
     query: str
     repo_id: Optional[str] = None  # NEW: Repo selection
@@ -17,6 +18,7 @@ class RAGQuery(BaseModel):
     # so the same deployment can serve an A/B comparison without a
     # redeploy.
     rerank: Optional[bool] = None
+
 
 class RAGResponse(BaseModel):  # Updated name
     answer: str
@@ -33,9 +35,11 @@ class RAGResponse(BaseModel):  # Updated name
     # WP-S8: whether the reranker actually ran for this response.
     reranked: bool = False
 
+
 class SearchQuery(BaseModel):
     question: str
     top_k: int = 5
+
 
 class SimpleRAGQuery(BaseModel):
     query: str
@@ -45,6 +49,7 @@ class SimpleRAGQuery(BaseModel):
     model: Optional[str] = None
     # WP-S8: see RAGQuery.rerank -- same override semantics.
     rerank: Optional[bool] = None
+
 
 class SimpleRAGResponse(BaseModel):  # Updated name
     final_context_manifest: List[Dict[str, Any]] = []
@@ -56,3 +61,56 @@ class SimpleRAGResponse(BaseModel):  # Updated name
     fallback_from: Optional[str] = None
     # WP-S8: whether the reranker actually ran for this response.
     reranked: bool = False
+
+
+# --- TRACE / IMPACT (issue #198) ---
+
+
+class ResolvedStartModel(BaseModel):
+    canonical_id: str
+    file_path: str
+
+
+class HopModel(BaseModel):
+    canonical_id: str
+    file_path: str
+    hop_index: int
+    relation_type: str
+    parent_canonical_id: str
+
+
+class GapNoteModel(BaseModel):
+    canonical_id: str
+    reason: str
+
+
+class TraceResponse(BaseModel):
+    repo_id: str
+    resolved_start: ResolvedStartModel
+    relation_types: List[str]
+    direction: str
+    max_depth: int
+    hops: List[HopModel]
+    truncated: bool
+    gaps: List[GapNoteModel]
+
+
+class ImpactBasisModel(BaseModel):
+    relation_type: str
+    hop_distance: int
+    path: List[str]
+
+
+class ImpactCandidateModel(BaseModel):
+    canonical_id: str
+    file_path: str
+    basis: List[ImpactBasisModel]
+
+
+class ImpactResponse(BaseModel):
+    repo_id: str
+    resolved_start: ResolvedStartModel
+    relation_types_considered: List[str]
+    max_depth: int
+    candidates: List[ImpactCandidateModel]
+    truncated: bool
