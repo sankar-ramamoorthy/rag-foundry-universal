@@ -204,11 +204,11 @@ the [ORIENT/TRACE/IMPACT notes](/DOCS/notes/20260906-repository-understanding-tr
 [09-Retrieval-Technique-Decision-Gates](/DOCS/audit/09-Retrieval-Technique-Decision-Gates.md)
 for the evidence-gated retrieval-experiment discipline).
 
-1. [ ] **(next)** Incremental ingestion + repository/file snapshot lineage — [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)
-2. [ ] **(next)** ORIENT — repository intelligence / structural inventory foundation — [#197](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/197)
-3. [ ] TRACE / IMPACT bounded structural query modes — [#198](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/198)
-4. [ ] Source authority / subject / provenance model — [#199](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/199)
-5. [ ] Bounded evidence-sufficiency loop for structural workflows — [#200](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/200)
+1. [x] Incremental ingestion + repository/file snapshot lineage — [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196), shipped via PR #212-#214
+2. [x] ORIENT — repository intelligence / structural inventory foundation — [#197](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/197), shipped via PR #215 (+ orchestrator exposure #216/PR #218, relationship-metadata export #220/PR #222, service-topology facts #221/PR #223)
+3. [x] TRACE / IMPACT bounded structural query modes — [#198](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/198), shipped via PR #219
+4. [ ] **(next, reordered ahead of #199 2026-09-19 — see rationale below)** Bounded evidence-sufficiency loop for structural workflows — [#200](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/200)
+5. [ ] Source authority / subject / provenance model — [#199](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/199)
 6. [ ] Evidence-driven retrieval experiments (keep the decision-gate process current) — [#201](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/201)
 7. [ ] Context/evidence survival improvements beyond WP-R4 — [#202](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/202)
 8. [ ] Architecture facts and derived views — [#203](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/203)
@@ -217,6 +217,28 @@ for the evidence-gated retrieval-experiment discipline).
 11. [ ] Bounded graph/query scaling — [#206](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/206)
 12. [ ] **(deferred, backlog slot only)** General agentic repository investigator — [#207](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/207)
 13. [ ] **(deferred, backlog slot only)** Enterprise/productization surface — [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
+
+**Reordering rationale (#200 ahead of #199, decided 2026-09-19):** #199
+(source authority/subject/provenance) and #200 (bounded evidence-
+sufficiency loop) were originally sequenced #199-then-#200. #200 does not
+actually depend on #199 landing first — a first version of the
+sufficiency loop can operate on today's evidence signals alone (distinct
+supporting chunks retrieved, requested symbol/entity resolved, whether
+TRACE terminated in unresolved externals, whether retrieval truncated,
+contradictory/missing evidence, whether required evidence reached final
+context) without yet being able to judge authority-specific questions
+(is this the authoritative source for the subject, are we mixing
+evidence from different snapshots/source authorities, is this evidence
+about the same logical subject the user asked about). Moving #200 first
+gives an immediate behavioral upgrade — retrieval stops treating the
+first result as final and checks whether evidence actually supports the
+question, closer to "agentic RAG" while staying deterministic and
+bounded (a hard iteration budget, mechanical sufficiency signals, no
+LLM-judge dependency for the first version) — without waiting on #199's
+larger provenance model. #199 still strengthens #200's sufficiency
+semantics once it lands (a revisit pass adds authority/provenance-aware
+checks on top of the mechanical ones), so #199 is not dropped, only
+resequenced after #200's first version.
 
 **Exit criteria:** items 1-2 have shipped code plus the same evidentiary
 bar the red-star track used (mechanics review + measured evaluation, not
@@ -260,4 +282,5 @@ graph LR
 > 7. **Production hardening completed (2026-09-12):** `prod-2026-09-12` is deployed and tagged at `202d91b34ee18e21c1dbb625d72acf9b82bce16d`; release evidence lives in `DOCS/releases/2026-09-12-prod-release.md`. The next recommended work is retrieval observability/evidence-survival tracing before choosing further retrieval interventions.
 > 8. **`WP-T1` done (2026-09-12):** [issue #100](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/100), planning doc [[WP-T1-retrieval-evidence-trace]] — extended the existing `evidence_trace.py` instrumentation (issue #89/PR #90) into a complete, automatic, query-level evidence trace (trace ID, chunk-index detail, token-budget stage, final-context manifest) across PRs #102-#105. `WP-T1e`'s first live run ([DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md)) found two clean cases of correct evidence reaching final context with generation still failing — the strongest signal yet that the next lever is generation reliability, not another retrieval-side fix — plus two follow-up issues, both now resolved: [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (a real canonical-lookup URL-length bug, fixed in PR #109) and [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106) (corpus self-contamination, resolved as a process decision — [DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md](/DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md)). Deliberately separate from Phase 4's `WP-E5 Observability` (generic ops tracing/metrics/logging) and from `08-RAG-Quality-Evaluation-Methodology`'s own `WP-Q1`/`Q2`/`Q3` naming (already used for chunking/retrieval/generation quality, executed as `WP-Q0`).
 > 9. **Red-star track substantially closed; Phase 6 opened (2026-09-18):** WP-R4/#167 merged (PR #192) and its ADR accepted (PR #193) with a net-positive frozen-question quality evaluation — see [the quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md). Its one non-blocking follow-up is tracked as [#194](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/194) (budget calibration — an evidence-gated experiment, explicitly not scheduled to run immediately). New Phase 6 above formalizes the 13-item post-R4 backlog as issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208), superseding `specs/005-production-correctness/spec.md`'s old "blue-star work remains deferred" placeholder. Next up: Phase 6 items 1-2 (incremental ingestion + snapshot lineage, ORIENT) — status/README updates are a separate, explicitly deferred follow-on task, not part of this update.
+> 10. **Phase 6 items 1-3 shipped (2026-09-19):** #196 (PR #214), #197 (PR #215) plus its orchestrator exposure ([#216](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/216)/PR #218), #198 (PR #219), and two #197 fast-follows filed and shipped the same day — relationship-metadata graph-export preservation ([#220](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/220)/PR #222) and mechanically derived endpoint/service/HTTP-call facts ([#221](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/221)/PR #223) — are all merged to `main`, CI green throughout, each independently live-verified against this repo's own real services (not just unit tests). **Reordered #200 ahead of #199** (rationale above the exit-criteria section) — #200's next up, not #199.
 
