@@ -204,6 +204,65 @@ def test_impact_mode_rejects_required_target():
     assert resp.status_code == 400
 
 
+# --- Stage A4: explanation_query ---
+
+
+def test_trace_mode_with_explanation_query_returns_explanation(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/generation"):
+            return httpx.Response(
+                200, json={"ingestion_id": "gen-1", "generation_status": "ready"}
+            )
+        if request.url.path.endswith("/generate"):
+            return httpx.Response(
+                200,
+                json={
+                    "response": "yes, via CALL.",
+                    "model": "llama3",
+                    "model_alias": "default",
+                    "fallback_from": None,
+                },
+            )
+        return httpx.Response(404)
+
+    _patched_client(monkeypatch, handler)
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_edge()),
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/repos/repo-x/evidence",
+        json={
+            "mode": "trace",
+            "start": "a.py#foo",
+            "required_target": "b.py#bar",
+            "explanation_query": "is b.py#bar reachable?",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["explanation"]["answer"] == "yes, via CALL."
+    assert body["explanation"]["model_used"] == "llama3"
+
+
+def test_mode_without_explanation_query_has_null_explanation(monkeypatch):
+    _patched_client(monkeypatch, _generation_handler())
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_edge()),
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/repos/repo-x/evidence",
+        json={"mode": "trace", "start": "a.py#foo"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["explanation"] is None
+
+
 # --- generation lifecycle failures propagate as HTTP errors ---
 
 

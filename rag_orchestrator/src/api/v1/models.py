@@ -144,12 +144,26 @@ class EvidenceRequest(BaseModel):
     # request to be sufficient. Without it, TRACE only obligates a
     # resolved start (see evidence_sufficiency.assess_trace).
     required_target: Optional[str] = None
+    # Stage A4, all modes: when set, one /generate call explains the
+    # finalized evidence (see evidence_service._generate_evidence_
+    # explanation). Omitted -> no generation, structured evidence only.
+    explanation_query: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
 
 
 class EvidenceItemModel(BaseModel):
     identity: str
     kind: str
     supporting: Optional[str] = None
+
+
+class ExplanationModel(BaseModel):
+    answer: Optional[str] = None
+    model_used: Optional[str] = None
+    model_alias: Optional[str] = None
+    fallback_from: Optional[str] = None
+    skipped_reason: Optional[str] = None
 
 
 class EvidenceAssessmentModel(BaseModel):
@@ -173,3 +187,4 @@ class EvidenceResponse(BaseModel):
     assessment: EvidenceAssessmentModel
     steps: List[EvidenceStepModel]
     stop_reason: str
+    explanation: Optional[ExplanationModel] = None

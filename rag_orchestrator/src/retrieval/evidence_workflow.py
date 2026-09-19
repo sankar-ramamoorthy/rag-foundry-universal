@@ -72,10 +72,29 @@ class StepRecord:
 
 
 @dataclass(frozen=True)
+class ExplanationResult:
+    """Issue #200, Stage A4: the optional single generation phase over
+    the finalized evidence -- `None` fields (other than `skipped_reason`)
+    mean generation didn't run at all, never that it ran and returned
+    nothing. Populated by `evidence_service.py` (I/O), never by this
+    module -- kept here only because it lives on `WorkflowResult`."""
+
+    answer: str | None
+    model_used: str | None = None
+    model_alias: str | None = None
+    fallback_from: str | None = None
+    skipped_reason: str | None = None
+
+
+@dataclass(frozen=True)
 class WorkflowResult:
     assessment: EvidenceAssessment
     steps: list[StepRecord] = field(default_factory=list)
     stop_reason: StopReason = "satisfied"
+    # Stage A4: absent (None) unless the caller asked for an explanation
+    # (an explanation_query was supplied) -- the pure workflow functions
+    # in this module never set it themselves.
+    explanation: ExplanationResult | None = None
 
 
 def _start_failure_result(
