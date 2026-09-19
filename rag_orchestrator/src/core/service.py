@@ -35,6 +35,7 @@ from src.core.reranker import rerank_chunks
 from rag_orchestrator.src.retrieval.codebase_utils import (
     canonical_id_from_metadata,
     doc_type_from_metadata,
+    provenance_from_metadata,
     extract_canonical_ids_from_chunks,
     dedupe_near_identical_chunks,
 )
@@ -322,6 +323,8 @@ def _add_chunks(
             fetch_position=index,
             # Issue #142: for the doc-type-aware seed tie-break.
             doc_type=doc_type_from_metadata(metadata),
+            # Issue #199 (Stage B2): transport only, not consulted below.
+            provenance=provenance_from_metadata(metadata),
         )
         added.append(chunk)
         retrieved_chunks_by_document.setdefault(doc_id, []).append(chunk)

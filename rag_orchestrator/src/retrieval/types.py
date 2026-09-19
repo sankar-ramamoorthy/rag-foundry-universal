@@ -21,6 +21,11 @@ class RetrievedChunk:
     # markdown_section / etc.), for the doc-type-aware seed tie-break.
     # None for chunks constructed without it (predates this field).
     doc_type: Optional[str] = None
+    # Issue #199 (ADR-053, Stage B2): the ADR-053 provenance envelope,
+    # transported from DocumentNode.provenance (Stage B1) through chunk
+    # metadata -- read-only passthrough, never used here to rank, filter,
+    # or select. None for a pre-B1 row or a chunk predating this field.
+    provenance: Optional[dict] = None
 
 
 @dataclass(frozen=True)

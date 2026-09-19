@@ -151,6 +151,11 @@ def build_final_context_manifest(
                 "token_count_method": "utf8_bytes_upper_estimate",
                 "fetch_position": c.get("fetch_position"),
                 "selection_reason": selection_reason,
+                # Issue #199 (ADR-053, Stage B2): the ADR-053 envelope for
+                # exactly the chunk that survived into the final context --
+                # transport only; does not affect selection_reason or
+                # which chunks land in this manifest.
+                "provenance": c.get("provenance"),
             }
         )
     return manifest
@@ -253,6 +258,10 @@ def prepare_chunks_for_agent(
                 # WP-T1d: first-class canonical_id, for the final-context
                 # manifest (previously only reachable via metadata digging).
                 "canonical_id": getattr(c, "canonical_id", None),
+                # Issue #199 (ADR-053, Stage B2): first-class provenance,
+                # for the final-context manifest -- transport only, not
+                # consulted anywhere in this function's own selection.
+                "provenance": getattr(c, "provenance", None),
             }
 
             # Token budget enforcement

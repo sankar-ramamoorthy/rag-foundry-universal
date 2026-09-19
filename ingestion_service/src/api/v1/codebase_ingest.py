@@ -17,6 +17,7 @@ from src.core.ingestion_jobs import submit_ingestion
 from src.core.ingestion_ownership import AdmissionBusy, RepositoryBusy
 from src.core.codebase.repo_graph_builder import RepoGraphBuilder
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
+from src.core.codebase.provenance_classifier import classify_node
 from src.core.codebase.structural_inventory import (
     build_structural_inventory,
     inventory_to_graph_dicts,
@@ -100,6 +101,11 @@ class RepoIngestResponse(BaseModel):
 def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) -> None:
     """Chunk+embed one node not eligible for reuse (T024's re-embed path)."""
     chunks = pipeline._chunk(node.text, "code", provider)
+    # Issue #199 (ADR-053, Stage B2): identical inputs to the ones
+    # CodebaseGraphPersistence.persist_graph classifies the DocumentNode
+    # row with, so this never drifts from what's persisted -- transport,
+    # not a second opinion.
+    provenance = classify_node(node.relative_path, node.doc_type, node.text)
     for ordinal, chunk in enumerate(chunks):
         chunk.metadata.update(
             canonical_id=node.canonical_id,
@@ -107,6 +113,7 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
             relative_path=node.relative_path,
             doc_type=node.doc_type,
             language=language_for_path(node.relative_path),
+            provenance=provenance,
             source_metadata={
                 **chunk.metadata.get("source_metadata", {}),
                 "canonical_id": node.canonical_id,

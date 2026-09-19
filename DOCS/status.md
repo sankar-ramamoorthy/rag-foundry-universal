@@ -330,11 +330,31 @@ composite score).
   `-m unit`/`-m integration` suites green, `ruff` clean, migration
   applied cleanly against local dev Postgres and verified live
   (`shared/` re-ingested, `provenance` populated correctly per row).
-- **Not yet done**: B2 (transport into the actual retrieval/LLM
-  context/manifest — right now `provenance` is persisted but not read
-  by anything downstream of ingestion) and B3 (measured rollout).
-  Stage C (`#200` authority-aware sufficiency) depends on B2/B3, not
-  on this slice alone.
+- **B2 (transport to context/manifest) done — transport only, by
+  explicit owner constraint: no ranking/filtering/source-preference/
+  sufficiency-policy/prompt-policy/generation-behavior change.**
+  `provenance` now reaches the exact selected context (ADR-053's bar),
+  following the same flat-then-`source_metadata`-nested lookup shape
+  `canonical_id`/`doc_type` already use at every hop: ingestion-time
+  chunk metadata (`codebase_ingest.py`, computed from the identical
+  `(relative_path, doc_type, text)` triple the persisted `DocumentNode`
+  row uses, so it never drifts) → vector store `source_metadata`
+  passthrough (no vector_store_service change needed — already a
+  generic JSON blob) → new `provenance_from_metadata()` helper
+  (`codebase_utils.py`) → new `RetrievedChunk.provenance` field →
+  `prepare_chunks_for_agent`'s chunk dict → `build_final_context_
+  manifest`'s manifest entries. Live-verified: a real `/v1/rag` query
+  against the local stack returns `final_context_manifest` entries each
+  carrying the correct `provenance` envelope, with selection/ordering
+  identical to before this change. 9 new tests
+  (`test_provenance_transport.py`), explicitly asserting provenance
+  reaches each hop *and* that it does not affect selection_reason or
+  ordering; full `-m unit` suites green (273 in `rag_orchestrator`),
+  `ruff` clean.
+- **Not yet done**: B3 (measured rollout — deciding when/how any
+  consumer is allowed to *act* on provenance, still entirely unused by
+  policy). Stage C (`#200` authority-aware sufficiency) depends on B3,
+  not on B2 alone — B2 only makes the data reachable.
 
 ## Known issues
 
