@@ -1,5 +1,6 @@
 from uuid import uuid4, UUID
 import logging
+from dataclasses import replace
 from pathlib import Path
 import tempfile
 import shutil
@@ -19,6 +20,11 @@ from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 from src.core.codebase.structural_inventory import (
     build_structural_inventory,
     inventory_to_graph_dicts,
+    walk_all_files,
+)
+from src.core.codebase.service_topology import (
+    build_service_topology,
+    service_topology_to_graph_dicts,
 )
 from src.core.pipeline import IngestionPipeline
 
@@ -33,6 +39,7 @@ from src.core.codebase.embedding_buffer import EmbeddingBuffer
 from src.core.codebase.language import language_for_path
 from src.core.config import Settings
 from src.core import db_utils
+
 # -----------------------------
 # Session and router
 # -----------------------------
@@ -40,6 +47,7 @@ SessionLocal = get_sessionmaker()
 router = APIRouter(tags=["codebase_ingest"])
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
 
 # -----------------------------
 # Temporary pipeline builder (TECH DEBT - see issue)
@@ -94,8 +102,10 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
     chunks = pipeline._chunk(node.text, "code", provider)
     for ordinal, chunk in enumerate(chunks):
         chunk.metadata.update(
-            canonical_id=node.canonical_id, repo_id=repo_id,
-            relative_path=node.relative_path, doc_type=node.doc_type,
+            canonical_id=node.canonical_id,
+            repo_id=repo_id,
+            relative_path=node.relative_path,
+            doc_type=node.doc_type,
             language=language_for_path(node.relative_path),
             source_metadata={
                 **chunk.metadata.get("source_metadata", {}),
@@ -106,7 +116,9 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
 
 
 def _retag_reused_vectors(
-    pipeline: IngestionPipeline, document_ids: list[str], ingestion_id: str,
+    pipeline: IngestionPipeline,
+    document_ids: list[str],
+    ingestion_id: str,
 ) -> None:
     """Issue #196 (FR-007b, T024): bulk-carry reused artifacts' existing
     vectors forward to this generation's ingestion_id, no re-embedding."""
@@ -147,8 +159,12 @@ def _embed_repo_artifacts(
     no-prior-generation case.
     """
     progress: dict = {
-        "stage": "embedding", "nodes_processed": 0, "nodes_total": 0,
-        "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0,
+        "stage": "embedding",
+        "nodes_processed": 0,
+        "nodes_total": 0,
+        "chunks_persisted": 0,
+        "max_buffer_chunks": 0,
+        "max_buffer_bytes": 0,
     }
     report_progress(dict(progress))  # BEFORE preflight/count/page allocation.
 
@@ -166,7 +182,9 @@ def _embed_repo_artifacts(
 
     def pages():
         return persistence.iter_artifact_pages(
-            repo_id, ingestion_id, page_size=settings.INGESTION_NODE_PAGE_SIZE,
+            repo_id,
+            ingestion_id,
+            page_size=settings.INGESTION_NODE_PAGE_SIZE,
             max_artifact_bytes=settings.INGESTION_MAX_ARTIFACT_BYTES,
             expected_nodes=expected_nodes,
         )
@@ -186,8 +204,11 @@ def _embed_repo_artifacts(
         report_progress(dict(progress))
 
     buffer = EmbeddingBuffer(
-        pipeline, ingestion_id, max_chunks=settings.INGESTION_EMBED_BATCH_SIZE,
-        max_bytes=settings.INGESTION_EMBED_MAX_BYTES, on_flush=acknowledged,
+        pipeline,
+        ingestion_id,
+        max_chunks=settings.INGESTION_EMBED_BATCH_SIZE,
+        max_bytes=settings.INGESTION_EMBED_MAX_BYTES,
+        on_flush=acknowledged,
     )
 
     retag_document_ids: list[str] = []
@@ -219,7 +240,11 @@ def _embed_repo_artifacts(
 
 
 def _build_and_persist_graph(
-    repo_path, repo_id, ingestion_id, persistence, report_stage,
+    repo_path,
+    repo_id,
+    ingestion_id,
+    persistence,
+    report_stage,
 ):
     """Own all graph/IR references in a frame that ends before embedding.
 
@@ -236,10 +261,15 @@ def _build_and_persist_graph(
     symbol graph's nodes and the inventory's nodes/relationships MUST be
     merged into that single call; two separate persist_graph calls would
     have the second delete every node the first just wrote.
+
+    Issue #221: same reasoning applies to the service-topology facts
+    (ROUTE/EXPOSES_ENDPOINT/CALLS_SERVICE) -- built here and merged into
+    the identical persist_graph call, not persisted separately.
     """
     report_stage("graph_build")
     builder = RepoGraphBuilder(
-        repo_root=Path(repo_path), ingestion_id=str(ingestion_id),
+        repo_root=Path(repo_path),
+        ingestion_id=str(ingestion_id),
     )
     graph = builder.build()
     current_file_hashes = {
@@ -251,23 +281,51 @@ def _build_and_persist_graph(
     report_stage("structural_inventory")
     indexed_paths = set(graph.files.keys())
     inventory = build_structural_inventory(
-        Path(repo_path), indexed_paths=indexed_paths,
+        Path(repo_path),
+        indexed_paths=indexed_paths,
     )
     inventory_nodes, inventory_relationships = inventory_to_graph_dicts(
-        str(ingestion_id), inventory, indexed_paths, Path(repo_path),
+        str(ingestion_id),
+        inventory,
+        indexed_paths,
+        Path(repo_path),
     )
+
+    report_stage("service_topology")
+    all_files = walk_all_files(Path(repo_path))
+    topology = build_service_topology(
+        Path(repo_path),
+        all_files,
+        inventory.services,
+        set(graph.entities.keys()),
+    )
+    topology_nodes, topology_relationships = service_topology_to_graph_dicts(
+        str(ingestion_id),
+        topology,
+        inventory.services,
+    )
+    if topology.gaps:
+        # Fold into the SAME generation-scoped gap list #197 already
+        # persists -- one place a caller checks for "what couldn't be
+        # resolved this generation," not a second, easy-to-miss list.
+        inventory = replace(inventory, gaps=[*inventory.gaps, *topology.gaps])
 
     report_stage("graph_persist")
     stats = persistence.persist_graph(
         repo_id=repo_id,
-        nodes=graph.all_entities() + inventory_nodes,
-        relationships=graph.relationships + inventory_relationships,
+        nodes=graph.all_entities() + inventory_nodes + topology_nodes,
+        relationships=(
+            graph.relationships + inventory_relationships + topology_relationships
+        ),
     )
     return stats, current_file_hashes, inventory
 
 
 def _resolve_reuse_eligibility(
-    session, ingestion_id: UUID, repo_id: str, force_full_rebuild: bool,
+    session,
+    ingestion_id: UUID,
+    repo_id: str,
+    force_full_rebuild: bool,
 ) -> tuple[str | None, bool, dict, bool]:
     """Issue #196 (T020/T021/T025/R4/R6): resolve this generation's lineage
     and FR-006 reuse-gate identity, before cloning/graph build begins, and
@@ -358,7 +416,10 @@ def _background_ingest_repo(
         # source URL/path, no checkout needed.
         _prior_generation_id, is_incremental, prior_hashes, config_matches = (
             _resolve_reuse_eligibility(
-                session, ingestion_id, repo_id, force_full_rebuild,
+                session,
+                ingestion_id,
+                repo_id,
+                force_full_rebuild,
             )
         )
 
@@ -368,6 +429,7 @@ def _background_ingest_repo(
         commit_sha: str | None = None
         if git_url:
             import git  # GitPython
+
             temp_dir = tempfile.mkdtemp()
             logger.debug(f"Cloning {git_url} into {temp_dir}")
             cloned = git.Repo.clone_from(git_url, temp_dir)
@@ -380,14 +442,24 @@ def _background_ingest_repo(
 
         persistence = CodebaseGraphPersistence(session=session)
         report_progress = partial(
-            StatusManager(session).update_embed_progress, ingestion_id,
+            StatusManager(session).update_embed_progress,
+            ingestion_id,
         )
         stats, current_hashes, inventory = _build_and_persist_graph(
-            repo_path, repo_id, ingestion_id, persistence,
-            lambda stage: report_progress({
-                "stage": stage, "nodes_processed": 0, "nodes_total": 0,
-                "chunks_persisted": 0, "max_buffer_chunks": 0, "max_buffer_bytes": 0,
-            }),
+            repo_path,
+            repo_id,
+            ingestion_id,
+            persistence,
+            lambda stage: report_progress(
+                {
+                    "stage": stage,
+                    "nodes_processed": 0,
+                    "nodes_total": 0,
+                    "chunks_persisted": 0,
+                    "max_buffer_chunks": 0,
+                    "max_buffer_bytes": 0,
+                }
+            ),
         )
         logger.info(f"[{ingestion_id}] Graph persisted: {stats}")
 
@@ -437,7 +509,9 @@ def _background_ingest_repo(
         # actually ran and the resolved commit SHA, before the terminal
         # status transition.
         StatusManager(session).record_completion_lineage(
-            ingestion_id, is_incremental=is_incremental, commit_sha=commit_sha,
+            ingestion_id,
+            is_incremental=is_incremental,
+            commit_sha=commit_sha,
         )
         StatusManager(session).mark_completed(ingestion_id)
         logger.info(f"✅ Repo ingestion completed: {ingestion_id}")
@@ -451,7 +525,8 @@ def _background_ingest_repo(
         # is not grounds to mark an otherwise-complete ingestion failed.
         try:
             stale_ids = db_utils.superseded_ingestion_ids_for_repo(
-                repo_id, str(ingestion_id),
+                repo_id,
+                str(ingestion_id),
             )
             settings = get_settings()
             vector_store = HttpVectorStore(
@@ -519,9 +594,7 @@ def ingest_repo(
     # Issue #30 Part 5: persist the derived display identity alongside the
     # raw source so it stays queryable; derivation lives in repo_naming.
     identity = derive_repo_identity(metadata)
-    metadata.update(
-        {k: identity[k] for k in ("source_type", "name", "display_name")}
-    )
+    metadata.update({k: identity[k] for k in ("source_type", "name", "display_name")})
     # #166: repo_id is a pure function of the source URL/path, so it is
     # known and persisted at accept time — before any clone — independent
     # of document_nodes. This also lets delete_repo find/enumerate this
@@ -529,23 +602,29 @@ def ingest_repo(
     repo_id = build_repo_id(repo_id_url)
     try:
         submit_ingestion(
-            ingestion_id=ingestion_id, source_type="repo", metadata=metadata,
+            ingestion_id=ingestion_id,
+            source_type="repo",
+            metadata=metadata,
             target=_background_ingest_repo,
             prepare=lambda: {
-            "git_url": git_url,
-            "local_path": local_path,
-            "provider": provider,
-            "force_full_rebuild": force_full_rebuild,
+                "git_url": git_url,
+                "local_path": local_path,
+                "provider": provider,
+                "force_full_rebuild": force_full_rebuild,
             },
             repo_id=repo_id,
         )
     except AdmissionBusy as exc:
         raise HTTPException(
-            status_code=503, detail=str(exc), headers={"Retry-After": "5"},
+            status_code=503,
+            detail=str(exc),
+            headers={"Retry-After": "5"},
         ) from exc
     except RepositoryBusy as exc:
         raise HTTPException(
-            status_code=409, detail=str(exc), headers={"Retry-After": "5"},
+            status_code=409,
+            detail=str(exc),
+            headers={"Retry-After": "5"},
         ) from exc
 
     return RepoIngestResponse(ingestion_id=ingestion_id, status="accepted")
@@ -571,6 +650,7 @@ def get_repo_ingest_status(ingestion_id: str) -> RepoIngestResponse:
             raise HTTPException(status_code=404, detail="Ingestion ID not found")
 
         return RepoIngestResponse(
-            ingestion_id=request.ingestion_id, status=request.status,
+            ingestion_id=request.ingestion_id,
+            status=request.status,
             embed_progress=(request.ingestion_metadata or {}).get("embed_progress"),
         )

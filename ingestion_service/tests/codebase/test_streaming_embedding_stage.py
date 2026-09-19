@@ -155,6 +155,7 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
     class Graph:
         relationships = []
         files = {}
+        entities = {}
 
         def all_entities(self):
             return [{"text": "fixture"}]
@@ -192,6 +193,23 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
         lambda ingestion_id, inventory, indexed_paths, repo_root: ([], []),
     )
     monkeypatch.setattr(api.db_utils, "record_structural_summary", lambda *a, **k: None)
+    # Issue #221: same reasoning as #197 above -- stub the (otherwise
+    # real filesystem-walking) service-topology extraction too.
+    topology_stub = Mock(gaps=[])
+    monkeypatch.setattr(api, "walk_all_files", lambda repo_root: [])
+    monkeypatch.setattr(
+        api,
+        "build_service_topology",
+        lambda repo_root,
+        all_files,
+        compose_services,
+        known_symbol_canonical_ids: topology_stub,
+    )
+    monkeypatch.setattr(
+        api,
+        "service_topology_to_graph_dicts",
+        lambda ingestion_id, topology, compose_services: ([], []),
+    )
     # Issue #196: no prior generation, so no real DB access -- this test
     # verifies memory discipline (#160), not incremental-reuse behavior.
     monkeypatch.setattr(
@@ -213,4 +231,4 @@ def test_background_worker_releases_builder_and_graph_before_embedding(monkeypat
     status.mark_completed.assert_called_once()
     assert [
         call.args[1]["stage"] for call in status.update_embed_progress.call_args_list
-    ] == ["graph_build", "structural_inventory", "graph_persist"]
+    ] == ["graph_build", "structural_inventory", "service_topology", "graph_persist"]
