@@ -14,6 +14,7 @@ from src.api.v1.models import (
     ImpactResponse,
 )
 from src.core.config import get_settings
+from src.core.evidence_service import fetch_orient_response
 from src.core.service import run_rag  # , search_documents
 from fastapi import APIRouter, HTTPException
 from src.core.simple_service import run_simple_rag  # new - no graph
@@ -101,29 +102,13 @@ async def get_repo_orient(repo_id: str):
     than collapsing every failure into one generic status: a caller
     needs to tell "this repo has no ORIENT data" apart from "ingestion_
     service is unreachable" to act correctly (e.g. re-ingest vs. retry).
-    """
-    settings = get_settings()
-    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/orient"
-    try:
-        async with httpx.AsyncClient(timeout=30) as client:
-            resp = await client.get(url)
-    except httpx.HTTPError as exc:
-        logger.error(f"Failed to reach ingestion_service for ORIENT: {exc}")
-        raise HTTPException(502, "ingestion_service unavailable") from exc
 
-    if resp.status_code == 200:
-        return resp.json()
-    if resp.status_code in (404, 409):
-        try:
-            detail = resp.json().get("detail", resp.text)
-        except ValueError:
-            detail = resp.text
-        raise HTTPException(resp.status_code, detail)
-    logger.error(
-        f"ingestion_service returned unexpected status {resp.status_code} "
-        f"for ORIENT (repo_id={repo_id[:8]})"
-    )
-    raise HTTPException(502, "ingestion_service returned an unexpected error")
+    Issue #200: the fetch/error-handling itself now lives in
+    `evidence_service.fetch_orient_response` (shared with the
+    generation-fenced ORIENT evidence workflow); this route is purely
+    the thin HTTP passthrough.
+    """
+    return await fetch_orient_response(repo_id)
 
 
 @router.get("/repos/{repo_id}/trace", response_model=TraceResponse)

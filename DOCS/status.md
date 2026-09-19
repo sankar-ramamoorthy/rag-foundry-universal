@@ -226,11 +226,30 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   (`tests/test_evidence_sufficiency.py`), plus 2 more in
   `tests/test_trace_impact.py` for `depth_limited`; full `-m unit` suite
   and `ruff`/`pyright` clean.
-- **Not yet done**: the bounded-repair control loop and generation fence
-  (A2), the `/v1/repos/{repo_id}/evidence` API surface (A3), explanation
-  generation wiring (A4), and the live paired-evaluation gate (A5) — all
-  tracked under #200, not separately filed yet. Nothing in this slice is
-  reachable from any existing endpoint.
+- **Slice A2 (bounded repair + generation fence) done**:
+  `rag_orchestrator/src/retrieval/evidence_workflow.py` adds the pure
+  one-repair control loop (`run_orient_workflow`/`run_trace_workflow`/
+  `run_impact_workflow`) — TRACE is the only mode with an obligation-
+  driven repair in Stage A (extend a depth-limited frontier to the
+  server ceiling, at most once); ORIENT has no repair capability yet and
+  reports gaps honestly; IMPACT's candidate-set obligation is always
+  satisfied so nothing there ever needs repair.
+  `rag_orchestrator/src/core/evidence_service.py` adds the I/O adapters
+  (`run_orient_evidence`/`run_trace_evidence`/`run_impact_evidence`),
+  each reusing `service.py`'s `_query_generation`/`_verify_generation`
+  ready-generation pattern (ADR-052) around the work, plus a new
+  `get_cached_graph_with_generation` in `codebase_utils.py` so a TRACE/
+  IMPACT fence has a generation to check against (the plain
+  `get_cached_graph` never exposed one). ORIENT's response is also
+  cross-checked against the resolved generation before use, since
+  ingestion_service's ORIENT payload carries its own `ingestion_id`.
+  21 new unit tests (`tests/test_evidence_workflow.py`,
+  `tests/test_evidence_service.py`); full `-m unit` suite (249 passed)
+  and `ruff`/`pyright` clean. Still not reachable from any existing
+  endpoint — no HTTP route calls these adapters yet.
+- **Not yet done**: the `/v1/repos/{repo_id}/evidence` API surface (A3),
+  explanation generation wiring (A4), and the live paired-evaluation
+  gate (A5) — all tracked under #200, not separately filed yet.
 
 ## Known issues
 
