@@ -283,15 +283,21 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   (observed firing for real: depth-1 request → `unknown` → repaired to
   the server ceiling → target found), the A4 explanation phase (one
   real `/generate` call, grounded answer), and input validation all
-  passed. See
+  passed. **Same day, the owner deployed `main` @ `292cc89` (through
+  PR #230) to the Tailscale production instance and ingested this
+  repository's full checkout there** (`repo_id=f7641840-...`,
+  645 files, 8881 nodes) — 5 more live cases were run against that real,
+  full-scale corpus over the actual production HTTP surface, all
+  passing, including a genuinely ambiguous bare-name TRACE result and a
+  real `/generate` explanation citing exactly the correct external-gap
+  symbols. See
   [test results](/DOCS/test_results/2026-09-19-stage-a5-evidence-sufficiency-live-verification.md)
-  for the full case table and — importantly — what this pass does
-  **not** establish: the handoff's full frozen 12-16 case, two-repository,
-  false-sufficient-rate release gate was not run (INCONCLUSIVE, not
-  claimed passed). The Tailscale production instance remains on commit
-  `65ccd096` (`/version` confirms `build_date: 2026-09-19T13:34:02Z`,
-  pre-Stage-A) — `/v1/repos/{repo_id}/evidence` is not deployed there;
-  deployment is a separate, not-yet-taken action.
+  for both passes' full case tables and — importantly — what neither
+  establishes: the handoff's full frozen 12-16 case, two-repository,
+  false-sufficient-rate release gate was still not run (INCONCLUSIVE,
+  not claimed passed) — production now holds one of the two required
+  corpora at full scale, which is a head start on that gate, not the
+  gate itself.
 
 **Stage B (#199, source authority/subject/provenance) — B0 started.**
 [ADR-053](/DOCS/adr/ADR-053-source-authority-provenance-model.md)

@@ -110,13 +110,46 @@ than expected is still reported correctly, not silently dropped).
   `/v1/repos/{repo_id}/evidence` is not reachable there. Deploying is a
   separate, explicit action this pass did not take.
 
+## Follow-up: production deployment + full self-repo verification (same day)
+
+After the local pass above, the owner deployed `main` @ `292cc89`
+(through PR #230, i.e. all of Stage A0-A5 plus Stage B0) to the
+Tailscale-reachable production instance and ingested this repository's
+full checkout there — confirmed via `GET /version`
+(`git_sha: 292cc899...`, `build_date: 2026-09-19T17:41:45Z`) and
+`GET /v1/repos` (`repo_id=f7641840-ba13-5f9d-9ae6-87e1f924709d`,
+`file_count: 645`, `node_count: 8881`, `status: completed`,
+`ingested_at: 2026-09-19T17:45:43`). This is the real, full-scale
+corpus the original local pass explicitly could not obtain in time.
+
+Additional live cases run against `http://100.105.24.12:8004` (all
+through the production HTTP surface, not a function call):
+
+| # | Mode | Case | Result |
+|---|---|---|---|
+| 12 | ORIENT | `required_facets=[services, test_dirs, entry_points]` (`entry_points` is not a real ORIENT field name — it's nested inside `services`) | `services`/`test_dirs` → `satisfied`; `entry_points` → `unknown` (`unsupported_facet`), not a manufactured gap |
+| 13 | TRACE | bare name `run_trace_workflow` | `needs_clarification` (genuinely ambiguous against this much larger real corpus) |
+| 14 | TRACE | exact canonical_id `rag_orchestrator/src/retrieval/evidence_workflow.py#run_trace_workflow`, no target | `satisfied`, 9 real external-symbol gaps correctly enumerated (cross-module calls this extractor doesn't resolve to in-repo canonical IDs) |
+| 15 | IMPACT | same start | `satisfied` with an empty candidate set (no in-repo caller resolved) — correctly not a failure |
+| 16 | TRACE | case 14 + `explanation_query` | one real `/generate` call via `ollama/Qwen3:4b`; answer lists exactly the 9 cited external-gap symbols, nothing invented |
+
+This upgrades the earlier conclusion but does not change it: mechanics
+now verified against a corpus close to the methodology's intended scale
+(8,881 nodes vs. the handoff's no minimum, but clearly no longer a toy
+fixture), still on a single repository, still without the frozen
+12-16 question set or a second differently-organized repository, and
+still without measuring false-sufficient rate or repair-usefulness
+statistically. **Formal release-gate sign-off remains open** for the
+same reasons as above — this is more live evidence, not the gate itself.
+
 ## Recommendation
 
 Keep default-on behavior gated (there is currently no default-on
 switch to gate — the endpoint is purely additive/opt-in by construction,
 callers must explicitly hit it). Before claiming the Stage A5 gate
 formally passed, run the full frozen two-repo methodology from the
-handoff's "Frozen paired evaluation" section. This pass is sufficient
-evidence to proceed with Stage B (#199) groundwork, since Stage B does
-not depend on Stage A's evaluation gate — only Stage C (authority-aware
-sufficiency) does.
+handoff's "Frozen paired evaluation" section — production now has one
+of the two required corpora already ingested at full scale. This pass
+is sufficient evidence to proceed with Stage B (#199) groundwork, since
+Stage B does not depend on Stage A's evaluation gate — only Stage C
+(authority-aware sufficiency) does.
