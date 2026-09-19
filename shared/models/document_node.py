@@ -18,6 +18,7 @@ from sqlalchemy import (
     Column,
     String,
     ForeignKey,
+    JSON,
     Text,
     UniqueConstraint,
     Index,
@@ -134,6 +135,20 @@ class DocumentNode(Base):
         nullable=True,
         doc="SHA-256 hex digest of raw file bytes (file-level nodes only, "
         "symbol_path IS NULL); NULL for symbol-level nodes.",
+    )
+
+    # Issue #199 (ADR-053, Stage B1): role/subject/derivation/validity +
+    # classification envelope. Additive/nullable -- a pre-existing or
+    # not-yet-reclassified row decodes as NULL, which every consumer
+    # must read as "every facet unknown," never a default interpretation.
+    # Origin is NOT duplicated here; it's the columns already above
+    # (repo_id, canonical_id, relative_path, source, ingestion_id,
+    # doc_type, content_hash).
+    provenance: dict | None = Column(
+        JSON,
+        nullable=True,
+        doc="ADR-053 role/subject/derivation/validity/classification "
+        "envelope; NULL means unclassified (read every facet as unknown).",
     )
     # ------------------------------------------------------------------
     # Relationships
