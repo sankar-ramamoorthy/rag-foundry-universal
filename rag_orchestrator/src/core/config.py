@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # -------------------------------------------------
     EMBEDDING_PROVIDER: str = "ollama"
     OLLAMA_BASE_URL: str = "http://host.docker.internal:11434"
-    #OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
+    # OLLAMA_EMBED_MODEL: str = "nomic-embed-text:v1.5"
     OLLAMA_EMBED_MODEL: str = "mxbai-embed-large:latest"
 
     OLLAMA_BATCH_SIZE: int = 50
@@ -68,13 +68,15 @@ class Settings(BaseSettings):
     # section, markdown_module, etc.) within an epsilon-band near-tie.
     # Keep in sync with the doc_type strings each extractor actually
     # writes (ingestion_service/src/core/extractors/*).
-    IMPLEMENTATION_DOC_TYPES: frozenset[str] = frozenset({
-        "python source",
-        "rust source",
-        "java source",
-        "typescript source",
-        "javascript source",
-    })
+    IMPLEMENTATION_DOC_TYPES: frozenset[str] = frozenset(
+        {
+            "python source",
+            "rust source",
+            "java source",
+            "typescript source",
+            "javascript source",
+        }
+    )
 
     # -------------------------------------------------
     # Optional cross-encoder reranker (WP-S8 stub, DOCS/audit/
@@ -117,6 +119,19 @@ class Settings(BaseSettings):
     # generations of one repo can be cached (always at most one: a
     # generation change replaces that repo_id's entry outright).
     GRAPH_CACHE_MAX_REPOS: int = 32
+
+    # -------------------------------------------------
+    # TRACE / IMPACT bounds (issue #198)
+    # -------------------------------------------------
+    # Explicit caps so a request either completes within them or reports
+    # truncation, never hangs or silently returns a partial answer
+    # indistinguishable from "complete." A request's own max_depth query
+    # param is validated against the corresponding _MAX_DEPTH cap at the
+    # route level (over-cap is a 400, not a silently-clamped value).
+    TRACE_MAX_DEPTH: int = 6
+    TRACE_MAX_NODES: int = 300
+    IMPACT_MAX_DEPTH: int = 4
+    IMPACT_MAX_CANDIDATES: int = 300
 
     model_config = SettingsConfigDict(
         env_file=".env",
