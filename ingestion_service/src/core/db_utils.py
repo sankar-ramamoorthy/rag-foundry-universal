@@ -27,6 +27,7 @@ SessionLocal = get_sessionmaker()
 # INGESTION HELPERS
 # ==============================================================
 
+
 def create_ingestion_request(
     source_type: str,
     metadata: Dict,
@@ -61,9 +62,7 @@ def get_ingestion_status(ingestion_id: UUID) -> Optional[str]:
     """
     with SessionLocal() as session:
         req = (
-            session.query(IngestionRequest)
-            .filter_by(ingestion_id=ingestion_id)
-            .first()
+            session.query(IngestionRequest).filter_by(ingestion_id=ingestion_id).first()
         )
         return req.status if req else None
 
@@ -71,6 +70,7 @@ def get_ingestion_status(ingestion_id: UUID) -> Optional[str]:
 # ==============================================================
 # CHUNK HELPERS
 # ==============================================================
+
 
 def get_chunk_texts_by_ingestion_id(ingestion_id: str) -> List[str]:
     """
@@ -101,6 +101,7 @@ def get_chunk_texts_by_ingestion_id(ingestion_id: str) -> List[str]:
 # REPOSITORY HELPERS
 # ==============================================================
 
+
 def list_complete_repos() -> List[Dict]:
     """
     Return metadata for all repositories with completed ingestions.
@@ -115,7 +116,6 @@ def list_complete_repos() -> List[Dict]:
         ingestion_metadata
     """
     with SessionLocal() as session:
-
         repo_rows = (
             session.query(
                 DocumentNode.repo_id,
@@ -143,17 +143,20 @@ def list_complete_repos() -> List[Dict]:
         # ingestion metadata (git_url/local_path/…) in a second query
         # keyed by the already-grouped ingestion_ids (issue #30 Part 5).
         ingestion_ids = [row[1] for row in repo_rows]
-        metadata_by_ingestion = dict(
-            session.query(
-                IngestionRequest.ingestion_id,
-                IngestionRequest.ingestion_metadata,
+        metadata_by_ingestion = (
+            dict(
+                session.query(
+                    IngestionRequest.ingestion_id,
+                    IngestionRequest.ingestion_metadata,
+                )
+                .filter(IngestionRequest.ingestion_id.in_(ingestion_ids))
+                .all()
             )
-            .filter(IngestionRequest.ingestion_id.in_(ingestion_ids))
-            .all()
-        ) if ingestion_ids else {}
+            if ingestion_ids
+            else {}
+        )
 
         for repo_id, ingestion_id, status, created_at in repo_rows:
-
             node_count = (
                 session.query(func.count(DocumentNode.document_id))
                 .filter(DocumentNode.repo_id == repo_id)
@@ -211,9 +214,7 @@ def list_ingestion_ids_for_repo(repo_id: str) -> List[str]:
             .distinct()
             .all()
         )
-        ingestion_ids = sorted({
-            str(row[0]) for row in (*from_requests, *from_nodes)
-        })
+        ingestion_ids = sorted({str(row[0]) for row in (*from_requests, *from_nodes)})
         logger.info(
             f"DB: {len(ingestion_ids)} historical ingestion_id(s) found for "
             f"repo {repo_id[:8]}"
@@ -222,7 +223,8 @@ def list_ingestion_ids_for_repo(repo_id: str) -> List[str]:
 
 
 def superseded_ingestion_ids_for_repo(
-    repo_id: str, current_ingestion_id: str,
+    repo_id: str,
+    current_ingestion_id: str,
 ) -> List[str]:
     """Every historical ingestion_id for repo_id other than current_ingestion_id.
 
@@ -250,10 +252,14 @@ def has_active_ingestion_for_repo(repo_id: str) -> bool:
     accepted row is committed).
     """
     with SessionLocal() as session:
-        active = session.query(IngestionRequest.ingestion_id).filter(
-            IngestionRequest.repo_id == repo_id,
-            IngestionRequest.status.in_(("accepted", "running")),
-        ).first()
+        active = (
+            session.query(IngestionRequest.ingestion_id)
+            .filter(
+                IngestionRequest.repo_id == repo_id,
+                IngestionRequest.status.in_(("accepted", "running")),
+            )
+            .first()
+        )
         return active is not None
 
 
@@ -286,6 +292,7 @@ def delete_ingestion_requests(ingestion_ids: List[str]) -> int:
 # GRAPH HELPERS
 # ==============================================================
 
+
 def _document_node_owner(session, repo_id: str) -> Optional[str]:
     """The single ingestion_id currently reflected in document_nodes for
     repo_id, or None if it has no graph rows right now.
@@ -297,9 +304,14 @@ def _document_node_owner(session, repo_id: str) -> Optional[str]:
     constraint. So at most one ingestion_id's rows can exist for repo_id at
     any moment; there is no schema-level way for two generations to coexist.
     """
-    return session.query(DocumentNode.ingestion_id).filter(
-        DocumentNode.repo_id == repo_id,
-    ).distinct().scalar()
+    return (
+        session.query(DocumentNode.ingestion_id)
+        .filter(
+            DocumentNode.repo_id == repo_id,
+        )
+        .distinct()
+        .scalar()
+    )
 
 
 def resolve_current_generation(repo_id: str) -> Optional[str]:
@@ -319,14 +331,18 @@ def resolve_current_generation(repo_id: str) -> Optional[str]:
         owner = _document_node_owner(session, repo_id)
         if owner is None:
             return None
-        status = session.query(IngestionRequest.status).filter(
-            IngestionRequest.ingestion_id == owner,
-        ).scalar()
+        status = (
+            session.query(IngestionRequest.status)
+            .filter(
+                IngestionRequest.ingestion_id == owner,
+            )
+            .scalar()
+        )
         return str(owner) if status == "completed" else None
 
 
 def generation_status(repo_id: str) -> str:
-    """"ready" (document_nodes hold a completed generation), "building" (an
+    """ "ready" (document_nodes hold a completed generation), "building" (an
     ingestion is accepted/running for repo_id -- its document_nodes, if any,
     may be a not-yet-embedded rebuild and must not be treated as stable),
     "failed" (the most recent ingestion for repo_id failed and none is
@@ -337,16 +353,26 @@ def generation_status(repo_id: str) -> str:
     with SessionLocal() as session:
         owner = _document_node_owner(session, repo_id)
         if owner is not None:
-            status = session.query(IngestionRequest.status).filter(
-                IngestionRequest.ingestion_id == owner,
-            ).scalar()
+            status = (
+                session.query(IngestionRequest.status)
+                .filter(
+                    IngestionRequest.ingestion_id == owner,
+                )
+                .scalar()
+            )
             if status == "completed":
                 return "ready"
             if status in ("accepted", "running"):
                 return "building"
-        latest_status = session.query(IngestionRequest.status).filter(
-            IngestionRequest.repo_id == repo_id,
-        ).order_by(IngestionRequest.created_at.desc()).limit(1).scalar()
+        latest_status = (
+            session.query(IngestionRequest.status)
+            .filter(
+                IngestionRequest.repo_id == repo_id,
+            )
+            .order_by(IngestionRequest.created_at.desc())
+            .limit(1)
+            .scalar()
+        )
         if latest_status in ("accepted", "running"):
             return "building"
         if latest_status == "failed":
@@ -355,7 +381,8 @@ def generation_status(repo_id: str) -> str:
 
 
 def file_content_hashes(
-    repo_id: str, ingestion_id: str,
+    repo_id: str,
+    ingestion_id: str,
 ) -> Dict[str, Optional[str]]:
     """{canonical_id: content_hash} for repo_id's file-level nodes owned by
     ingestion_id (issue #196, R3/R6/T021).
@@ -422,8 +449,10 @@ def generation_lineage(ingestion_id: str) -> Dict:
         )
         if row is None:
             return {
-                "commit_sha": None, "ingested_at": None,
-                "parent_generation_id": None, "is_incremental": False,
+                "commit_sha": None,
+                "ingested_at": None,
+                "parent_generation_id": None,
+                "is_incremental": False,
             }
         commit_sha, ingested_at, parent_generation_id, is_incremental = row
         return {
@@ -456,9 +485,13 @@ def get_structural_summary(ingestion_id: str) -> Optional[Dict]:
     re-ingestion has happened yet) or the row doesn't exist.
     """
     with SessionLocal() as session:
-        return session.query(IngestionRequest.structural_summary).filter(
-            IngestionRequest.ingestion_id == ingestion_id,
-        ).scalar()
+        return (
+            session.query(IngestionRequest.structural_summary)
+            .filter(
+                IngestionRequest.ingestion_id == ingestion_id,
+            )
+            .scalar()
+        )
 
 
 def get_document_nodes_by_canonical_ids(
@@ -505,12 +538,12 @@ def get_full_graph_for_repo(repo_id: str) -> Dict:
     current_ingestion_id = resolve_current_generation(repo_id)
     if current_ingestion_id is None:
         return {
-            "nodes": {}, "relationships": {},
+            "nodes": {},
+            "relationships": {},
             "generation_status": generation_status(repo_id),
         }
 
     with SessionLocal() as session:
-
         nodes = (
             session.query(DocumentNode)
             .filter(
@@ -522,7 +555,9 @@ def get_full_graph_for_repo(repo_id: str) -> Dict:
 
         if not nodes:
             return {
-                "nodes": {}, "relationships": {}, "generation_status": "ready",
+                "nodes": {},
+                "relationships": {},
+                "generation_status": "ready",
             }
 
         node_data = {node.canonical_id: node for node in nodes}
@@ -543,10 +578,18 @@ def get_full_graph_for_repo(repo_id: str) -> Dict:
             if from_cid and to_cid:
                 if from_cid not in rel_data:
                     rel_data[from_cid] = []
-                rel_data[from_cid].append({
-                    "to_canonical_id": to_cid,
-                    "relation_type": rel.relation_type,
-                })
+                rel_data[from_cid].append(
+                    {
+                        "to_canonical_id": to_cid,
+                        "relation_type": rel.relation_type,
+                        # Issue #220: confidence/call_sites/bases/etc, populated
+                        # at assembly time (graph_assembler.py) and persisted
+                        # verbatim (codebase_persistence.py) -- previously
+                        # dropped here, the first export step, even though it
+                        # survives correctly all the way to Postgres.
+                        "relationship_metadata": rel.relationship_metadata or {},
+                    }
+                )
 
         logger.info(
             f"DB: get_full_graph_for_repo repo={repo_id[:8]} "

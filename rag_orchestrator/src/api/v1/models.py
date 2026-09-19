@@ -77,6 +77,9 @@ class HopModel(BaseModel):
     hop_index: int
     relation_type: str
     parent_canonical_id: str
+    # Issue #220: confidence/call_sites/bases/etc when the underlying
+    # edge carried relationship_metadata; {} otherwise.
+    metadata: Dict[str, Any] = {}
 
 
 class GapNoteModel(BaseModel):
@@ -99,6 +102,8 @@ class ImpactBasisModel(BaseModel):
     relation_type: str
     hop_distance: int
     path: List[str]
+    # Issue #220: see HopModel.metadata.
+    metadata: Dict[str, Any] = {}
 
 
 class ImpactCandidateModel(BaseModel):

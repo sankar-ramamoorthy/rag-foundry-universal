@@ -9,12 +9,15 @@ logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 settings = get_settings()
-ingestion_service_url=settings.INGESTION_SERVICE_URL
+ingestion_service_url = settings.INGESTION_SERVICE_URL
+
+
 # --- Graph Classes ---
 class Node:
     """
     Represents a single artifact node in the graph.
     """
+
     def __init__(self, canonical_id: str, file_path: str, lineno: Optional[int] = None):
         self.canonical_id = canonical_id
         self.file_path = file_path
@@ -29,35 +32,66 @@ class Node:
     def __repr__(self):
         return f"Node({self.canonical_id})"
 
+
 class CodebaseGraph:
     """
     In-memory representation of a codebase's canonical artifact graph.
     """
+
     def __init__(self):
         self.nodes: Dict[str, Node] = {}
+        # Issue #220: per-edge relationship_metadata (confidence,
+        # call_sites, bases, etc. -- see graph_assembler.py), keyed by the
+        # directed (from_canonical_id, to_canonical_id, relation_type)
+        # triple. Deliberately NOT stored on Node.out_edges/in_edges
+        # itself (those stay Dict[relation_type, Set[Node]] exactly as
+        # before) -- every existing consumer (bfs_traversal,
+        # traversal_selector.py) keeps working unchanged; only a caller
+        # that explicitly wants metadata (trace_impact.py) looks here.
+        self.edge_metadata: Dict[tuple[str, str, str], dict] = {}
 
     def add_node(self, node: Node):
         self.nodes[node.canonical_id] = node
 
-    def add_edge(self, from_cid: str, to_cid: str, relation_type: str):
+    def add_edge(
+        self,
+        from_cid: str,
+        to_cid: str,
+        relation_type: str,
+        metadata: dict | None = None,
+    ):
         from_node = self.nodes.get(from_cid)
         to_node = self.nodes.get(to_cid)
         if not from_node or not to_node:
             raise ValueError(f"Cannot add edge: nodes missing {from_cid} -> {to_cid}")
         from_node.out_edges[relation_type].add(to_node)
         to_node.in_edges[relation_type].add(from_node)
+        if metadata:
+            self.edge_metadata[(from_cid, to_cid, relation_type)] = metadata
+
+    def get_edge_metadata(
+        self,
+        from_cid: str,
+        to_cid: str,
+        relation_type: str,
+    ) -> dict:
+        """{} when no metadata was ever recorded for this directed edge --
+        never raises, so callers can look this up unconditionally."""
+        return self.edge_metadata.get((from_cid, to_cid, relation_type), {})
 
     def get_node(self, canonical_id: str) -> Optional[Node]:
         return self.nodes.get(canonical_id)
 
+
 # --- Traversal Functions ---
+
 
 def bfs_traversal(
     graph: CodebaseGraph,
     start_cid: str,
     relation_types: Optional[Set[str]] = None,
     direction: str = "forward",
-    max_depth: int = 3
+    max_depth: int = 3,
 ) -> List[Node]:
     """
     Breadth-first traversal of graph starting from a node.
@@ -96,9 +130,11 @@ def bfs_traversal(
 
     return results
 
+
 # -------------------------------
 # Convenience Traversals
 # -------------------------------
+
 
 def traverse_calls(graph: CodebaseGraph, start_cid: str, depth: int = 3) -> List[Node]:
     """Traverse CALL edges forward (what does this node call?)."""
@@ -148,6 +184,7 @@ def traverse_incoming_imports(
 
 
 # WP-G6: traversals over the WP-G5 inheritance edges.
+
 
 def traverse_superclasses(
     graph: CodebaseGraph, start_cid: str, depth: int = 3
@@ -203,6 +240,7 @@ def traverse_overridden_by(
 
 # --- API Calls ---
 
+
 def get_nodes_by_canonical_ids_from_api(
     repo_id: str, canonical_ids: List[str]
 ) -> List[Dict]:
@@ -210,13 +248,13 @@ def get_nodes_by_canonical_ids_from_api(
     Fetch nodes by canonical_ids from the ingestion_service API
     (instead of directly querying DB).
     """
-    #url = f"http://ingestion_service/v1/graph/repos/{repo_id}/nodes"
+    # url = f"http://ingestion_service/v1/graph/repos/{repo_id}/nodes"
     url = f"{ingestion_service_url}/v1/graph/repos/{repo_id}/nodes"
     params = {"canonical_ids": ",".join(canonical_ids)}
     response = requests.get(url, params=params)
 
     if response.status_code == 200:
-        return response.json().get('nodes', [])
+        return response.json().get("nodes", [])
     else:
         raise Exception(
             f"Error fetching nodes: {response.status_code} - {response.text}"
@@ -243,7 +281,8 @@ def get_repo_generation(repo_id: str) -> tuple[Optional[str], str]:
         response = requests.get(url, timeout=5)
     except requests.RequestException:
         logger.warning(
-            f"Generation check failed for repo_id={repo_id[:8]}", exc_info=True,
+            f"Generation check failed for repo_id={repo_id[:8]}",
+            exc_info=True,
         )
         return None, "unknown"
 
@@ -263,7 +302,7 @@ def get_full_graph_from_api(repo_id: str) -> Dict:
     Fetch the full graph (nodes and relationships) for a given repository
     from the ingestion_service API.
     """
-    #url = f"http://ingestion_service/v1/graph/repos/{repo_id}"
+    # url = f"http://ingestion_service/v1/graph/repos/{repo_id}"
     url = f"{ingestion_service_url}/v1/graph/repos/{repo_id}"
     response = requests.get(url)
 
@@ -276,6 +315,7 @@ def get_full_graph_from_api(repo_id: str) -> Dict:
 
 
 # --- Graph Loading ---
+
 
 def load_graph_for_repo(repo_id: str) -> CodebaseGraph:
     """
@@ -302,7 +342,15 @@ def load_graph_for_repo(repo_id: str) -> CodebaseGraph:
             to_cid = edge.get("to_canonical_id")
             relation_type = edge.get("relation_type")
             if from_cid in graph.nodes and to_cid in graph.nodes:
-                graph.add_edge(from_cid, to_cid, relation_type)
+                # Issue #220: relationship_metadata now survives the
+                # export -- pass it through so trace_impact.py can surface
+                # confidence/call-site evidence per hop.
+                graph.add_edge(
+                    from_cid,
+                    to_cid,
+                    relation_type,
+                    metadata=edge.get("relationship_metadata"),
+                )
 
     logger.info(f"Graph built: {len(graph.nodes)} nodes")
     return graph

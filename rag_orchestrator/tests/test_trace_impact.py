@@ -106,6 +106,71 @@ def test_traced_path_linear_chain_ordered_hops():
     assert result.hops[1].parent_canonical_id == "b.py#bar"
 
 
+def test_traced_path_forward_hop_carries_edge_metadata():
+    graph = CodebaseGraph()
+    graph.add_node(Node(canonical_id="a.py#foo", file_path="a.py"))
+    graph.add_node(Node(canonical_id="b.py#bar", file_path="b.py"))
+    graph.add_edge(
+        "a.py#foo",
+        "b.py#bar",
+        "CALL",
+        metadata={"confidence": 1.0, "call_sites": [12], "count": 1},
+    )
+
+    result = traced_path(
+        graph,
+        "a.py#foo",
+        relation_types={"CALL"},
+        direction="forward",
+        max_depth=6,
+        max_nodes=300,
+    )
+    assert result.hops[0].metadata == {
+        "confidence": 1.0,
+        "call_sites": [12],
+        "count": 1,
+    }
+
+
+def test_traced_path_reverse_hop_carries_edge_metadata_of_the_real_directed_edge():
+    graph = CodebaseGraph()
+    graph.add_node(Node(canonical_id="caller.py#outer", file_path="caller.py"))
+    graph.add_node(Node(canonical_id="callee.py#inner", file_path="callee.py"))
+    # the real edge is caller -> callee; metadata is keyed on that
+    # direction regardless of which direction traced_path is later asked
+    # to walk it.
+    graph.add_edge(
+        "caller.py#outer",
+        "callee.py#inner",
+        "CALL",
+        metadata={"confidence": 0.5},
+    )
+
+    result = traced_path(
+        graph,
+        "callee.py#inner",
+        relation_types={"CALL"},
+        direction="reverse",
+        max_depth=6,
+        max_nodes=300,
+    )
+    assert result.hops[0].canonical_id == "caller.py#outer"
+    assert result.hops[0].metadata == {"confidence": 0.5}
+
+
+def test_traced_path_hop_metadata_defaults_to_empty_dict_when_none_recorded():
+    graph = _graph([("a.py#foo", "b.py#bar", "CALL")])  # no metadata passed
+    result = traced_path(
+        graph,
+        "a.py#foo",
+        relation_types={"CALL"},
+        direction="forward",
+        max_depth=6,
+        max_nodes=300,
+    )
+    assert result.hops[0].metadata == {}
+
+
 def test_traced_path_branching_chain_deterministic_order():
     graph = _graph(
         [
@@ -240,6 +305,22 @@ def test_assess_impact_candidate_with_multiple_bases():
     assert candidate.canonical_id == "caller.py#outer"
     relation_types_found = {b.relation_type for b in candidate.basis}
     assert relation_types_found == {"CALL", "IMPORTS"}
+
+
+def test_assess_impact_basis_carries_edge_metadata():
+    graph = CodebaseGraph()
+    graph.add_node(Node(canonical_id="caller.py#outer", file_path="caller.py"))
+    graph.add_node(Node(canonical_id="target.py#fn", file_path="target.py"))
+    graph.add_edge(
+        "caller.py#outer",
+        "target.py#fn",
+        "CALL",
+        metadata={"confidence": 1.0, "call_sites": [5]},
+    )
+
+    result = assess_impact(graph, "target.py#fn", max_depth=4, max_candidates=300)
+    basis = result.candidates[0].basis[0]
+    assert basis.metadata == {"confidence": 1.0, "call_sites": [5]}
 
 
 def test_assess_impact_excludes_defines_and_documents():
