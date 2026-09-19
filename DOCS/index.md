@@ -64,8 +64,10 @@ The active next tranche is **Phase 6** in
 [`07-Roadmap.md`](/DOCS/audit/07-Roadmap.md#phase-6--repository-intelligence-and-incremental-ingestion-foundation) —
 13 prioritized issues (#196-#208) covering incremental ingestion/snapshot
 lineage, repository intelligence (ORIENT/TRACE/IMPACT), provenance/source
-authority, and related foundation work, with items 1-2 (incremental
-ingestion, ORIENT) next up.
+authority, and related foundation work. Items 1-3 (#196, #197, #198) and
+their fast-follows (#216, #220, #221) have shipped. Next is #200 (bounded
+evidence sufficiency), followed by #199 (source authority / subject /
+provenance), then authority/provenance-aware sufficiency checks.
 
 Start at [[audit/00-Audit-Overview]] — the audit subtree's own index
 (codebase findings, scalability/platform/LLM-provider plans, the roadmap,
@@ -98,6 +100,13 @@ is retained as part of the audit trail.
 
 ## Proposals
 
+The [Phase 6 Claude handoff](/DOCS/proposals/2026-09-19-phase-6-sufficiency-authority-handoff.md)
+plans #200 mechanical sufficiency, then #199 authority/subject/provenance, then
+authority-aware sufficiency checks. Its
+[code findings](/DOCS/notes/2026-09-19-phase-6-sufficiency-findings.md)
+record the inspected baseline and implementation seams. This is proposed work,
+not a shipped capability.
+
 `DOCS/proposals/` — process/tooling proposals under discussion, not yet
 binding: [[proposals/sdd-spec-kit-adoption]],
 [[proposals/lean-instruction-routing-layer]] (before Phase 3).
@@ -106,7 +115,7 @@ binding: [[proposals/sdd-spec-kit-adoption]],
 
 [WP-R4 evidence delivery](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)
 tracks local mechanics verification and outstanding quality gates;
-[ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md) records the proposed contract.
+[ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md) records the accepted contract.
 
 
 
