@@ -647,7 +647,7 @@ def test_rebuild_graph_and_vector_parity_at_each_buffer_size(
         )
         with factory() as session:
             persistence = CodebaseGraphPersistence(session)
-            stats, _current_hashes = api._build_and_persist_graph(
+            stats, _current_hashes, _inventory = api._build_and_persist_graph(
                 tmp_path,
                 repo,
                 attempt,
