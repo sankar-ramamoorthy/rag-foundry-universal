@@ -366,12 +366,20 @@ composite score).
   fixture) with **no concern raised** — the Stage B1 classifier's
   fixture rule only matches `fixtures/`/`examples/` path segments, so
   this corpus has zero `example_fixture`/`embedded_subject` rows at
-  all. Recorded as an open recommendation for a follow-up B1 classifier
-  refinement (not applied in this pass — a rule change needs its own
-  review, not a same-PR patch). See
+  all. See
   [test results](/DOCS/test_results/2026-09-19-stage-b3-provenance-shadow-diagnostics.md).
   11 new tests (`test_provenance_diagnostics.py`); full `-m unit` suite
   (284 passed), `ruff`/`pyright` clean.
+- **`smoke_repo/` classifier gap fixed**: `provenance_classifier.py`'s
+  fixture rule now also matches `smoke_repo`/`smoke_tests` directory
+  segments (`CLASSIFIER_VERSION` bumped `role-subject-v1` →
+  `role-subject-v2`), scoped to exactly the observed gap, not broadened
+  to unobserved patterns. Live re-verified after re-ingesting `shared/`:
+  `smoke_repo/`'s 15 nodes now read `role=example_fixture`/
+  `subject=embedded_subject` (0 before), the other 252 nodes'
+  classification unchanged, and the `repository_overview` diagnostic now
+  correctly flags `embedded_subject_in_overview` for that content. 2 new
+  classifier tests.
 - **Not yet done**: a fuller B3 pass against a fixture/test/design-rich
   corpus (production already has the full self-repo ingested, which
   would exercise every rule — this pass used only the small local

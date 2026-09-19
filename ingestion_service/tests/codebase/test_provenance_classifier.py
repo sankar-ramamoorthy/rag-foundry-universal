@@ -51,6 +51,27 @@ def test_fixture_file_classified_as_example_fixture_and_embedded_subject():
     assert result["subject"]["basis"] == "path_convention:fixtures_or_examples_dir"
 
 
+def test_smoke_repo_classified_as_example_fixture_and_embedded_subject():
+    """Issue #199, Stage B3 finding: shared/smoke_repo/ is a real,
+    self-documented live-smoke-test fixture the v1 rule missed entirely
+    (see DOCS/test_results/2026-09-19-stage-b3-provenance-shadow-diagnostics.md).
+    v2 adds this without broadening to unobserved patterns."""
+    result = classify_node(
+        relative_path="smoke_repo/kennel.py", doc_type="python source", text=""
+    )
+    assert result["role"]["value"] == "example_fixture"
+    assert result["subject"]["value"] == "embedded_subject"
+
+
+def test_smoke_tests_dir_classified_as_example_fixture():
+    result = classify_node(
+        relative_path="shared/smoke_tests/README.md",
+        doc_type="markdown_module",
+        text="",
+    )
+    assert result["role"]["value"] == "example_fixture"
+
+
 def test_docs_archive_classified_as_historical():
     result = classify_node(
         relative_path="docs-archive/status-snapshots-2025-2026/2025-06-01.md",

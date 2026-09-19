@@ -84,13 +84,18 @@ changed, no false confidence was introduced. It is exactly the kind of
 signal this stage exists to surface before any of it becomes a policy
 Stage C could rely on.
 
-**Not fixed in this pass, by design** -- widening the fixture-path rule
-(e.g. to also match `smoke_repo`/`smoke_test`-style directory names) is
-itself a Stage B1 classifier change that deserves its own deliberate
-review and re-verification (per Constitution Principle VIII, a rule
-change needs its own test coverage, not a same-PR patch bundled into a
-"just diagnostics" pass). Recorded here as an open recommendation for
-a follow-up B1 refinement PR, not applied automatically.
+**Fixed as a separate, deliberate follow-up** (not bundled into this
+pass): `provenance_classifier.py`'s `_FIXTURE_PATH_RE` now also matches
+`smoke_repo`/`smoke_tests` directory segments (`CLASSIFIER_VERSION`
+bumped `role-subject-v1` -> `role-subject-v2`), scoped to exactly the
+observed gap -- not broadened to unobserved patterns like `demo`/
+`sample`/`mock`. Re-verified live after re-ingesting `shared/`:
+`smoke_repo/`'s 15 nodes now classify `role=example_fixture`,
+`subject=embedded_subject` (0 before the fix), the other 252 nodes'
+classification is unchanged, and the same `repository_overview` query
+that previously showed `concerns: []` for `smoke_repo/README.md` now
+correctly reports `["embedded_subject_in_overview"]`. 2 new classifier
+unit tests. See `ingestion_service/tests/codebase/test_provenance_classifier.py`.
 
 ## What this does and does not establish
 
@@ -114,9 +119,8 @@ fuller production pass in this same session.
 ## Recommendation
 
 Keep this fully opt-in (no default-on switch exists to flip). The
-`smoke_repo` finding above is real signal that the Stage B1 classifier
-rule set is incomplete for at least one real case in this codebase --
-worth a deliberate, separately-reviewed follow-up, not a same-session
-patch. Stage C (authority-aware sufficiency) should not be started from
-this alone; it needs the fuller-corpus pass this document explicitly
+`smoke_repo` classifier gap has since been fixed and re-verified live
+(see above) -- `role-subject-v2`. Stage C (authority-aware sufficiency)
+should not be started from this alone; it needs the fuller-corpus pass
+this document explicitly
 does not claim to have completed.
