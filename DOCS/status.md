@@ -299,15 +299,42 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   corpora at full scale, which is a head start on that gate, not the
   gate itself.
 
-**Stage B (#199, source authority/subject/provenance) — B0 started.**
+**Stage B (#199, source authority/subject/provenance) — B0 and B1 done.**
 [ADR-053](/DOCS/adr/ADR-053-source-authority-provenance-model.md)
-(status: proposed, not implemented) and
+(status: proposed) and
 [spec 008](/specs/008-source-authority-provenance/spec.md) record the
 five-facet contract (origin/role/subject/derivation/validity, no
-composite score) and its persistence direction (additive nullable JSON
-on `DocumentNode`, no new table). No migration, producer, or persistence
-code exists yet — B1 (migration/producers), B2 (transport to context/
-manifest), and B3 (measured rollout) remain open, tracked under #199.
+composite score).
+
+- **B1 (migration + deterministic producer + persistence) done**:
+  migration `20260919_node_provenance` adds a nullable JSON `provenance`
+  column to `document_nodes` (additive; old/null rows read as every
+  facet `unknown`). `ingestion_service/src/core/codebase/
+  provenance_classifier.py` is a pure, deterministic
+  `classify_node(relative_path, doc_type, text)` — path-convention rules
+  for role (test/example_fixture/historical/design/configuration/
+  documentation/implementation/unknown_mixed), fixture-path override for
+  subject (embedded_subject vs. selected_repository), declared-only
+  Markdown frontmatter `status:` for validity, `source` derivation
+  (no generated-summary producer exists yet). Wired into the single
+  node-upsert chokepoint (`CodebaseGraphPersistence.persist_graph`, so
+  every language/extractor gets it uniformly) and into
+  `create_document_node` (the document-upload path). Recomputed on
+  *every* upsert, including a reused/unchanged row, so a future
+  classifier-version bump reaches existing nodes without forcing
+  re-embedding. No LLM call anywhere. Origin is not duplicated —
+  existing `repo_id`/`canonical_id`/`relative_path`/`source`/
+  `ingestion_id`/`doc_type`/`content_hash` columns remain that facet.
+  14 new tests (12 pure classifier + 2 real-Postgres integration
+  confirming persistence and reclassification-on-reused-row); local
+  `-m unit`/`-m integration` suites green, `ruff` clean, migration
+  applied cleanly against local dev Postgres and verified live
+  (`shared/` re-ingested, `provenance` populated correctly per row).
+- **Not yet done**: B2 (transport into the actual retrieval/LLM
+  context/manifest — right now `provenance` is persisted but not read
+  by anything downstream of ingestion) and B3 (measured rollout).
+  Stage C (`#200` authority-aware sufficiency) depends on B2/B3, not
+  on this slice alone.
 
 ## Known issues
 

@@ -6,6 +6,7 @@ import logging
 
 from sqlalchemy.orm import Session
 from shared.models.document_node import DocumentNode
+from src.core.codebase.provenance_classifier import classify_node
 from src.core.worker_context import check_ownership
 
 # Set up logging
@@ -60,6 +61,11 @@ def create_document_node(
         canonical_id=canonical_id,       # ✅
         relative_path=relative_path,     # ✅
         repo_id=repo_id or str(ingestion_id),  # Use ingestion_id if repo_id is None
+        # Issue #199 (ADR-053, Stage B1): full document text isn't known
+        # yet at this call site (chunking/embedding happens after this
+        # row commits), so classification runs on path/doc_type alone --
+        # validity stays "unknown" here rather than guessed from nothing.
+        provenance=classify_node(relative_path, doc_type, ""),
     )
 
     session.add(node)

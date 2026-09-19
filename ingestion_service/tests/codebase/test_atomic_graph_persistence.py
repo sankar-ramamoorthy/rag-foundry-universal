@@ -243,3 +243,79 @@ def test_persist_graph_statement_count_is_bulk(repo_id, ingestion_id):
         f"{len(statements)} statements for 50 nodes / 49 edges:\n"
         + "\n".join(statements[:20])
     )
+
+
+# ---------------------------------------------------------------------
+# Issue #199 (ADR-053, Stage B1): provenance classification persists
+# through the real upsert chokepoint, not just the pure classifier tests.
+# ---------------------------------------------------------------------
+
+def _provenance_by_canonical_id(repo_id):
+    Session = get_sessionmaker()
+    with Session() as s:
+        rows = (
+            s.query(DocumentNode.canonical_id, DocumentNode.provenance)
+            .filter(DocumentNode.repo_id == repo_id)
+            .all()
+        )
+        return {r.canonical_id: r.provenance for r in rows}
+
+
+def test_persist_graph_populates_provenance_deterministically(repo_id, ingestion_id):
+    nodes = [
+        {
+            "canonical_id": "tests/test_foo.py",
+            "relative_path": "tests/test_foo.py",
+            "title": "test_foo",
+            "doc_type": "python source",
+            "source": "tests/test_foo.py",
+            "summary": "",
+            "text": "",
+            "ingestion_id": ingestion_id,
+        },
+        {
+            "canonical_id": "src/foo.py",
+            "relative_path": "src/foo.py",
+            "title": "foo",
+            "doc_type": "python source",
+            "source": "src/foo.py",
+            "summary": "",
+            "text": "",
+            "ingestion_id": ingestion_id,
+        },
+    ]
+    _persist(repo_id, nodes, [])
+
+    provenance = _provenance_by_canonical_id(repo_id)
+    assert provenance["tests/test_foo.py"]["role"]["value"] == "test"
+    assert provenance["src/foo.py"]["role"]["value"] == "implementation"
+    assert provenance["src/foo.py"]["subject"]["value"] == "selected_repository"
+
+
+def test_reused_node_gets_reclassified_on_rebuild_not_just_new_ones(
+    repo_id, ingestion_id
+):
+    """A canonical_id that survives a rebuild (R1: same document_id kept)
+    must still have its provenance recomputed on that rebuild -- this is
+    what lets a classifier-version bump reach an unchanged node without
+    requiring re-embedding (spec 008 FR-005); persist_graph always
+    recomputes on every upsert, reused row or not."""
+    node = {
+        "canonical_id": "src/bar.py",
+        "relative_path": "src/bar.py",
+        "title": "bar",
+        "doc_type": "python source",
+        "source": "src/bar.py",
+        "summary": "",
+        "text": "",
+        "ingestion_id": ingestion_id,
+    }
+    _persist(repo_id, [node], [])
+    first = _provenance_by_canonical_id(repo_id)["src/bar.py"]
+    assert first["role"]["value"] == "implementation"
+
+    # Simulate a path-convention change: same canonical_id, now under tests/.
+    moved = {**node, "relative_path": "tests/bar.py"}
+    _persist(repo_id, [moved], [])
+    second = _provenance_by_canonical_id(repo_id)["src/bar.py"]
+    assert second["role"]["value"] == "test"

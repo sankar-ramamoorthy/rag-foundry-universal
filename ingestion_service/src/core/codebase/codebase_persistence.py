@@ -24,6 +24,7 @@ from shared.models.document_relationship import DocumentRelationship
 #from shared.models.vector_chunk import VectorChunk
 from src.core.database_session import get_sessionmaker
 from src.core.codebase.identity import build_canonical_id
+from src.core.codebase.provenance_classifier import classify_node
 
 logger = logging.getLogger(__name__)
 SessionLocal = get_sessionmaker()
@@ -90,6 +91,7 @@ class CodebaseGraphPersistence:
         "doc_type",
         "text",
         "content_hash",
+        "provenance",
     )
 
     def persist_graph(
@@ -149,6 +151,8 @@ class CodebaseGraphPersistence:
                 relative_path, node.get("symbol_path")
             )
             canonical_ids.append(canonical_id)
+            doc_type = node.get("doc_type", "unknown")
+            text_value = node.get("text", "")
             node_rows.append(
                 {
                     # Only used for a brand-new row; ON CONFLICT DO UPDATE
@@ -162,9 +166,14 @@ class CodebaseGraphPersistence:
                     "summary": node.get("summary", ""),
                     "source": node.get("source", relative_path),
                     "ingestion_id": str(node.get("ingestion_id")),
-                    "doc_type": node.get("doc_type", "unknown"),
-                    "text": node.get("text", ""),
+                    "doc_type": doc_type,
+                    "text": text_value,
                     "content_hash": node.get("content_hash"),
+                    # Issue #199 (ADR-053, Stage B1): recomputed on every
+                    # upsert -- including a reused, otherwise-unchanged
+                    # row -- so a classifier-version bump reclassifies
+                    # without requiring re-embedding (spec 008 FR-005).
+                    "provenance": classify_node(relative_path, doc_type, text_value),
                 }
             )
 
