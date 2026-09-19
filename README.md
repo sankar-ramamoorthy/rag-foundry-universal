@@ -1,339 +1,260 @@
-# rag-foundry-universal
+﻿# rag-foundry-universal
 
-![Journey of Rags](DOCS/assets/banner/journey-of-rags-banner.jpg)
+**Read-only code intelligence for understanding unfamiliar repositories.**
 
-**Graph-aware retrieval, measured: 70% → 90% Recall@5** over raw vector
-search alone, by combining vector similarity with deterministic graph
-traversal (BFS over CALL/DEFINES/IMPORTS/INHERITS/OVERRIDES/DOCUMENTS edges).
-*Query Python, TypeScript/JavaScript, Rust, and Java codebases, plus
-documents, like a developer assistant.*
+Combines semantic search with a deterministic code graph to answer questions
+about implementation, dependencies, and repository structure. Supports Python,
+TypeScript/JavaScript, Rust, and Java, alongside Markdown and uploaded documents.
 
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sankar-ramamoorthy/rag-foundry-universal)
 [![CI](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sankar-ramamoorthy/rag-foundry-universal)
 
-**Status:** see [`DOCS/status.md`](/DOCS/status.md) for current language
-support, shipped work, and known issues.
+In a **10-question baseline**, graph expansion recovered relevant evidence for
+**two questions missed by the top-five vector results**. The project also covers
+operational concerns that affect answer reliability: ingestion recovery,
+repository generation consistency, bounded context selection, and traceable
+source evidence. See [measured results](#measured-results) for scope and limitations.
 
----
+**Hardware:** plan for GPU-backed embedding and generation, locally or through
+remote inference endpoints. The current system is not intended as a CPU-friendly
+local setup.
 
-**Graph-Aware RAG Query in action** — real run against this repo
-(`sankar-ramamoorthy/rag-foundry-universal`), Gradio UI, remote Ollama
-(`Qwen3:4b`) over Tailscale, 2026-09-14:
+## See it in action
 
-![Graph-Aware RAG Query example: "What calls GraphAssembler.assemble() and what edges does it produce?"](DOCS/assets/screenshots/graph-aware-rag-query-example.png)
+Ask questions such as:
 
----
+- What calls this function, and which source relationships support the answer?
+- Which services, manifests, and entry points exist in this repository?
+- Which callers or dependents might be affected by changing a symbol?
+- What does the documentation say about this implementation?
 
-## 🚀 Overview
+The system exposes both generated answers and deterministic structural queries.
+It reads indexed source; it does not modify the repositories it analyzes.
 
-`rag-foundry-universal` provides **graph-aware RAG querying** across **Python, TypeScript/JavaScript, Rust, and Java codebases** and **documents**, enabling semantic search at both the code and document level. Unlike a simple RAG system, it preserves structure in code and Markdown across an entire repository, giving precise answers that respect relationships like function calls, imports, and documentation links.
+![Graph-aware query showing callers of GraphAssembler.assemble and the edges it produces](DOCS/assets/screenshots/graph-aware-rag-query-example.png)
 
-It enables you to:
+*Recorded against this repository through the Gradio UI, using remote Ollama
+with Qwen3:4b, September 14, 2026.*
 
-* Query code repositories with graph relationships extracted from source
-* Query Markdown and other documents semantically with section-level context
-* Combine deterministic graph traversal with LLM reasoning
-* Ingest PDFs, DOCX, PPTX, XLSX, CSV, Markdown, and text using a universal preprocessor (Docling)
-* OCR scanned documents with Tesseract
+## Engineering decisions
 
----
+**Use structure to recover evidence semantic search misses.** Vector search
+provides seeds; traversal follows extracted call, import, inheritance,
+containment, and documentation relationships. Explicit repository overview,
+trace, and impact endpoints use structural evidence without an LLM router.
 
-## 🧩 Key Features
+**Measure before adding retrieval complexity.** The initial evaluation separated
+retrieval failures from answer-generation failures. It did not justify enabling
+a reranker by default. An optional reranker remains available for controlled
+comparisons; adding a component is not treated as evidence of better answers.
 
-* **Dual Ingestion Paths**: Git repositories (graph-aware) and uploaded files (Docling + chunking)
-* **Deterministic Artifact Graph**: tree-sitter-based extraction across supported languages (modules, classes, interfaces, functions, calls, imports, inheritance) — five edge types: `CALL`, `DEFINES`, `IMPORTS`, `INHERITS`, `OVERRIDES`. A `language` filter is available on graph-aware queries. Python's move to tree-sitter was parity-gated against the legacy AST extractor across a fixture repo and six real service codebases before becoming the default; the AST extractor remains available as an automatic + manual rollback path.
-* **Cross-linking of Markdown to Code**: DOCUMENTS relationships connect Markdown headings to the code they describe
-* **Vector Embeddings**: Ollama embedder, 1024 dimensions (mxbai-embed-large:latest), batched end-to-end (embedder batches + bulk vector writes)
-* **Indexed Vector Search**: HNSW (cosine) ANN index plus filter indexes on pgvector — p95 ≈ 62 ms measured at Phase 1 benchmark scale (56k artifacts, see below). The "latency independent of corpus size" goal (<100 ms p95 at 1M+ chunk rows) is a target tracked in `DOCS/audit/04-Scalability-Plan.md` — not yet measured at that scale.
-* **Atomic Repo Rebuilds**: re-ingesting a repo replaces its whole graph in one transaction under a per-repo advisory lock — a failed or concurrent ingest can never corrupt or lose the previous graph
-* **Repository Deletion**: hard-deletes every historical ingestion's vectors, graph nodes/relationships, and request records for a repo, serialized against concurrent ingests of the same repo via the same advisory-lock scope
-* **RAG Query Paths**: Separate endpoints for code repo queries and document queries, combining vector similarity seeding with deterministic BFS graph expansion (empirically shown to matter — see RAG Quality below)
-* **OCR Support**: Tesseract for scanned PDFs/images
-* **Multi-Provider LLM Routing (LiteLLM)**: local Ollama by default, switchable per-machine (Tailscale-reachable Ollama, Anthropic/OpenAI, or a free-tier endpoint) via a gitignored `.env` — no code changes; see `llm_service/models.yaml`, the live provider-verification notes in `DOCS/notes/20260913-free-provider-live-verification.md`, and the dynamic model catalog/admin-policy endpoints documented in [Service URLs](#-service-urls).
+**Track what actually reaches the model.** Context selection returns the exact
+selected passages. A final-context manifest records source identities and text
+hashes, distinguishing evidence found during retrieval from evidence retained
+in the prompt. Context budgets and whole-passage selection make losses visible.
 
----
+**Make repository lifecycle behavior explicit.** Graph persistence is atomic,
+and repository mutations are serialized. Generation-scoped retrieval checks
+for rebuilds so a query does not silently combine different indexed generations.
+A repository can be unavailable during rebuilding; preserving a continuously
+servable previous snapshot is not a current guarantee.
 
-## 💡 Getting Started
+**Avoid redundant embedding work.** Incremental ingestion reuses embeddings for
+unchanged files and records generation lineage. Files are still parsed to rebuild
+structure; this is not a claim that every ingestion stage scales only with the diff.
 
-**Prerequisites**
+## Measured results
 
-* Ensure **Ollama** is installed on the host
-* The containers expect Ollama served at `http://host.docker.internal:11434`
-* Pre-download the embedder (`mxbai-embed-large:latest`), the default
-  generation model (`phi4-mini:latest`), and the summarization-step model
-  (`granite4:350m`) — all three are used by the default local-Ollama
-  configuration
-* Optional: route generation through a different endpoint (a Tailscale-reachable remote Ollama box, or a cloud provider like Anthropic/OpenAI) by setting `LLM_DEFAULT_ALIAS` and the matching env vars in a gitignored `.env` — see `llm_service/models.yaml`. The committed default stays local-Ollama-only so a fresh clone works without any provider account.
+### Retrieval and answer quality
 
-**Steps**
+The August 2026 baseline used **10 known-answer questions: five code questions
+and five document questions**.
 
+| Measurement | Result |
+| --- | --- |
+| Expected source in the top-five raw vector results | 7/10 |
+| Expected source recovered by production retrieval with five vector seeds and graph expansion | 9/10 |
+| End-to-end answer pass rate | 9/10 |
+
+The expanded retrieval pool can contain more than five artifacts, so the first
+two rows are not an equal-sized final-result comparison. This is a small,
+project-specific baseline, not a general accuracy guarantee. Retrieval success
+and answer correctness are evaluated separately.
+
+[Baseline questions, methodology, and failure analysis](DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md)
+
+A later, separate eight-question evaluation compared improved passage selection
+and context delivery against the earlier implementation: **5/8 versus 3/8**.
+These are different question sets and should not be read as a longitudinal
+accuracy trend. The report includes the regression analysis and budget tradeoff.
+
+[Passage-selection evaluation](DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)
+
+### Ingestion and search performance
+
+A synthetic repository with **2,000 files, 56,000 artifacts, and 104,000
+relationships**, measured on a laptop with PostgreSQL/pgvector in Docker:
+
+| Stage | Measured result |
+| --- | --- |
+| Source extraction and graph construction | 42.7 s |
+| Atomic graph persistence | 25.7 s |
+| Chunking 54,000 artifacts | 1.2 s |
+| Filtered vector search, k=10 | 61.7 ms p95 |
+
+These are historical component measurements, not current end-to-end latency
+claims. Embedding was the dominant cost: about 2.2 chunks/second on CPU Ollama.
+That historical CPU measurement illustrates the bottleneck; it is not a practical
+hardware recommendation for the current system. The benchmark does not
+demonstrate million-artifact scale.
+
+[Benchmark setup and measurements](DOCS/test_results/Phase-1-Exit-Report.md)
+
+## Architecture
+
+Services communicate over HTTP. The diagram shows the main ingestion and query
+paths; the orchestrator has no direct database access.
+
+```mermaid
+flowchart LR
+    UI[Gradio UI] -->|ingest| I[Ingestion service]
+    UI -->|query| R[RAG orchestrator]
+    R -->|graph, inventory, generation| I
+    R -->|passage retrieval| V[Vector store service]
+    R -->|answer generation| L[LLM service]
+    I -->|store embeddings| V
+    I -->|graph and document metadata| DB[(PostgreSQL + pgvector)]
+    V -->|vector storage and search| DB
+    L --> P[Local or remote model provider]
 ```
+
+Code extraction uses tree-sitter and a shared graph representation across
+languages. Markdown preserves section structure and links to code where resolved.
+Uploaded documents use Docling and OCR where needed. Embedding uses Ollama;
+generation supports local and remote providers through LiteLLM.
+
+| Service | Responsibility | Local port |
+| --- | --- | --- |
+| Ingestion | Parsing, artifact graph, ingestion lifecycle, structural inventory | 8001 |
+| Vector store | Embedding storage and passage search | 8002 |
+| LLM | Generation and provider routing | 8003 |
+| Orchestrator | Retrieval, traversal, evidence selection, answer coordination | 8004 |
+| Gradio | Ingestion and query interface | 7860 |
+
+**Stack:** Python, FastAPI, PostgreSQL, pgvector, tree-sitter, Docling, Ollama,
+LiteLLM, Gradio, Docker Compose, pytest, and GitHub Actions.
+
+## Current capabilities and limits
+
+- **Code intelligence:** Python, TypeScript/JavaScript, Rust, and Java extraction;
+  repository inventory; bounded call tracing; candidate impact analysis.
+- **Document retrieval:** Markdown, PDF, office documents, CSV, text, and OCR inputs.
+- **Repository maintenance:** incremental embedding reuse, source/generation
+  lineage, serialized ingestion/deletion, and interrupted-job recovery.
+- **Evidence delivery:** query-relevant passages, bounded context, source manifests,
+  and visibility into the model and fallback that served an answer.
+
+Static analysis cannot resolve every runtime call or external dependency. Trace
+results expose unresolved boundaries and truncation; impact results describe
+candidates, not guaranteed breakage. Graph retrieval still loads a repository
+into an in-memory cache. Source-authority and subject-aware sufficiency checks
+are planned work, not a current guarantee.
+
+[Current status and known limitations](DOCS/status.md) ·
+[Roadmap](DOCS/audit/07-Roadmap.md) · [Documentation index](DOCS/index.md)
+
+## Quick start
+
+Requires Docker Compose, Python 3.12 with `uv`, and GPU-backed inference capacity
+for embedding and generation. Use a local GPU or configure remote inference
+endpoints; a CPU-only laptop is not the intended setup. Memory requirements
+depend on model choice and repository size; no universal minimum is claimed here.
+
+The example below uses local Ollama accessible from the containers at
+`http://host.docker.internal:11434`. Commands use Bash. Review
+[the environment template](.env.example) for local or remote host configuration.
+
+```bash
 git clone https://github.com/sankar-ramamoorthy/rag-foundry-universal.git
 cd rag-foundry-universal
+cp .env.example .env
 
-docker compose up --build
+ollama pull mxbai-embed-large:latest
+ollama pull phi4-mini:latest
+
+# Start the database and apply migrations before starting the application.
+docker compose up -d postgres
 DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5434/ingestion_db \
     uv run alembic upgrade head
 
-# File ingestion
-curl -X POST http://localhost:8001/v1/ingest/file -F file=@my_doc.txt
-
-# Repo ingestion
-curl -X POST http://localhost:8001/v1/ingest-repo -F git_url=https://github.com/your/repo.git
-
-# Code repo query
-curl -X POST http://localhost:8004/v1/rag -H "Content-Type: application/json" \
-     -d '{"query": "what calls add()", "repo_id": "<repo_id>", "top_k": 5}'
-
-# Document query
-curl -X POST http://localhost:8004/v1/rag/simple -H "Content-Type: application/json" \
-     -d '{"query": "what are the key features", "top_k": 5}'
+docker compose up --build -d
 ```
 
----
+Wait for PostgreSQL to become healthy before running migrations. Once application
+services are healthy, open **http://localhost:7860** to ingest and query through
+the UI. Local generation needs no cloud account. Optional providers and
+per-step model choices are configured in [the model registry](llm_service/models.yaml).
 
-## 🏗️ Architecture
+For an API walkthrough, submit a repository and retain the returned `ingestion_id`:
 
-```
-┌─────────────────────────────┐
-│ Gradio UI :7860             │
-│ ├── Repo ingestion          │
-│ ├── Document ingestion      │
-│ ├── Graph-aware RAG query   │
-│ └── Document RAG query      │
-└─────────────┬───────────────┘
-              │
-      ┌───────▼─────────┐
-      │ rag_orchestrator │ :8004
-      │ ├── /v1/rag      │ graph-aware queries
-      │ └── /v1/rag/simple │ document RAG
-      └───────┬─────────┘
-              │
-   ┌──────────▼───────────┐
-   │ ingestion_service     │ :8001
-   │ ├── /v1/ingest/file  │ file ingestion
-   │ ├── /v1/ingest-repo  │ repo ingestion
-   │ ├── /v1/summary      │ save summaries
-   │ ├── /v1/repos        │ list repos
-   │ ├── DELETE /v1/repos/{id} │ hard-delete a repo (vectors+graph+requests)
-   │ ├── /v1/repos/{id}/generation │ current servable ingestion generation
-   │ ├── /v1/graph/repos  │ get repo graph
-   │ ├── /v1/graph/docs   │ document relationships
-   │ └── /v1/chunks       │ chunk queries
-   └──────────┬───────────┘
-              │
-   ┌──────────▼───────────┐
-   │ vector_store_service  │ :8002
-   │ ├── /v1/vectors/batch │ add vectors
-   │ ├── /v1/vectors/search │ similarity search
-   │ ├── /v1/vectors/search-by-doc │ search by document
-   │ ├── /v1/vectors/by-ingestion/{id} │ delete vectors
-   │ └── /v1/ingestions     │ create ingestion
-   └──────────┬───────────┘
-              │
-   ┌──────────▼───────────┐
-   │ llm_service           │ :8003
-   │ ├── /generate         │ generate text
-   │ ├── /v1/summarize/{id} │ generate summary
-   │ └── /health           │ health check
-   └───────────────────────┘
+```bash
+curl -X POST http://localhost:8001/v1/ingest-repo \
+    -F git_url=https://github.com/your/repo.git
+
+# Poll until completed; inspect failure details if ingestion fails.
+curl 'http://localhost:8001/v1/ingest-repo/<ingestion_id>'
+
+# Find the ingested repository's repo_id.
+curl http://localhost:8001/v1/repos
+
+curl -X POST http://localhost:8004/v1/rag \
+    -H "Content-Type: application/json" \
+    -d '{"query":"What calls this function?","repo_id":"<repo_id>","top_k":5}'
 ```
 
----
+Replace the placeholders with your repository, returned identifiers, and a
+question about its source. Structural queries are also available without generation:
 
-## 🌐 Service URLs
-
-| Service                | Port | Endpoint Examples                                                      |
-| ----------------------- | ---- | ------------------------------------------------------------------------ |
-| `ingestion_service`    | 8001 | `/v1/ingest/file`, `/v1/ingest-repo`, `DELETE /v1/repos/{repo_id}`, `/v1/graph/repos/{repo_id}` |
-| `vector_store_service` | 8002 | `/v1/vectors/batch`, `/v1/vectors/search`, `/v1/vectors/search-by-doc` |
-| `llm_service`          | 8003 | `/generate`, `/v1/summarize/{ingestion_id}`, `GET /v1/models`, `PUT /v1/admin/policy/{slot}` |
-| `rag_orchestrator`     | 8004 | `/v1/rag`, `/v1/rag/simple`                                            |
-| `gradio`               | 7860 | Web UI                                                                 |
-
----
-
-## 🛠️ Tech Stack
-
-| Layer               | Technology                        |
-| ------------------- | --------------------------------- |
-| API / Orchestration | Python + FastAPI                  |
-| Database            | PostgreSQL + `pgvector`           |
-| Code Parsing        | tree-sitter (Python, TypeScript/JavaScript, Rust, Java) |
-| Markdown Parsing    | `markdown-it-py`                  |
-| OCR                 | Tesseract                         |
-| Embeddings          | Ollama (1024d)                    |
-| Vector Operations   | HTTP vector store                 |
-| Graph Traversal     | BFS + relationship-aware planning |
-| UI                  | Gradio                            |
-| Containers          | Docker Compose                    |
-
----
-
-## 📄 Ingestion Capabilities
-
-| Content Type             | Path                        | Embeddings | Graph                   | Query           |
-| ------------------------ | --------------------------- | ---------- | ----------------------- | --------------- |
-| Python code              | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS, OVERRIDES | Graph-aware RAG |
-| TypeScript / JavaScript  | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS | Graph-aware RAG |
-| Rust                     | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS | Graph-aware RAG |
-| Java                     | tree-sitter + canonical graph | ✅        | ✅ CALL, DEFINES, IMPORTS, INHERITS, OVERRIDES | Graph-aware RAG |
-| Markdown (repo)          | Section extraction          | ✅          | ✅ DEFINES               | Graph-aware RAG |
-| Markdown (upload)        | Section extraction          | ✅          | ✅ DEFINES               | Document RAG    |
-| PDFs                     | Docling → Markdown → chunks | ✅          | — flat                  | Document RAG    |
-| DOCX / PPTX / XLSX / CSV | Docling → chunks            | ✅          | — flat                  | Document RAG    |
-| Text files               | Chunking + embedding        | ✅          | — flat                  | Document RAG    |
-| Images                   | OCR via Tesseract → chunks  | ✅          | — flat                  | Document RAG    |
-
----
-
-## Production deployments
-
-The default Compose file is optimized for development and bind-mounts source
-directories into the containers. For production or long-lived deployments, use
-the production Compose override documented in
-[`DOCS/deployment/production-docker-compose.md`](/DOCS/deployment/production-docker-compose.md)
-so containers execute immutable image contents labeled with the exact Git SHA.
-Do not treat `latest` as a production release identifier; pin an exact Git SHA,
-tag, or image digest.
-
-Every release follows an audited process — CI-green main SHA, self-contained
-application images, no production source bind mounts, preserved Postgres
-storage, running-image OCI provenance checks, health checks, and a known RAG
-smoke test — recorded per-release under `DOCS/releases/`. See the most recent
-release doc there for the current pinned SHA and deployment date.
-
-A production-correctness hardening pass (bounded ingestion memory, ownership/
-recovery for interrupted jobs, consistent rebuild/delete lifecycle,
-generation-aware caching, evidence-delivery and context-budget accuracy,
-corrected health checks, and non-blocking async I/O) has shipped across the
-services above — see [`DOCS/status.md`](/DOCS/status.md) for the current
-per-item evidence trail.
-
----
-
-## 🧪 Tests & CI
-
-CI (`.github/workflows/ci.yml`) runs on every PR and on pushes to `main`:
-repo-wide ruff lint, per-service unit tests, and an integration job that
-brings up a pgvector service container, applies all Alembic migrations,
-and runs the atomic-graph-persistence and ANN-index suites.
-
-Locally, an isolated test stack lives in `docker-compose.test.yml`
-(its own compose project, Postgres on port 5433):
-
-```
-docker compose -f docker-compose.test.yml up -d postgres
-DATABASE_URL=postgresql://ingestion_user:ingestion_pass@localhost:5433/ingestion_test \
-    uv run alembic upgrade head
-
-# unit tests (per service, e.g.)
-cd ingestion_service && uv run pytest -m unit
-
-# integration tests need DATABASE_URL pointing at the test DB
+```bash
+curl 'http://localhost:8004/v1/repos/<repo_id>/orient'
+curl --get 'http://localhost:8004/v1/repos/<repo_id>/trace' \
+    --data-urlencode 'start=<canonical_id_or_symbol>'
+curl --get 'http://localhost:8004/v1/repos/<repo_id>/impact' \
+    --data-urlencode 'start=<canonical_id_or_symbol>'
 ```
 
----
+## Testing and deployment
 
-## 📊 Performance (Phase 1 baseline)
+[CI](.github/workflows/ci.yml) runs lint, service tests, and PostgreSQL-backed
+integration checks for graph persistence, ingestion ownership, repository
+lifecycle, passage retrieval, and vector indexing. A separate job checks bounded
+ingestion memory. Retrieval changes also require measured quality evaluation;
+unit-test success alone does not establish answer quality.
 
-Measured on a 2,000-file / 56k-artifact synthetic repo (laptop, CPU-only
-Ollama) — full details in `DOCS/test_results/Phase-1-Exit-Report.md`:
+Run a service's tests from its directory, for example:
 
-| Stage | Result |
-| --- | --- |
-| Graph build (source extraction → artifact graph) | 42.7 s |
-| Atomic persist (56k nodes + 104k edges) | 25.7 s |
-| Chunking (54k artifacts) | 1.2 s |
-| Vector search p95 (HNSW, filtered, k=10) | 61.7 ms |
+```bash
+cd ingestion_service
+uv run pytest -m unit
+```
 
-Embedding throughput is bound by the embedder hardware (~2.2 chunks/s on
-CPU Ollama); use a GPU or hosted embedder for large corpora.
+Database tests use the isolated [test Compose stack](docker-compose.test.yml).
+See [development guidance](CLAUDE.md) for migration, lint, and test commands.
 
-The audit findings, remediation plans, and roadmap driving this work are
-in `DOCS/audit/`.
+Development Compose bind-mounts source. Long-lived deployments use immutable
+application images and recorded source revisions, with health checks and a RAG
+smoke test. See the [deployment guide](DOCS/deployment/production-docker-compose.md)
+and [release records](DOCS/releases/) for the process and deployed versions.
+Shipped code and a verified deployment are tracked separately.
 
----
+## Project ownership and AI assistance
 
-## 🎯 RAG Quality
+This is a human-directed, AI-assisted engineering project. Human maintainers
+retain project ownership and release responsibility. ChatGPT, Claude, and OpenAI
+Codex have contributed to design exploration, architecture reviews, implementation,
+tests, and documentation. The repository records decisions and evaluation evidence
+so that changes can be reviewed against observable behavior.
 
-Retrieval and answer quality are evaluated empirically, not assumed. The
-baseline (full evidence in
-`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md`) ran 10
-known-answer questions (5 code, 5 document) end-to-end through production
-`/v1/rag` and `/v1/rag/simple`:
+## License
 
-| Metric | Result |
-| --- | --- |
-| End-to-end pass rate | 9/10 (90%) |
-| Recall@5 — raw vector search only | 70% |
-| Recall@5 — production path (incl. graph expansion) | 90% |
-| Reranker default | **off** (NO-GO as a default; implemented, flag-gated) |
-
-The 70%→90% gap is graph expansion recovering questions raw vector search
-alone missed — direct measured evidence for the graph-aware architecture,
-not just an architectural claim. The reranker decision is
-**evaluation-gated**: that baseline found zero failures in the rank 8–20
-band a reranker could address, so it stays off by default unless a
-future evaluation finds a non-trivial fraction of failures landing there
-and not already explained by a chunking or generation defect (full
-reversal criterion in `DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md`
-§4). An optional, flag-gated cross-encoder reranker now exists precisely
-to run that evaluation — see [`DOCS/status.md`](/DOCS/status.md) for
-current state; it changes no default behavior on its own.
-
-Retrieval-quality fixes and a follow-up evaluation round are tracked in
-`DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md` and
-`DOCS/test_results/2026-09-03-rag-retrieval-quality-linux-tailscale-baseline.md`,
-including a live-verified graph-expansion ranking fix and one still-open
-limitation around same-relation-type candidate overload — see
-[`DOCS/status.md`](/DOCS/status.md) for the current ticket-level detail.
-See `DOCS/audit/00-Audit-Overview.md` for how these results gate further
-retrieval work.
-
----
-
-## 🤖 Future Vision
-
-Tracked as a prioritized roadmap, not just aspiration — see
-[`DOCS/audit/07-Roadmap.md`](/DOCS/audit/07-Roadmap.md) for the full
-sequencing and evidentiary bar each item has to clear before the next one
-starts:
-
-* Repository intelligence: a trustworthy structural inventory of a
-  repository (services, packages, entry points) and bounded call/impact
-  tracing, ahead of any general-purpose agent
-* Incremental ingestion with per-file/commit-SHA lineage, so re-ingesting
-  a repo only reprocesses what changed
-* Retrieval quality improvements driven by evidence, not speculation —
-  see [RAG Quality](#-rag-quality) for the current evaluation-gated
-  reranker decision
-* Language-aware UI (a Gradio `language` filter dropdown) and coverage
-  beyond today's Python, TypeScript/JavaScript, Rust, and Java support;
-  see [`DOCS/status.md`](/DOCS/status.md) for current language support
-  and `DOCS/audit/03-Multi-Language-Graph-Plan.md` for the full plan
-* Enhanced observability across ingestion and query pipelines
-* Free-tier LLM provider reliability — see [`DOCS/status.md`](/DOCS/status.md) for current provider status
-* An agentic repository investigator and team-product features
-  (auth, multi-tenancy, a richer UI) — deliberately last: deferred until
-  the deterministic foundation work above demonstrates what it can't do
-  on its own
-
----
-
-## 📘 Acknowledgements
-
-* Used ChatGPT, Claude, and other publicly accessible LLMs to help with code, design, and documentation
-* **OpenAI Codex — AI-assisted contributor:** repository and architecture audits,
-  production-correctness specifications, implementation, regression tests, and
-  knowledge-base documentation. Human maintainers retain project ownership and
-  release responsibility. This acknowledgement is separate from GitHub's
-  automatically generated contributor listing.
-
----
-
-## 📄 License
-
-Apache License 2.0 — see [`LICENSE`](/LICENSE).
-
----
+[Apache License 2.0](LICENSE).

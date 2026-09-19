@@ -95,6 +95,7 @@ class TraceResponse(BaseModel):
     max_depth: int
     hops: List[HopModel]
     truncated: bool
+    depth_limited: bool
     gaps: List[GapNoteModel]
 
 

@@ -207,6 +207,24 @@ def test_traced_path_respects_max_depth():
     )
     assert [h.canonical_id for h in result.hops] == ["b.py#bar"]
     assert not result.truncated  # depth bound, not node bound
+    # b.py#bar has an unexplored CALL edge to c.py#baz that max_depth=1
+    # cut off -- issue #200 needs this distinguished from a fully
+    # exhausted frontier.
+    assert result.depth_limited
+
+
+def test_traced_path_full_frontier_is_not_depth_limited():
+    graph = _graph([("a.py#foo", "b.py#bar", "CALL")])
+    result = traced_path(
+        graph,
+        "a.py#foo",
+        relation_types={"CALL"},
+        direction="forward",
+        max_depth=6,
+        max_nodes=300,
+    )
+    assert not result.truncated
+    assert not result.depth_limited
 
 
 def test_traced_path_max_nodes_stops_computation_not_just_output():
