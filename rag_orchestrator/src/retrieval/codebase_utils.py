@@ -205,9 +205,26 @@ def canonical_ids_to_document_ids(
 
 
 def get_cached_graph(repo_id: str, force_reload: bool = False) -> CodebaseGraph:
+    """Thin wrapper over `get_cached_graph_with_generation` for the
+    (majority of) callers that only need the graph itself."""
+    return get_cached_graph_with_generation(repo_id, force_reload)[1]
+
+
+def get_cached_graph_with_generation(
+    repo_id: str, force_reload: bool = False
+) -> Tuple[str, CodebaseGraph]:
     """
     Get CodebaseGraph for repo_id (in-memory cached), keyed on repo_id's
     *current servable generation* (#168 / WP-R5), not repo_id alone.
+
+    Issue #200 (Stage A2): unlike `get_cached_graph`, also returns the
+    generation_id the graph was resolved against, so a caller that needs
+    a generation fence (verify nothing changed before trusting the
+    result) has something to fence against -- `get_cached_graph` alone
+    gives no such envelope, which the handoff calls out explicitly as a
+    gap. Returns `("", CodebaseGraph())` when nothing is servable; an
+    empty generation_id is never a valid fence target, so callers must
+    treat it as "not ready," not "matches."
 
     A re-ingested repo gets a new ingestion_id under the same repo_id; the
     previous implementation kept whichever graph it loaded first forever,
@@ -237,13 +254,13 @@ def get_cached_graph(repo_id: str, force_reload: bool = False) -> CodebaseGraph:
                 f"Graph for repo_id={repo_id[:8]} not servable "
                 f"(generation_status={status}); returning empty graph"
             )
-        return CodebaseGraph()
+        return "", CodebaseGraph()
 
     with _repo_graphs_lock:
         cached = _repo_graphs.get(repo_id)
         if not force_reload and cached is not None and cached[0] == generation_id:
             _repo_graphs.move_to_end(repo_id)
-            return cached[1]
+            return generation_id, cached[1]
 
     logger.info(
         f"Loading graph for repo_id={repo_id[:8]} generation={generation_id[:8]}..."
@@ -257,4 +274,4 @@ def get_cached_graph(repo_id: str, force_reload: bool = False) -> CodebaseGraph:
         while len(_repo_graphs) > _CACHE_MAX_REPOS:
             evicted_repo_id, _ = _repo_graphs.popitem(last=False)
             logger.info(f"Evicted cached graph for repo_id={evicted_repo_id[:8]}")
-    return graph
+    return generation_id, graph
