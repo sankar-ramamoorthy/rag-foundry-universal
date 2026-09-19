@@ -5,7 +5,7 @@ import asyncio
 import logging
 import re
 import uuid
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import List, Optional, Callable, Dict, Any, Set, cast
 import httpx
 
@@ -48,6 +48,10 @@ from rag_orchestrator.src.retrieval.traversal_selector import (
     execute_traversals_from_seeds_detailed,
 )
 from rag_orchestrator.src.retrieval.codebase_queries import CodebaseGraph
+from rag_orchestrator.src.retrieval.provenance_diagnostics import (
+    ClaimType,
+    diagnose_manifest,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -721,6 +725,7 @@ async def run_rag(
     language: Optional[str] = None,
     trace_canonical_ids: Optional[Set[str]] = None,
     rerank: Optional[bool] = None,
+    claim_type: Optional[ClaimType] = None,
 ) -> RAGResult:
 
     settings = get_settings()
@@ -875,6 +880,15 @@ async def run_rag(
         "context.finalized",
         manifest_entries=len(final_context_manifest),
     )
+
+    # Issue #199 (ADR-053, Stage B3): shadow diagnostics only, only when
+    # explicitly requested -- never affects agent_chunks/context_str/the
+    # LLM call below. See provenance_diagnostics.py for the constraint.
+    if claim_type is not None:
+        retrieval_plan_dict["provenance_diagnostics"] = [
+            asdict(finding)
+            for finding in diagnose_manifest(claim_type, final_context_manifest)
+        ]
 
     # LLM call
     llm_payload = {"context": context_str, "query": query}

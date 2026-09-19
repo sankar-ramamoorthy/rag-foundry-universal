@@ -351,10 +351,32 @@ composite score).
   reaches each hop *and* that it does not affect selection_reason or
   ordering; full `-m unit` suites green (273 in `rag_orchestrator`),
   `ruff` clean.
-- **Not yet done**: B3 (measured rollout — deciding when/how any
-  consumer is allowed to *act* on provenance, still entirely unused by
-  policy). Stage C (`#200` authority-aware sufficiency) depends on B3,
-  not on B2 alone — B2 only makes the data reachable.
+- **B3 (measured rollout, shadow phase) done — diagnostics only, no
+  policy, by explicit owner constraint.** An optional `claim_type` on
+  `POST /v1/rag` (`implemented_behavior`/`design_rationale`/
+  `test_contract`/`repository_overview`) triggers
+  `provenance_diagnostics.py::diagnose_manifest`, a pure, deterministic,
+  per-manifest-entry concern list — never a score, never a filter.
+  Omitted (default): zero code runs, response shape unchanged. Live-
+  verified: identical `final_context_manifest`/chunk selection with and
+  without `claim_type` on the same query (proves zero contamination);
+  invalid `claim_type` rejected 422 before retrieval runs. **Real
+  finding, not synthetic**: querying `claim_type=repository_overview`
+  surfaced `shared/smoke_repo/` (a self-documented live-smoke-test
+  fixture) with **no concern raised** — the Stage B1 classifier's
+  fixture rule only matches `fixtures/`/`examples/` path segments, so
+  this corpus has zero `example_fixture`/`embedded_subject` rows at
+  all. Recorded as an open recommendation for a follow-up B1 classifier
+  refinement (not applied in this pass — a rule change needs its own
+  review, not a same-PR patch). See
+  [test results](/DOCS/test_results/2026-09-19-stage-b3-provenance-shadow-diagnostics.md).
+  11 new tests (`test_provenance_diagnostics.py`); full `-m unit` suite
+  (284 passed), `ruff`/`pyright` clean.
+- **Not yet done**: a fuller B3 pass against a fixture/test/design-rich
+  corpus (production already has the full self-repo ingested, which
+  would exercise every rule — this pass used only the small local
+  `shared/` corpus). Stage C (`#200` authority-aware sufficiency)
+  should wait for that fuller pass, not start from this alone.
 
 ## Known issues
 
