@@ -71,6 +71,7 @@ async def rag_endpoint(rag_query: RAGQuery):
             model=rag_query.model,
             language=rag_query.language,
             rerank=rag_query.rerank,
+            claim_type=rag_query.claim_type,
         )
         return result
 

@@ -18,6 +18,21 @@ class RAGQuery(BaseModel):
     # so the same deployment can serve an A/B comparison without a
     # redeploy.
     rerank: Optional[bool] = None
+    # Issue #199 (ADR-053, Stage B3): optional shadow provenance
+    # diagnostics. None (default) -> no diagnostics computed, response
+    # shape and retrieval behavior are byte-identical to before this
+    # field existed. When set, retrieval_plan.provenance_diagnostics
+    # carries one informational finding per final-context-manifest
+    # entry -- it never changes which chunks are selected or what the
+    # LLM sees (see provenance_diagnostics.py).
+    claim_type: Optional[
+        Literal[
+            "implemented_behavior",
+            "design_rationale",
+            "test_contract",
+            "repository_overview",
+        ]
+    ] = None
 
 
 class RAGResponse(BaseModel):  # Updated name
