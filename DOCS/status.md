@@ -293,6 +293,16 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   pre-Stage-A) — `/v1/repos/{repo_id}/evidence` is not deployed there;
   deployment is a separate, not-yet-taken action.
 
+**Stage B (#199, source authority/subject/provenance) — B0 started.**
+[ADR-053](/DOCS/adr/ADR-053-source-authority-provenance-model.md)
+(status: proposed, not implemented) and
+[spec 008](/specs/008-source-authority-provenance/spec.md) record the
+five-facet contract (origin/role/subject/derivation/validity, no
+composite score) and its persistence direction (additive nullable JSON
+on `DocumentNode`, no new table). No migration, producer, or persistence
+code exists yet — B1 (migration/producers), B2 (transport to context/
+manifest), and B3 (measured rollout) remain open, tracked under #199.
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**

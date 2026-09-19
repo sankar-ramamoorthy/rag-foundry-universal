@@ -49,6 +49,13 @@ records the accepted WP-R5 (narrowed #168) decision keying
 bounding, and its explicit non-goals (no vector-store generation filtering,
 no live two-service HTTP round-trip test yet).
 
+[ADR-053: source authority / subject / provenance model](/DOCS/adr/ADR-053-source-authority-provenance-model.md)
+— **proposed**, not yet implemented — records the issue #199 (Phase 6
+Stage B) contract: five orthogonal facets (origin/role/subject/
+derivation/validity) plus a classification envelope, persisted as an
+additive nullable JSON field on `DocumentNode`, no composite authority
+score, no LLM calls in classification.
+
 ## Audit & Planning
 
 The production-correctness programme
@@ -65,9 +72,12 @@ The active next tranche is **Phase 6** in
 13 prioritized issues (#196-#208) covering incremental ingestion/snapshot
 lineage, repository intelligence (ORIENT/TRACE/IMPACT), provenance/source
 authority, and related foundation work. Items 1-3 (#196, #197, #198) and
-their fast-follows (#216, #220, #221) have shipped. Next is #200 (bounded
-evidence sufficiency), followed by #199 (source authority / subject /
-provenance), then authority/provenance-aware sufficiency checks.
+their fast-follows (#216, #220, #221) have shipped. #200 Stage A
+(mechanical bounded evidence sufficiency, A0-A5) has shipped — see
+[status](/DOCS/status.md); its full frozen live-evaluation gate remains
+open. Next is #199 (source authority / subject / provenance, ADR-053
+proposed, not yet implemented), then a #200 Stage C follow-up combining
+both.
 
 Start at [[audit/00-Audit-Overview]] — the audit subtree's own index
 (codebase findings, scalability/platform/LLM-provider plans, the roadmap,
