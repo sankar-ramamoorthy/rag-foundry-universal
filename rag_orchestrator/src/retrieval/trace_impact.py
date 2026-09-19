@@ -77,6 +77,13 @@ class TraceResult:
     max_depth: int
     hops: list[Hop]
     truncated: bool
+    # Issue #200: True iff at least one visited node had an unexplored
+    # matching-relation edge to a not-yet-visited node, cut off solely by
+    # `max_depth` -- distinct from `truncated` (the node/candidate-count
+    # cap). A caller must not treat `depth_limited=False` as proof the
+    # indexed frontier was fully exhausted at a *shallower* depth than
+    # requested; it only describes what happened at *this* max_depth.
+    depth_limited: bool
     gaps: list[GapNote]
 
 
@@ -191,6 +198,25 @@ def _record_hop(
         queue.append((neighbor, new_depth))
 
 
+def _has_unexplored_frontier(
+    node: Node,
+    direction: str,
+    relation_types: set[str] | None,
+    visited: set[str],
+) -> bool:
+    """True iff `node` has at least one matching-relation edge to a node
+    not yet in `visited` -- i.e. there is more graph past this node that
+    a deeper traversal could still reach."""
+    edges = node.out_edges if direction == "forward" else node.in_edges
+    for relation_type, neighbors in edges.items():
+        if relation_types and relation_type not in relation_types:
+            continue
+        for neighbor in neighbors:
+            if neighbor.canonical_id not in visited:
+                return True
+    return False
+
+
 def traced_path(
     graph: CodebaseGraph,
     start_cid: str,
@@ -219,10 +245,14 @@ def traced_path(
     visited: set[str] = {start_node.canonical_id}
     queue: deque[tuple[Node, int]] = deque([(start_node, 0)])
     truncated = False
+    depth_limited = False
 
     while queue and not truncated:
         current_node, depth = queue.popleft()
         if depth >= max_depth:
+            depth_limited = depth_limited or _has_unexplored_frontier(
+                current_node, direction, relation_types, visited
+            )
             continue
 
         edges = (
@@ -259,6 +289,7 @@ def traced_path(
         max_depth=max_depth,
         hops=hops,
         truncated=truncated,
+        depth_limited=depth_limited,
         gaps=gaps,
     )
 

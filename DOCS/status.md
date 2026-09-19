@@ -206,6 +206,32 @@ re-verified green after #214 merged). Issue closed automatically.
   TRACE/IMPACT (#3) and a general agentic investigator (#12) remain
   separately scoped, not started.
 
+## Evidence sufficiency (#200, Stage A in progress)
+
+Per the [Phase 6 handoff](/DOCS/proposals/2026-09-19-phase-6-sufficiency-authority-handoff.md),
+#200 (bounded evidence-sufficiency) is implemented before #199
+(authority/subject/provenance) as a mechanical-only first pass, with
+authority-aware sufficiency deferred to a Stage C follow-up once #199
+exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
+
+- **Slices A0 (spec) and A1 (pure assessor) done**:
+  `rag_orchestrator/src/retrieval/evidence_sufficiency.py` classifies
+  ORIENT facet, TRACE start/target, and IMPACT start/candidate-set
+  obligations as `satisfied`/`missing`/`unknown` from already-computed
+  results — pure functions, no I/O, no retry, not wired into any request
+  path yet. `trace_impact.py`'s `TraceResult` gained a `depth_limited`
+  field (distinct from the existing node-count `truncated`) so a target
+  cut off by the depth cap is distinguishable from one genuinely absent
+  from a fully-explored frontier. 20 new unit tests
+  (`tests/test_evidence_sufficiency.py`), plus 2 more in
+  `tests/test_trace_impact.py` for `depth_limited`; full `-m unit` suite
+  and `ruff`/`pyright` clean.
+- **Not yet done**: the bounded-repair control loop and generation fence
+  (A2), the `/v1/repos/{repo_id}/evidence` API surface (A3), explanation
+  generation wiring (A4), and the live paired-evaluation gate (A5) — all
+  tracked under #200, not separately filed yet. Nothing in this slice is
+  reachable from any existing endpoint.
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
