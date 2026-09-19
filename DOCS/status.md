@@ -245,11 +245,23 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   ingestion_service's ORIENT payload carries its own `ingestion_id`.
   21 new unit tests (`tests/test_evidence_workflow.py`,
   `tests/test_evidence_service.py`); full `-m unit` suite (249 passed)
-  and `ruff`/`pyright` clean. Still not reachable from any existing
-  endpoint — no HTTP route calls these adapters yet.
-- **Not yet done**: the `/v1/repos/{repo_id}/evidence` API surface (A3),
-  explanation generation wiring (A4), and the live paired-evaluation
-  gate (A5) — all tracked under #200, not separately filed yet.
+  and `ruff`/`pyright` clean.
+- **Slice A3 (API surface) done**: `POST /v1/repos/{repo_id}/evidence`
+  (`rag_orchestrator/src/api/v1/routes.py`), body `{mode: orient|trace|
+  impact, start?, relation_types?, direction?, max_depth?,
+  required_facets?, required_target?}`. Structured evidence response
+  only — no generation, no explanation (that's A4). Per-mode input
+  validation (400 on unsupported field combinations or an out-of-ceiling
+  `max_depth`); a missing/ambiguous start or an unmet obligation is a
+  normal 200 result (`status="partial"`/`"needs_clarification"` in the
+  body), never an HTTP error — only infra/lifecycle failures (repo not
+  ready, generation changed mid-request) raise. Existing `/orient`,
+  `/trace`, `/impact` GET endpoints are untouched single-pass
+  primitives. 10 new route-level tests (`tests/test_evidence_endpoint.py`);
+  full `-m unit` suite (259 passed) and `ruff`/`pyright` clean.
+- **Not yet done**: explanation generation wiring (A4) and the live
+  paired-evaluation gate (A5) — tracked under #200, not separately
+  filed yet.
 
 ## Known issues
 
