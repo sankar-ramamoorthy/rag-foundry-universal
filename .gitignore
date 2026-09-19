@@ -9,6 +9,11 @@ ms12_repo_delete.patch
 # one-off debugging, deliberately not a committed/shared script.
 scripts/db_inspect.py
 
+# Personal read-only DB sanity check (2026-09-19) -- verifies prod is
+# actually empty after a repo delete; same "not a committed/shared
+# script" reasoning as db_inspect.py above.
+scripts/verify_prod_empty.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
