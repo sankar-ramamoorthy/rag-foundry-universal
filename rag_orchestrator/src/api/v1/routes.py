@@ -242,7 +242,13 @@ async def _dispatch_orient_evidence(
         raise HTTPException(
             400, "mode=orient does not accept start/relation_types/required_target"
         )
-    return await run_orient_evidence(repo_id, req.required_facets or [])
+    return await run_orient_evidence(
+        repo_id,
+        req.required_facets or [],
+        explanation_query=req.explanation_query,
+        provider=req.provider,
+        model=req.model,
+    )
 
 
 async def _dispatch_trace_evidence(
@@ -277,6 +283,9 @@ async def _dispatch_trace_evidence(
         settings.TRACE_MAX_DEPTH,
         settings.TRACE_MAX_NODES,
         req.required_target,
+        explanation_query=req.explanation_query,
+        provider=req.provider,
+        model=req.model,
     )
 
 
@@ -303,7 +312,13 @@ async def _dispatch_impact_evidence(
             400, f"max_depth must be between 1 and {settings.IMPACT_MAX_DEPTH}"
         )
     return await run_impact_evidence(
-        repo_id, req.start, requested_depth, settings.IMPACT_MAX_CANDIDATES
+        repo_id,
+        req.start,
+        requested_depth,
+        settings.IMPACT_MAX_CANDIDATES,
+        explanation_query=req.explanation_query,
+        provider=req.provider,
+        model=req.model,
     )
 
 

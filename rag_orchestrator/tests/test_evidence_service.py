@@ -233,3 +233,129 @@ def test_impact_evidence_happy_path(monkeypatch):
         )
     )
     assert result.assessment.status == "satisfied"
+
+
+# --- Stage A4: explanation phase ---
+
+
+def test_trace_evidence_with_explanation_query_calls_generate_once(monkeypatch):
+    generate_calls = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/generation"):
+            return httpx.Response(
+                200, json={"ingestion_id": "gen-1", "generation_status": "ready"}
+            )
+        if request.url.path.endswith("/generate"):
+            generate_calls.append(request)
+            return httpx.Response(
+                200,
+                json={
+                    "response": "b.py#bar is reachable from a.py#foo via CALL.",
+                    "model": "llama3",
+                    "model_alias": "default",
+                    "fallback_from": None,
+                },
+            )
+        return httpx.Response(404)
+
+    _patched_httpx(monkeypatch, handler)
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_edge()),
+    )
+
+    result = asyncio.run(
+        evidence_service.run_trace_evidence(
+            "repo-x",
+            "a.py#foo",
+            {"CALL"},
+            direction="forward",
+            requested_max_depth=6,
+            server_max_depth=6,
+            max_nodes=300,
+            required_target="b.py#bar",
+            explanation_query="is b.py#bar reachable from a.py#foo?",
+        )
+    )
+    assert len(generate_calls) == 1
+    assert result.explanation is not None
+    assert result.explanation.answer == "b.py#bar is reachable from a.py#foo via CALL."
+    assert result.explanation.model_used == "llama3"
+
+
+def test_no_explanation_query_never_calls_generate(monkeypatch):
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/generation"):
+            return httpx.Response(
+                200, json={"ingestion_id": "gen-1", "generation_status": "ready"}
+            )
+        if request.url.path.endswith("/generate"):
+            raise AssertionError(
+                "must not call /generate when explanation_query is None"
+            )
+        return httpx.Response(404)
+
+    _patched_httpx(monkeypatch, handler)
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_edge()),
+    )
+
+    result = asyncio.run(
+        evidence_service.run_trace_evidence(
+            "repo-x",
+            "a.py#foo",
+            {"CALL"},
+            direction="forward",
+            requested_max_depth=6,
+            server_max_depth=6,
+            max_nodes=300,
+        )
+    )
+    assert result.explanation is None
+
+
+def test_ambiguous_start_skips_generation(monkeypatch):
+    graph = CodebaseGraph()
+    graph.add_node(Node("a.py#foo", "a.py"))
+    graph.add_node(Node("a.py#dup", "a.py"))
+    graph.add_edge("a.py#foo", "a.py#dup", "CALL")
+    graph.add_node(Node("b.py#foo", "b.py"))
+    graph.add_node(Node("b.py#dup2", "b.py"))
+    graph.add_edge("b.py#foo", "b.py#dup2", "CALL")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/generation"):
+            return httpx.Response(
+                200, json={"ingestion_id": "gen-1", "generation_status": "ready"}
+            )
+        if request.url.path.endswith("/generate"):
+            raise AssertionError("must not call /generate for an ambiguous start")
+        return httpx.Response(404)
+
+    _patched_httpx(monkeypatch, handler)
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", graph),
+    )
+
+    result = asyncio.run(
+        evidence_service.run_trace_evidence(
+            "repo-x",
+            "foo",
+            {"CALL"},
+            direction="forward",
+            requested_max_depth=6,
+            server_max_depth=6,
+            max_nodes=300,
+            explanation_query="what does foo do?",
+        )
+    )
+    assert result.assessment.status == "needs_clarification"
+    assert result.explanation is not None
+    assert result.explanation.answer is None
+    assert result.explanation.skipped_reason is not None

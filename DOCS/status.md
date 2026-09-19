@@ -259,9 +259,28 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   `/trace`, `/impact` GET endpoints are untouched single-pass
   primitives. 10 new route-level tests (`tests/test_evidence_endpoint.py`);
   full `-m unit` suite (259 passed) and `ruff`/`pyright` clean.
-- **Not yet done**: explanation generation wiring (A4) and the live
-  paired-evaluation gate (A5) — tracked under #200, not separately
-  filed yet.
+- **Slice A4 (optional explanation generation) done**: an optional
+  `explanation_query` (plus passthrough `provider`/`model`) on the
+  request triggers exactly one `/generate` call, made only after the
+  workflow's final, generation-verified assessment is in hand — never
+  mid-repair, never more than once. The prompt context is a
+  deterministic rendering of the finalized `EvidenceAssessment` itself
+  (obligations, evidence identities/kinds/relations, reason codes) —
+  the same structural facts the response already reports, not raw
+  source text (that remains `/v1/rag`'s job). `status="needs_
+  clarification"` or zero evidence items skips generation entirely with
+  an explicit `skipped_reason`, rather than asking the model to explain
+  nothing. Existing `model_used`/`model_alias`/`fallback_from`
+  observability survives into the response's `explanation` object.
+  9 new tests (`test_evidence_service.py`, `test_evidence_endpoint.py`);
+  full `-m unit` suite (264 passed) and `ruff`/`pyright` clean.
+- **Not yet done**: the live paired-evaluation gate (A5) — tracked
+  under #200, not separately filed yet. Everything through A4 is code-
+  reviewed-clean-by-local-tests only; no live deployment currently runs
+  it (the Tailscale production instance was last built from commit
+  `65ccd09`, 2026-09-19 09:25am, before any Stage A work — confirmed via
+  its `/version` endpoint — so `/v1/repos/{repo_id}/evidence` is not
+  reachable there yet).
 
 ## Known issues
 
