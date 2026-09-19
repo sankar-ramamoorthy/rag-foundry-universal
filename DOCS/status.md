@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-09-18
+date: 2026-09-19
 type: status
 status: current
 tags: [status, overview]
@@ -138,7 +138,9 @@ merged to main:
   baseline full ingest and a full-then-incremental ingest reaching the
   same target state via a scripted add/change/delete edit. 15/15 tests
   green against real Postgres + a real `vector_store_service` process.
-  Not yet a merged PR as of this status update.
+  Merged to `main` via [PR #214](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/214),
+  CI green. Issue #196 closed 2026-09-19 (manually — the PR body had no
+  auto-close keyword).
 - **#180** (ingestion source-revision provenance) is *not* closed by
   #196 — verified against its acceptance criteria rather than assumed
   subsumed (spec.md's explicit instruction): #196 satisfies only
@@ -150,6 +152,59 @@ merged to main:
   opt-in `slow` marker) but no production-scale/Linux validation —
   same disclosed gap pattern as the WP-R* production-correctness track
   below.
+
+## Repository intelligence (ORIENT)
+
+Issue #197 (blue-star tranche, priority 2/13, named by the
+[2026-09-07 repository-intelligence audit](/DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md)
+as the strongest fix for "semantic top-k can't reliably answer 'what is
+this repository'" questions): an MVP deterministic repository-structure
+inventory, merged to `main` via [PR #215](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/215)
+(stacked on #196's branch, since it keys facts by `(repo_id, generation)`
+using #196's `ingestion_id`/`commit_sha`; retargeted to `main` and
+re-verified green after #214 merged). Issue closed automatically.
+
+- **`ingestion_service/src/core/codebase/structural_inventory.py`** —
+  pure, deterministic walk/classify/find pipeline: per-language file
+  counts, manifest presence (`pyproject.toml`/`package.json`/
+  `Cargo.toml`/`pom.xml`/`requirements.txt`), Docker Compose service
+  declarations (dockerfile path, container name, best-effort `command:`
+  entry point), heuristic test/docs directory locations, and an explicit
+  gap/unknown list (unparseable Compose YAML, unresolvable entry points)
+  — no LLM call anywhere in the ingestion-time path.
+- **`IngestionRequest.structural_summary`** (migration
+  `20260919_orient_inventory`) — a generation-aggregate JSON blob,
+  computed once per ingestion and read directly by the query endpoint;
+  same generation always returns the same JSON. Inventory-only
+  `FILE`/`MANIFEST`/`SERVICE` graph nodes are also persisted (for future
+  TRACE/IMPACT traversal), built inside `_build_and_persist_graph` and
+  merged into the single `persist_graph()` call — `persist_graph` deletes
+  any `canonical_id` absent from the node set it's given, so a second,
+  separate call would have silently deleted the symbol graph's own
+  nodes. A hard canonical-ID collision rule (a `FILE`/`MANIFEST` node is
+  only emitted for a path not already indexed by the symbol graph)
+  guarantees no duplicate `MODULE`/`MARKDOWN_MODULE` identity.
+- **`GET /v1/repos/{repo_id}/orient`** — 404 with no completed
+  generation, 409 when a generation predates this feature
+  (`structural_summary IS NULL`) rather than serving an empty/wrong
+  inventory.
+- Verified two ways: 4 integration tests against real Postgres
+  (404/409/deterministic-response/re-ingestion-supersedes-prior-
+  generation), and `build_structural_inventory()` run directly against
+  this repository's own checkout — correctly found all 6
+  `docker-compose.yml` services with real dockerfile paths/container
+  names, all 5 `pyproject.toml` manifests, and recorded
+  `docker-compose.prod.yml`'s unparseable `!override` YAML tag as an
+  explicit `compose_parse` gap instead of crashing. No live two-service
+  HTTP round trip (a running `rag_orchestrator` actually calling a
+  running `ingestion_service`) or production deployment is claimed.
+- **Not yet done, deliberately deferred out of #197's scope**: ORIENT is
+  not reachable from `rag_orchestrator`'s query path — `run_rag()` has no
+  mode concept today and every existing seam only activates after vector
+  search has already run. Tracked as fast-follow
+  [issue #216](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/216).
+  TRACE/IMPACT (#3) and a general agentic investigator (#12) remain
+  separately scoped, not started.
 
 ## Known issues
 
