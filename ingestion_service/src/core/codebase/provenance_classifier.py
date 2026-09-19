@@ -22,12 +22,21 @@ from typing import Optional
 # Bumped whenever a rule below changes in a way that could flip a prior
 # classification -- incremental ingestion must recompute (not skip)
 # provenance for an unchanged-bytes node when this changes (ADR-053,
-# spec 008 FR-005).
-CLASSIFIER_VERSION = "role-subject-v1"
+# spec 008 FR-005). v2 (issue #199, Stage B3 finding): widened
+# _FIXTURE_PATH_RE to also catch shared/smoke_repo/ -- a real,
+# self-documented live-smoke-test fixture the v1 rule missed entirely,
+# found by the B3 shadow-diagnostics pass, never applied automatically
+# -- see DOCS/test_results/2026-09-19-stage-b3-provenance-shadow-diagnostics.md.
+CLASSIFIER_VERSION = "role-subject-v2"
 SCHEMA_VERSION = "provenance-v1"
 
 _TEST_PATH_RE = re.compile(r"(^|/)(tests?)(/|$)|_test\.py$|^test_.*\.py$")
-_FIXTURE_PATH_RE = re.compile(r"(^|/)(fixtures?|examples?)(/|$)")
+# smoke_repo/smoke_tests(?) added in v2 for the observed shared/smoke_repo/
+# gap; deliberately not broadened further (e.g. demo/sample/mock) without
+# an observed case to justify it (Stage B3's "measured improvement" bar).
+_FIXTURE_PATH_RE = re.compile(
+    r"(^|/)(fixtures?|examples?|smoke_repos?|smoke_tests?)(/|$)"
+)
 _HISTORICAL_PATH_RE = re.compile(r"^docs-archive/")
 _DESIGN_PATH_RE = re.compile(r"^DOCS/adr/")
 _DOCUMENTATION_PATH_RE = re.compile(r"^DOCS/")
