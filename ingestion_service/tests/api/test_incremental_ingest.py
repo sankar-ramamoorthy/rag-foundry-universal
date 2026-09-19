@@ -191,6 +191,19 @@ def _vector_ingestion_ids(document_id):
         return {str(r[0]) for r in rows}
 
 
+def _vector_source_metadata(document_id):
+    Session = get_sessionmaker()
+    with Session() as s:
+        rows = s.execute(
+            text(
+                "SELECT source_metadata FROM ingestion_service.vector_chunks "
+                "WHERE document_id = :document_id"
+            ),
+            {"document_id": document_id},
+        ).all()
+        return [r[0] for r in rows]
+
+
 # ---------------------------------------------------------------------
 # T014: unchanged file reuses document_id + vectors, no re-embed, re-tagged
 # ---------------------------------------------------------------------
@@ -233,6 +246,96 @@ def test_unchanged_file_reuses_vectors_and_retags(
     # re-tagged to the new generation, not deleted and re-created.
     assert _document_id(repo_id, "keep.py") == keep_doc_id
     assert _vector_ingestion_ids(keep_doc_id) == {str(id2)}
+
+
+# ---------------------------------------------------------------------
+# Issue #199 (Stage B2 incremental-reuse fix): a reused (not re-embedded)
+# artifact's vector-level provenance must still track the current
+# classifier's output, exactly like DocumentNode.provenance already does
+# (Stage B1). Root cause found via a real production incremental ingest
+# (see DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md's
+# follow-up note): the reuse path retagged ingestion_id but never touched
+# source_metadata, so /v1/rag's manifest silently read stale/unknown
+# provenance for anything an incremental generation didn't re-embed.
+# ---------------------------------------------------------------------
+
+def test_reused_vector_provenance_refreshed_without_reembed(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+
+    keep_doc_id = _document_id(repo_id, "keep.py")
+    original_metadata = _vector_source_metadata(keep_doc_id)
+    assert original_metadata, "keep.py must have persisted vector rows"
+    original_provenance = original_metadata[0]["provenance"]
+    assert original_provenance["role"]["value"] == "implementation"
+    original_canonical_id = original_metadata[0]["canonical_id"]
+
+    # Edit touch.py only; keep.py's bytes stay untouched, so it is reuse-
+    # eligible on the next generation -- exactly the path that skipped
+    # provenance entirely before this fix.
+    (tmp_path / "touch.py").write_text("def touch():\n    return 2\n", encoding="utf-8")
+
+    # Simulate a classifier-version bump (spec 008 FR-005): keep.py's
+    # bytes/path/doc_type are unchanged, but the classifier's output for
+    # it is different now.
+    bumped_provenance = {
+        "role": {"value": "test", "basis": "simulated-classifier-v2"},
+        "subject": {"value": "selected_repository", "basis": None},
+        "derivation": {"status": "source"},
+        "validity": {"declared_status": "unknown"},
+        "classification": {
+            "schema_version": "provenance-v1",
+            "classifier_version": "simulated-v2",
+            "scope": "artifact",
+        },
+    }
+    from src.api.v1 import codebase_ingest as codebase_ingest_module
+    from src.core.codebase import codebase_persistence as codebase_persistence_module
+
+    # Both modules import classify_node independently (persist_graph's
+    # DocumentNode-level recompute and codebase_ingest's chunk/reuse-path
+    # recompute are separate call sites by design -- see B1/B2) -- patch
+    # both so this test simulates one consistent classifier-version bump
+    # across the whole pipeline, not a contradiction between the two.
+    monkeypatch.setattr(
+        codebase_ingest_module, "classify_node", lambda *a, **k: bumped_provenance
+    )
+    monkeypatch.setattr(
+        codebase_persistence_module, "classify_node", lambda *a, **k: bumped_provenance
+    )
+
+    id2 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id2, embedder=embedder,
+    )
+
+    # No re-embed for the reused artifact -- the fix must not have
+    # started re-chunking/re-embedding to refresh provenance.
+    assert "keep.py" not in embedded_ids and "keep.py#keep" not in embedded_ids
+
+    # DocumentNode.provenance (Stage B1) was always going to pick this up
+    # (persist_graph recomputes on every upsert) -- confirmed as a sanity
+    # baseline, not the regression this test targets.
+    Session = get_sessionmaker()
+    with Session() as s:
+        keep_node = s.get(DocumentNode, keep_doc_id)
+        assert keep_node.provenance == bumped_provenance
+
+    refreshed_metadata = _vector_source_metadata(keep_doc_id)
+    assert refreshed_metadata, "reused rows must still exist (no delete/re-insert)"
+    for row in refreshed_metadata:
+        assert row["provenance"] == bumped_provenance, (
+            "reused vector row's source_metadata.provenance must be "
+            "refreshed to the current classifier's output without a "
+            "re-embed"
+        )
+        # Every other source_metadata key survives the patch untouched.
+        assert row["canonical_id"] == original_canonical_id
 
 
 # ---------------------------------------------------------------------

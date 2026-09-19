@@ -37,6 +37,12 @@ class VectorSearchRequest(BaseModel):
 class VectorRetagRequest(BaseModel):
     document_ids: List[str]
     new_ingestion_id: str
+    # Issue #199 (Stage B2 incremental-reuse fix): document_id -> the
+    # ADR-053 provenance envelope to patch into that document's rows'
+    # source_metadata.provenance, in the same update. Every other
+    # source_metadata key is preserved. Omitted/absent for a given
+    # document_id -> retag only, no provenance change.
+    provenance_by_document_id: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 class VectorSearchByDocRequest(BaseModel):
@@ -139,7 +145,10 @@ async def retag_vectors(
     try:
         # #170 (WP-R7): off the event loop (see add_vectors above).
         count = await asyncio.to_thread(
-            store.retag_ingestion_id, request.document_ids, request.new_ingestion_id,
+            store.retag_ingestion_id,
+            request.document_ids,
+            request.new_ingestion_id,
+            request.provenance_by_document_id,
         )
         logger.info(
             f"Retagged {count} vector row(s) to ingestion_id "

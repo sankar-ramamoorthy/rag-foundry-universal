@@ -270,7 +270,10 @@ class PgVectorStore(VectorStore):
                     cur.execute(delete_sql, (ingestion_id,))
 
     def retag_ingestion_id(
-        self, document_ids: List[str], new_ingestion_id: str,
+        self,
+        document_ids: List[str],
+        new_ingestion_id: str,
+        provenance_by_document_id: "dict[str, dict] | None" = None,
     ) -> int:
         """Issue #196 (FR-007b, T024): re-tag reused artifacts' existing
         vector_chunks rows to the new generation's ingestion_id, in place.
@@ -279,18 +282,60 @@ class PgVectorStore(VectorStore):
         document_id-stability invariant means a reused document_id has at
         most one generation's vectors alive at a time, so there is no
         ambiguity about which rows "belong" to it.
+
+        Issue #199 (Stage B2 incremental-reuse fix): document_ids present
+        in `provenance_by_document_id` also get `source_metadata`'s
+        `provenance` key replaced in the same statement, via `jsonb_set`
+        (preserves every other existing key -- never a full overwrite).
+        No embedding call, no row insert; still exactly one UPDATE
+        statement per batch.
         """
         if not document_ids:
             return 0
-        update_sql = sql.SQL("""
-            UPDATE {schema}.vector_chunks
-            SET ingestion_id = %s
-            WHERE document_id = ANY(%s)
-        """).format(schema=sql.Identifier(self.SCHEMA))
+        provenance_by_document_id = provenance_by_document_id or {}
+        with_provenance = [d for d in document_ids if d in provenance_by_document_id]
+        without_provenance = [
+            d for d in document_ids if d not in provenance_by_document_id
+        ]
+
+        updated = 0
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
-                cur.execute(update_sql, (new_ingestion_id, document_ids))
-                return cur.rowcount
+                if without_provenance:
+                    plain_sql = sql.SQL("""
+                        UPDATE {schema}.vector_chunks
+                        SET ingestion_id = %s
+                        WHERE document_id = ANY(%s)
+                    """).format(schema=sql.Identifier(self.SCHEMA))
+                    cur.execute(plain_sql, (new_ingestion_id, without_provenance))
+                    updated += cur.rowcount
+
+                if with_provenance:
+                    values_sql = sql.SQL(", ").join(
+                        sql.SQL("(%s::uuid, %s::jsonb)") for _ in with_provenance
+                    )
+                    # jsonb_set's path is a bound parameter (a one-element
+                    # text[]), not spliced into the SQL text -- avoids any
+                    # ambiguity between Postgres's '{...}' array-literal
+                    # syntax and sql.SQL.format's own '{}' placeholders.
+                    combined_sql = sql.SQL("""
+                        UPDATE {schema}.vector_chunks AS vc
+                        SET ingestion_id = %s,
+                            source_metadata = jsonb_set(
+                                vc.source_metadata, %s, v.provenance, true
+                            )
+                        FROM (VALUES {values}) AS v(document_id, provenance)
+                        WHERE vc.document_id = v.document_id
+                    """).format(
+                        schema=sql.Identifier(self.SCHEMA), values=values_sql
+                    )
+                    params: list = [new_ingestion_id, ["provenance"]]
+                    for document_id in with_provenance:
+                        params.append(document_id)
+                        params.append(Jsonb(provenance_by_document_id[document_id]))
+                    cur.execute(combined_sql, params)
+                    updated += cur.rowcount
+        return updated
 
     def get_chunks_by_document_id(
         self, document_id: str, k: int = 3,

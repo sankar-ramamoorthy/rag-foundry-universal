@@ -152,21 +152,43 @@ class HttpVectorStore:
     RETAG_BATCH_SIZE = 1000
 
     def retag_ingestion_id(
-        self, document_ids: List[str], new_ingestion_id: str,
+        self,
+        document_ids: List[str],
+        new_ingestion_id: str,
+        provenance_by_document_id: "dict[str, dict] | None" = None,
     ) -> int:
         """Re-tag reused artifacts' vectors to the new generation's
         ingestion_id, in place (issue #196, FR-007b) -- no re-embedding.
+
+        Issue #199 (Stage B2 incremental-reuse fix): when
+        `provenance_by_document_id` is given, each batch also carries the
+        matching document_ids' current provenance, patched into
+        `source_metadata.provenance` server-side in the same request --
+        the only way a reused artifact's vector-level provenance stays
+        current without a re-embed. See
+        `vector_store_service`'s `retag_ingestion_id` for the exact
+        preserve-other-keys guarantee.
         """
         check_ownership()
         if not document_ids:
             return 0
+        provenance_by_document_id = provenance_by_document_id or {}
         url = f"{self.base_url}/v1/vectors/retag"
         total = 0
         for start in range(0, len(document_ids), self.RETAG_BATCH_SIZE):
             batch = document_ids[start:start + self.RETAG_BATCH_SIZE]
+            batch_provenance = {
+                document_id: provenance_by_document_id[document_id]
+                for document_id in batch
+                if document_id in provenance_by_document_id
+            }
             resp = requests.post(
                 url,
-                json={"document_ids": batch, "new_ingestion_id": new_ingestion_id},
+                json={
+                    "document_ids": batch,
+                    "new_ingestion_id": new_ingestion_id,
+                    "provenance_by_document_id": batch_provenance or None,
+                },
                 timeout=90,
             )
             resp.raise_for_status()

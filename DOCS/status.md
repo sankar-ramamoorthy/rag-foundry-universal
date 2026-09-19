@@ -414,6 +414,27 @@ rules by design). 9 new pure tests (`test_evidence_authority.py`) + 4
 new route-level tests; full `-m unit` suite (297 passed), `ruff`/
 `pyright` clean.
 
+**Follow-up fix: incremental ingestion silently dropped vector-level
+provenance.** A real production incremental re-ingestion (after Stage C
+shipped) surfaced `unknown_provenance` on every `/v1/rag` manifest
+entry, even for files independently confirmed to have correct
+`DocumentNode.provenance`. Root cause: Stage B1's `persist_graph`
+recomputes `DocumentNode.provenance` on every upsert (including reused
+rows), but Stage B2's chunk-level provenance was only ever set on the
+re-embed path — an incremental generation reusing an unchanged file's
+vectors (`_retag_reused_vectors`) retagged `ingestion_id` but never
+touched `source_metadata`, so the vector-retrieval path (`/v1/rag`)
+silently went stale while the graph path (TRACE/IMPACT/Stage C) stayed
+correct. Fixed: `vector_store_service`'s existing `/v1/vectors/retag`
+endpoint gained a narrowly-scoped `provenance_by_document_id` parameter
+that patches `source_metadata.provenance` via `jsonb_set` in the same
+`UPDATE`, preserving every other key — no new endpoint, no embedding
+call. Verified via a new real-Postgres-plus-real-`vector_store_service`
+integration test and live re-verification against the local stack
+(reproduced the exact bug via a real incremental re-ingest, confirmed
+the fix resolves it). See the
+[test results follow-up](/DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#follow-up-finding-incremental-ingestion-silently-dropped-vector-level-provenance).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**

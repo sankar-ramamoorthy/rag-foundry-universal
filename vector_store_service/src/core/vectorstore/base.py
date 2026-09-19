@@ -35,11 +35,26 @@ class VectorStore(ABC):
 
     @abstractmethod
     def retag_ingestion_id(
-        self, document_ids: List[str], new_ingestion_id: str,
+        self,
+        document_ids: List[str],
+        new_ingestion_id: str,
+        provenance_by_document_id: "dict[str, dict] | None" = None,
     ) -> int:
         """Re-tag every vector row for the given document_ids to
         new_ingestion_id, in place (no re-embedding). Returns the number
         of rows updated. Issue #196 (FR-007b): carries a reused, unchanged
         artifact's existing vectors forward to the new generation.
+
+        Issue #199 (ADR-053, Stage B2 incremental-reuse fix): when
+        `provenance_by_document_id` is given, each listed document_id's
+        `source_metadata.provenance` key is patched in the same update --
+        every other `source_metadata` key is preserved unchanged. This is
+        the only way a reused (not re-chunked/re-embedded) artifact's
+        vector-level provenance can ever reach the current classifier's
+        output; DocumentNode.provenance alone (Stage B1) is not enough,
+        since /v1/rag reads chunk-level source_metadata, not the graph.
+        A document_id present in `document_ids` but absent from the map
+        is retagged only (no provenance change) -- defensive, not the
+        expected call shape from ingestion_service.
         """
         ...
