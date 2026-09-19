@@ -1,7 +1,7 @@
 # ingestion_service/src/api/v1/graph.py
 
 from fastapi import APIRouter, HTTPException, Query
-from typing import List, Dict
+from typing import List, Dict, Optional
 from pydantic import BaseModel
 import logging
 
@@ -21,6 +21,11 @@ class GraphNode(BaseModel):
     relative_path: str
     title: str
     doc_type: str
+    # Issue #199 (ADR-053, Stage C prerequisite): transport only, same
+    # spirit as Stage B2's vector-path transport -- TRACE/IMPACT/ORIENT
+    # consume the in-memory graph this API backs, which had no provenance
+    # reachability at all before this field. None for a pre-B1 row.
+    provenance: Optional[dict] = None
 
 
 class CanonicalLookupResponse(BaseModel):
@@ -72,6 +77,7 @@ def _lookup_nodes_by_canonical_ids(
             relative_path=node.relative_path or "",
             title=node.title or "",
             doc_type=node.doc_type or "",
+            provenance=node.provenance,
         )
         for node in nodes
     ]
@@ -166,6 +172,7 @@ async def get_full_graph(
             relative_path=node.relative_path or "",
             title=node.title or "",
             doc_type=node.doc_type or "",
+            provenance=node.provenance,
         )
         for canonical_id, node in graph_data["nodes"].items()
     ]

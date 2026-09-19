@@ -239,9 +239,11 @@ def _to_evidence_response(
 async def _dispatch_orient_evidence(
     repo_id: str, req: EvidenceRequest
 ) -> WorkflowResult:
-    if req.start or req.relation_types or req.required_target:
+    if req.start or req.relation_types or req.required_target or req.claim_type:
         raise HTTPException(
-            400, "mode=orient does not accept start/relation_types/required_target"
+            400,
+            "mode=orient does not accept start/relation_types/required_target/"
+            "claim_type",
         )
     return await run_orient_evidence(
         repo_id,
@@ -287,6 +289,7 @@ async def _dispatch_trace_evidence(
         explanation_query=req.explanation_query,
         provider=req.provider,
         model=req.model,
+        claim_type=req.claim_type,
     )
 
 
@@ -320,6 +323,7 @@ async def _dispatch_impact_evidence(
         explanation_query=req.explanation_query,
         provider=req.provider,
         model=req.model,
+        claim_type=req.claim_type,
     )
 
 

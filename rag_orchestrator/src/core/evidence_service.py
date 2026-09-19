@@ -35,6 +35,7 @@ from src.retrieval.evidence_workflow import (
     run_orient_workflow,
     run_trace_workflow,
 )
+from src.retrieval.provenance_diagnostics import ClaimType
 
 logger = logging.getLogger(__name__)
 
@@ -194,6 +195,7 @@ async def run_trace_evidence(
     explanation_query: str | None = None,
     provider: str | None = None,
     model: str | None = None,
+    claim_type: ClaimType | None = None,
 ) -> WorkflowResult:
     """Generation-fenced TRACE evidence check. `get_cached_graph_with_
     generation` already re-checks the generation on every call (#168);
@@ -201,7 +203,10 @@ async def run_trace_evidence(
     (synchronous, in-memory) workflow finishes, matching `hybrid_
     retrieve`'s fencing discipline for a multi-step read. The optional
     explanation phase (Stage A4) runs last, over the already generation-
-    verified final assessment."""
+    verified final assessment. `claim_type` (Stage C) is threaded
+    straight through to the pure workflow -- no extra I/O, since the
+    graph already loaded here carries provenance (Stage C's graph-
+    transport prerequisite)."""
     generation_id = await _query_generation(repo_id)
     graph_generation_id, graph = get_cached_graph_with_generation(repo_id)
     if graph_generation_id != generation_id:
@@ -217,6 +222,7 @@ async def run_trace_evidence(
         server_max_depth,
         max_nodes,
         required_target,
+        claim_type,
     )
     await _verify_generation(repo_id, generation_id)
     return await _with_explanation("trace", result, explanation_query, provider, model)
@@ -230,15 +236,17 @@ async def run_impact_evidence(
     explanation_query: str | None = None,
     provider: str | None = None,
     model: str | None = None,
+    claim_type: ClaimType | None = None,
 ) -> WorkflowResult:
     """Generation-fenced IMPACT evidence check -- same fencing shape as
-    `run_trace_evidence`, same Stage A4 explanation phase."""
+    `run_trace_evidence`, same Stage A4 explanation phase and Stage C
+    `claim_type` passthrough."""
     generation_id = await _query_generation(repo_id)
     graph_generation_id, graph = get_cached_graph_with_generation(repo_id)
     if graph_generation_id != generation_id:
         raise HTTPException(
             409, "Repository generation changed while loading the graph; retry"
         )
-    result = run_impact_workflow(graph, start, max_depth, max_candidates)
+    result = run_impact_workflow(graph, start, max_depth, max_candidates, claim_type)
     await _verify_generation(repo_id, generation_id)
     return await _with_explanation("impact", result, explanation_query, provider, model)

@@ -263,6 +263,117 @@ def test_mode_without_explanation_query_has_null_explanation(monkeypatch):
     assert resp.json()["explanation"] is None
 
 
+# --- Stage C: claim_type authority assessment ---
+
+
+def _provenance(role, subject):
+    return {
+        "role": {"value": role, "basis": "test"},
+        "subject": {"value": subject, "basis": None},
+        "derivation": {"status": "source"},
+        "validity": {"declared_status": "unknown"},
+        "classification": {
+            "schema_version": "provenance-v1",
+            "classifier_version": "role-subject-v2",
+            "scope": "artifact",
+        },
+    }
+
+
+def _graph_with_fixture_edge() -> CodebaseGraph:
+    graph = CodebaseGraph()
+    graph.add_node(
+        Node(
+            "a.py#foo",
+            "a.py",
+            provenance=_provenance("implementation", "selected_repository"),
+        )
+    )
+    graph.add_node(
+        Node(
+            "fixtures/example.py#run",
+            "fixtures/example.py",
+            provenance=_provenance("example_fixture", "embedded_subject"),
+        )
+    )
+    graph.add_edge("a.py#foo", "fixtures/example.py#run", "CALL")
+    return graph
+
+
+def test_trace_mode_claim_type_flags_embedded_example(monkeypatch):
+    _patched_client(monkeypatch, _generation_handler())
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_fixture_edge()),
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/repos/repo-x/evidence",
+        json={
+            "mode": "trace",
+            "start": "a.py#foo",
+            "required_target": "fixtures/example.py#run",
+            "claim_type": "implemented_behavior",
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["assessment"]["status"] == "satisfied"  # mechanical: unaffected
+    assert body["authority"]["status"] == "authority_unqualified"
+    findings_by_id = {
+        f["canonical_id"]: f["concerns"] for f in body["authority"]["findings"]
+    }
+    assert "embedded_subject_offered_as_implementation" in (
+        findings_by_id["fixtures/example.py#run"]
+    )
+
+
+def test_trace_mode_claim_type_test_contract_still_qualifies_same_fixture(monkeypatch):
+    _patched_client(monkeypatch, _generation_handler())
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_fixture_edge()),
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/repos/repo-x/evidence",
+        json={
+            "mode": "trace",
+            "start": "a.py#foo",
+            "required_target": "fixtures/example.py#run",
+            "claim_type": "test_contract",
+        },
+    )
+    assert resp.status_code == 200
+    assert resp.json()["authority"]["status"] == "authority_qualified"
+
+
+def test_trace_mode_without_claim_type_has_null_authority(monkeypatch):
+    _patched_client(monkeypatch, _generation_handler())
+    monkeypatch.setattr(
+        evidence_service,
+        "get_cached_graph_with_generation",
+        lambda repo_id: ("gen-1", _graph_with_edge()),
+    )
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/repos/repo-x/evidence", json={"mode": "trace", "start": "a.py#foo"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["authority"] is None
+
+
+def test_orient_mode_rejects_claim_type():
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/repos/repo-x/evidence",
+        json={"mode": "orient", "claim_type": "implemented_behavior"},
+    )
+    assert resp.status_code == 400
+
+
 # --- generation lifecycle failures propagate as HTTP errors ---
 
 

@@ -36,6 +36,7 @@ class FakeDocumentNode:
     relative_path: str
     title: str
     doc_type: str
+    provenance: dict | None = None
 
 
 def _fake_lookup(expected_repo_id, nodes_by_cid):

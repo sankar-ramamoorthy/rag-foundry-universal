@@ -32,16 +32,18 @@ the "pure controller, I/O isolated in adapters" split the handoff
 describes for the assessor.
 """
 
-from dataclasses import dataclass, field
-from typing import Literal
+from dataclasses import dataclass, field, replace
+from typing import Literal, Optional
 
 from src.retrieval.codebase_queries import CodebaseGraph
+from src.retrieval.evidence_authority import AuthorityAssessment, assess_authority
 from src.retrieval.evidence_sufficiency import (
     EvidenceAssessment,
     assess_impact as assess_impact_evidence,
     assess_orient,
     assess_trace,
 )
+from src.retrieval.provenance_diagnostics import ClaimType
 from src.retrieval.trace_impact import (
     AmbiguousStart,
     ImpactResult,
@@ -95,6 +97,27 @@ class WorkflowResult:
     # (an explanation_query was supplied) -- the pure workflow functions
     # in this module never set it themselves.
     explanation: ExplanationResult | None = None
+    # Issue #200 (Stage C, follow-up to #199): absent (None) unless the
+    # caller supplied claim_type -- see evidence_authority.py. Never
+    # gates or replaces `assessment` above; both are always visible
+    # together when present.
+    authority: AuthorityAssessment | None = None
+
+
+def _with_authority(
+    graph: CodebaseGraph,
+    result: WorkflowResult,
+    claim_type: Optional[ClaimType],
+) -> WorkflowResult:
+    if claim_type is None:
+        return result
+    provenance_by_canonical_id = {
+        cid: node.provenance for cid, node in graph.nodes.items()
+    }
+    authority = assess_authority(
+        claim_type, result.assessment, provenance_by_canonical_id
+    )
+    return replace(result, authority=authority)
 
 
 def _start_failure_result(
@@ -135,11 +158,23 @@ def run_impact_workflow(
     start: str,
     max_depth: int,
     max_candidates: int,
+    claim_type: Optional[ClaimType] = None,
 ) -> WorkflowResult:
     """IMPACT's candidate-set obligation is always `satisfied` once
     resolved (an empty/truncated candidate set is itself a valid bounded
     result) -- so there is never an obligation-driven reason to spend a
-    repair action here under Stage A."""
+    repair action here under Stage A. `claim_type` (Stage C) only adds
+    an authority assessment alongside this; it changes nothing above."""
+    result = _run_impact_workflow(graph, start, max_depth, max_candidates)
+    return _with_authority(graph, result, claim_type)
+
+
+def _run_impact_workflow(
+    graph: CodebaseGraph,
+    start: str,
+    max_depth: int,
+    max_candidates: int,
+) -> WorkflowResult:
     resolved = resolve_start_symbol(graph, start)
     if resolved is None or isinstance(resolved, AmbiguousStart):
         return _start_failure_result(resolved, assess_impact_evidence)
@@ -167,12 +202,38 @@ def run_trace_workflow(
     server_max_depth: int,
     max_nodes: int,
     required_target: str | None = None,
+    claim_type: Optional[ClaimType] = None,
 ) -> WorkflowResult:
     """One bounded repair: if the target obligation came back `unknown`
     because the requested depth (deliberately smaller than the server
     ceiling) cut the frontier off, retry once at the server ceiling.
     Never repairs a `missing` target (fully-explored frontier, more
-    depth cannot help) or when the request already ran at the ceiling."""
+    depth cannot help) or when the request already ran at the ceiling.
+    `claim_type` (Stage C) only adds an authority assessment over the
+    final evidence; it changes nothing about the repair decision above."""
+    result = _run_trace_workflow(
+        graph,
+        start,
+        relation_types,
+        direction,
+        requested_max_depth,
+        server_max_depth,
+        max_nodes,
+        required_target,
+    )
+    return _with_authority(graph, result, claim_type)
+
+
+def _run_trace_workflow(
+    graph: CodebaseGraph,
+    start: str,
+    relation_types: set[str] | None,
+    direction: str,
+    requested_max_depth: int,
+    server_max_depth: int,
+    max_nodes: int,
+    required_target: str | None = None,
+) -> WorkflowResult:
     resolved = resolve_start_symbol(graph, start)
     if resolved is None or isinstance(resolved, AmbiguousStart):
         return WorkflowResult(
