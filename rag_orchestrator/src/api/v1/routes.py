@@ -76,6 +76,41 @@ async def list_models():
         raise HTTPException(502, "llm_service model menu unavailable")
 
 
+@router.get("/repos/{repo_id}/orient")
+async def get_repo_orient(repo_id: str):
+    """Issue #216: thin passthrough to ingestion_service's deterministic
+    ORIENT endpoint (issue #197) -- no vector search, no graph expansion,
+    no LLM call, entirely outside run_rag()'s retrieval path. Unlike
+    /models above, this preserves ingestion_service's own 404 (no
+    completed generation) and 409 (generation predates ORIENT) rather
+    than collapsing every failure into one generic status: a caller
+    needs to tell "this repo has no ORIENT data" apart from "ingestion_
+    service is unreachable" to act correctly (e.g. re-ingest vs. retry).
+    """
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/orient"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.get(url)
+    except httpx.HTTPError as exc:
+        logger.error(f"Failed to reach ingestion_service for ORIENT: {exc}")
+        raise HTTPException(502, "ingestion_service unavailable") from exc
+
+    if resp.status_code == 200:
+        return resp.json()
+    if resp.status_code in (404, 409):
+        try:
+            detail = resp.json().get("detail", resp.text)
+        except ValueError:
+            detail = resp.text
+        raise HTTPException(resp.status_code, detail)
+    logger.error(
+        f"ingestion_service returned unexpected status {resp.status_code} "
+        f"for ORIENT (repo_id={repo_id[:8]})"
+    )
+    raise HTTPException(502, "ingestion_service returned an unexpected error")
+
+
 @router.post("/rag/simple", response_model=SimpleRAGResponse)
 async def simple_rag_endpoint(simple_rag_query: SimpleRAGQuery):
     """Simple RAG for regular documents - no graph traversal."""
