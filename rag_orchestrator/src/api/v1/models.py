@@ -1,5 +1,5 @@
 # rag_orchestrator/src/api/v1/models.py (UPDATED)
-from typing import List, Optional, Dict, Any
+from typing import List, Literal, Optional, Dict, Any
 
 from pydantic import BaseModel
 
@@ -120,3 +120,56 @@ class ImpactResponse(BaseModel):
     max_depth: int
     candidates: List[ImpactCandidateModel]
     truncated: bool
+
+
+# --- Issue #200, Stage A3: bounded evidence-sufficiency workflow ---
+
+
+class EvidenceRequest(BaseModel):
+    mode: Literal["orient", "trace", "impact"]
+    # TRACE/IMPACT: a canonical_id or bare symbol name (see
+    # resolve_start_symbol). Required for those modes, rejected for ORIENT.
+    start: Optional[str] = None
+    # TRACE only. None -> {"CALL"}, matching the existing GET /trace default.
+    relation_types: Optional[List[str]] = None
+    # TRACE only.
+    direction: str = "forward"
+    # TRACE/IMPACT only. None -> the mode's server ceiling
+    # (settings.TRACE_MAX_DEPTH / IMPACT_MAX_DEPTH).
+    max_depth: Optional[int] = None
+    # ORIENT only: which structural-inventory facets are required for
+    # this request to be sufficient (e.g. ["services", "manifests"]).
+    required_facets: Optional[List[str]] = None
+    # TRACE only: a canonical_id the traversal must reach for the
+    # request to be sufficient. Without it, TRACE only obligates a
+    # resolved start (see evidence_sufficiency.assess_trace).
+    required_target: Optional[str] = None
+
+
+class EvidenceItemModel(BaseModel):
+    identity: str
+    kind: str
+    supporting: Optional[str] = None
+
+
+class EvidenceAssessmentModel(BaseModel):
+    policy_version: str
+    status: Literal["satisfied", "partial", "needs_clarification"]
+    obligations: Dict[str, str]
+    reason_codes: List[str]
+    evidence: List[EvidenceItemModel]
+    missing_obligations: List[str]
+
+
+class EvidenceStepModel(BaseModel):
+    action: str
+    reason: str
+    outcome: str
+
+
+class EvidenceResponse(BaseModel):
+    repo_id: str
+    mode: str
+    assessment: EvidenceAssessmentModel
+    steps: List[EvidenceStepModel]
+    stop_reason: str
