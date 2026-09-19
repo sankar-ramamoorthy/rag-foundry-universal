@@ -59,6 +59,24 @@ def doc_type_from_metadata(metadata: dict) -> Optional[str]:
     )
 
 
+def provenance_from_metadata(metadata: dict) -> Optional[dict]:
+    """
+    Issue #199 (ADR-053, Stage B2): single source of truth for pulling
+    the ADR-053 role/subject/derivation/validity/classification envelope
+    out of a raw vector-search result's metadata dict -- mirrors
+    canonical_id_from_metadata's/doc_type_from_metadata's exact lookup
+    shape (checked flat, then nested under source_metadata). Transport
+    only: this makes the already-persisted `DocumentNode.provenance`
+    (Stage B1) reachable from a retrieved chunk; it does not rank,
+    filter, or prefer anything by it. `None` when absent -- a pre-B1
+    row or a chunk whose provenance wasn't classified, never guessed.
+    """
+    metadata = metadata or {}
+    return metadata.get("provenance") or metadata.get("source_metadata", {}).get(
+        "provenance"
+    )
+
+
 def extract_canonical_ids_from_chunks(chunks: List) -> Set[str]:
     """
     Extract canonical_ids from retrieved chunks, preferring the
