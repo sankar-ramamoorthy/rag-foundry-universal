@@ -274,13 +274,24 @@ exists. See [spec 007](/specs/007-bounded-evidence-sufficiency/spec.md).
   observability survives into the response's `explanation` object.
   9 new tests (`test_evidence_service.py`, `test_evidence_endpoint.py`);
   full `-m unit` suite (264 passed) and `ruff`/`pyright` clean.
-- **Not yet done**: the live paired-evaluation gate (A5) — tracked
-  under #200, not separately filed yet. Everything through A4 is code-
-  reviewed-clean-by-local-tests only; no live deployment currently runs
-  it (the Tailscale production instance was last built from commit
-  `65ccd09`, 2026-09-19 09:25am, before any Stage A work — confirmed via
-  its `/version` endpoint — so `/v1/repos/{repo_id}/evidence` is not
-  reachable there yet).
+- **Slice A5 (live verification) — reduced-scope pass done, full gate
+  still open**: ran `POST /v1/repos/{repo_id}/evidence` live over HTTP
+  against a real local docker-compose stack and a freshly-ingested
+  corpus (`shared/`, 67 nodes — this repo's own full ~5,100-node graph
+  was impractical to embed locally in this pass, ~4.5h at measured
+  throughput). 11 cases across ORIENT/TRACE/IMPACT, the bounded repair
+  (observed firing for real: depth-1 request → `unknown` → repaired to
+  the server ceiling → target found), the A4 explanation phase (one
+  real `/generate` call, grounded answer), and input validation all
+  passed. See
+  [test results](/DOCS/test_results/2026-09-19-stage-a5-evidence-sufficiency-live-verification.md)
+  for the full case table and — importantly — what this pass does
+  **not** establish: the handoff's full frozen 12-16 case, two-repository,
+  false-sufficient-rate release gate was not run (INCONCLUSIVE, not
+  claimed passed). The Tailscale production instance remains on commit
+  `65ccd096` (`/version` confirms `build_date: 2026-09-19T13:34:02Z`,
+  pre-Stage-A) — `/v1/repos/{repo_id}/evidence` is not deployed there;
+  deployment is a separate, not-yet-taken action.
 
 ## Known issues
 
