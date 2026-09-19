@@ -92,11 +92,57 @@ generation fence (Stage A2), derivation support has no live producer to
 check yet (no generated-summary path exists), and required-context is
 `/v1/rag`'s manifest concern, not TRACE/IMPACT's.
 
+## Follow-up finding: incremental ingestion silently dropped vector-level provenance
+
+After this document's initial verification, the owner deployed the
+Stage C build to production and ran a **second** ingestion of the full
+self-repo corpus -- this one incremental (`is_incremental: true`,
+confirmed via `GET /v1/repos/{repo_id}/generation`), not a full rebuild.
+Querying `/v1/rag` for real content afterward showed every manifest
+entry reading `unknown_provenance`, including files independently
+confirmed (via direct `GET /v1/graph/repos/{repo_id}/nodes/lookup`
+calls) to have correct, current `role-subject-v2` provenance on their
+`DocumentNode` row.
+
+**Root cause**: Stage B1's `persist_graph` recomputes `DocumentNode.
+provenance` on every upsert, including a reused row -- that invariant
+held. But Stage B2's chunk-level provenance is only ever set inside
+`_chunk_and_buffer_node`, the re-embed path. An incremental generation
+that reuses an unchanged file's existing vectors (`_retag_reused_
+vectors`, previously just an `ingestion_id` retag) never touched that
+vector's `source_metadata` at all -- so `/v1/rag`, which reads
+chunk-level metadata, not the graph, silently lost provenance for
+anything the generation didn't literally re-embed. TRACE/IMPACT/Stage C
+(reading the graph) were unaffected; only the vector-retrieval path
+was stale. This is exactly the split described in the follow-up
+directive: mechanical classification was generation-aware at the graph
+layer, but provenance freshness on the vector layer was accidentally
+tied to embedding regeneration.
+
+**Fixed**: `_retag_reused_vectors` now recomputes each reused node's
+provenance (same `classify_node` call, same inputs persist_graph uses)
+and passes it to a widened `retag_ingestion_id` (`vector_store_service`
+gained a narrowly-scoped `provenance_by_document_id` parameter on the
+existing `/v1/vectors/retag` endpoint -- no new endpoint), which patches
+`source_metadata.provenance` via `jsonb_set` in the same `UPDATE` that
+already retags `ingestion_id`, preserving every other `source_metadata`
+key. No embedding call, no row insert -- one bulk `UPDATE` per batch,
+same as before.
+
+Verified end-to-end via a new real-Postgres-plus-real-`vector_store_
+service` integration test
+(`test_reused_vector_provenance_refreshed_without_reembed`): an
+unchanged file's provenance is refreshed to a simulated classifier-
+version bump's output, the file is confirmed *not* re-embedded, and
+every other `source_metadata` key (e.g. `canonical_id`) survives
+unchanged.
+
 ## Recommendation
 
 Keep fully opt-in. This is a real, working authority layer for the two
 rules Stage B3 already validated (subject fit, claim-relative role
 fit for `implemented_behavior`/`repository_overview`, plus declared
-validity), live-verified against real fixture content. The remaining
+validity), live-verified against real fixture content, and now correct
+under incremental ingestion as well as full rebuilds. The remaining
 Stage C obligation-table rows are legitimate future increments, not
 blockers to using what exists today.

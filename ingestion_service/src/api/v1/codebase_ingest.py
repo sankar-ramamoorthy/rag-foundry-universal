@@ -124,17 +124,35 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
 
 def _retag_reused_vectors(
     pipeline: IngestionPipeline,
-    document_ids: list[str],
+    provenance_by_document_id: dict[str, dict],
     ingestion_id: str,
 ) -> None:
     """Issue #196 (FR-007b, T024): bulk-carry reused artifacts' existing
-    vectors forward to this generation's ingestion_id, no re-embedding."""
-    if not document_ids:
+    vectors forward to this generation's ingestion_id, no re-embedding.
+
+    Issue #199 (Stage B2 incremental-reuse fix): also patches each
+    reused artifact's vector-level `source_metadata.provenance` to the
+    current classifier's output in the same request -- without this, a
+    reused (not re-chunked/re-embedded) artifact's `/v1/rag`-visible
+    provenance would silently go stale (or stay `unknown` forever)
+    across every future incremental generation, even though its
+    `DocumentNode.provenance` (Stage B1) is already current. See
+    `DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md`'s
+    follow-up note for how this was found (a real production incremental
+    ingest) and `provenance_classifier.classify_node`'s docstring for why
+    this call is guaranteed identical to what persist_graph computed for
+    the same node.
+    """
+    if not provenance_by_document_id:
         return
-    retagged = pipeline._vector_store.retag_ingestion_id(document_ids, ingestion_id)
+    document_ids = list(provenance_by_document_id)
+    retagged = pipeline._vector_store.retag_ingestion_id(
+        document_ids, ingestion_id, provenance_by_document_id
+    )
     logger.info(
         f"Re-tagged {retagged} reused vector row(s) "
-        f"({len(document_ids)} artifact(s)) to ingestion {ingestion_id}"
+        f"({len(document_ids)} artifact(s)) to ingestion {ingestion_id}, "
+        f"provenance refreshed"
     )
 
 
@@ -218,7 +236,7 @@ def _embed_repo_artifacts(
         on_flush=acknowledged,
     )
 
-    retag_document_ids: list[str] = []
+    retag_provenance_by_document_id: dict[str, dict] = {}
 
     def append_page(page):
         # Frame exit drops the last artifact's text/chunk-list references.
@@ -228,8 +246,13 @@ def _embed_repo_artifacts(
             if node.relative_path in eligible_relative_paths:
                 # FR-006/FR-007: content + chunking + embedding config all
                 # match the prior generation -- carry the existing vectors
-                # forward instead of re-chunking/re-embedding.
-                retag_document_ids.append(str(node.document_id))
+                # forward instead of re-chunking/re-embedding. Issue #199:
+                # still recompute provenance here (cheap, no I/O) so the
+                # retag call can refresh it too -- see
+                # _retag_reused_vectors's docstring.
+                retag_provenance_by_document_id[str(node.document_id)] = classify_node(
+                    node.relative_path, node.doc_type, node.text
+                )
             else:
                 _chunk_and_buffer_node(pipeline, buffer, node, repo_id, provider)
             progress["nodes_processed"] += 1
@@ -242,7 +265,7 @@ def _embed_repo_artifacts(
         raise RuntimeError("Embeddable artifact count changed during embedding")
     buffer.flush()
     acknowledged()
-    _retag_reused_vectors(pipeline, retag_document_ids, ingestion_id)
+    _retag_reused_vectors(pipeline, retag_provenance_by_document_id, ingestion_id)
     return buffer.chunks_persisted, 0
 
 
