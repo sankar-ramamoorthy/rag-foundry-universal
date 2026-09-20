@@ -435,6 +435,23 @@ integration test and live re-verification against the local stack
 the fix resolves it). See the
 [test results follow-up](/DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#follow-up-finding-incremental-ingestion-silently-dropped-vector-level-provenance).
 
+**Production-verified 2026-09-20** (PR #237's fix deployed, `main` @
+`d7fbf874`): the repository was deleted from production, redeployed,
+and re-ingested through the exact sequence that originally exposed the
+bug — a fresh full ingest, then a genuinely incremental re-ingest with
+`chunks_persisted: 0` (100% vector reuse, zero re-embedding). A full-
+corpus database query confirmed **19,490 / 19,490** `vector_chunks`
+rows carry `provenance` after that reuse — zero missing — with a real,
+diverse role distribution (`documentation` 5637, `implementation` 3389,
+`unknown_mixed` 3050, `test` 2888, `historical` 2859, `design` 1565,
+`example_fixture` 102). **Stage A (`#200`), Stage B (`#199`), Stage C,
+and this regression fix are now production-verified**, not only
+locally/unit-tested. See the
+[production verification record](/DOCS/test_results/2026-09-20-production-incremental-provenance-verification.md).
+This does not substitute for Stage A's still-open formal frozen-
+evaluation gate (12-16 case, two-repo, statistical tracking), which
+remains separate, not-yet-run work.
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
