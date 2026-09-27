@@ -52,6 +52,10 @@ from rag_orchestrator.src.retrieval.provenance_diagnostics import (
     ClaimType,
     diagnose_manifest,
 )
+from rag_orchestrator.src.retrieval.repository_overview_policy import (
+    assess_repository_overview,
+    render_repository_overview_policy,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -457,6 +461,36 @@ async def _query_generation(repo_id: str) -> str:
 async def _verify_generation(repo_id: str, expected: str) -> None:
     if await _query_generation(repo_id) != expected:
         raise HTTPException(409, "Repository generation changed; retry")
+
+
+async def _fetch_repository_overview(
+    repo_id: str, expected_generation: str
+) -> dict[str, Any] | None:
+    """Read the pinned generation's deterministic ORIENT inventory.
+
+    A missing inventory is a diagnostic gap, not a reason to fail an otherwise
+    valid RAG request. The policy renderer then instructs generation to report
+    the gap instead of inventing current structure.
+    """
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/orient"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(url)
+            if response.status_code == 200:
+                payload = response.json()
+                if payload.get("ingestion_id") != expected_generation:
+                    logger.info(
+                        "ORIENT inventory generation mismatch: expected=%s actual=%s",
+                        expected_generation,
+                        payload.get("ingestion_id"),
+                    )
+                    return None
+                return payload
+            logger.info("ORIENT inventory unavailable: status=%s", response.status_code)
+    except httpx.HTTPError as exc:
+        logger.info("ORIENT inventory unavailable: %s", exc)
+    return None
 
 
 def _sort_passages(chunks_by_document: Dict[str, List[RetrievedChunk]]) -> None:
@@ -890,8 +924,25 @@ async def run_rag(
             for finding in diagnose_manifest(claim_type, final_context_manifest)
         ]
 
+    llm_context = context_str
+    if claim_type == "repository_overview":
+        orient_response = await _fetch_repository_overview(
+            resolved_repo_id, retrieval_plan_dict["generation_id"]
+        )
+        overview_assessment = assess_repository_overview(
+            final_context_manifest, orient_response
+        )
+        retrieval_plan_dict["repository_overview_policy"] = overview_assessment
+        llm_context = (
+            render_repository_overview_policy(
+                resolved_repo_id, orient_response, overview_assessment
+            )
+            + "\nRETRIEVED EVIDENCE\n"
+            + context_str
+        )
+
     # LLM call
-    llm_payload = {"context": context_str, "query": query}
+    llm_payload = {"context": llm_context, "query": query}
     params: Dict[str, str] = {}
     if provider:
         params["provider"] = provider

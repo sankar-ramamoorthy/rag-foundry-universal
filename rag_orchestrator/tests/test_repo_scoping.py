@@ -50,6 +50,34 @@ def test_route_forwards_repo_id(monkeypatch):
     assert resp.json()["repo_id"] == "repo-x"
 
 
+def test_route_forwards_optional_trace_canonical_ids(monkeypatch):
+    captured = {}
+
+    async def fake_run_rag(**kwargs):
+        captured.update(kwargs)
+        return RAGResult(
+            answer="ok", sources=[], repo_id="repo-x", retrieval_plan={}
+        )
+
+    monkeypatch.setattr(routes, "run_rag", fake_run_rag)
+
+    client = TestClient(app)
+    resp = client.post(
+        "/v1/rag",
+        json={
+            "query": "orientation",
+            "repo_id": "repo-x",
+            "trace_canonical_ids": ["README.md", "compose:docker-compose.yml#api"],
+        },
+    )
+
+    assert resp.status_code == 200
+    assert captured["trace_canonical_ids"] == {
+        "README.md",
+        "compose:docker-compose.yml#api",
+    }
+
+
 def test_route_forwards_none_when_repo_id_omitted(monkeypatch):
     captured = {}
 

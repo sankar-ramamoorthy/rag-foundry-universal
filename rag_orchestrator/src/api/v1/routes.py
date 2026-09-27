@@ -72,6 +72,11 @@ async def rag_endpoint(rag_query: RAGQuery):
             language=rag_query.language,
             rerank=rag_query.rerank,
             claim_type=rag_query.claim_type,
+            trace_canonical_ids=(
+                set(rag_query.trace_canonical_ids)
+                if rag_query.trace_canonical_ids
+                else None
+            ),
         )
         return result
 

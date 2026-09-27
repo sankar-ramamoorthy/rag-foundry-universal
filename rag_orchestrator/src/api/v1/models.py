@@ -33,6 +33,9 @@ class RAGQuery(BaseModel):
             "repository_overview",
         ]
     ] = None
+    # Issue #240: opt-in canonical targets for live evidence-survival
+    # diagnostics. Omitted -> retrieval behavior and response shape unchanged.
+    trace_canonical_ids: Optional[List[str]] = None
 
 
 class RAGResponse(BaseModel):  # Updated name
