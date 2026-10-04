@@ -97,6 +97,22 @@ No production/deployment validation is claimed (separate #171 gate).
   stays `deferred/NO-GO` as a *default* pending clean, pinned, matched-budget
   comparisons accounting for issue #150's recall fix.
 
+## Repository-overview answer quality (#240)
+
+**Open; measured merge gate failed on 2026-10-03.** The local
+`feature/240-repository-overview-followup` branch contains `e00ddb2` ORIENT
+grounding and `07a5d59` default-off selection instrumentation, but a pinned 11-request
+comparison found Q2–Q4 still failing. An opt-in, default-off canonical
+purpose-passage selection prototype recovered the indexed `CLAUDE.md`
+description in Q5's final context, but regressed structural answers and
+repeated a stale language-support claim. It is not a release candidate.
+Production still runs `d7fbf874`; the ready self-repository corpus is
+generation `d3ecfaea…` from `00e0cc9`. The earlier claim that production
+omitted the final-context manifest was corrected: it is nested under
+`retrieval_plan`. See the [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md),
+[measured comparison](/DOCS/test_results/2026-10-03-issue-240-frozen-quality-comparison.md),
+and [restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md).
+
 ## Incremental ingestion & snapshot lineage
 
 Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):
