@@ -106,6 +106,7 @@ def build_final_context_manifest(
     *,
     seed_document_ids: Optional[set] = None,
     expansion_metadata: Optional[Dict[str, object]] = None,
+    policy_document_ids: Optional[set] = None,
 ) -> List[Dict[str, object]]:
     """
     WP-T1d: one structured record per chunk that actually crosses into
@@ -122,12 +123,15 @@ def build_final_context_manifest(
     """
     seed_document_ids = seed_document_ids or set()
     expansion_metadata = expansion_metadata or {}
+    policy_document_ids = policy_document_ids or set()
     manifest: List[Dict[str, object]] = []
     for c in chunks_in_final_context:
         text = str(c.get("text", ""))
         document_id = c.get("document_id")
         meta = expansion_metadata.get(str(document_id)) if document_id else None
-        if document_id in seed_document_ids:
+        if document_id in policy_document_ids:
+            selection_reason = "repository_overview_canonical_selection"
+        elif document_id in seed_document_ids:
             selection_reason = "seed"
         elif isinstance(meta, dict):
             selection_reason = (

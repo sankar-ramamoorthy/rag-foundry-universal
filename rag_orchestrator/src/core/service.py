@@ -29,7 +29,7 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
     build_sources,
     prepare_chunks_for_agent,
 )
-from rag_orchestrator.src.retrieval.types import RetrievedChunk
+from rag_orchestrator.src.retrieval.types import RetrievedChunk, RetrievedContext
 from src.core.reranker import rerank_chunks
 
 from rag_orchestrator.src.retrieval.codebase_utils import (
@@ -493,6 +493,51 @@ async def _fetch_repository_overview(
     return None
 
 
+_PURPOSE_CANONICAL_ID = "CLAUDE.md#claude_md.what_this_project_is"
+
+
+async def _fetch_canonical_overview_chunks(
+    repo_id: str, generation_id: str, query_embedding: List[float]
+) -> tuple[str | None, List[RetrievedChunk]]:
+    """Resolve one selected-repository source, then fetch its pinned chunks."""
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}/nodes/lookup"
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            url, json={"canonical_ids": [_PURPOSE_CANONICAL_ID]}
+        )
+        response.raise_for_status()
+    nodes = response.json().get("nodes", [])
+    node = next(
+        (item for item in nodes if item.get("canonical_id") == _PURPOSE_CANONICAL_ID),
+        None,
+    )
+    if not node or not node.get("document_id"):
+        return None, []
+    doc_id = str(node["document_id"])
+    fetched = await _fetch_expanded_doc_chunks(
+        [doc_id], query_embedding=query_embedding,
+        repo_id=repo_id, ingestion_id=generation_id,
+    )
+    rows = fetched[0][1] if fetched else []
+    chunks = _add_chunks(doc_id, rows, set(), {})
+    chunks = [chunk for chunk in chunks if chunk.canonical_id == _PURPOSE_CANONICAL_ID]
+    await _verify_generation(repo_id, generation_id)
+    return doc_id, chunks
+
+
+def _prepend_policy_chunks(
+    agent_chunks: List[Dict[str, Any]],
+    policy_chunks: List[Dict[str, Any]],
+    max_total_chunks: int,
+) -> List[Dict[str, Any]]:
+    """Prioritize selected canonical evidence without duplicating a chunk."""
+    policy_ids = {chunk["chunk_id"] for chunk in policy_chunks}
+    return (policy_chunks + [
+        chunk for chunk in agent_chunks if chunk["chunk_id"] not in policy_ids
+    ])[:max_total_chunks]
+
+
 def _sort_passages(chunks_by_document: Dict[str, List[RetrievedChunk]]) -> None:
     for chunks in chunks_by_document.values():
         chunks.sort(key=lambda c: (-(c.score or 0.0), c.chunk_id))
@@ -850,6 +895,30 @@ async def run_rag(
         )
         _log_stage(trace_id, "rerank.applied", chunks_kept=len(agent_chunks))
 
+    policy_document_ids: set[str] = set()
+    if (
+        claim_type == "repository_overview"
+        and settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED
+    ):
+        policy_doc_id, policy_chunks = await _fetch_canonical_overview_chunks(
+            resolved_repo_id, retrieval_plan_dict["generation_id"], query_embedding
+        )
+        if policy_doc_id and policy_chunks:
+            policy_ready = prepare_chunks_for_agent(
+                RetrievedContext({policy_doc_id: policy_chunks}),
+                document_order=[policy_doc_id],
+                max_chunks_per_doc=max_chunks_per_doc,
+                max_total_chunks=settings.MAX_TOTAL_CHUNKS,
+            )
+            agent_chunks = _prepend_policy_chunks(
+                agent_chunks, [cast(Dict[str, Any], c) for c in policy_ready],
+                settings.MAX_TOTAL_CHUNKS,
+            )
+            policy_document_ids.add(policy_doc_id)
+        retrieval_plan_dict["policy_selected_canonical_ids"] = (
+            [_PURPOSE_CANONICAL_ID] if policy_document_ids else []
+        )
+
     # WP-T1c: two genuinely distinct survival stages, both computed before
     # the LLM call so the evidence trace and retrieval_plan can report
     # each separately instead of conflating them.
@@ -907,6 +976,7 @@ async def run_rag(
         chunks_in_final_context,
         seed_document_ids=true_seed_document_ids,
         expansion_metadata=retrieval_plan_dict["expansion_metadata"],
+        policy_document_ids=policy_document_ids,
     )
     retrieval_plan_dict["final_context_manifest"] = final_context_manifest
     _log_stage(

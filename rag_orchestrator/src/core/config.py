@@ -103,6 +103,10 @@ class Settings(BaseSettings):
     # separate wider fetch.
     RERANK_TOP_K: int = 10
 
+    # Issue #240 measured experiment. Off by default until the frozen
+    # repository-overview quality set establishes a benefit without regressions.
+    REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED: bool = False
+
     # -------------------------------------------------
     # Service URLs (Docker service names)
     # -------------------------------------------------
