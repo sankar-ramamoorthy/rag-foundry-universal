@@ -104,10 +104,10 @@ separate context-budget issue. No result above claims to fix it.
 
 **No-go for merging `e00ddb2` or the later `07a5d59` prototype as a #240 fix.** Its measured structural
 answers fail Q2–Q4; the selection prototype also fails the frozen acceptance
-criteria. The branch has no verified production runtime, and this environment's
-`gh` authentication cannot create a PR or inspect live CI. Elevated Git can
-read and publish the branch. No production
-data or deployment was changed.
+criteria. The branch has no verified production runtime. Host-permission Git
+and `gh` calls published the feature branch and confirmed no PR or CI run;
+the quality failure is the reason no PR was opened. No production data or
+deployment was changed.
 
 The next bounded experiment should prevent historical/evaluation passages
 from speaking as *current repository facts* on generic overview questions,

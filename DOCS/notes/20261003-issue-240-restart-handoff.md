@@ -63,12 +63,12 @@ prior version until a new ingestion.
 ## Merge gate and next action
 
 **Do not merge or deploy the current branch as a #240 fix.** The measured
-answer-quality gate failed. `gh auth status` reported an invalid token in
-this shell. Elevated Git access could read the live refs and is used to
-publish the branch commits; `gh` PR and CI operations remain unavailable
-here. No PR, CI run, merge, or docs-only handoff branch was created in this
-session. Reauthenticate `gh` before PR work, and refresh live refs rather
-than trusting saved remote-tracking state.
+answer-quality gate failed. Sandbox-level Git and `gh` credential checks
+failed, but host-permission calls authenticated successfully. The feature
+branch was fast-forward pushed; a live `gh pr list` and `gh run list` then
+returned no PR or CI run for this branch. No merge, deployment, or docs-only
+handoff branch was created. Refresh live refs on restart rather than trusting
+a saved remote-tracking ref.
 
 Next, keep the source/generation pin and run a bounded authority-selection
 experiment: for generic overview questions, stop old notes and archived
