@@ -54,7 +54,9 @@ CASES = (
         "C3",
         "What does GraphAssembler.assemble do?",
         10,
-        ("ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler.assemble",),
+        (
+            "ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler.assemble",
+        ),
     ),
 )
 
@@ -66,23 +68,32 @@ def fetch(url: str, payload: dict | None = None) -> dict:
         return json.load(response)
 
 
-def generation(ingestion_url: str) -> dict:
-    result = fetch(f"{ingestion_url}/v1/repos/{REPO_ID}/generation")
+def generation(
+    ingestion_url: str, repo_id: str, generation_id: str, source_sha: str
+) -> dict:
+    result = fetch(f"{ingestion_url}/v1/repos/{repo_id}/generation")
     if result.get("generation_status") != "ready":
         raise RuntimeError(f"Repository is not ready: {result}")
-    if result.get("ingestion_id") != GENERATION_ID:
+    if result.get("ingestion_id") != generation_id:
         raise RuntimeError(f"Generation changed: {result}")
-    if result.get("commit_sha") != SOURCE_SHA:
+    if result.get("commit_sha") != source_sha:
         raise RuntimeError(f"Source snapshot changed: {result}")
     return result
 
 
-def run_case(orchestrator_url: str, ingestion_url: str, case: tuple) -> dict:
+def run_case(
+    orchestrator_url: str,
+    ingestion_url: str,
+    case: tuple,
+    repo_id: str,
+    generation_id: str,
+    source_sha: str,
+) -> dict:
     name, query, top_k, targets = case
-    before = generation(ingestion_url)
+    before = generation(ingestion_url, repo_id, generation_id, source_sha)
     request = {
         "query": query,
-        "repo_id": REPO_ID,
+        "repo_id": repo_id,
         "top_k": top_k,
         "claim_type": "repository_overview",
         "rerank": False,
@@ -91,9 +102,9 @@ def run_case(orchestrator_url: str, ingestion_url: str, case: tuple) -> dict:
     started = time.monotonic()
     response = fetch(f"{orchestrator_url}/v1/rag", request)
     elapsed = round(time.monotonic() - started, 2)
-    after = generation(ingestion_url)
+    after = generation(ingestion_url, repo_id, generation_id, source_sha)
     plan = response["retrieval_plan"]
-    if response["repo_id"] != REPO_ID or plan.get("generation_id") != GENERATION_ID:
+    if response["repo_id"] != repo_id or plan.get("generation_id") != generation_id:
         raise RuntimeError(f"Response not pinned for {name}: {response['repo_id']}")
     return {
         "case": name,
@@ -119,6 +130,9 @@ def run_case(orchestrator_url: str, ingestion_url: str, case: tuple) -> dict:
                 "provenance_diagnostics",
                 "repository_overview_policy",
                 "policy_selected_canonical_ids",
+                "evidence_obligation",
+                "excluded_evidence",
+                "repository_display_name",
                 "context_budget",
                 "tokens_before_budget",
                 "tokens_after_budget",
@@ -131,6 +145,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--orchestrator", required=True)
     parser.add_argument("--ingestion", default="http://100.105.24.12:8001")
+    parser.add_argument("--repo-id", default=REPO_ID)
+    parser.add_argument("--generation-id", default=GENERATION_ID)
+    parser.add_argument("--source-sha", default=SOURCE_SHA)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cases", nargs="*", default=[])
     args = parser.parse_args()
@@ -141,14 +158,21 @@ def main() -> None:
         "orchestrator": args.orchestrator,
         "ingestion": args.ingestion,
         "runtime_version": fetch(f"{args.orchestrator}/version"),
-        "orient_response": fetch(f"{args.ingestion}/v1/repos/{REPO_ID}/orient"),
-        "expected_generation": GENERATION_ID,
-        "expected_source_sha": SOURCE_SHA,
+        "orient_response": fetch(f"{args.ingestion}/v1/repos/{args.repo_id}/orient"),
+        "expected_generation": args.generation_id,
+        "expected_source_sha": args.source_sha,
         "expected_cases": [case[0] for case in selected],
         "results": [],
     }
     for case in selected:
-        result = run_case(args.orchestrator, args.ingestion, case)
+        result = run_case(
+            args.orchestrator,
+            args.ingestion,
+            case,
+            args.repo_id,
+            args.generation_id,
+            args.source_sha,
+        )
         results["results"].append(result)
         args.output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
         print(

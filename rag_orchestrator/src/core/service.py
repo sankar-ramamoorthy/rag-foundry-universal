@@ -54,7 +54,10 @@ from rag_orchestrator.src.retrieval.provenance_diagnostics import (
 )
 from rag_orchestrator.src.retrieval.repository_overview_policy import (
     assess_repository_overview,
+    canonical_evidence_ids,
+    evidence_obligation,
     render_repository_overview_policy,
+    select_current_evidence,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,6 +87,7 @@ def _log_stage(trace_id: str, stage: str, **fields: Any) -> None:
 # Response Model
 # ------------------------------------------------------------------
 
+
 class RAGResult(BaseModel):
     answer: str
     sources: List[str]
@@ -105,6 +109,7 @@ class RAGResult(BaseModel):
 # ------------------------------------------------------------------
 # REPO RESOLUTION (HTTP via ingestion_service)
 # ------------------------------------------------------------------
+
 
 async def resolve_repo_id_http(repo_id: Optional[str]) -> str:
     """
@@ -140,6 +145,7 @@ async def resolve_repo_id_http(repo_id: Optional[str]) -> str:
 # ------------------------------------------------------------------
 # GRAPH API: canonical_ids → document_ids
 # ------------------------------------------------------------------
+
 
 async def canonical_to_document_map_http(
     repo_id: str,
@@ -204,6 +210,7 @@ async def canonical_to_document_map_http(
 # HYBRID RETRIEVAL (Vector → Canonical → Graph → Docs → Chunks)
 # ------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class ExpansionRanking:
     """
@@ -213,6 +220,7 @@ class ExpansionRanking:
     `hybrid_retrieve` can populate RetrievalPlan.expansion_metadata
     instead of leaving it always empty.
     """
+
     expanded_ranked: List[str]
     relation_type_by_canonical_id: Dict[str, str]
     source_seed_by_canonical_id: Dict[str, str]
@@ -242,12 +250,20 @@ def _rank_expanded_canonical_ids(
     # Preserve relation priority; within a relation prefer query-matching
     # symbols over arbitrary alphabetical truncation under the document cap.
     terms = set(re.findall(r"[a-z0-9]+", query.lower()))
-    candidates.sort(key=lambda candidate: (
-        candidate.strategy_index,
-        -len(terms & set(re.findall(
-            r"[a-z0-9]+", candidate.node.canonical_id.lower(),
-        ))),
-    ))
+    candidates.sort(
+        key=lambda candidate: (
+            candidate.strategy_index,
+            -len(
+                terms
+                & set(
+                    re.findall(
+                        r"[a-z0-9]+",
+                        candidate.node.canonical_id.lower(),
+                    )
+                )
+            ),
+        )
+    )
     expanded_ranked: List[str] = []
     relation_type_by_cid: Dict[str, str] = {}
     source_seed_by_cid: Dict[str, str] = {}
@@ -493,35 +509,52 @@ async def _fetch_repository_overview(
     return None
 
 
-_PURPOSE_CANONICAL_ID = "CLAUDE.md#claude_md.what_this_project_is"
+async def _fetch_repository_name(repo_id: str, expected_generation: str) -> str | None:
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(f"{settings.INGESTION_SERVICE_URL}/v1/repos")
+            response.raise_for_status()
+        for item in response.json():
+            if (
+                item.get("id") == repo_id
+                and item.get("ingestion_id") == expected_generation
+            ):
+                return item.get("display_name") or item.get("name")
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        logger.info("Repository name unavailable: %s", exc)
+    return None
 
 
 async def _fetch_canonical_overview_chunks(
-    repo_id: str, generation_id: str, query_embedding: List[float]
+    repo_id: str,
+    generation_id: str,
+    query_embedding: List[float],
+    canonical_id: str,
 ) -> tuple[str | None, List[RetrievedChunk]]:
     """Resolve one selected-repository source, then fetch its pinned chunks."""
     settings = get_settings()
     url = f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}/nodes/lookup"
     async with httpx.AsyncClient(timeout=30) as client:
-        response = await client.post(
-            url, json={"canonical_ids": [_PURPOSE_CANONICAL_ID]}
-        )
+        response = await client.post(url, json={"canonical_ids": [canonical_id]})
         response.raise_for_status()
     nodes = response.json().get("nodes", [])
     node = next(
-        (item for item in nodes if item.get("canonical_id") == _PURPOSE_CANONICAL_ID),
+        (item for item in nodes if item.get("canonical_id") == canonical_id),
         None,
     )
     if not node or not node.get("document_id"):
         return None, []
     doc_id = str(node["document_id"])
     fetched = await _fetch_expanded_doc_chunks(
-        [doc_id], query_embedding=query_embedding,
-        repo_id=repo_id, ingestion_id=generation_id,
+        [doc_id],
+        query_embedding=query_embedding,
+        repo_id=repo_id,
+        ingestion_id=generation_id,
     )
     rows = fetched[0][1] if fetched else []
     chunks = _add_chunks(doc_id, rows, set(), {})
-    chunks = [chunk for chunk in chunks if chunk.canonical_id == _PURPOSE_CANONICAL_ID]
+    chunks = [chunk for chunk in chunks if chunk.canonical_id == canonical_id]
     await _verify_generation(repo_id, generation_id)
     return doc_id, chunks
 
@@ -533,14 +566,67 @@ def _prepend_policy_chunks(
 ) -> List[Dict[str, Any]]:
     """Prioritize selected canonical evidence without duplicating a chunk."""
     policy_ids = {chunk["chunk_id"] for chunk in policy_chunks}
-    return (policy_chunks + [
-        chunk for chunk in agent_chunks if chunk["chunk_id"] not in policy_ids
-    ])[:max_total_chunks]
+    return (
+        policy_chunks
+        + [chunk for chunk in agent_chunks if chunk["chunk_id"] not in policy_ids]
+    )[:max_total_chunks]
 
 
 def _sort_passages(chunks_by_document: Dict[str, List[RetrievedChunk]]) -> None:
     for chunks in chunks_by_document.values():
         chunks.sort(key=lambda c: (-(c.score or 0.0), c.chunk_id))
+
+
+async def _apply_overview_selection(
+    chunks: List[Dict[str, Any]],
+    query: str,
+    repo_id: str,
+    generation_id: str,
+    query_embedding: List[float],
+    max_chunks_per_doc: int,
+    max_total_chunks: int,
+    claim_selection: bool,
+    legacy_selection: bool,
+) -> tuple[List[Dict[str, Any]], set[str], str, dict[str, Any]]:
+    obligation = evidence_obligation(query)
+    selected_ids = (
+        canonical_evidence_ids(obligation)
+        if claim_selection
+        else canonical_evidence_ids("repository_purpose")
+        if legacy_selection
+        else ()
+    )
+    policy_document_ids: set[str] = set()
+    trace: dict[str, Any] = {}
+    selected_found: list[str] = []
+    for selected_id in selected_ids:
+        policy_doc_id, policy_chunks = await _fetch_canonical_overview_chunks(
+            repo_id,
+            generation_id,
+            query_embedding,
+            selected_id,
+        )
+        if policy_doc_id and policy_chunks:
+            policy_ready = prepare_chunks_for_agent(
+                RetrievedContext({policy_doc_id: policy_chunks}),
+                document_order=[policy_doc_id],
+                max_chunks_per_doc=max_chunks_per_doc,
+                max_total_chunks=max_total_chunks,
+            )
+            chunks = _prepend_policy_chunks(
+                chunks,
+                [cast(Dict[str, Any], c) for c in policy_ready],
+                max_total_chunks,
+            )
+            policy_document_ids.add(policy_doc_id)
+            selected_found.append(selected_id)
+    if selected_ids:
+        trace["policy_selected_canonical_ids"] = selected_found
+    if claim_selection:
+        chunks, excluded = select_current_evidence(chunks, obligation)
+        trace["evidence_obligation"] = obligation
+        trace["excluded_evidence"] = excluded
+    return chunks, policy_document_ids, obligation, trace
 
 
 async def hybrid_retrieve(
@@ -586,13 +672,18 @@ async def hybrid_retrieve(
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
     generation_id = await _query_generation(repo_id)
     seed_filter: Dict[str, Any] = {
-        "source_type": "code", "repo_id": repo_id, "ingestion_id": generation_id,
+        "source_type": "code",
+        "repo_id": repo_id,
+        "ingestion_id": generation_id,
     }
     if language:
         seed_filter["language"] = language
     seed_k = _seed_search_k(top_k, settings)
-    payload = {"query_vector": query_embedding, "k": seed_k,
-                "metadata_filter": seed_filter}
+    payload = {
+        "query_vector": query_embedding,
+        "k": seed_k,
+        "metadata_filter": seed_filter,
+    }
 
     async with httpx.AsyncClient(timeout=200) as client:
         resp = await client.post(search_url, json=payload)
@@ -604,7 +695,8 @@ async def hybrid_retrieve(
             # (issue #30 Part 1; WP-L6a extends the same reasoning to
             # language).
             fallback_filter: Dict[str, Any] = {
-                "repo_id": repo_id, "ingestion_id": generation_id,
+                "repo_id": repo_id,
+                "ingestion_id": generation_id,
             }
             if language:
                 fallback_filter["language"] = language
@@ -666,7 +758,10 @@ async def hybrid_retrieve(
     # a synchronous generation check (#168/WP-R5) on every call plus, on a
     # cache miss, a synchronous full-graph HTTP fetch; off the event loop.
     ranking = await asyncio.to_thread(
-        _rank_expanded_canonical_ids, query, repo_id, seed_canonical_ids,
+        _rank_expanded_canonical_ids,
+        query,
+        repo_id,
+        seed_canonical_ids,
     )
     expanded_ranked = ranking.expanded_ranked
     expanded_canonical_ids = set(expanded_ranked)
@@ -704,12 +799,15 @@ async def hybrid_retrieve(
 
     passage_doc_ids = list(retrieved_chunks_by_document) + expanded_doc_ids
     fetched = await _fetch_expanded_doc_chunks(
-        passage_doc_ids, query_embedding=query_embedding, repo_id=repo_id,
+        passage_doc_ids,
+        query_embedding=query_embedding,
+        repo_id=repo_id,
         ingestion_id=generation_id,
     )
     # Requests specify a count, not stored ordinal ranges.
     chunks_requested_by_document = dict.fromkeys(
-        passage_doc_ids, settings.EXPANDED_DOC_CHUNKS,
+        passage_doc_ids,
+        settings.EXPANDED_DOC_CHUNKS,
     )
     chunks_returned_by_document: Dict[str, List[int]] = {}
     for doc_id, doc_results in fetched:
@@ -770,9 +868,7 @@ async def hybrid_retrieve(
     }
 
     if trace_canonical_ids:
-        fetched_doc_ids_with_chunks = {
-            doc_id for doc_id, results in fetched if results
-        }
+        fetched_doc_ids_with_chunks = {doc_id for doc_id, results in fetched if results}
         retrieval_plan_dict["_evidence_trace_partial"] = (
             compute_partial_evidence_survival(
                 target_canonical_ids=trace_canonical_ids,
@@ -791,6 +887,7 @@ async def hybrid_retrieve(
 # ------------------------------------------------------------------
 # MAIN RAG PIPELINE
 # ------------------------------------------------------------------
+
 
 async def run_rag(
     query: str,
@@ -896,28 +993,26 @@ async def run_rag(
         _log_stage(trace_id, "rerank.applied", chunks_kept=len(agent_chunks))
 
     policy_document_ids: set[str] = set()
-    if (
-        claim_type == "repository_overview"
-        and settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED
-    ):
-        policy_doc_id, policy_chunks = await _fetch_canonical_overview_chunks(
-            resolved_repo_id, retrieval_plan_dict["generation_id"], query_embedding
+    obligation = "current_structure"
+    claim_selection = settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
+    if claim_type == "repository_overview":
+        (
+            agent_chunks,
+            policy_document_ids,
+            obligation,
+            selection_trace,
+        ) = await _apply_overview_selection(
+            agent_chunks,
+            query,
+            resolved_repo_id,
+            retrieval_plan_dict["generation_id"],
+            query_embedding,
+            max_chunks_per_doc,
+            settings.MAX_TOTAL_CHUNKS,
+            claim_selection,
+            settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED,
         )
-        if policy_doc_id and policy_chunks:
-            policy_ready = prepare_chunks_for_agent(
-                RetrievedContext({policy_doc_id: policy_chunks}),
-                document_order=[policy_doc_id],
-                max_chunks_per_doc=max_chunks_per_doc,
-                max_total_chunks=settings.MAX_TOTAL_CHUNKS,
-            )
-            agent_chunks = _prepend_policy_chunks(
-                agent_chunks, [cast(Dict[str, Any], c) for c in policy_ready],
-                settings.MAX_TOTAL_CHUNKS,
-            )
-            policy_document_ids.add(policy_doc_id)
-        retrieval_plan_dict["policy_selected_canonical_ids"] = (
-            [_PURPOSE_CANONICAL_ID] if policy_document_ids else []
-        )
+        retrieval_plan_dict.update(selection_trace)
 
     # WP-T1c: two genuinely distinct survival stages, both computed before
     # the LLM call so the evidence trace and retrieval_plan can report
@@ -935,9 +1030,16 @@ async def run_rag(
         documents=len(chunk_limited_document_ids),
     )
     tokens_before_budget = assemble_context(agent_chunks, 2**63).token_count
-    context_budget = min(max_total_tokens, max(0, settings.CONTEXT_WINDOW_TOKENS
-        - settings.PROMPT_RESERVE_TOKENS - settings.OUTPUT_RESERVE_TOKENS
-        - conservative_token_count(query)))
+    context_budget = min(
+        max_total_tokens,
+        max(
+            0,
+            settings.CONTEXT_WINDOW_TOKENS
+            - settings.PROMPT_RESERVE_TOKENS
+            - settings.OUTPUT_RESERVE_TOKENS
+            - conservative_token_count(query),
+        ),
+    )
     assembled = assemble_context(agent_chunks, context_budget)
     chunks_in_final_context = assembled.chunks
     final_context_document_ids = {
@@ -999,13 +1101,26 @@ async def run_rag(
         orient_response = await _fetch_repository_overview(
             resolved_repo_id, retrieval_plan_dict["generation_id"]
         )
+        repository_name = (
+            await _fetch_repository_name(
+                resolved_repo_id, retrieval_plan_dict["generation_id"]
+            )
+            if claim_selection
+            else None
+        )
         overview_assessment = assess_repository_overview(
             final_context_manifest, orient_response
         )
         retrieval_plan_dict["repository_overview_policy"] = overview_assessment
+        if claim_selection:
+            retrieval_plan_dict["repository_display_name"] = repository_name
         llm_context = (
             render_repository_overview_policy(
-                resolved_repo_id, orient_response, overview_assessment
+                resolved_repo_id,
+                orient_response,
+                overview_assessment,
+                obligation if claim_selection else "current_structure",
+                repository_name,
             )
             + "\nRETRIEVED EVIDENCE\n"
             + context_str

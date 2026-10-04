@@ -106,6 +106,7 @@ class Settings(BaseSettings):
     # Issue #240 measured experiment. Off by default until the frozen
     # repository-overview quality set establishes a benefit without regressions.
     REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED: bool = False
+    REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED: bool = False
 
     # -------------------------------------------------
     # Service URLs (Docker service names)

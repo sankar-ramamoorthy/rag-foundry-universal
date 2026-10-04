@@ -99,15 +99,21 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
-**Open; measured merge gate failed on 2026-10-03.** The local
+**Open; measured merge gate failed again on 2026-10-04.** The local
 `feature/240-repository-overview-followup` branch contains `e00ddb2` ORIENT
 grounding and `07a5d59` default-off selection instrumentation, but a pinned 11-request
 comparison found Q2–Q4 still failing. An opt-in, default-off canonical
 purpose-passage selection prototype recovered the indexed `CLAUDE.md`
 description in Q5's final context, but regressed structural answers and
 repeated a stale language-support claim. It is not a release candidate.
-Production still runs `d7fbf874`; the ready self-repository corpus is
-generation `d3ecfaea…` from `00e0cc9`. The earlier claim that production
+Production now runs `00e0cc9`; the ready self-repository corpus is
+generation `f873147c…` from docs-only main SHA `7a805d5`. PR #242
+corrected `CLAUDE.md` on main and the new corpus contains that correction.
+A new default-off claim-specific authority experiment recovered canonical
+purpose evidence and current architecture evidence, but Q2–Q4 still made
+unsupported claims; it is not approved for a #240 PR or deployment. See the
+[new matched comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md).
+The earlier claim that production
 omitted the final-context manifest was corrected: it is nested under
 `retrieval_plan`. See the [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md),
 [measured comparison](/DOCS/test_results/2026-10-03-issue-240-frozen-quality-comparison.md),
