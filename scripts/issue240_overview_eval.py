@@ -133,6 +133,8 @@ def run_case(
                 "evidence_obligation",
                 "excluded_evidence",
                 "repository_display_name",
+                "typed_fact_experiment",
+                "typed_fact_experiment_gap",
                 "context_budget",
                 "tokens_before_budget",
                 "tokens_after_budget",

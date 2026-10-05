@@ -59,6 +59,10 @@ from rag_orchestrator.src.retrieval.repository_overview_policy import (
     render_repository_overview_policy,
     select_current_evidence,
 )
+from rag_orchestrator.src.retrieval.repository_typed_facts import (
+    EXPERIMENTS,
+    render_typed_facts,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -509,6 +513,64 @@ async def _fetch_repository_overview(
     return None
 
 
+async def _fetch_repository_graph(
+    repo_id: str, expected_generation: str
+) -> dict[str, Any] | None:
+    """Read graph facts, then check that the selected generation stayed pinned."""
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.get(
+                f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}"
+            )
+            response.raise_for_status()
+        await _verify_generation(repo_id, expected_generation)
+        graph = response.json()
+        if graph.get("generation_status") == "ready":
+            return graph
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        logger.info("Repository graph unavailable for typed facts: %s", exc)
+    return None
+
+
+async def _overview_policy_text(
+    repo_id: str,
+    generation_id: str,
+    inventory: dict[str, Any] | None,
+    assessment: dict[str, Any],
+    obligation: str,
+    repository_name: str | None,
+    claim_selection: bool,
+    experiment: str,
+) -> tuple[str, dict[str, str]]:
+    policy_text = render_repository_overview_policy(
+        repo_id,
+        inventory,
+        assessment,
+        obligation if claim_selection else "current_structure",
+        repository_name,
+    )
+    eligible = (
+        claim_selection
+        and inventory is not None
+        and experiment in EXPERIMENTS
+        and (
+            obligation == "current_architecture"
+            if experiment == "architecture_edges"
+            else obligation == "current_structure"
+        )
+    )
+    if not eligible or inventory is None:
+        return policy_text, {}
+    graph = await _fetch_repository_graph(repo_id, generation_id)
+    if graph is None:
+        return policy_text, {"typed_fact_experiment_gap": "graph_unavailable"}
+    return (
+        render_typed_facts(experiment, inventory, graph, repo_id, repository_name),
+        {"typed_fact_experiment": experiment},
+    )
+
+
 async def _fetch_repository_name(repo_id: str, expected_generation: str) -> str | None:
     settings = get_settings()
     try:
@@ -903,7 +965,6 @@ async def run_rag(
     rerank: Optional[bool] = None,
     claim_type: Optional[ClaimType] = None,
 ) -> RAGResult:
-
     settings = get_settings()
     trace_id = _new_trace_id()
     _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
@@ -1114,17 +1175,18 @@ async def run_rag(
         retrieval_plan_dict["repository_overview_policy"] = overview_assessment
         if claim_selection:
             retrieval_plan_dict["repository_display_name"] = repository_name
-        llm_context = (
-            render_repository_overview_policy(
-                resolved_repo_id,
-                orient_response,
-                overview_assessment,
-                obligation if claim_selection else "current_structure",
-                repository_name,
-            )
-            + "\nRETRIEVED EVIDENCE\n"
-            + context_str
+        policy_text, typed_trace = await _overview_policy_text(
+            resolved_repo_id,
+            retrieval_plan_dict["generation_id"],
+            orient_response,
+            overview_assessment,
+            obligation,
+            repository_name,
+            claim_selection,
+            settings.REPOSITORY_OVERVIEW_TYPED_FACT_EXPERIMENT,
         )
+        retrieval_plan_dict.update(typed_trace)
+        llm_context = policy_text + "\nRETRIEVED EVIDENCE\n" + context_str
 
     # LLM call
     llm_payload = {"context": llm_context, "query": query}

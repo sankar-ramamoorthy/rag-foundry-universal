@@ -113,6 +113,21 @@ A new default-off claim-specific authority experiment recovered canonical
 purpose evidence and current architecture evidence, but Q2–Q4 still made
 unsupported claims; it is not approved for a #240 PR or deployment. See the
 [new matched comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md).
+Three subsequent, separately gated typed-fact arms improved parts of Q2 and
+Q3, but Q2 still omitted supplied service fields, Q3 still converted unknown
+package status into absence, and Q4 still conflated relationship types and
+invented a port value. The [typed-fact results](/DOCS/test_results/2026-10-04-issue-240-typed-fact-experiments.md)
+are diagnostic only; the full frozen gate has not been rerun and no #240
+candidate is approved for merge or deployment.
+A separate [structured-answer experiment](/DOCS/test_results/2026-10-04-issue-240-structured-answer-validation.md)
+derived and validated Q2–Q4 objects, including Compose ports verified against
+source-commit blob hashes, then rendered complete answers deterministically.
+It is a standalone read-only prototype, not yet an HTTP answer-path candidate;
+the #240 merge gate remains unmet.
+A bounded Qwen JSON-copy check then rejected all three model outputs against
+the validated objects (Q2 nested rows incorrectly; Q3/Q4 returned prose
+instead of JSON). The [structured-answer report](/DOCS/test_results/2026-10-04-issue-240-structured-answer-validation.md)
+records both the deterministic success and this model-output failure.
 The earlier claim that production
 omitted the final-context manifest was corrected: it is nested under
 `retrieval_plan`. See the [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md),

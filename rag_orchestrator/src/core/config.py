@@ -107,6 +107,9 @@ class Settings(BaseSettings):
     # repository-overview quality set establishes a benefit without regressions.
     REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED: bool = False
     REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED: bool = False
+    # Issue #240: one read-only, claim-family experiment at a time.
+    # Values: service_table, package_markers, architecture_edges.
+    REPOSITORY_OVERVIEW_TYPED_FACT_EXPERIMENT: str = ""
 
     # -------------------------------------------------
     # Service URLs (Docker service names)

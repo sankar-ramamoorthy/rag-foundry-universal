@@ -1,0 +1,731 @@
+{
+  "orchestrator": "http://127.0.0.1:8765",
+  "ingestion": "http://100.105.24.12:8001",
+  "runtime_version": {
+    "service": "rag_orchestrator",
+    "git_sha": "unknown",
+    "build_date": "unknown",
+    "release_version": "dev"
+  },
+  "orient_response": {
+    "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+    "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+    "generation_status": "ready",
+    "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+    "languages": {
+      "java": 4,
+      "javascript": 1,
+      "json": 5,
+      "markdown": 237,
+      "other": 45,
+      "python": 335,
+      "rust": 5,
+      "text": 5,
+      "toml": 8,
+      "typescript": 7,
+      "yaml": 4
+    },
+    "file_counts": {
+      "indexed": 589,
+      "non_indexed": 67,
+      "total": 656
+    },
+    "manifests": [
+      {
+        "kind": "pyproject.toml",
+        "path": "gradio/pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "ingestion_service/pyproject.toml"
+      },
+      {
+        "kind": "Cargo.toml",
+        "path": "ingestion_service/tests/fixtures/rust_repo/crate_a/Cargo.toml"
+      },
+      {
+        "kind": "Cargo.toml",
+        "path": "ingestion_service/tests/fixtures/rust_repo/crate_b/Cargo.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "llm_service/pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "rag_orchestrator/pyproject.toml"
+      }
+    ],
+    "services": [
+      {
+        "name": "ingestion_service",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": "ingestion_service/Dockerfile",
+        "container_name": null,
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "postgres",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": null,
+        "container_name": "ingestion-db-test",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "vector_store_service",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": "vector_store_service/Dockerfile",
+        "container_name": null,
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "gradio",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "gradio/Dockerfile",
+        "container_name": "gradio-ui",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "ingestion_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "ingestion_service/Dockerfile",
+        "container_name": "ingestion-service",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "llm_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "llm_service/Dockerfile",
+        "container_name": "llm-service",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "postgres",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": null,
+        "container_name": "ingestion-db",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "rag_orchestrator",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "rag_orchestrator/Dockerfile",
+        "container_name": "rag-orchestrator",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "vector_store_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "vector_store_service/Dockerfile",
+        "container_name": "vector-store-service",
+        "entry_point": null,
+        "entry_point_source": null
+      }
+    ],
+    "test_dirs": [
+      "ingestion_service/tests",
+      "llm_service/tests",
+      "rag_orchestrator/tests",
+      "tests",
+      "vector_store_service/tests"
+    ],
+    "docs_dirs": [
+      "DOCS"
+    ],
+    "heuristic_fields": [
+      "test_dirs",
+      "docs_dirs"
+    ],
+    "gaps": [
+      {
+        "category": "compose_parse",
+        "path": "docker-compose.prod.yml",
+        "reason": "could not parse Compose YAML: could not determine a constructor for the tag '!override'\n  in \"<unicode string>\", line 20, column 14:\n        volumes: !override []\n                 ^"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#ingestion_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#postgres",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#vector_store_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#gradio",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#ingestion_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#llm_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#postgres",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#rag_orchestrator",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#vector_store_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "route_handler",
+        "path": "ingestion_service/src/api/v1/graph.py:196",
+        "reason": "no handler def found immediately after route decorator"
+      }
+    ],
+    "computed_at": "2026-10-04T14:26:53.800127"
+  },
+  "expected_generation": "f873147c-a1d1-4891-bb98-972672db8e9a",
+  "expected_source_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+  "expected_cases": [
+    "Q4"
+  ],
+  "results": [
+    {
+      "case": "Q4",
+      "request": {
+        "query": "Give me an architectural map of this repository.",
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "top_k": 10,
+        "claim_type": "repository_overview",
+        "rerank": false,
+        "trace_canonical_ids": [
+          "CLAUDE.md#claude_md.architecture_independent_services_over_http"
+        ]
+      },
+      "generation_before": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "generation_after": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "elapsed_seconds": 90.97,
+      "trace_id": "230e6fc233ae4418b3e7f200dd64a362",
+      "model_used": "ollama/Qwen3:4b",
+      "model_alias": "default",
+      "fallback_from": null,
+      "reranked": false,
+      "answer": "Based on the provided context, here is a precise architectural map of the repository system, structured to reflect the evidence from the README.md documentation and Docker configuration files:\n\n---\n\n### **Core Architecture Overview**\nThe system implements a **RAG (Retrieval-Augmented Generation)** pipeline with 5 application services and 1 database, communicating via HTTP over Docker's internal network. Key components and their roles:\n\n| **Component**               | **Local Port** | **Primary Function**                                                                 |\n|-----------------------------|----------------|-----------------------------------------------------------------------------------|\n| Gradio (UI)                 | 7860            | User-facing interface for ingestion/query operations                              |\n| Ingestion Service           | 8001            | Data parsing, artifact graph construction, and structural inventory                |\n| Vector Store Service        | 8002            | Embedding storage and passage search (RAG vector database)                        |\n| LLM Service                 | 8003            | Text generation and model provider connections (e.g., OpenAI, Hugging Face)       |\n| RAG Orchestrator            | 8004            | Coordinates retrieval, evidence selection, and final response generation           |\n| PostgreSQL                  | N/A             | Stores graph metadata and document inventory (accessed by Ingestion/Vector Services) |\n\n---\n\n### **Critical Communication Flow**\n1. **User Interaction**  \n   \u2192 Gradio (Port 7860) initiates:  \n   - Ingestion operations \u2192 Ingestion Service (Port 8001)  \n   - Query operations \u2192 RAG Orchestrator (Port 8004)\n\n2. **RAG Orchestrator Workflow** (Port 8004)  \n   - Queries **Ingestion Service** (Port 8001) for graph metadata  \n   - Queries **Vector Store Service** (Port 8002) for relevant passages  \n   - Queries **LLM Service** (Port 8003) for final response generation\n\n3. **Ingestion Service Workflow** (Port 8001)  \n   - Sends embeddings \u2192 **Vector Store Service** (Port 8002)  \n   - Sends graph metadata \u2192 **PostgreSQL** (for persistent storage)\n\n4. **Vector Store Service** (Port 8002)  \n   - Interacts with **PostgreSQL** for vector storage/search operations\n\n5. **LLM Service** (Port 8003)  \n   - Connects to external model providers (e.g., OpenAI API, Hugging Face)\n\n---\n\n### **Docker Network Configuration** (from `shared/config/service_urls.py`)\nAll services communicate via *internal Docker network URLs* (port 8000 is the **communication port** for service-to-service calls):\n\n| **Service**                  | **Internal Docker URL**                     | **Purpose**                                  |\n|------------------------------|---------------------------------------------|----------------------------------------------|\n| Ingestion Service            | `http://ingestion_service:8000`            | Data ingestion pipeline                     |\n| Vector Store Service         | `http://vector_store_service:8002`          | Vector storage/search                      |\n| LLM Service                  | `http://llm_service:8000`                  | Text generation                            |\n| RAG Orchestrator             | `http://rag_orchestrator:8000`             | Pipeline coordination                      |\n\n> **Note**: The `8000` port in Docker configuration is *not* the local port (e.g., 8001/8002). It is the **internal communication port** used by services to interact with each other *within the Docker network*.\n\n---\n\n### **Why This Architecture?**\n- **RAG Compliance**: Explicitly follows the RAG pattern (retrieval \u2192 generation) with vector search for contextual relevance.\n- **Docker-Optimized**: Services are isolated via Docker networks with standardized internal URLs (no external IPs).\n- **Real-World Alignment**: Matches FastAPI stack (common for RAG systems) and PostgreSQL for metadata storage.\n- **No External Dependencies**: All communication happens within Docker (no public network exposure).\n\nThis map is **directly derived from the provided context** (README.md table, Docker config files) and avoids external assumptions. The key insight: **Local ports (8001\u20138004) are for user-facing exposure, while internal Docker URLs (8000) handle service-to-service communication**.\n\nFor implementation details, refer to:  \n- `README.md` (tables/diagrams)  \n- `shared/config/service_urls.py` (Docker network configuration)",
+      "sources": [
+        "README.md#architecture",
+        "shared/config/service_urls.py"
+      ],
+      "retrieval_plan": {
+        "generation_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "seed_canonical_ids": [
+          "DOCS/architecture/ms4-codebase-persistence-ingestion.md#ms4_design_document_persistence_ingestion_integration_2.architecture_diagram",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.1_repository_structure_as_a_first_class_artifact",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+          "docs-archive/DOCS-rag-foundry/SERVICES/summary.md#service_summary_2026_01_21.data_flow_summary.ascii_architecture_diagram",
+          "specs/005-production-correctness/issues/async.md#wp_r7_prevent_blocking_ingestion_vector_and_retrieval_operations_from_stalling_async_services.problem_and_evidence",
+          "specs/005-production-correctness/issues/evidence.md#wp_r4_preserve_retrieved_passages_chunk_identity_and_final_context_provenance.problem_and_evidence",
+          "specs/005-production-correctness/issues/health.md#wp_r6_correct_production_healthchecks_and_expose_runtime_provenance.problem_and_evidence"
+        ],
+        "expanded_canonical_ids": [
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.concrete_design_options",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing.ownership_and_adr_compatibility",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.executive_summary",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.2_architecture_graph_architecture_artifact",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.3_mermaid_and_architecture_rendering",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.4_orient_me",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.5_trace_this",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.6_assess_impact",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.7_repository_identity_and_source_authority",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.8_evidence_sufficiency_and_agentic_evolution",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.future_investigation_questions_and_decision_gates",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.interaction_with_the_current_roadmap",
+          "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.risks_and_explicit_deferrals",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison"
+        ],
+        "evidence_trace": [
+          {
+            "canonical_id": "CLAUDE.md#claude_md.architecture_independent_services_over_http",
+            "document_id": null,
+            "found_by_vector": false,
+            "found_by_graph": false,
+            "expanded_rank": null,
+            "survives_cap": false,
+            "chunk_fetched": false,
+            "survives_chunk_limits": false,
+            "reaches_final_context": false,
+            "drop_reason": "not_found_by_vector_or_graph",
+            "survives_rerank": false
+          }
+        ],
+        "final_context_manifest": [
+          {
+            "canonical_id": "README.md#architecture",
+            "document_id": "e322270f-3b71-43d9-aaef-4e523ab3e270",
+            "chunk_id": "882ba104-4f2d-48da-b86b-877b7ad5bb2f",
+            "chunk_index": 0,
+            "source_label": "README.md#architecture",
+            "char_count": 150,
+            "text_sha256": "6401fe1cd6e4d6b86ea05c7bc9d4767e07abc65feee0c89b159fffa91ff9e61d",
+            "token_count": 183,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 0,
+            "selection_reason": "repository_overview_canonical_selection",
+            "provenance": {
+              "role": {
+                "basis": "no_matching_rule",
+                "value": "unknown_mixed"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "README.md#architecture",
+            "document_id": "e322270f-3b71-43d9-aaef-4e523ab3e270",
+            "chunk_id": "28a5387e-1460-4959-ab2b-eb905770d767",
+            "chunk_index": 4,
+            "source_label": "README.md#architecture",
+            "char_count": 543,
+            "text_sha256": "1cb624c28cf541ac3ea4ddcbabe280304e2148ab633782e59587c57f1fadce00",
+            "token_count": 576,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 1,
+            "selection_reason": "repository_overview_canonical_selection",
+            "provenance": {
+              "role": {
+                "basis": "no_matching_rule",
+                "value": "unknown_mixed"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "README.md#architecture",
+            "document_id": "e322270f-3b71-43d9-aaef-4e523ab3e270",
+            "chunk_id": "372e3969-afce-4d2b-9b00-378bb788c15f",
+            "chunk_index": 1,
+            "source_label": "README.md#architecture",
+            "char_count": 522,
+            "text_sha256": "0ace5304a6ec0afe90b808086c748344f6d97a829f2b0bb134982966af38fe67",
+            "token_count": 555,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 2,
+            "selection_reason": "repository_overview_canonical_selection",
+            "provenance": {
+              "role": {
+                "basis": "no_matching_rule",
+                "value": "unknown_mixed"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "shared/config/service_urls.py",
+            "document_id": "4305669e-35e7-4f4f-92ae-c410c15d8fd6",
+            "chunk_id": "0f0959e1-238d-4857-9fb8-6fc789376357",
+            "chunk_index": 1,
+            "source_label": "shared/config/service_urls.py",
+            "char_count": 436,
+            "text_sha256": "8836c393746f9e0dcdd6b49412ac6e0f4afa7b73f7a03851e0a9907142246c70",
+            "token_count": 476,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 0,
+            "selection_reason": "repository_overview_canonical_selection",
+            "provenance": {
+              "role": {
+                "basis": "doc_type:source_suffix",
+                "value": "implementation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "shared/config/service_urls.py",
+            "document_id": "4305669e-35e7-4f4f-92ae-c410c15d8fd6",
+            "chunk_id": "1eea27be-3743-4c9e-be34-31de4a8e986b",
+            "chunk_index": 0,
+            "source_label": "shared/config/service_urls.py",
+            "char_count": 155,
+            "text_sha256": "c220235a0f780920c1b986291057f08b42317f3da5002ace033de0f3921a79b5",
+            "token_count": 195,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 1,
+            "selection_reason": "repository_overview_canonical_selection",
+            "provenance": {
+              "role": {
+                "basis": "doc_type:source_suffix",
+                "value": "implementation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          }
+        ],
+        "provenance_diagnostics": [
+          {
+            "canonical_id": "README.md#architecture",
+            "chunk_id": "882ba104-4f2d-48da-b86b-877b7ad5bb2f",
+            "concerns": []
+          },
+          {
+            "canonical_id": "README.md#architecture",
+            "chunk_id": "28a5387e-1460-4959-ab2b-eb905770d767",
+            "concerns": []
+          },
+          {
+            "canonical_id": "README.md#architecture",
+            "chunk_id": "372e3969-afce-4d2b-9b00-378bb788c15f",
+            "concerns": []
+          },
+          {
+            "canonical_id": "shared/config/service_urls.py",
+            "chunk_id": "0f0959e1-238d-4857-9fb8-6fc789376357",
+            "concerns": []
+          },
+          {
+            "canonical_id": "shared/config/service_urls.py",
+            "chunk_id": "1eea27be-3743-4c9e-be34-31de4a8e986b",
+            "concerns": []
+          }
+        ],
+        "repository_overview_policy": {
+          "policy_version": "repository-overview-authority-v1",
+          "status": "qualified",
+          "gap": null,
+          "findings": [
+            {
+              "canonical_id": "README.md#architecture",
+              "concerns": []
+            },
+            {
+              "canonical_id": "README.md#architecture",
+              "concerns": []
+            },
+            {
+              "canonical_id": "README.md#architecture",
+              "concerns": []
+            },
+            {
+              "canonical_id": "shared/config/service_urls.py",
+              "concerns": []
+            },
+            {
+              "canonical_id": "shared/config/service_urls.py",
+              "concerns": []
+            }
+          ],
+          "inventory_present": true
+        },
+        "policy_selected_canonical_ids": [
+          "shared/config/service_urls.py",
+          "README.md#architecture"
+        ],
+        "evidence_obligation": "current_architecture",
+        "excluded_evidence": [
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/architecture/ms4-codebase-persistence-ingestion.md#ms4_design_document_persistence_ingestion_integration_2.architecture_diagram",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.1_repository_structure_as_a_first_class_artifact",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.1_repository_structure_as_a_first_class_artifact",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.1_repository_structure_as_a_first_class_artifact",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/async.md#wp_r7_prevent_blocking_ingestion_vector_and_retrieval_operations_from_stalling_async_services.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/async.md#wp_r7_prevent_blocking_ingestion_vector_and_retrieval_operations_from_stalling_async_services.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/async.md#wp_r7_prevent_blocking_ingestion_vector_and_retrieval_operations_from_stalling_async_services.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/health.md#wp_r6_correct_production_healthchecks_and_expose_runtime_provenance.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/health.md#wp_r6_correct_production_healthchecks_and_expose_runtime_provenance.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/evidence.md#wp_r4_preserve_retrieved_passages_chunk_identity_and_final_context_provenance.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/evidence.md#wp_r4_preserve_retrieved_passages_chunk_identity_and_final_context_provenance.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "specs/005-production-correctness/issues/evidence.md#wp_r4_preserve_retrieved_passages_chunk_identity_and_final_context_provenance.problem_and_evidence",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "docs-archive/DOCS-rag-foundry/SERVICES/summary.md#service_summary_2026_01_21.data_flow_summary.ascii_architecture_diagram",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing.ownership_and_adr_compatibility",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing.ownership_and_adr_compatibility",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.current_architectural_fit_what_exists_and_what_is_missing.ownership_and_adr_compatibility",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.4_orient_me",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.4_orient_me",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.4_orient_me",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.5_trace_this",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.5_trace_this",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md#repository_intelligence_architecture_audit.findings_by_capability.5_trace_this",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+            "reason": "outside_selected_claim_evidence"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison",
+            "reason": "outside_selected_claim_evidence"
+          }
+        ],
+        "repository_display_name": "sankar-ramamoorthy/rag-foundry-universal",
+        "typed_fact_experiment": "architecture_edges",
+        "typed_fact_experiment_gap": null,
+        "context_budget": 4096,
+        "tokens_before_budget": 1993,
+        "tokens_after_budget": 1993
+      }
+    }
+  ]
+}
