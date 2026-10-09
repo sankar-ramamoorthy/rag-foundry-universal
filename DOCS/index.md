@@ -131,6 +131,8 @@ Issue #240's [pinned overview comparison](/DOCS/test_results/2026-10-03-issue-24
 records the failed quality gate, raw traces, and next experiment. Its
 [restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md) preserves
 the branch, production, and publication state.
+The [October 8 HTTP structured-answer comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
+records the later matched 11-request result and its remaining merge gate.
 
 
 

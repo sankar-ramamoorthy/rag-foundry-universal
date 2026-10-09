@@ -63,6 +63,14 @@ from rag_orchestrator.src.retrieval.repository_typed_facts import (
     EXPERIMENTS,
     render_typed_facts,
 )
+from rag_orchestrator.src.retrieval.repository_structured_results import (
+    build_architecture_result,
+    build_service_result,
+    render_architecture_answer,
+    render_service_answer,
+    validate_architecture_result,
+    validate_service_result,
+)
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -484,7 +492,7 @@ async def _verify_generation(repo_id: str, expected: str) -> None:
 
 
 async def _fetch_repository_overview(
-    repo_id: str, expected_generation: str
+    repo_id: str, expected_generation: str, strict_generation: bool = False
 ) -> dict[str, Any] | None:
     """Read the pinned generation's deterministic ORIENT inventory.
 
@@ -500,6 +508,8 @@ async def _fetch_repository_overview(
             if response.status_code == 200:
                 payload = response.json()
                 if payload.get("ingestion_id") != expected_generation:
+                    if strict_generation:
+                        raise HTTPException(409, "ORIENT generation mismatch; retry")
                     logger.info(
                         "ORIENT inventory generation mismatch: expected=%s actual=%s",
                         expected_generation,
@@ -531,6 +541,124 @@ async def _fetch_repository_graph(
     except (httpx.HTTPError, ValueError, TypeError) as exc:
         logger.info("Repository graph unavailable for typed facts: %s", exc)
     return None
+
+
+def _structured_overview_focus(query: str, obligation: str) -> str | None:
+    """Route only the measured finite-claim families; other queries keep RAG."""
+    question = query.lower().strip()
+    if obligation == "current_architecture" and "architectural map" in question:
+        return "q4"
+    if obligation != "current_structure":
+        return None
+    if "actual directory, service, and package structure" in question:
+        return "q2" if " of this repository" in question else "q3"
+    return None
+
+
+async def _fetch_compose_snapshot(
+    repo_id: str, generation_id: str
+) -> dict[str, Any]:
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/compose-snapshot"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(url, params={"generation_id": generation_id})
+            if response.status_code == 409:
+                raise HTTPException(409, "Repository generation changed; retry")
+            if response.status_code == 404:
+                raise HTTPException(
+                    503, "Compose snapshot unavailable; re-ingest repository"
+                )
+            response.raise_for_status()
+            snapshot = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise HTTPException(503, "Compose snapshot unavailable; retry") from exc
+    if snapshot.get("ingestion_id") != generation_id:
+        raise HTTPException(409, "Compose snapshot generation mismatch; retry")
+    return snapshot
+
+
+async def _validated_compose_files(
+    repo_id: str, generation_id: str, inventory: dict[str, Any]
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    snapshot = await _fetch_compose_snapshot(repo_id, generation_id)
+    documents = snapshot.get("compose_documents")
+    if not isinstance(documents, dict) or not documents:
+        raise HTTPException(503, "No Compose source content in generation")
+    if snapshot.get("commit_sha") != inventory.get("commit_sha"):
+        raise HTTPException(409, "Compose source commit mismatch; retry")
+    expected_paths = {row["compose_file"] for row in inventory.get("services", [])}
+    if not expected_paths.issubset(documents):
+        raise HTTPException(503, "Compose snapshot omits declared source files")
+    if any(
+        not isinstance(entry, dict)
+        or not re.fullmatch(r"[0-9a-f]{64}", str(entry.get("sha256", "")))
+        or not isinstance(entry.get("content"), dict)
+        or not isinstance(entry["content"].get("services"), dict)
+        for entry in documents.values()
+    ):
+        raise HTTPException(503, "Invalid Compose snapshot content")
+    return (
+        {path: entry["content"] for path, entry in documents.items()},
+        {path: entry["sha256"] for path, entry in documents.items()},
+    )
+
+
+async def _structured_overview_answer(
+    repo_id: str,
+    generation_id: str,
+    focus: str,
+    inventory: dict[str, Any] | None,
+    repository_name: str | None,
+) -> tuple[str, dict[str, Any], list[str]]:
+    if inventory is None:
+        raise HTTPException(503, "Current structural inventory unavailable")
+    graph = await _fetch_repository_graph(repo_id, generation_id)
+    if graph is None:
+        raise HTTPException(503, "Current repository graph unavailable")
+    service_result = build_service_result(inventory, graph)
+    errors = validate_service_result(service_result, inventory, graph)
+    if errors:
+        raise HTTPException(503, "Structural fact validation failed")
+    evidence = sorted({
+        row["compose_file"] for row in inventory.get("services", [])
+    })
+    source_snapshots: dict[str, str] = {}
+    if focus in {"q2", "q3"}:
+        answer = render_service_answer(service_result, focus)
+        if focus == "q3":
+            answer = (
+                f"Selected repository: {repository_name or repo_id} "
+                f"(repo_id {repo_id}, generation {generation_id}).\n" + answer
+            )
+        result = service_result
+    else:
+        compose_files, source_snapshots = await _validated_compose_files(
+            repo_id, generation_id, inventory
+        )
+        result = build_architecture_result(service_result, graph, compose_files)
+        errors = validate_architecture_result(
+            result, service_result, graph, compose_files
+        )
+        if errors:
+            raise HTTPException(503, "Architecture fact validation failed")
+        answer = render_architecture_answer(result)
+        evidence = sorted(set(evidence) | set(compose_files))
+    await _verify_generation(repo_id, generation_id)
+    return answer, {
+        "focus": focus,
+        "generation_id": generation_id,
+        "evidence_apis": [
+            f"/v1/repos/{repo_id}/orient",
+            f"/v1/graph/repos/{repo_id}",
+        ] + (
+            [f"/v1/repos/{repo_id}/compose-snapshot"] if focus == "q4" else []
+        ),
+        "schema": result["schema"],
+        "result": result,
+        "source_snapshots": source_snapshots,
+        "validation_errors": errors,
+    }, evidence
 
 
 async def _overview_policy_text(
@@ -1159,8 +1287,14 @@ async def run_rag(
 
     llm_context = context_str
     if claim_type == "repository_overview":
+        focus = _structured_overview_focus(query, obligation)
         orient_response = await _fetch_repository_overview(
-            resolved_repo_id, retrieval_plan_dict["generation_id"]
+            resolved_repo_id,
+            retrieval_plan_dict["generation_id"],
+            strict_generation=(
+                settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
+                and focus is not None
+            ),
         )
         repository_name = (
             await _fetch_repository_name(
@@ -1187,6 +1321,29 @@ async def run_rag(
         )
         retrieval_plan_dict.update(typed_trace)
         llm_context = policy_text + "\nRETRIEVED EVIDENCE\n" + context_str
+
+        if settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED and focus:
+            answer, structured_trace, structured_sources = (
+                await _structured_overview_answer(
+                    resolved_repo_id,
+                    retrieval_plan_dict["generation_id"],
+                    focus,
+                    orient_response,
+                    repository_name,
+                )
+            )
+            retrieval_plan_dict["structured_answer"] = structured_trace
+            sources = list(dict.fromkeys(
+                build_sources(chunks_in_final_context) + structured_sources
+            ))
+            return RAGResult(
+                answer=answer,
+                sources=sources,
+                repo_id=resolved_repo_id,
+                retrieval_plan=retrieval_plan_dict,
+                trace_id=trace_id,
+                reranked=rerank_active,
+            )
 
     # LLM call
     llm_payload = {"context": llm_context, "query": query}

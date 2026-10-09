@@ -99,40 +99,33 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
-**Open; measured merge gate failed again on 2026-10-04.** The local
-`feature/240-repository-overview-followup` branch contains `e00ddb2` ORIENT
-grounding and `07a5d59` default-off selection instrumentation, but a pinned 11-request
-comparison found Q2–Q4 still failing. An opt-in, default-off canonical
-purpose-passage selection prototype recovered the indexed `CLAUDE.md`
-description in Q5's final context, but regressed structural answers and
-repeated a stale language-support claim. It is not a release candidate.
-Production now runs `00e0cc9`; the ready self-repository corpus is
-generation `f873147c…` from docs-only main SHA `7a805d5`. PR #242
-corrected `CLAUDE.md` on main and the new corpus contains that correction.
-A new default-off claim-specific authority experiment recovered canonical
-purpose evidence and current architecture evidence, but Q2–Q4 still made
-unsupported claims; it is not approved for a #240 PR or deployment. See the
-[new matched comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md).
-Three subsequent, separately gated typed-fact arms improved parts of Q2 and
-Q3, but Q2 still omitted supplied service fields, Q3 still converted unknown
-package status into absence, and Q4 still conflated relationship types and
-invented a port value. The [typed-fact results](/DOCS/test_results/2026-10-04-issue-240-typed-fact-experiments.md)
-are diagnostic only; the full frozen gate has not been rerun and no #240
-candidate is approved for merge or deployment.
-A separate [structured-answer experiment](/DOCS/test_results/2026-10-04-issue-240-structured-answer-validation.md)
-derived and validated Q2–Q4 objects, including Compose ports verified against
-source-commit blob hashes, then rendered complete answers deterministically.
-It is a standalone read-only prototype, not yet an HTTP answer-path candidate;
-the #240 merge gate remains unmet.
-A bounded Qwen JSON-copy check then rejected all three model outputs against
-the validated objects (Q2 nested rows incorrectly; Q3/Q4 returned prose
-instead of JSON). The [structured-answer report](/DOCS/test_results/2026-10-04-issue-240-structured-answer-validation.md)
-records both the deterministic success and this model-output failure.
-The earlier claim that production
-omitted the final-context manifest was corrected: it is nested under
-`retrieval_plan`. See the [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md),
-[measured comparison](/DOCS/test_results/2026-10-03-issue-240-frozen-quality-comparison.md),
-and [restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md).
+**Open; the 2026-10-08 measured merge gate is still no-go.** The local
+`feature/240-repository-overview-followup` worktree now has an opt-in HTTP
+structured-answer path for Q2-Q4. Ingestion captures a credential-stripped
+Compose relationship snapshot with source-byte hashes in the ready
+generation; a generation-matched read endpoint serves it. The orchestrator
+validates typed ORIENT/graph/Compose facts and renders Q2-Q4 without asking
+the model to restate them. Unrelated queries retain the existing retrieval
+and generation path; the new flag defaults off.
+
+The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
+on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source
+`7a805d5b3cee031c44fbe0d9b8048065ce8ef039`) found Q2-Q4 passing
+validated structured checks. Q5 at both k values, Q6, and Q7 had the corrected
+canonical purpose in final context and correct answers. Q1 remained
+incomplete; C2/C3 retained baseline exact-source misses without answer
+regression. The production ingestion service has not deployed the Compose
+endpoint, so the read-only quality run used a source-verified evaluation
+adapter for that one route. A database-backed HTTP test verified the new
+handler locally, but a new ready generation from deployed code remains
+unverified. No #240 PR, merge, or production policy deployment is approved.
+
+Earlier evidence remains in the [October 4 authority comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md),
+[typed-fact runs](/DOCS/test_results/2026-10-04-issue-240-typed-fact-experiments.md),
+and [standalone structured prototype](/DOCS/test_results/2026-10-04-issue-240-structured-answer-validation.md).
+The [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md)
+and [restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md)
+retain the earlier generation's history.
 
 ## Incremental ingestion & snapshot lineage
 

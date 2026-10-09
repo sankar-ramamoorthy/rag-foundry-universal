@@ -8,7 +8,9 @@ inspected without silently claiming completion.
 import argparse
 import json
 import time
+from datetime import datetime, timezone
 from pathlib import Path
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 REPO_ID = "f7641840-ba13-5f9d-9ae6-87e1f924709d"
@@ -61,10 +63,10 @@ CASES = (
 )
 
 
-def fetch(url: str, payload: dict | None = None) -> dict:
+def fetch(url: str, payload: dict | None = None, timeout: int = 270) -> dict:
     body = json.dumps(payload).encode() if payload is not None else None
     request = Request(url, data=body, headers={"Content-Type": "application/json"})
-    with urlopen(request, timeout=270) as response:
+    with urlopen(request, timeout=timeout) as response:
         return json.load(response)
 
 
@@ -100,9 +102,23 @@ def run_case(
         "trace_canonical_ids": list(targets),
     }
     started = time.monotonic()
-    response = fetch(f"{orchestrator_url}/v1/rag", request)
+    try:
+        response = fetch(f"{orchestrator_url}/v1/rag", request, timeout=600)
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        response = {"http_error": exc.code, "error_body": body}
     elapsed = round(time.monotonic() - started, 2)
     after = generation(ingestion_url, repo_id, generation_id, source_sha)
+    if "http_error" in response:
+        return {
+            "case": name,
+            "request": request,
+            "generation_before": before,
+            "generation_after": after,
+            "elapsed_seconds": elapsed,
+            "http_error": response["http_error"],
+            "error_body": response["error_body"],
+        }
     plan = response["retrieval_plan"]
     if response["repo_id"] != repo_id or plan.get("generation_id") != generation_id:
         raise RuntimeError(f"Response not pinned for {name}: {response['repo_id']}")
@@ -135,6 +151,7 @@ def run_case(
                 "repository_display_name",
                 "typed_fact_experiment",
                 "typed_fact_experiment_gap",
+                "structured_answer",
                 "context_budget",
                 "tokens_before_budget",
                 "tokens_after_budget",
@@ -152,20 +169,40 @@ def main() -> None:
     parser.add_argument("--source-sha", default=SOURCE_SHA)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cases", nargs="*", default=[])
+    parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
     selected = [case for case in CASES if not args.cases or case[0] in args.cases]
     if not selected:
         raise SystemExit("No matching cases")
-    results = {
-        "orchestrator": args.orchestrator,
-        "ingestion": args.ingestion,
-        "runtime_version": fetch(f"{args.orchestrator}/version"),
-        "orient_response": fetch(f"{args.ingestion}/v1/repos/{args.repo_id}/orient"),
-        "expected_generation": args.generation_id,
-        "expected_source_sha": args.source_sha,
-        "expected_cases": [case[0] for case in selected],
-        "results": [],
-    }
+    if args.resume:
+        results = json.loads(args.output.read_text(encoding="utf-8"))
+        if (
+            results["expected_generation"] != args.generation_id
+            or results["expected_source_sha"] != args.source_sha
+            or results["expected_cases"] != [case[0] for case in selected]
+        ):
+            raise RuntimeError("Cannot resume a different pinned evaluation")
+        completed = {row["case"] for row in results["results"]}
+        selected = [case for case in selected if case[0] not in completed]
+        results.setdefault("resume_events", []).append({
+            "utc": datetime.now(timezone.utc).isoformat(),
+            "completed_cases": sorted(completed),
+            "remaining_cases": [case[0] for case in selected],
+        })
+        args.output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
+    else:
+        results = {
+            "orchestrator": args.orchestrator,
+            "ingestion": args.ingestion,
+            "runtime_version": fetch(f"{args.orchestrator}/version"),
+            "orient_response": fetch(
+                f"{args.ingestion}/v1/repos/{args.repo_id}/orient"
+            ),
+            "expected_generation": args.generation_id,
+            "expected_source_sha": args.source_sha,
+            "expected_cases": [case[0] for case in selected],
+            "results": [],
+        }
     for case in selected:
         result = run_case(
             args.orchestrator,
@@ -178,7 +215,8 @@ def main() -> None:
         results["results"].append(result)
         args.output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
         print(
-            f"{case[0]}: {result['trace_id']} ({result['elapsed_seconds']}s)",
+            f"{case[0]}: {result.get('trace_id', result.get('http_error'))} "
+            f"({result['elapsed_seconds']}s)",
             flush=True,
         )
 

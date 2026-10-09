@@ -110,6 +110,7 @@ class Settings(BaseSettings):
     # Issue #240: one read-only, claim-family experiment at a time.
     # Values: service_table, package_markers, architecture_edges.
     REPOSITORY_OVERVIEW_TYPED_FACT_EXPERIMENT: str = ""
+    REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED: bool = False
 
     # -------------------------------------------------
     # Service URLs (Docker service names)

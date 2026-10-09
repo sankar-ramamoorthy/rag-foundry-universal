@@ -228,27 +228,20 @@ def render_service_answer(result: dict[str, Any], focus: str) -> str:
                 "UNKNOWN: no traditional package marker observed; package "
                 "absence is not proven"
             )
-        if focus == "q3":
-            lines.append(
-                f"{name}: repository directory {row['repository_directory']}; "
-                f"Python package {package_text}."
-            )
-        else:
-            lines.append(
-                f"{name}: Compose {row['compose_declarations']}; repository "
-                f"directory {row['repository_directory']}; indexed source directory "
-                f"{row['indexed_source_directory']}; Dockerfiles {row['dockerfiles']}; "
-                f"manifests {row['manifests']}; test directories "
-                f"{row['test_directories']}; indexed implementation files "
-                f"by language {row['indexed_implementation_files_by_language']}; "
-                "Python package "
-                f"{package_text}."
-            )
-    if focus == "q2":
         lines.append(
-            f"Whole-repository file counts: {result['whole_repository_file_counts']}; "
-            f"language counts: {result['whole_repository_language_counts']}."
+            f"{name}: Compose {row['compose_declarations']}; repository "
+            f"directory {row['repository_directory']}; indexed source directory "
+            f"{row['indexed_source_directory']}; Dockerfiles {row['dockerfiles']}; "
+            f"manifests {row['manifests']}; test directories "
+            f"{row['test_directories']}; indexed implementation files "
+            f"by language {row['indexed_implementation_files_by_language']}; "
+            "Python package "
+            f"{package_text}."
         )
+    lines.append(
+        f"Whole-repository file counts: {result['whole_repository_file_counts']}; "
+        f"language counts: {result['whole_repository_language_counts']}."
+    )
     return "\n".join(lines)
 
 

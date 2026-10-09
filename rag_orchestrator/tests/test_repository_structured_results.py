@@ -83,6 +83,8 @@ def test_complete_service_result_and_unknown_package_state():
     assert validate_service_result(result, INVENTORY, GRAPH) == []
     answer = render_service_answer(result, "q3")
     assert "absence is not proven" in answer
+    assert "Dockerfiles" in answer
+    assert "language counts" in answer
 
 
 def test_validator_rejects_unknown_to_absence_and_missing_fields():
