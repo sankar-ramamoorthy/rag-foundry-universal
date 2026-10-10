@@ -1,0 +1,529 @@
+{
+  "source_record": "DOCS\\test_results\\2026-10-04-issue-240-structured-answer.json",
+  "repository_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+  "generation_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+  "source_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+  "cases": [
+    {
+      "case": "Q2",
+      "generation_before": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "generation_after": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "model": "ollama/Qwen3:4b",
+      "elapsed_seconds": 56.64,
+      "expected": {
+        "service_count": 6,
+        "services": {
+          "gradio": {
+            "compose_declarations": [
+              "docker-compose.yml"
+            ],
+            "repository_directory": "OBSERVED",
+            "indexed_source_directory": "UNKNOWN",
+            "dockerfiles": [
+              "gradio/Dockerfile"
+            ],
+            "manifests": [
+              "gradio/pyproject.toml"
+            ],
+            "test_directories": [],
+            "indexed_implementation_files_by_language": {}
+          },
+          "ingestion_service": {
+            "compose_declarations": [
+              "docker-compose.test.yml",
+              "docker-compose.yml"
+            ],
+            "repository_directory": "OBSERVED",
+            "indexed_source_directory": "OBSERVED",
+            "dockerfiles": [
+              "ingestion_service/Dockerfile"
+            ],
+            "manifests": [
+              "ingestion_service/pyproject.toml"
+            ],
+            "test_directories": [
+              "ingestion_service/tests"
+            ],
+            "indexed_implementation_files_by_language": {
+              "python": 87
+            }
+          },
+          "llm_service": {
+            "compose_declarations": [
+              "docker-compose.yml"
+            ],
+            "repository_directory": "OBSERVED",
+            "indexed_source_directory": "OBSERVED",
+            "dockerfiles": [
+              "llm_service/Dockerfile"
+            ],
+            "manifests": [
+              "llm_service/pyproject.toml"
+            ],
+            "test_directories": [
+              "llm_service/tests"
+            ],
+            "indexed_implementation_files_by_language": {
+              "python": 15
+            }
+          },
+          "postgres": {
+            "compose_declarations": [
+              "docker-compose.test.yml",
+              "docker-compose.yml"
+            ],
+            "repository_directory": "UNKNOWN",
+            "indexed_source_directory": "UNKNOWN",
+            "dockerfiles": [],
+            "manifests": [],
+            "test_directories": [],
+            "indexed_implementation_files_by_language": {}
+          },
+          "rag_orchestrator": {
+            "compose_declarations": [
+              "docker-compose.yml"
+            ],
+            "repository_directory": "OBSERVED",
+            "indexed_source_directory": "OBSERVED",
+            "dockerfiles": [
+              "rag_orchestrator/Dockerfile"
+            ],
+            "manifests": [
+              "rag_orchestrator/pyproject.toml"
+            ],
+            "test_directories": [
+              "rag_orchestrator/tests"
+            ],
+            "indexed_implementation_files_by_language": {
+              "python": 33
+            }
+          },
+          "vector_store_service": {
+            "compose_declarations": [
+              "docker-compose.test.yml",
+              "docker-compose.yml"
+            ],
+            "repository_directory": "OBSERVED",
+            "indexed_source_directory": "OBSERVED",
+            "dockerfiles": [
+              "vector_store_service/Dockerfile"
+            ],
+            "manifests": [],
+            "test_directories": [
+              "vector_store_service/tests"
+            ],
+            "indexed_implementation_files_by_language": {
+              "python": 16
+            }
+          }
+        }
+      },
+      "raw_response": "{\"service_count\":6,\"services\":{\"gradio\":{\"compose_declarations\":[\"docker-compose.yml\"],\"repository_directory\":\"OBSERVED\",\"indexed_source_directory\":\"UNKNOWN\",\"dockerfiles\":[\"gradio/Dockerfile\"],\"manifests\":[\"gradio/pyproject.toml\"],\"test_directories\":[],\"indexed_implementation_files_by_language\":{},\"ingestion_service\":{\"compose_declarations\":[\"docker-compose.test.yml\",\"docker-compose.yml\"],\"repository_directory\":\"OBSERVED\",\"indexed_source_directory\":\"OBSERVED\",\"dockerfiles\":[\"ingestion_service/Dockerfile\"],\"manifests\":[\"ingestion_service/pyproject.toml\"],\"test_directories\":[\"ingestion_service/tests\"],\"indexed_implementation_files_by_language\":{\"python\":87}},\"llm_service\":{\"compose_declarations\":[\"docker-compose.yml\"],\"repository_directory\":\"OBSERVED\",\"indexed_source_directory\":\"OBSERVED\",\"dockerfiles\":[\"llm_service/Dockerfile\"],\"manifests\":[\"llm_service/pyproject.toml\"],\"test_directories\":[\"llm_service/tests\"],\"indexed_implementation_files_by_language\":{\"python\":15}},\"postgres\":{\"compose_declarations\":[\"docker-compose.test.yml\",\"docker-compose.yml\"],\"repository_directory\":\"UNKNOWN\",\"indexed_source_directory\":\"UNKNOWN\",\"dockerfiles\":[],\"manifests\":[],\"test_directories\":[],\"indexed_implementation_files_by_language\":{},\"rag_orchestrator\":{\"compose_declarations\":[\"docker-compose.yml\"],\"repository_directory\":\"OBSERVED\",\"indexed_source_directory\":\"OBSERVED\",\"dockerfiles\":[\"rag_orchestrator/Dockerfile\"],\"manifests\":[\"rag_orchestrator/pyproject.toml\"],\"test_directories\":[\"rag_orchestrator/tests\"],\"indexed_implementation_files_by_language\":{\"python\":33}},\"vector_store_service\":{\"compose_declarations\":[\"docker-compose.test.yml\",\"docker-compose.yml\"],\"repository_directory\":\"OBSERVED\",\"indexed_source_directory\":\"OBSERVED\",\"dockerfiles\":[\"vector_store_service/Dockerfile\"],\"manifests\":[],\"test_directories\":[\"vector_store_service/tests\"],\"indexed_implementation_files_by_language\":{\"python\":16}}}}}}",
+      "parsed": {
+        "service_count": 6,
+        "services": {
+          "gradio": {
+            "compose_declarations": [
+              "docker-compose.yml"
+            ],
+            "repository_directory": "OBSERVED",
+            "indexed_source_directory": "UNKNOWN",
+            "dockerfiles": [
+              "gradio/Dockerfile"
+            ],
+            "manifests": [
+              "gradio/pyproject.toml"
+            ],
+            "test_directories": [],
+            "indexed_implementation_files_by_language": {},
+            "ingestion_service": {
+              "compose_declarations": [
+                "docker-compose.test.yml",
+                "docker-compose.yml"
+              ],
+              "repository_directory": "OBSERVED",
+              "indexed_source_directory": "OBSERVED",
+              "dockerfiles": [
+                "ingestion_service/Dockerfile"
+              ],
+              "manifests": [
+                "ingestion_service/pyproject.toml"
+              ],
+              "test_directories": [
+                "ingestion_service/tests"
+              ],
+              "indexed_implementation_files_by_language": {
+                "python": 87
+              }
+            },
+            "llm_service": {
+              "compose_declarations": [
+                "docker-compose.yml"
+              ],
+              "repository_directory": "OBSERVED",
+              "indexed_source_directory": "OBSERVED",
+              "dockerfiles": [
+                "llm_service/Dockerfile"
+              ],
+              "manifests": [
+                "llm_service/pyproject.toml"
+              ],
+              "test_directories": [
+                "llm_service/tests"
+              ],
+              "indexed_implementation_files_by_language": {
+                "python": 15
+              }
+            },
+            "postgres": {
+              "compose_declarations": [
+                "docker-compose.test.yml",
+                "docker-compose.yml"
+              ],
+              "repository_directory": "UNKNOWN",
+              "indexed_source_directory": "UNKNOWN",
+              "dockerfiles": [],
+              "manifests": [],
+              "test_directories": [],
+              "indexed_implementation_files_by_language": {},
+              "rag_orchestrator": {
+                "compose_declarations": [
+                  "docker-compose.yml"
+                ],
+                "repository_directory": "OBSERVED",
+                "indexed_source_directory": "OBSERVED",
+                "dockerfiles": [
+                  "rag_orchestrator/Dockerfile"
+                ],
+                "manifests": [
+                  "rag_orchestrator/pyproject.toml"
+                ],
+                "test_directories": [
+                  "rag_orchestrator/tests"
+                ],
+                "indexed_implementation_files_by_language": {
+                  "python": 33
+                }
+              },
+              "vector_store_service": {
+                "compose_declarations": [
+                  "docker-compose.test.yml",
+                  "docker-compose.yml"
+                ],
+                "repository_directory": "OBSERVED",
+                "indexed_source_directory": "OBSERVED",
+                "dockerfiles": [
+                  "vector_store_service/Dockerfile"
+                ],
+                "manifests": [],
+                "test_directories": [
+                  "vector_store_service/tests"
+                ],
+                "indexed_implementation_files_by_language": {
+                  "python": 16
+                }
+              }
+            }
+          }
+        }
+      },
+      "valid": false,
+      "failure": "semantic_or_field_mismatch"
+    },
+    {
+      "case": "Q3",
+      "generation_before": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "generation_after": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "model": "ollama/Qwen3:4b",
+      "elapsed_seconds": 23.25,
+      "expected": {
+        "services": {
+          "gradio": {
+            "package_status": "UNKNOWN",
+            "marker_count": 0
+          },
+          "ingestion_service": {
+            "package_status": "OBSERVED",
+            "marker_count": 16
+          },
+          "llm_service": {
+            "package_status": "OBSERVED",
+            "marker_count": 6
+          },
+          "postgres": {
+            "package_status": "UNKNOWN",
+            "marker_count": 0
+          },
+          "rag_orchestrator": {
+            "package_status": "OBSERVED",
+            "marker_count": 7
+          },
+          "vector_store_service": {
+            "package_status": "OBSERVED",
+            "marker_count": 8
+          }
+        }
+      },
+      "raw_response": "The context does not contain a repository claim object.",
+      "parsed": null,
+      "valid": false,
+      "failure": "invalid_json"
+    },
+    {
+      "case": "Q4",
+      "generation_before": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "generation_after": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "model": "ollama/Qwen3:4b",
+      "elapsed_seconds": 12.66,
+      "expected": {
+        "components": {
+          "gradio": {
+            "kind": "application",
+            "package_status": "UNKNOWN"
+          },
+          "ingestion_service": {
+            "kind": "application",
+            "package_status": "OBSERVED"
+          },
+          "llm_service": {
+            "kind": "application",
+            "package_status": "OBSERVED"
+          },
+          "postgres": {
+            "kind": "datastore",
+            "package_status": "UNKNOWN"
+          },
+          "rag_orchestrator": {
+            "kind": "application",
+            "package_status": "OBSERVED"
+          },
+          "vector_store_service": {
+            "kind": "application",
+            "package_status": "OBSERVED"
+          }
+        },
+        "http_edges": [
+          [
+            "gradio",
+            "ingestion_service",
+            "compose:docker-compose.yml:API_BASE_URL"
+          ],
+          [
+            "gradio",
+            "rag_orchestrator",
+            "compose:docker-compose.yml:RAG_API_BASE_URL"
+          ],
+          [
+            "ingestion_service",
+            "vector_store_service",
+            "heuristic:VECTOR_STORE_SERVICE_URL"
+          ],
+          [
+            "llm_service",
+            "ingestion_service",
+            "heuristic:INGESTION_SERVICE_URL"
+          ],
+          [
+            "rag_orchestrator",
+            "ingestion_service",
+            "heuristic:INGESTION_API_BASE_URL"
+          ],
+          [
+            "rag_orchestrator",
+            "ingestion_service",
+            "heuristic:INGESTION_SERVICE_URL"
+          ],
+          [
+            "rag_orchestrator",
+            "llm_service",
+            "heuristic:LLM_SERVICE_URL"
+          ],
+          [
+            "rag_orchestrator",
+            "vector_store_service",
+            "heuristic:VECTOR_STORE_URL"
+          ]
+        ],
+        "datastore_edges": [
+          [
+            "docker-compose.test.yml",
+            "ingestion_service",
+            "postgres",
+            "DATABASE_URL"
+          ],
+          [
+            "docker-compose.test.yml",
+            "vector_store_service",
+            "postgres",
+            "DATABASE_URL"
+          ],
+          [
+            "docker-compose.yml",
+            "ingestion_service",
+            "postgres",
+            "DATABASE_URL"
+          ],
+          [
+            "docker-compose.yml",
+            "vector_store_service",
+            "postgres",
+            "DATABASE_URL"
+          ]
+        ],
+        "deployment_edges": [
+          [
+            "docker-compose.test.yml",
+            "ingestion_service",
+            "postgres"
+          ],
+          [
+            "docker-compose.test.yml",
+            "ingestion_service",
+            "vector_store_service"
+          ],
+          [
+            "docker-compose.test.yml",
+            "vector_store_service",
+            "postgres"
+          ],
+          [
+            "docker-compose.yml",
+            "gradio",
+            "ingestion_service"
+          ],
+          [
+            "docker-compose.yml",
+            "gradio",
+            "rag_orchestrator"
+          ],
+          [
+            "docker-compose.yml",
+            "ingestion_service",
+            "postgres"
+          ],
+          [
+            "docker-compose.yml",
+            "llm_service",
+            "vector_store_service"
+          ],
+          [
+            "docker-compose.yml",
+            "rag_orchestrator",
+            "ingestion_service"
+          ],
+          [
+            "docker-compose.yml",
+            "rag_orchestrator",
+            "llm_service"
+          ],
+          [
+            "docker-compose.yml",
+            "rag_orchestrator",
+            "vector_store_service"
+          ],
+          [
+            "docker-compose.yml",
+            "vector_store_service",
+            "postgres"
+          ]
+        ],
+        "ports": [
+          [
+            "docker-compose.test.yml",
+            "postgres",
+            "5433",
+            "5432"
+          ],
+          [
+            "docker-compose.yml",
+            "gradio",
+            "7860",
+            "7860"
+          ],
+          [
+            "docker-compose.yml",
+            "ingestion_service",
+            "8001",
+            "8000"
+          ],
+          [
+            "docker-compose.yml",
+            "llm_service",
+            "8003",
+            "8000"
+          ],
+          [
+            "docker-compose.yml",
+            "postgres",
+            "5434",
+            "5432"
+          ],
+          [
+            "docker-compose.yml",
+            "rag_orchestrator",
+            "8004",
+            "8000"
+          ],
+          [
+            "docker-compose.yml",
+            "vector_store_service",
+            "8002",
+            "8002"
+          ]
+        ]
+      },
+      "raw_response": "The context does not contain the repository claim object.",
+      "parsed": null,
+      "valid": false,
+      "failure": "invalid_json"
+    }
+  ]
+}

@@ -1,0 +1,455 @@
+{
+  "repository_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+  "generation_before": {
+    "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+    "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+    "generation_status": "ready",
+    "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+    "ingested_at": "2026-10-04T14:26:53.800127",
+    "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+    "is_incremental": true
+  },
+  "generation_after": {
+    "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+    "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+    "generation_status": "ready",
+    "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+    "ingested_at": "2026-10-04T14:26:53.800127",
+    "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+    "is_incremental": true
+  },
+  "source_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+  "compose_blob_proofs": [
+    {
+      "path": "docker-compose.yml",
+      "git_blob_sha": "7dc65b11e177eab96d2d7aeeec3ea8d658995679",
+      "checkout_normalization": "crlf_to_lf"
+    },
+    {
+      "path": "docker-compose.test.yml",
+      "git_blob_sha": "e66f3755ab0ba30e534b955bbfda30cb8a290c39",
+      "checkout_normalization": "crlf_to_lf"
+    }
+  ],
+  "graph_node_count": 9068,
+  "validation": {
+    "Q2": [],
+    "Q3": [],
+    "Q4": []
+  },
+  "structured_service_result": {
+    "schema": "repository-service-result-v1",
+    "top_level_directories": [
+      "DOCS",
+      "artifacts",
+      "docs-archive",
+      "gradio",
+      "ingestion_service",
+      "llm_service",
+      "migrations",
+      "rag_orchestrator",
+      "scripts",
+      "shared",
+      "specs",
+      "tests",
+      "vector_store_service"
+    ],
+    "service_count": 6,
+    "compose_declaration_count": 9,
+    "services": {
+      "gradio": {
+        "compose_declarations": [
+          "docker-compose.yml"
+        ],
+        "repository_directory": "OBSERVED",
+        "indexed_source_directory": "UNKNOWN",
+        "dockerfiles": [
+          "gradio/Dockerfile"
+        ],
+        "manifests": [
+          "gradio/pyproject.toml"
+        ],
+        "test_directories": [],
+        "indexed_implementation_files_by_language": {},
+        "package": {
+          "status": "UNKNOWN",
+          "markers": []
+        }
+      },
+      "ingestion_service": {
+        "compose_declarations": [
+          "docker-compose.test.yml",
+          "docker-compose.yml"
+        ],
+        "repository_directory": "OBSERVED",
+        "indexed_source_directory": "OBSERVED",
+        "dockerfiles": [
+          "ingestion_service/Dockerfile"
+        ],
+        "manifests": [
+          "ingestion_service/pyproject.toml"
+        ],
+        "test_directories": [
+          "ingestion_service/tests"
+        ],
+        "indexed_implementation_files_by_language": {
+          "python": 87
+        },
+        "package": {
+          "status": "OBSERVED",
+          "markers": [
+            "ingestion_service/__init__.py",
+            "ingestion_service/src/__init__.py",
+            "ingestion_service/src/api/__init__.py",
+            "ingestion_service/src/api/v1/__init__.py",
+            "ingestion_service/src/core/__init__.py",
+            "ingestion_service/src/core/chunk_assembly/__init__.py",
+            "ingestion_service/src/core/codebase/__init__.py",
+            "ingestion_service/src/core/constants/__init__.py",
+            "ingestion_service/src/core/converters/__init__.py",
+            "ingestion_service/src/core/crud/__init__.py",
+            "ingestion_service/src/core/document_graph/__init__.py",
+            "ingestion_service/src/core/embedders/__init__.py",
+            "ingestion_service/src/core/extractors/__init__.py",
+            "ingestion_service/src/core/extractors/treesitter/__init__.py",
+            "ingestion_service/src/core/ocr/__init__.py",
+            "ingestion_service/src/ui/__init__.py"
+          ]
+        }
+      },
+      "llm_service": {
+        "compose_declarations": [
+          "docker-compose.yml"
+        ],
+        "repository_directory": "OBSERVED",
+        "indexed_source_directory": "OBSERVED",
+        "dockerfiles": [
+          "llm_service/Dockerfile"
+        ],
+        "manifests": [
+          "llm_service/pyproject.toml"
+        ],
+        "test_directories": [
+          "llm_service/tests"
+        ],
+        "indexed_implementation_files_by_language": {
+          "python": 15
+        },
+        "package": {
+          "status": "OBSERVED",
+          "markers": [
+            "llm_service/__init__.py",
+            "llm_service/src/__init__.py",
+            "llm_service/src/api/__init__.py",
+            "llm_service/src/api/v1/__init__.py",
+            "llm_service/src/core/__init__.py",
+            "llm_service/src/core/prompts/__init__.py"
+          ]
+        }
+      },
+      "postgres": {
+        "compose_declarations": [
+          "docker-compose.test.yml",
+          "docker-compose.yml"
+        ],
+        "repository_directory": "UNKNOWN",
+        "indexed_source_directory": "UNKNOWN",
+        "dockerfiles": [],
+        "manifests": [],
+        "test_directories": [],
+        "indexed_implementation_files_by_language": {},
+        "package": {
+          "status": "UNKNOWN",
+          "markers": []
+        }
+      },
+      "rag_orchestrator": {
+        "compose_declarations": [
+          "docker-compose.yml"
+        ],
+        "repository_directory": "OBSERVED",
+        "indexed_source_directory": "OBSERVED",
+        "dockerfiles": [
+          "rag_orchestrator/Dockerfile"
+        ],
+        "manifests": [
+          "rag_orchestrator/pyproject.toml"
+        ],
+        "test_directories": [
+          "rag_orchestrator/tests"
+        ],
+        "indexed_implementation_files_by_language": {
+          "python": 33
+        },
+        "package": {
+          "status": "OBSERVED",
+          "markers": [
+            "rag_orchestrator/__init__.py",
+            "rag_orchestrator/src/__init__.py",
+            "rag_orchestrator/src/api/__init__.py",
+            "rag_orchestrator/src/api/v1/__init__.py",
+            "rag_orchestrator/src/core/__init__.py",
+            "rag_orchestrator/src/retrieval/__init__.py",
+            "rag_orchestrator/src/utils/__init__.py"
+          ]
+        }
+      },
+      "vector_store_service": {
+        "compose_declarations": [
+          "docker-compose.test.yml",
+          "docker-compose.yml"
+        ],
+        "repository_directory": "OBSERVED",
+        "indexed_source_directory": "OBSERVED",
+        "dockerfiles": [
+          "vector_store_service/Dockerfile"
+        ],
+        "manifests": [],
+        "test_directories": [
+          "vector_store_service/tests"
+        ],
+        "indexed_implementation_files_by_language": {
+          "python": 16
+        },
+        "package": {
+          "status": "OBSERVED",
+          "markers": [
+            "vector_store_service/__init__.py",
+            "vector_store_service/src/__init__.py",
+            "vector_store_service/src/api/__init__.py",
+            "vector_store_service/src/api/v1/__init__.py",
+            "vector_store_service/src/core/__init__.py",
+            "vector_store_service/src/core/db/__init__.py",
+            "vector_store_service/src/core/db/models/__init__.py",
+            "vector_store_service/src/core/vectorstore/__init__.py"
+          ]
+        }
+      }
+    },
+    "whole_repository_file_counts": {
+      "indexed": 589,
+      "non_indexed": 67,
+      "total": 656
+    },
+    "whole_repository_language_counts": {
+      "java": 4,
+      "javascript": 1,
+      "json": 5,
+      "markdown": 237,
+      "other": 45,
+      "python": 335,
+      "rust": 5,
+      "text": 5,
+      "toml": 8,
+      "typescript": 7,
+      "yaml": 4
+    }
+  },
+  "structured_architecture_result": {
+    "schema": "repository-architecture-result-v1",
+    "components": {
+      "gradio": {
+        "kind": "application",
+        "package_status": "UNKNOWN"
+      },
+      "ingestion_service": {
+        "kind": "application",
+        "package_status": "OBSERVED"
+      },
+      "llm_service": {
+        "kind": "application",
+        "package_status": "OBSERVED"
+      },
+      "postgres": {
+        "kind": "datastore",
+        "package_status": "UNKNOWN"
+      },
+      "rag_orchestrator": {
+        "kind": "application",
+        "package_status": "OBSERVED"
+      },
+      "vector_store_service": {
+        "kind": "application",
+        "package_status": "OBSERVED"
+      }
+    },
+    "http_edges": [
+      [
+        "gradio",
+        "ingestion_service",
+        "compose:docker-compose.yml:API_BASE_URL"
+      ],
+      [
+        "gradio",
+        "rag_orchestrator",
+        "compose:docker-compose.yml:RAG_API_BASE_URL"
+      ],
+      [
+        "ingestion_service",
+        "vector_store_service",
+        "heuristic:VECTOR_STORE_SERVICE_URL"
+      ],
+      [
+        "llm_service",
+        "ingestion_service",
+        "heuristic:INGESTION_SERVICE_URL"
+      ],
+      [
+        "rag_orchestrator",
+        "ingestion_service",
+        "heuristic:INGESTION_API_BASE_URL"
+      ],
+      [
+        "rag_orchestrator",
+        "ingestion_service",
+        "heuristic:INGESTION_SERVICE_URL"
+      ],
+      [
+        "rag_orchestrator",
+        "llm_service",
+        "heuristic:LLM_SERVICE_URL"
+      ],
+      [
+        "rag_orchestrator",
+        "vector_store_service",
+        "heuristic:VECTOR_STORE_URL"
+      ]
+    ],
+    "datastore_edges": [
+      [
+        "docker-compose.test.yml",
+        "ingestion_service",
+        "postgres",
+        "DATABASE_URL"
+      ],
+      [
+        "docker-compose.test.yml",
+        "vector_store_service",
+        "postgres",
+        "DATABASE_URL"
+      ],
+      [
+        "docker-compose.yml",
+        "ingestion_service",
+        "postgres",
+        "DATABASE_URL"
+      ],
+      [
+        "docker-compose.yml",
+        "vector_store_service",
+        "postgres",
+        "DATABASE_URL"
+      ]
+    ],
+    "deployment_edges": [
+      [
+        "docker-compose.test.yml",
+        "ingestion_service",
+        "postgres"
+      ],
+      [
+        "docker-compose.test.yml",
+        "ingestion_service",
+        "vector_store_service"
+      ],
+      [
+        "docker-compose.test.yml",
+        "vector_store_service",
+        "postgres"
+      ],
+      [
+        "docker-compose.yml",
+        "gradio",
+        "ingestion_service"
+      ],
+      [
+        "docker-compose.yml",
+        "gradio",
+        "rag_orchestrator"
+      ],
+      [
+        "docker-compose.yml",
+        "ingestion_service",
+        "postgres"
+      ],
+      [
+        "docker-compose.yml",
+        "llm_service",
+        "vector_store_service"
+      ],
+      [
+        "docker-compose.yml",
+        "rag_orchestrator",
+        "ingestion_service"
+      ],
+      [
+        "docker-compose.yml",
+        "rag_orchestrator",
+        "llm_service"
+      ],
+      [
+        "docker-compose.yml",
+        "rag_orchestrator",
+        "vector_store_service"
+      ],
+      [
+        "docker-compose.yml",
+        "vector_store_service",
+        "postgres"
+      ]
+    ],
+    "ports": [
+      [
+        "docker-compose.test.yml",
+        "postgres",
+        "5433",
+        "5432"
+      ],
+      [
+        "docker-compose.yml",
+        "gradio",
+        "7860",
+        "7860"
+      ],
+      [
+        "docker-compose.yml",
+        "ingestion_service",
+        "8001",
+        "8000"
+      ],
+      [
+        "docker-compose.yml",
+        "llm_service",
+        "8003",
+        "8000"
+      ],
+      [
+        "docker-compose.yml",
+        "postgres",
+        "5434",
+        "5432"
+      ],
+      [
+        "docker-compose.yml",
+        "rag_orchestrator",
+        "8004",
+        "8000"
+      ],
+      [
+        "docker-compose.yml",
+        "vector_store_service",
+        "8002",
+        "8002"
+      ]
+    ],
+    "scope": [
+      "docker-compose.test.yml",
+      "docker-compose.yml"
+    ]
+  },
+  "answers": {
+    "Q2": "Observed top-level directories: DOCS, artifacts, docs-archive, gradio, ingestion_service, llm_service, migrations, rag_orchestrator, scripts, shared, specs, tests, vector_store_service.\nCompose declares 6 distinct service identities in 9 declarations.\ngradio: Compose ['docker-compose.yml']; repository directory OBSERVED; indexed source directory UNKNOWN; Dockerfiles ['gradio/Dockerfile']; manifests ['gradio/pyproject.toml']; test directories []; indexed implementation files by language {}; Python package UNKNOWN: no traditional package marker observed; package absence is not proven.\ningestion_service: Compose ['docker-compose.test.yml', 'docker-compose.yml']; repository directory OBSERVED; indexed source directory OBSERVED; Dockerfiles ['ingestion_service/Dockerfile']; manifests ['ingestion_service/pyproject.toml']; test directories ['ingestion_service/tests']; indexed implementation files by language {'python': 87}; Python package OBSERVED (16 traditional package markers).\nllm_service: Compose ['docker-compose.yml']; repository directory OBSERVED; indexed source directory OBSERVED; Dockerfiles ['llm_service/Dockerfile']; manifests ['llm_service/pyproject.toml']; test directories ['llm_service/tests']; indexed implementation files by language {'python': 15}; Python package OBSERVED (6 traditional package markers).\npostgres: Compose ['docker-compose.test.yml', 'docker-compose.yml']; repository directory UNKNOWN; indexed source directory UNKNOWN; Dockerfiles []; manifests []; test directories []; indexed implementation files by language {}; Python package UNKNOWN: no traditional package marker observed; package absence is not proven.\nrag_orchestrator: Compose ['docker-compose.yml']; repository directory OBSERVED; indexed source directory OBSERVED; Dockerfiles ['rag_orchestrator/Dockerfile']; manifests ['rag_orchestrator/pyproject.toml']; test directories ['rag_orchestrator/tests']; indexed implementation files by language {'python': 33}; Python package OBSERVED (7 traditional package markers).\nvector_store_service: Compose ['docker-compose.test.yml', 'docker-compose.yml']; repository directory OBSERVED; indexed source directory OBSERVED; Dockerfiles ['vector_store_service/Dockerfile']; manifests []; test directories ['vector_store_service/tests']; indexed implementation files by language {'python': 16}; Python package OBSERVED (8 traditional package markers).\nWhole-repository file counts: {'indexed': 589, 'non_indexed': 67, 'total': 656}; language counts: {'java': 4, 'javascript': 1, 'json': 5, 'markdown': 237, 'other': 45, 'python': 335, 'rust': 5, 'text': 5, 'toml': 8, 'typescript': 7, 'yaml': 4}.",
+    "Q3": "Observed top-level directories: DOCS, artifacts, docs-archive, gradio, ingestion_service, llm_service, migrations, rag_orchestrator, scripts, shared, specs, tests, vector_store_service.\nCompose declares 6 distinct service identities in 9 declarations.\ngradio: repository directory OBSERVED; Python package UNKNOWN: no traditional package marker observed; package absence is not proven.\ningestion_service: repository directory OBSERVED; Python package observed markers: ingestion_service/__init__.py, ingestion_service/src/__init__.py, ingestion_service/src/api/__init__.py, ingestion_service/src/api/v1/__init__.py, ingestion_service/src/core/__init__.py, ingestion_service/src/core/chunk_assembly/__init__.py, ingestion_service/src/core/codebase/__init__.py, ingestion_service/src/core/constants/__init__.py, ingestion_service/src/core/converters/__init__.py, ingestion_service/src/core/crud/__init__.py, ingestion_service/src/core/document_graph/__init__.py, ingestion_service/src/core/embedders/__init__.py, ingestion_service/src/core/extractors/__init__.py, ingestion_service/src/core/extractors/treesitter/__init__.py, ingestion_service/src/core/ocr/__init__.py, ingestion_service/src/ui/__init__.py.\nllm_service: repository directory OBSERVED; Python package observed markers: llm_service/__init__.py, llm_service/src/__init__.py, llm_service/src/api/__init__.py, llm_service/src/api/v1/__init__.py, llm_service/src/core/__init__.py, llm_service/src/core/prompts/__init__.py.\npostgres: repository directory UNKNOWN; Python package UNKNOWN: no traditional package marker observed; package absence is not proven.\nrag_orchestrator: repository directory OBSERVED; Python package observed markers: rag_orchestrator/__init__.py, rag_orchestrator/src/__init__.py, rag_orchestrator/src/api/__init__.py, rag_orchestrator/src/api/v1/__init__.py, rag_orchestrator/src/core/__init__.py, rag_orchestrator/src/retrieval/__init__.py, rag_orchestrator/src/utils/__init__.py.\nvector_store_service: repository directory OBSERVED; Python package observed markers: vector_store_service/__init__.py, vector_store_service/src/__init__.py, vector_store_service/src/api/__init__.py, vector_store_service/src/api/v1/__init__.py, vector_store_service/src/core/__init__.py, vector_store_service/src/core/db/__init__.py, vector_store_service/src/core/db/models/__init__.py, vector_store_service/src/core/vectorstore/__init__.py.",
+    "Q4": "Components: gradio (application), ingestion_service (application), llm_service (application), postgres (datastore), rag_orchestrator (application), vector_store_service (application).\nApplication HTTP relationships (Compose URL configuration or heuristic graph calls):\n- gradio -> ingestion_service [compose:docker-compose.yml:API_BASE_URL]\n- gradio -> rag_orchestrator [compose:docker-compose.yml:RAG_API_BASE_URL]\n- ingestion_service -> vector_store_service [heuristic:VECTOR_STORE_SERVICE_URL]\n- llm_service -> ingestion_service [heuristic:INGESTION_SERVICE_URL]\n- rag_orchestrator -> ingestion_service [heuristic:INGESTION_API_BASE_URL]\n- rag_orchestrator -> ingestion_service [heuristic:INGESTION_SERVICE_URL]\n- rag_orchestrator -> llm_service [heuristic:LLM_SERVICE_URL]\n- rag_orchestrator -> vector_store_service [heuristic:VECTOR_STORE_URL]\nService-to-datastore configuration (DATABASE_URL, not HTTP):\n- ingestion_service -> postgres [docker-compose.test.yml:DATABASE_URL]\n- vector_store_service -> postgres [docker-compose.test.yml:DATABASE_URL]\n- ingestion_service -> postgres [docker-compose.yml:DATABASE_URL]\n- vector_store_service -> postgres [docker-compose.yml:DATABASE_URL]\nCompose startup dependencies (not request edges):\n- ingestion_service depends on postgres [docker-compose.test.yml]\n- ingestion_service depends on vector_store_service [docker-compose.test.yml]\n- vector_store_service depends on postgres [docker-compose.test.yml]\n- gradio depends on ingestion_service [docker-compose.yml]\n- gradio depends on rag_orchestrator [docker-compose.yml]\n- ingestion_service depends on postgres [docker-compose.yml]\n- llm_service depends on vector_store_service [docker-compose.yml]\n- rag_orchestrator depends on ingestion_service [docker-compose.yml]\n- rag_orchestrator depends on llm_service [docker-compose.yml]\n- rag_orchestrator depends on vector_store_service [docker-compose.yml]\n- vector_store_service depends on postgres [docker-compose.yml]\nPublished host:container ports by Compose file:\n- postgres: 5433:5432 [docker-compose.test.yml]\n- gradio: 7860:7860 [docker-compose.yml]\n- ingestion_service: 8001:8000 [docker-compose.yml]\n- llm_service: 8003:8000 [docker-compose.yml]\n- postgres: 5434:5432 [docker-compose.yml]\n- rag_orchestrator: 8004:8000 [docker-compose.yml]\n- vector_store_service: 8002:8002 [docker-compose.yml]\nScope: docker-compose.test.yml, docker-compose.yml. These declarations do not establish every runtime call or the active deployment profile."
+  }
+}

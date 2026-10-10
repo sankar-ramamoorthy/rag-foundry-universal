@@ -18,6 +18,7 @@ import pytest
 import src.core.models  # noqa: F401  (register IngestionRequest for FK metadata)
 from shared.models.document_node import DocumentNode
 from src.api.v1 import orient as orient_module
+from src.api.v1 import repos as repos_module
 from src.core import db_utils
 from src.core.database_session import get_sessionmaker
 from src.core.status_manager import StatusManager
@@ -188,3 +189,39 @@ def test_reingest_under_same_repo_id_reports_new_generation(client, repo_id):
     assert second["ingestion_id"] == str(ing2)
     assert second["ingestion_id"] != first["ingestion_id"]
     assert second["languages"] == {"python": 9}
+
+
+def test_compose_snapshot_http_is_bound_to_completed_generation(repo_id):
+    app = FastAPI()
+    app.include_router(repos_module.router)
+    client = TestClient(app)
+    Session = get_sessionmaker()
+    with Session() as session:
+        first = _make_completed_generation(session, repo_id, commit_sha="sha-one")
+    summary = SAMPLE_INVENTORY.summary_dict()
+    summary["compose_documents"] = {
+        "docker-compose.yml": {
+            "sha256": "a" * 64,
+            "content": {"services": {"ingestion_service": {"ports": ["8001:8000"]}}},
+        }
+    }
+    db_utils.record_structural_summary(first, summary)
+
+    url = f"/repos/{repo_id}/compose-snapshot"
+    response = client.get(url, params={"generation_id": str(first)})
+    assert response.status_code == 200
+    assert response.json()["commit_sha"] == "sha-one"
+    snapshot = response.json()["compose_documents"]["docker-compose.yml"]
+    assert snapshot["sha256"] == "a" * 64
+    assert snapshot["content"]["services"]["ingestion_service"]["ports"] == [
+        "8001:8000"
+    ]
+    assert client.get(url, params={"generation_id": "old"}).status_code == 409
+
+    with Session() as session:
+        second = _make_completed_generation(session, repo_id, commit_sha="sha-two")
+    db_utils.record_structural_summary(second, summary)
+    assert client.get(url, params={"generation_id": str(first)}).status_code == 409
+    assert client.get(url, params={"generation_id": str(second)}).json()[
+        "ingestion_id"
+    ] == str(second)

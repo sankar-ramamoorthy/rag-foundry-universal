@@ -9,18 +9,21 @@ trees, including a trimmed copy of this repo's own docker-compose.yml
 """
 
 from pathlib import Path
+import json
 from uuid import uuid4
 
 import pytest
 
 from src.core.codebase.repo_graph_builder import DEFAULT_IGNORED_DIRS, RepoGraphBuilder
 from src.core.codebase.structural_inventory import (
+    architecture_compose_content,
     build_structural_inventory,
     classify_languages,
     find_compose_services,
     find_heuristic_dirs,
     find_manifests,
     inventory_to_graph_dicts,
+    snapshot_compose_documents,
     walk_all_files,
 )
 
@@ -203,6 +206,79 @@ def test_build_structural_inventory_summary_dict_has_no_silent_omissions(tmp_pat
     )
     assert ingestion_service_entry["dockerfile"] == "ingestion_service/Dockerfile"
     assert ingestion_service_entry["container_name"] == "ingestion-service"
+    snapshot = summary["compose_documents"]["docker-compose.yml"]
+    assert snapshot["content"]["services"]["postgres"]["image"] == "postgres:16"
+    assert len(snapshot["sha256"]) == 64
+
+
+def test_compose_snapshot_is_generation_content_not_a_live_file_read(tmp_path):
+    _make_repo(tmp_path)
+    inventory = build_structural_inventory(tmp_path)
+    original = inventory.summary_dict()["compose_documents"]
+    (tmp_path / "docker-compose.yml").write_text(
+        "services:\n  other:\n    image: busybox\n", encoding="utf-8"
+    )
+    assert inventory.summary_dict()["compose_documents"] == original
+    assert build_structural_inventory(tmp_path).summary_dict()[
+        "compose_documents"
+    ] != original
+
+
+def test_service_facts_use_the_same_compose_snapshot_bytes(tmp_path):
+    _make_repo(tmp_path)
+    original = snapshot_compose_documents(walk_all_files(tmp_path), tmp_path)
+    (tmp_path / "docker-compose.yml").write_text(
+        "services:\n  other:\n    image: busybox\n", encoding="utf-8"
+    )
+    services, _ = find_compose_services(
+        walk_all_files(tmp_path), tmp_path, original
+    )
+    assert {item.name for item in services} == {
+        "postgres", "ingestion_service", "gradio"
+    }
+    assert next(
+        item.dockerfile for item in services if item.name == "ingestion_service"
+    ) == "ingestion_service/Dockerfile"
+
+
+def test_persisted_compose_projection_omits_credentials(tmp_path):
+    (tmp_path / "docker-compose.yml").write_text(
+        "services:\n  app:\n    environment:\n"
+        "      DATABASE_URL: postgresql://user:secret@postgres:5432/db\n"
+        "      POSTGRES_PASSWORD: secret\n",
+        encoding="utf-8",
+    )
+    summary = build_structural_inventory(tmp_path).summary_dict()
+    serialized = json.dumps(summary["compose_documents"])
+    assert "secret" not in serialized
+    environment = summary["compose_documents"]["docker-compose.yml"]["content"][
+        "services"
+    ]["app"]["environment"]
+    assert environment == {"DATABASE_URL": "postgresql://postgres"}
+
+
+def test_compose_snapshot_caps_file_count_deterministically(tmp_path):
+    files = []
+    for number in range(33):
+        path = tmp_path / f"docker-compose.{number:02}.yml"
+        path.write_text("services:\n  app:\n    image: busybox\n", encoding="utf-8")
+        files.append(path)
+    snapshots = snapshot_compose_documents(list(reversed(files)), tmp_path)
+    assert len(snapshots) == 32
+    assert "docker-compose.00.yml" in snapshots
+    assert "docker-compose.32.yml" not in snapshots
+
+
+def test_compose_projection_ignores_invalid_url_without_failing():
+    projected = architecture_compose_content({
+        "services": {"app": {"environment": {
+            "BROKEN_URL": "http://[invalid",
+            "GOOD_URL": "http://api:8000/path",
+        }}}
+    })
+    assert projected["services"]["app"]["environment"] == {
+        "GOOD_URL": "http://api"
+    }
 
 
 def test_inventory_to_graph_dicts_no_canonical_id_collision_with_symbol_graph(tmp_path):

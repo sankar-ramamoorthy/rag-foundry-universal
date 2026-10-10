@@ -127,6 +127,13 @@ binding: [[proposals/sdd-spec-kit-adoption]],
 tracks local mechanics verification and outstanding quality gates;
 [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md) records the accepted contract.
 
+Issue #240's [pinned overview comparison](/DOCS/test_results/2026-10-03-issue-240-frozen-quality-comparison.md)
+records the failed quality gate, raw traces, and next experiment. Its
+[restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md) preserves
+the branch, production, and publication state.
+The [October 8 HTTP structured-answer comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
+records the later matched 11-request result and its remaining merge gate.
+
 
 
 `DOCS/test_results/` — benchmark and verification records tied to specific
@@ -138,6 +145,8 @@ audit findings.
 (defined before the experiment runs, distinct from `DOCS/test_results/`'s
 post-hoc verification evidence):
 [[evaluations/2026-09-07-evidence-survival-question-set]].
+The [issue #240 frozen overview set](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md)
+defines the current repository-overview comparison and controls.
 
 ## Patterns
 

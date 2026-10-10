@@ -3,7 +3,7 @@
 import asyncio
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -15,6 +15,7 @@ from src.core.http_vectorstore import HttpVectorStore
 from src.core.ingestion_ownership import RepositoryBusy, reserve_repo_mutation
 from src.core.repo_naming import derive_repo_identity
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
+from src.core.codebase.structural_inventory import architecture_compose_content
 
 #router = APIRouter(prefix="/v1", tags=["repos"])
 router = APIRouter(tags=["repos"])
@@ -117,6 +118,43 @@ async def get_repo_generation(repo_id: str):
         repo_id=repo_id, ingestion_id=ingestion_id, generation_status=status,
         **lineage,
     )
+
+
+@router.get("/repos/{repo_id}/compose-snapshot")
+async def get_repo_compose_snapshot(
+    repo_id: str,
+    generation_id: str = Query(..., description="Expected ready generation ID"),
+):
+    """Return Compose content captured during the selected ready ingestion."""
+    current = db_utils.resolve_current_generation(repo_id)
+    if (
+        current is None
+        or current != generation_id
+        or db_utils.generation_status(repo_id) != "ready"
+    ):
+        raise HTTPException(409, "Repository generation mismatch or not ready")
+    summary = db_utils.get_structural_summary(current)
+    documents = summary.get("compose_documents") if summary else None
+    if documents is None:
+        raise HTTPException(404, "Compose snapshot unavailable; re-ingest repository")
+    if not isinstance(documents, dict):
+        raise HTTPException(503, "Compose snapshot has an invalid format")
+    if db_utils.resolve_current_generation(repo_id) != generation_id:
+        raise HTTPException(409, "Repository generation changed during read")
+    safe_documents = {
+        path: {
+            "sha256": entry["sha256"],
+            "content": architecture_compose_content(entry["content"]),
+        }
+        for path, entry in documents.items()
+    }
+    return {
+        "repo_id": repo_id,
+        "ingestion_id": generation_id,
+        "generation_status": "ready",
+        "commit_sha": db_utils.generation_lineage(generation_id).get("commit_sha"),
+        "compose_documents": safe_documents,
+    }
 
 
 class RepoDeleteResponse(BaseModel):

@@ -1,0 +1,510 @@
+{
+  "orchestrator": "http://127.0.0.1:8765",
+  "ingestion": "http://100.105.24.12:8001",
+  "runtime_version": {
+    "service": "rag_orchestrator",
+    "git_sha": "unknown",
+    "build_date": "unknown",
+    "release_version": "dev"
+  },
+  "orient_response": {
+    "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+    "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+    "generation_status": "ready",
+    "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+    "languages": {
+      "java": 4,
+      "javascript": 1,
+      "json": 5,
+      "markdown": 237,
+      "other": 45,
+      "python": 335,
+      "rust": 5,
+      "text": 5,
+      "toml": 8,
+      "typescript": 7,
+      "yaml": 4
+    },
+    "file_counts": {
+      "indexed": 589,
+      "non_indexed": 67,
+      "total": 656
+    },
+    "manifests": [
+      {
+        "kind": "pyproject.toml",
+        "path": "gradio/pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "ingestion_service/pyproject.toml"
+      },
+      {
+        "kind": "Cargo.toml",
+        "path": "ingestion_service/tests/fixtures/rust_repo/crate_a/Cargo.toml"
+      },
+      {
+        "kind": "Cargo.toml",
+        "path": "ingestion_service/tests/fixtures/rust_repo/crate_b/Cargo.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "llm_service/pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "rag_orchestrator/pyproject.toml"
+      }
+    ],
+    "services": [
+      {
+        "name": "ingestion_service",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": "ingestion_service/Dockerfile",
+        "container_name": null,
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "postgres",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": null,
+        "container_name": "ingestion-db-test",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "vector_store_service",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": "vector_store_service/Dockerfile",
+        "container_name": null,
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "gradio",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "gradio/Dockerfile",
+        "container_name": "gradio-ui",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "ingestion_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "ingestion_service/Dockerfile",
+        "container_name": "ingestion-service",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "llm_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "llm_service/Dockerfile",
+        "container_name": "llm-service",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "postgres",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": null,
+        "container_name": "ingestion-db",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "rag_orchestrator",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "rag_orchestrator/Dockerfile",
+        "container_name": "rag-orchestrator",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "vector_store_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "vector_store_service/Dockerfile",
+        "container_name": "vector-store-service",
+        "entry_point": null,
+        "entry_point_source": null
+      }
+    ],
+    "test_dirs": [
+      "ingestion_service/tests",
+      "llm_service/tests",
+      "rag_orchestrator/tests",
+      "tests",
+      "vector_store_service/tests"
+    ],
+    "docs_dirs": [
+      "DOCS"
+    ],
+    "heuristic_fields": [
+      "test_dirs",
+      "docs_dirs"
+    ],
+    "gaps": [
+      {
+        "category": "compose_parse",
+        "path": "docker-compose.prod.yml",
+        "reason": "could not parse Compose YAML: could not determine a constructor for the tag '!override'\n  in \"<unicode string>\", line 20, column 14:\n        volumes: !override []\n                 ^"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#ingestion_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#postgres",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#vector_store_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#gradio",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#ingestion_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#llm_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#postgres",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#rag_orchestrator",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#vector_store_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "route_handler",
+        "path": "ingestion_service/src/api/v1/graph.py:196",
+        "reason": "no handler def found immediately after route decorator"
+      }
+    ],
+    "computed_at": "2026-10-04T14:26:53.800127"
+  },
+  "expected_generation": "f873147c-a1d1-4891-bb98-972672db8e9a",
+  "expected_source_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+  "expected_cases": [
+    "Q3"
+  ],
+  "results": [
+    {
+      "case": "Q3",
+      "request": {
+        "query": "Describe the actual directory, service, and package structure of rag-foundry-universal.",
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "top_k": 10,
+        "claim_type": "repository_overview",
+        "rerank": false,
+        "trace_canonical_ids": []
+      },
+      "generation_before": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "generation_after": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-04T14:26:53.800127",
+        "parent_generation_id": "8672557e-842c-4999-babe-dc146beb8d30",
+        "is_incremental": true
+      },
+      "elapsed_seconds": 66.73,
+      "trace_id": "2f256d0011b24b3f87019b75d56b4d41",
+      "model_used": "ollama/Qwen3:4b",
+      "model_alias": "default",
+      "fallback_from": null,
+      "reranked": false,
+      "answer": "Based on the provided context, here is a precise description of the repository's **actual directories**, **services**, and **package structure** for \"rag-foundry-universal\" (sankar-ramamoorthy/rag-foundry-universal). All information is derived directly from the given data without external assumptions:\n\n---\n\n### **1. Top-Level Directories (Actual Directories)**\nThe repository contains the following observable directories (as explicitly listed in the context):\n```plaintext\nDOCS\nartifacts\ndocs-archive\ngradio\ningestion_service\nllm_service\nmigrations\nrag_orchestrator\nscripts\nshared\nspecs\ntests\nvector_store_service\n```\n\n---\n\n### **2. Services and Their Characteristics**\nThe repository has **6 services**, each with the following attributes (based on context):\n\n| Service                | Source Directory (Observed?) | Compose Files                                  | Python Package Markers | Package Structure (Count) |\n|------------------------|-------------------------------|-----------------------------------------------|------------------------|----------------------------|\n| **gradio**             | Yes (directory exists)        | `docker-compose.yml`                         | Not established        | 0                           |\n| **ingestion_service**  | Yes (directory exists)        | `docker-compose.test.yml`, `docker-compose.yml` | Established            | 16                          |\n| **llm_service**        | Yes (directory exists)        | `docker-compose.yml`                         | Established            | 6                           |\n| **postgres**           | No (not observed)             | `docker-compose.test.yml`, `docker-compose.yml` | Not established        | 0                           |\n| **rag_orchestrator**   | Yes (directory exists)        | `docker-compose.yml`                         | Established            | 7                           |\n| **vector_store_service**| Yes (directory exists)        | `docker-compose.test.yml`, `docker-compose.yml` | Established            | 8                           |\n\n#### Key Notes:\n- **Source Directory Status**: \n  - \"Observed\" = Directory exists and is tracked in the repository.\n  - \"Not observed\" = Directory does not exist or was not tracked (e.g., `postgres`).\n- **Python Package Markers**: \n  - \"Established\" = At least one `__init__.py` file exists in the directory structure (indicating a Python package).\n  - \"Not established\" = No Python packages exist (e.g., `gradio` and `postgres`).\n- **Compose Files**: Exact filenames are listed as in the context (e.g., `docker-compose.test.yml` for test-specific configurations).\n\n---\n\n### **3. Package Structure Details (For Services with Established Packages)**\n*Only services with Python package markers are described below (as per context). Full paths are listed for clarity.*\n\n#### **ingestion_service** (16 packages)\n```plaintext\ningestion_service/__init__.py\ningestion_service/src/__init__.py\ningestion_service/src/api/__init__.py\ningestion_service/src/api/v1/__init__.py\ningestion_service/src/core/__init__.py\ningestion_service/src/core/chunk_assembly/__init__.py\ningestion_service/src/core/codebase/__init__.py\ningestion_service/src/core/constants/__init__.py\ningestion_service/src/core/converters/__init__.py\ningestion_service/src/core/crud/__init__.py\ningestion_service/src/core/document_graph/__init__.py\ningestion_service/src/core/embedders/__init__.py\ningestion_service/src/core/extractors/__init__.py\ningestion_service/src/core/extractors/treesitter/__init__.py\ningestion_service/src/core/ocr/__init__.py\ningestion_service/src/ui/__init__.py\n```\n\n#### **llm_service** (6 packages)\n```plaintext\nllm_service/__init__.py\nllm_service/src/__init__.py\nllm_service/src/api/__init__.py\nllm_service/src/api/v1/__init__.py\nllm_service/src/core/__init__.py\nllm_service/src/core/prompts/__init__.py\n```\n\n#### **rag_orchestrator** (7 packages)\n```plaintext\nrag_orchestrator/__init__.py\nrag_orchestrator/src/__init__.py\nrag_orchestrator/src/api/__init__.py\nrag_orchestrator/src/api/v1/__init__.py\nrag_orchestrator/src/core/__init__.py\nrag_orchestrator/src/retrieval/__init__.py\nrag_orchestrator/src/utils/__init__.py\n```\n\n#### **vector_store_service** (8 packages)\n```plaintext\nvector_store_service/__init__.py\nvector_store_service/src/__init__.py\nvector_store_service/src/api/__init__.py\nvector_store_service/src/api/v1/__init__.py\nvector_store_service/src/core/__init__.py\nvector_store_service/src/core/db/__init__.py\nvector_store_service/src/core/db/models/__init__.py\nvector_store_service/src/core/vectorstore/__init__.py\n```\n\n---\n\n### **Why This Is Accurate**\n- **No Extrapolation**: All details (directories, compose files, package paths) are **directly quoted** from the context. \n- **Clarity on \"Not Established\"**: For `gradio` and `postgres`, the context explicitly states \"Python package markers: not established\" (marker count = 0), so no package structure is provided.\n- **Compliance with Context**: The repository has **13 top-level directories** (as listed), **6 services**, and **only 4 services** have observable Python packages (16 + 6 + 7 + 8 = 37 total package files).\n\nThis description fully answers the query while strictly adhering to the provided data. No external information or inferences were added.",
+      "sources": [],
+      "retrieval_plan": {
+        "generation_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "seed_canonical_ids": [
+          "CLAUDE.md#claude_md.what_this_project_is",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.10_proposed_product_use_case_framing",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+          "docs-archive/DOCS-docgraph/PROJECT_PLAN.md#project_plan_rag_foundry_docgraph.5_folder_structure",
+          "docs-archive/DOCS-docgraph/detailed_architecture_20260207.md#detailed_architecture_rag_foundry_docgraph_current_state"
+        ],
+        "expanded_canonical_ids": [
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.11_source_authority_is_becoming_a_first_class_concern",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.12_important_non_conclusions",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.13_evaluation_ideas_to_preserve_for_later",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.14_relationship_to_existing_roadmap",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.15_central_architectural_insight",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.2026_09_06_exploratory_evaluation",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.2_existing_retrieval_work_immediately_preceding_these_experiments",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.2_existing_retrieval_work_immediately_preceding_these_experiments.89_closed_pr_90",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.2_existing_retrieval_work_immediately_preceding_these_experiments.91_open",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_1_benchmark_contamination",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.5_architectural_implication_preserve_repository_structure_as_a_first_class_artifact",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.6_architectural_implication_preserve_an_architecture_graph_artifact",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.7_mermaid_diagrams",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.8_trace_this_experiment",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.9_architectural_implication_trace_this_should_likely_be_graph_driven"
+        ],
+        "evidence_trace": null,
+        "final_context_manifest": [],
+        "provenance_diagnostics": [],
+        "repository_overview_policy": {
+          "policy_version": "repository-overview-authority-v1",
+          "status": "qualified",
+          "gap": null,
+          "findings": [],
+          "inventory_present": true
+        },
+        "policy_selected_canonical_ids": null,
+        "evidence_obligation": "current_structure",
+        "excluded_evidence": [
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "docs-archive/DOCS-docgraph/PROJECT_PLAN.md#project_plan_rag_foundry_docgraph.5_folder_structure",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "docs-archive/DOCS-docgraph/PROJECT_PLAN.md#project_plan_rag_foundry_docgraph.5_folder_structure",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.10_proposed_product_use_case_framing",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.10_proposed_product_use_case_framing",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.10_proposed_product_use_case_framing",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "docs-archive/DOCS-docgraph/detailed_architecture_20260207.md#detailed_architecture_rag_foundry_docgraph_current_state",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "CLAUDE.md#claude_md.what_this_project_is",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "CLAUDE.md#claude_md.what_this_project_is",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "CLAUDE.md#claude_md.what_this_project_is",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.5_architectural_implication_preserve_repository_structure_as_a_first_class_artifact",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.5_architectural_implication_preserve_repository_structure_as_a_first_class_artifact",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.5_architectural_implication_preserve_repository_structure_as_a_first_class_artifact",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.11_source_authority_is_becoming_a_first_class_concern",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.11_source_authority_is_becoming_a_first_class_concern",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.11_source_authority_is_becoming_a_first_class_concern",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.12_important_non_conclusions",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.12_important_non_conclusions",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.12_important_non_conclusions",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.13_evaluation_ideas_to_preserve_for_later",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.13_evaluation_ideas_to_preserve_for_later",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.13_evaluation_ideas_to_preserve_for_later",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.14_relationship_to_existing_roadmap",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.14_relationship_to_existing_roadmap",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.14_relationship_to_existing_roadmap",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.15_central_architectural_insight",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.15_central_architectural_insight",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.15_central_architectural_insight",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+            "reason": "orient_inventory_authoritative_for_structure"
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.2026_09_06_exploratory_evaluation",
+            "reason": "orient_inventory_authoritative_for_structure"
+          }
+        ],
+        "repository_display_name": "sankar-ramamoorthy/rag-foundry-universal",
+        "typed_fact_experiment": "package_markers",
+        "typed_fact_experiment_gap": null,
+        "context_budget": 4096,
+        "tokens_before_budget": 0,
+        "tokens_after_budget": 0
+      }
+    }
+  ]
+}

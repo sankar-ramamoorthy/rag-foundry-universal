@@ -29,7 +29,10 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
     build_sources,
     prepare_chunks_for_agent,
 )
-from rag_orchestrator.src.retrieval.types import RetrievedChunk
+from rag_orchestrator.src.retrieval.exact_source_preservation import (
+    prioritize_exact_sources,
+)
+from rag_orchestrator.src.retrieval.types import RetrievedChunk, RetrievedContext
 from src.core.reranker import rerank_chunks
 
 from rag_orchestrator.src.retrieval.codebase_utils import (
@@ -51,6 +54,29 @@ from rag_orchestrator.src.retrieval.codebase_queries import CodebaseGraph
 from rag_orchestrator.src.retrieval.provenance_diagnostics import (
     ClaimType,
     diagnose_manifest,
+)
+from rag_orchestrator.src.retrieval.repository_overview_policy import (
+    assess_repository_overview,
+    canonical_evidence_ids,
+    evidence_obligation,
+    qualify_historical_note_answer,
+    render_repository_overview_policy,
+    select_current_evidence,
+)
+from rag_orchestrator.src.retrieval.repository_typed_facts import (
+    EXPERIMENTS,
+    render_typed_facts,
+)
+from rag_orchestrator.src.retrieval.repository_structured_results import (
+    build_architecture_result,
+    build_inventory_result,
+    build_service_result,
+    render_architecture_answer,
+    render_inventory_answer,
+    render_service_answer,
+    validate_architecture_result,
+    validate_inventory_result,
+    validate_service_result,
 )
 
 logger = logging.getLogger(__name__)
@@ -80,6 +106,7 @@ def _log_stage(trace_id: str, stage: str, **fields: Any) -> None:
 # Response Model
 # ------------------------------------------------------------------
 
+
 class RAGResult(BaseModel):
     answer: str
     sources: List[str]
@@ -101,6 +128,7 @@ class RAGResult(BaseModel):
 # ------------------------------------------------------------------
 # REPO RESOLUTION (HTTP via ingestion_service)
 # ------------------------------------------------------------------
+
 
 async def resolve_repo_id_http(repo_id: Optional[str]) -> str:
     """
@@ -136,6 +164,7 @@ async def resolve_repo_id_http(repo_id: Optional[str]) -> str:
 # ------------------------------------------------------------------
 # GRAPH API: canonical_ids → document_ids
 # ------------------------------------------------------------------
+
 
 async def canonical_to_document_map_http(
     repo_id: str,
@@ -200,6 +229,7 @@ async def canonical_to_document_map_http(
 # HYBRID RETRIEVAL (Vector → Canonical → Graph → Docs → Chunks)
 # ------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class ExpansionRanking:
     """
@@ -209,6 +239,7 @@ class ExpansionRanking:
     `hybrid_retrieve` can populate RetrievalPlan.expansion_metadata
     instead of leaving it always empty.
     """
+
     expanded_ranked: List[str]
     relation_type_by_canonical_id: Dict[str, str]
     source_seed_by_canonical_id: Dict[str, str]
@@ -238,12 +269,20 @@ def _rank_expanded_canonical_ids(
     # Preserve relation priority; within a relation prefer query-matching
     # symbols over arbitrary alphabetical truncation under the document cap.
     terms = set(re.findall(r"[a-z0-9]+", query.lower()))
-    candidates.sort(key=lambda candidate: (
-        candidate.strategy_index,
-        -len(terms & set(re.findall(
-            r"[a-z0-9]+", candidate.node.canonical_id.lower(),
-        ))),
-    ))
+    candidates.sort(
+        key=lambda candidate: (
+            candidate.strategy_index,
+            -len(
+                terms
+                & set(
+                    re.findall(
+                        r"[a-z0-9]+",
+                        candidate.node.canonical_id.lower(),
+                    )
+                )
+            ),
+        )
+    )
     expanded_ranked: List[str] = []
     relation_type_by_cid: Dict[str, str] = {}
     source_seed_by_cid: Dict[str, str] = {}
@@ -459,9 +498,357 @@ async def _verify_generation(repo_id: str, expected: str) -> None:
         raise HTTPException(409, "Repository generation changed; retry")
 
 
+async def _fetch_repository_overview(
+    repo_id: str, expected_generation: str, strict_generation: bool = False
+) -> dict[str, Any] | None:
+    """Read the pinned generation's deterministic ORIENT inventory.
+
+    A missing inventory is a diagnostic gap, not a reason to fail an otherwise
+    valid RAG request. The policy renderer then instructs generation to report
+    the gap instead of inventing current structure.
+    """
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/orient"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(url)
+            if response.status_code == 200:
+                payload = response.json()
+                if payload.get("ingestion_id") != expected_generation:
+                    if strict_generation:
+                        raise HTTPException(409, "ORIENT generation mismatch; retry")
+                    logger.info(
+                        "ORIENT inventory generation mismatch: expected=%s actual=%s",
+                        expected_generation,
+                        payload.get("ingestion_id"),
+                    )
+                    return None
+                return payload
+            logger.info("ORIENT inventory unavailable: status=%s", response.status_code)
+    except httpx.HTTPError as exc:
+        logger.info("ORIENT inventory unavailable: %s", exc)
+    return None
+
+
+async def _fetch_repository_graph(
+    repo_id: str, expected_generation: str
+) -> dict[str, Any] | None:
+    """Read graph facts, then check that the selected generation stayed pinned."""
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.get(
+                f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}"
+            )
+            response.raise_for_status()
+        await _verify_generation(repo_id, expected_generation)
+        graph = response.json()
+        if graph.get("generation_status") == "ready":
+            return graph
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        logger.info("Repository graph unavailable for typed facts: %s", exc)
+    return None
+
+
+def _structured_overview_focus(query: str, obligation: str) -> str | None:
+    """Route only the measured finite-claim families; other queries keep RAG."""
+    question = query.lower().strip()
+    if obligation == "current_architecture" and "architectural map" in question:
+        return "q4"
+    if obligation != "current_structure":
+        return None
+    if question == "i need information about the repo structure.":
+        return "q1"
+    if "actual directory, service, and package structure" in question:
+        return "q2" if " of this repository" in question else "q3"
+    return None
+
+
+async def _fetch_compose_snapshot(
+    repo_id: str, generation_id: str
+) -> dict[str, Any]:
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/compose-snapshot"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(url, params={"generation_id": generation_id})
+            if response.status_code == 409:
+                raise HTTPException(409, "Repository generation changed; retry")
+            if response.status_code == 404:
+                raise HTTPException(
+                    503, "Compose snapshot unavailable; re-ingest repository"
+                )
+            response.raise_for_status()
+            snapshot = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise HTTPException(503, "Compose snapshot unavailable; retry") from exc
+    if snapshot.get("ingestion_id") != generation_id:
+        raise HTTPException(409, "Compose snapshot generation mismatch; retry")
+    return snapshot
+
+
+async def _validated_compose_files(
+    repo_id: str, generation_id: str, inventory: dict[str, Any]
+) -> tuple[dict[str, dict[str, Any]], dict[str, str]]:
+    snapshot = await _fetch_compose_snapshot(repo_id, generation_id)
+    documents = snapshot.get("compose_documents")
+    if not isinstance(documents, dict) or not documents:
+        raise HTTPException(503, "No Compose source content in generation")
+    if snapshot.get("commit_sha") != inventory.get("commit_sha"):
+        raise HTTPException(409, "Compose source commit mismatch; retry")
+    expected_paths = {row["compose_file"] for row in inventory.get("services", [])}
+    if not expected_paths.issubset(documents):
+        raise HTTPException(503, "Compose snapshot omits declared source files")
+    if any(
+        not isinstance(entry, dict)
+        or not re.fullmatch(r"[0-9a-f]{64}", str(entry.get("sha256", "")))
+        or not isinstance(entry.get("content"), dict)
+        or not isinstance(entry["content"].get("services"), dict)
+        for entry in documents.values()
+    ):
+        raise HTTPException(503, "Invalid Compose snapshot content")
+    return (
+        {path: entry["content"] for path, entry in documents.items()},
+        {path: entry["sha256"] for path, entry in documents.items()},
+    )
+
+
+async def _structured_overview_answer(
+    repo_id: str,
+    generation_id: str,
+    focus: str,
+    inventory: dict[str, Any] | None,
+    repository_name: str | None,
+) -> tuple[str, dict[str, Any], list[str]]:
+    if inventory is None:
+        raise HTTPException(503, "Current structural inventory unavailable")
+    if focus == "q1":
+        try:
+            result = build_inventory_result(inventory)
+            errors = validate_inventory_result(result, inventory)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(503, "Incomplete structural inventory") from exc
+        if errors:
+            raise HTTPException(503, "Structural fact validation failed")
+        answer = render_inventory_answer(result)
+        await _verify_generation(repo_id, generation_id)
+        evidence = sorted({
+            *(row["compose_file"] for row in inventory["services"]),
+            *(row["path"] for row in inventory["manifests"]),
+        })
+        return answer, {
+            "focus": focus,
+            "generation_id": generation_id,
+            "evidence_apis": [f"/v1/repos/{repo_id}/orient"],
+            "schema": result["schema"],
+            "result": result,
+            "source_snapshots": {},
+            "validation_errors": errors,
+        }, evidence
+    graph = await _fetch_repository_graph(repo_id, generation_id)
+    if graph is None:
+        raise HTTPException(503, "Current repository graph unavailable")
+    service_result = build_service_result(inventory, graph)
+    errors = validate_service_result(service_result, inventory, graph)
+    if errors:
+        raise HTTPException(503, "Structural fact validation failed")
+    evidence = sorted({
+        row["compose_file"] for row in inventory.get("services", [])
+    })
+    source_snapshots: dict[str, str] = {}
+    if focus in {"q2", "q3"}:
+        answer = render_service_answer(service_result, focus)
+        if focus == "q3":
+            answer = (
+                f"Selected repository: {repository_name or repo_id} "
+                f"(repo_id {repo_id}, generation {generation_id}).\n" + answer
+            )
+        result = service_result
+    else:
+        compose_files, source_snapshots = await _validated_compose_files(
+            repo_id, generation_id, inventory
+        )
+        result = build_architecture_result(service_result, graph, compose_files)
+        errors = validate_architecture_result(
+            result, service_result, graph, compose_files
+        )
+        if errors:
+            raise HTTPException(503, "Architecture fact validation failed")
+        answer = render_architecture_answer(result)
+        evidence = sorted(set(evidence) | set(compose_files))
+    await _verify_generation(repo_id, generation_id)
+    return answer, {
+        "focus": focus,
+        "generation_id": generation_id,
+        "evidence_apis": [
+            f"/v1/repos/{repo_id}/orient",
+            f"/v1/graph/repos/{repo_id}",
+        ] + (
+            [f"/v1/repos/{repo_id}/compose-snapshot"] if focus == "q4" else []
+        ),
+        "schema": result["schema"],
+        "result": result,
+        "source_snapshots": source_snapshots,
+        "validation_errors": errors,
+    }, evidence
+
+
+async def _overview_policy_text(
+    repo_id: str,
+    generation_id: str,
+    inventory: dict[str, Any] | None,
+    assessment: dict[str, Any],
+    obligation: str,
+    repository_name: str | None,
+    claim_selection: bool,
+    experiment: str,
+) -> tuple[str, dict[str, str]]:
+    policy_text = render_repository_overview_policy(
+        repo_id,
+        inventory,
+        assessment,
+        obligation if claim_selection else "current_structure",
+        repository_name,
+    )
+    eligible = (
+        claim_selection
+        and inventory is not None
+        and experiment in EXPERIMENTS
+        and (
+            obligation == "current_architecture"
+            if experiment == "architecture_edges"
+            else obligation == "current_structure"
+        )
+    )
+    if not eligible or inventory is None:
+        return policy_text, {}
+    graph = await _fetch_repository_graph(repo_id, generation_id)
+    if graph is None:
+        return policy_text, {"typed_fact_experiment_gap": "graph_unavailable"}
+    return (
+        render_typed_facts(experiment, inventory, graph, repo_id, repository_name),
+        {"typed_fact_experiment": experiment},
+    )
+
+
+async def _fetch_repository_name(repo_id: str, expected_generation: str) -> str | None:
+    settings = get_settings()
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(f"{settings.INGESTION_SERVICE_URL}/v1/repos")
+            response.raise_for_status()
+        for item in response.json():
+            if (
+                item.get("id") == repo_id
+                and item.get("ingestion_id") == expected_generation
+            ):
+                return item.get("display_name") or item.get("name")
+    except (httpx.HTTPError, ValueError, TypeError) as exc:
+        logger.info("Repository name unavailable: %s", exc)
+    return None
+
+
+async def _fetch_canonical_overview_chunks(
+    repo_id: str,
+    generation_id: str,
+    query_embedding: List[float],
+    canonical_id: str,
+) -> tuple[str | None, List[RetrievedChunk]]:
+    """Resolve one selected-repository source, then fetch its pinned chunks."""
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/graph/repos/{repo_id}/nodes/lookup"
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(url, json={"canonical_ids": [canonical_id]})
+        response.raise_for_status()
+    nodes = response.json().get("nodes", [])
+    node = next(
+        (item for item in nodes if item.get("canonical_id") == canonical_id),
+        None,
+    )
+    if not node or not node.get("document_id"):
+        return None, []
+    doc_id = str(node["document_id"])
+    fetched = await _fetch_expanded_doc_chunks(
+        [doc_id],
+        query_embedding=query_embedding,
+        repo_id=repo_id,
+        ingestion_id=generation_id,
+    )
+    rows = fetched[0][1] if fetched else []
+    chunks = _add_chunks(doc_id, rows, set(), {})
+    chunks = [chunk for chunk in chunks if chunk.canonical_id == canonical_id]
+    await _verify_generation(repo_id, generation_id)
+    return doc_id, chunks
+
+
+def _prepend_policy_chunks(
+    agent_chunks: List[Dict[str, Any]],
+    policy_chunks: List[Dict[str, Any]],
+    max_total_chunks: int,
+) -> List[Dict[str, Any]]:
+    """Prioritize selected canonical evidence without duplicating a chunk."""
+    policy_ids = {chunk["chunk_id"] for chunk in policy_chunks}
+    return (
+        policy_chunks
+        + [chunk for chunk in agent_chunks if chunk["chunk_id"] not in policy_ids]
+    )[:max_total_chunks]
+
+
 def _sort_passages(chunks_by_document: Dict[str, List[RetrievedChunk]]) -> None:
     for chunks in chunks_by_document.values():
         chunks.sort(key=lambda c: (-(c.score or 0.0), c.chunk_id))
+
+
+async def _apply_overview_selection(
+    chunks: List[Dict[str, Any]],
+    query: str,
+    repo_id: str,
+    generation_id: str,
+    query_embedding: List[float],
+    max_chunks_per_doc: int,
+    max_total_chunks: int,
+    claim_selection: bool,
+    legacy_selection: bool,
+) -> tuple[List[Dict[str, Any]], set[str], str, dict[str, Any]]:
+    obligation = evidence_obligation(query)
+    selected_ids = (
+        canonical_evidence_ids(obligation)
+        if claim_selection
+        else canonical_evidence_ids("repository_purpose")
+        if legacy_selection
+        else ()
+    )
+    policy_document_ids: set[str] = set()
+    trace: dict[str, Any] = {}
+    selected_found: list[str] = []
+    for selected_id in selected_ids:
+        policy_doc_id, policy_chunks = await _fetch_canonical_overview_chunks(
+            repo_id,
+            generation_id,
+            query_embedding,
+            selected_id,
+        )
+        if policy_doc_id and policy_chunks:
+            policy_ready = prepare_chunks_for_agent(
+                RetrievedContext({policy_doc_id: policy_chunks}),
+                document_order=[policy_doc_id],
+                max_chunks_per_doc=max_chunks_per_doc,
+                max_total_chunks=max_total_chunks,
+            )
+            chunks = _prepend_policy_chunks(
+                chunks,
+                [cast(Dict[str, Any], c) for c in policy_ready],
+                max_total_chunks,
+            )
+            policy_document_ids.add(policy_doc_id)
+            selected_found.append(selected_id)
+    if selected_ids:
+        trace["policy_selected_canonical_ids"] = selected_found
+    if claim_selection:
+        chunks, excluded = select_current_evidence(chunks, obligation)
+        trace["evidence_obligation"] = obligation
+        trace["excluded_evidence"] = excluded
+    return chunks, policy_document_ids, obligation, trace
 
 
 async def hybrid_retrieve(
@@ -507,13 +894,18 @@ async def hybrid_retrieve(
     search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
     generation_id = await _query_generation(repo_id)
     seed_filter: Dict[str, Any] = {
-        "source_type": "code", "repo_id": repo_id, "ingestion_id": generation_id,
+        "source_type": "code",
+        "repo_id": repo_id,
+        "ingestion_id": generation_id,
     }
     if language:
         seed_filter["language"] = language
     seed_k = _seed_search_k(top_k, settings)
-    payload = {"query_vector": query_embedding, "k": seed_k,
-                "metadata_filter": seed_filter}
+    payload = {
+        "query_vector": query_embedding,
+        "k": seed_k,
+        "metadata_filter": seed_filter,
+    }
 
     async with httpx.AsyncClient(timeout=200) as client:
         resp = await client.post(search_url, json=payload)
@@ -525,7 +917,8 @@ async def hybrid_retrieve(
             # (issue #30 Part 1; WP-L6a extends the same reasoning to
             # language).
             fallback_filter: Dict[str, Any] = {
-                "repo_id": repo_id, "ingestion_id": generation_id,
+                "repo_id": repo_id,
+                "ingestion_id": generation_id,
             }
             if language:
                 fallback_filter["language"] = language
@@ -587,7 +980,10 @@ async def hybrid_retrieve(
     # a synchronous generation check (#168/WP-R5) on every call plus, on a
     # cache miss, a synchronous full-graph HTTP fetch; off the event loop.
     ranking = await asyncio.to_thread(
-        _rank_expanded_canonical_ids, query, repo_id, seed_canonical_ids,
+        _rank_expanded_canonical_ids,
+        query,
+        repo_id,
+        seed_canonical_ids,
     )
     expanded_ranked = ranking.expanded_ranked
     expanded_canonical_ids = set(expanded_ranked)
@@ -625,12 +1021,15 @@ async def hybrid_retrieve(
 
     passage_doc_ids = list(retrieved_chunks_by_document) + expanded_doc_ids
     fetched = await _fetch_expanded_doc_chunks(
-        passage_doc_ids, query_embedding=query_embedding, repo_id=repo_id,
+        passage_doc_ids,
+        query_embedding=query_embedding,
+        repo_id=repo_id,
         ingestion_id=generation_id,
     )
     # Requests specify a count, not stored ordinal ranges.
     chunks_requested_by_document = dict.fromkeys(
-        passage_doc_ids, settings.EXPANDED_DOC_CHUNKS,
+        passage_doc_ids,
+        settings.EXPANDED_DOC_CHUNKS,
     )
     chunks_returned_by_document: Dict[str, List[int]] = {}
     for doc_id, doc_results in fetched:
@@ -691,9 +1090,7 @@ async def hybrid_retrieve(
     }
 
     if trace_canonical_ids:
-        fetched_doc_ids_with_chunks = {
-            doc_id for doc_id, results in fetched if results
-        }
+        fetched_doc_ids_with_chunks = {doc_id for doc_id, results in fetched if results}
         retrieval_plan_dict["_evidence_trace_partial"] = (
             compute_partial_evidence_survival(
                 target_canonical_ids=trace_canonical_ids,
@@ -713,6 +1110,7 @@ async def hybrid_retrieve(
 # MAIN RAG PIPELINE
 # ------------------------------------------------------------------
 
+
 async def run_rag(
     query: str,
     repo_id: Optional[str] = None,
@@ -727,7 +1125,6 @@ async def run_rag(
     rerank: Optional[bool] = None,
     claim_type: Optional[ClaimType] = None,
 ) -> RAGResult:
-
     settings = get_settings()
     trace_id = _new_trace_id()
     _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
@@ -816,6 +1213,28 @@ async def run_rag(
         )
         _log_stage(trace_id, "rerank.applied", chunks_kept=len(agent_chunks))
 
+    policy_document_ids: set[str] = set()
+    obligation = "current_structure"
+    claim_selection = settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
+    if claim_type == "repository_overview":
+        (
+            agent_chunks,
+            policy_document_ids,
+            obligation,
+            selection_trace,
+        ) = await _apply_overview_selection(
+            agent_chunks,
+            query,
+            resolved_repo_id,
+            retrieval_plan_dict["generation_id"],
+            query_embedding,
+            max_chunks_per_doc,
+            settings.MAX_TOTAL_CHUNKS,
+            claim_selection,
+            settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED,
+        )
+        retrieval_plan_dict.update(selection_trace)
+
     # WP-T1c: two genuinely distinct survival stages, both computed before
     # the LLM call so the evidence trace and retrieval_plan can report
     # each separately instead of conflating them.
@@ -832,9 +1251,23 @@ async def run_rag(
         documents=len(chunk_limited_document_ids),
     )
     tokens_before_budget = assemble_context(agent_chunks, 2**63).token_count
-    context_budget = min(max_total_tokens, max(0, settings.CONTEXT_WINDOW_TOKENS
-        - settings.PROMPT_RESERVE_TOKENS - settings.OUTPUT_RESERVE_TOKENS
-        - conservative_token_count(query)))
+    context_budget = min(
+        max_total_tokens,
+        max(
+            0,
+            settings.CONTEXT_WINDOW_TOKENS
+            - settings.PROMPT_RESERVE_TOKENS
+            - settings.OUTPUT_RESERVE_TOKENS
+            - conservative_token_count(query),
+        ),
+    )
+    agent_chunks, preservation_trace = prioritize_exact_sources(
+        agent_chunks,
+        query,
+        context_budget,
+        enabled=claim_type == "repository_overview" and claim_selection,
+    )
+    retrieval_plan_dict.update(preservation_trace)
     assembled = assemble_context(agent_chunks, context_budget)
     chunks_in_final_context = assembled.chunks
     final_context_document_ids = {
@@ -873,6 +1306,7 @@ async def run_rag(
         chunks_in_final_context,
         seed_document_ids=true_seed_document_ids,
         expansion_metadata=retrieval_plan_dict["expansion_metadata"],
+        policy_document_ids=policy_document_ids,
     )
     retrieval_plan_dict["final_context_manifest"] = final_context_manifest
     _log_stage(
@@ -890,8 +1324,68 @@ async def run_rag(
             for finding in diagnose_manifest(claim_type, final_context_manifest)
         ]
 
+    llm_context = context_str
+    if claim_type == "repository_overview":
+        focus = _structured_overview_focus(query, obligation)
+        orient_response = await _fetch_repository_overview(
+            resolved_repo_id,
+            retrieval_plan_dict["generation_id"],
+            strict_generation=(
+                settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
+                and focus is not None
+            ),
+        )
+        repository_name = (
+            await _fetch_repository_name(
+                resolved_repo_id, retrieval_plan_dict["generation_id"]
+            )
+            if claim_selection
+            else None
+        )
+        overview_assessment = assess_repository_overview(
+            final_context_manifest, orient_response
+        )
+        retrieval_plan_dict["repository_overview_policy"] = overview_assessment
+        if claim_selection:
+            retrieval_plan_dict["repository_display_name"] = repository_name
+        policy_text, typed_trace = await _overview_policy_text(
+            resolved_repo_id,
+            retrieval_plan_dict["generation_id"],
+            orient_response,
+            overview_assessment,
+            obligation,
+            repository_name,
+            claim_selection,
+            settings.REPOSITORY_OVERVIEW_TYPED_FACT_EXPERIMENT,
+        )
+        retrieval_plan_dict.update(typed_trace)
+        llm_context = policy_text + "\nRETRIEVED EVIDENCE\n" + context_str
+
+        if settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED and focus:
+            answer, structured_trace, structured_sources = (
+                await _structured_overview_answer(
+                    resolved_repo_id,
+                    retrieval_plan_dict["generation_id"],
+                    focus,
+                    orient_response,
+                    repository_name,
+                )
+            )
+            retrieval_plan_dict["structured_answer"] = structured_trace
+            sources = list(dict.fromkeys(
+                build_sources(chunks_in_final_context) + structured_sources
+            ))
+            return RAGResult(
+                answer=answer,
+                sources=sources,
+                repo_id=resolved_repo_id,
+                retrieval_plan=retrieval_plan_dict,
+                trace_id=trace_id,
+                reranked=rerank_active,
+            )
+
     # LLM call
-    llm_payload = {"context": context_str, "query": query}
+    llm_payload = {"context": llm_context, "query": query}
     params: Dict[str, str] = {}
     if provider:
         params["provider"] = provider
@@ -909,6 +1403,14 @@ async def run_rag(
         model=result.get("model"),
         fallback_from=result.get("fallback_from"),
     )
+    answer, qualification_trace = qualify_historical_note_answer(
+        query,
+        chunks_in_final_context,
+        str(result.get("response") or ""),
+        enabled=claim_type == "repository_overview" and claim_selection
+        and obligation == "explicit_source",
+    )
+    retrieval_plan_dict.update(qualification_trace)
 
     # Issue #30 Part 4: canonical IDs / paths, deduplicated, seeds first
     sources = build_sources(chunks_in_final_context)
@@ -917,11 +1419,11 @@ async def run_rag(
         trace_id,
         "rag.query.completed",
         sources=len(sources),
-        answer_chars=len(result.get("response", "")),
+        answer_chars=len(answer),
     )
 
     return RAGResult(
-        answer=result.get("response", ""),
+        answer=answer,
         sources=sources,
         repo_id=resolved_repo_id,
         retrieval_plan=retrieval_plan_dict,

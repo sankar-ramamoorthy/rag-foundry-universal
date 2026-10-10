@@ -97,6 +97,82 @@ No production/deployment validation is claimed (separate #171 gate).
   stays `deferred/NO-GO` as a *default* pending clean, pinned, matched-budget
   comparisons accounting for issue #150's recall fix.
 
+## Repository-overview answer quality (#240)
+
+**Accepted for PR/merge on measured self-repository evidence; the frozen
+answer/source gate passes 11/11.** The
+`feature/240-repository-overview-followup` branch now has an opt-in HTTP
+structured-answer path for Q1-Q4. Ingestion captures a credential-stripped
+Compose relationship snapshot with source-byte hashes in the ready
+generation; a generation-matched read endpoint serves it. The orchestrator
+validates typed ORIENT/graph/Compose facts and renders Q2-Q4 without asking
+the model to restate them. Unrelated queries retain the existing retrieval
+and generation path; the new flag defaults off.
+
+The Q1 follow-up renders all required inventory facets directly from
+generation-matched ORIENT data, including the full language and manifest lists
+and recorded gaps. It passed the new-generation frozen HTTP comparison.
+
+The exact-source preservation correction orders explicitly named,
+already retrieved source passages before the final context-byte budget pass
+when repository-overview claim selection is enabled. It does not change
+retrieval, chunk caps, source policy, or the budget. Read-only local replays
+against the same pinned generation, `top_k=10`, `rerank=false`, and
+`ollama/Qwen3:4b` put the C2 fixture README and C3 exact method into the
+final manifest and citations; both answers satisfied their requested facts.
+Focused tests confirm the frozen Q1-Q4 query strings leave context ordering
+unchanged.
+
+The [C1 correction and full frozen rerun](/DOCS/test_results/2026-10-10-issue-240-c1-fix-frozen-verification.md)
+identify answer synthesis as the historical-label loss stage. A bounded,
+answer-side qualification now labels one unambiguously requested dated note
+only when that note survived final context and its own retrieved text calls
+the incident historical. The focused C1 repeat and the complete 11-case
+candidate HTTP pass on ready generation
+`efd94377-679d-494d-84af-53b00c83f487` passed. Q1-Q4 were unchanged;
+Q5-Q7 and C2/C3 retained their required sources and correct answers. This
+C1 correction was verified with a local orchestrator against the deployed
+ingestion, vector, and LLM services; its remote deployment remains a separate
+rollout step.
+
+The [October 10 matched 11-case comparison](/DOCS/test_results/2026-10-10-issue-240-new-generation-http-comparison.md)
+used new ready generation `efd94377-679d-494d-84af-53b00c83f487` from
+deployed ingestion runtime `1b8f4f5`, including its persisted Compose
+snapshot endpoint without an adapter. Candidate Q1-Q7 and C2/C3 passed
+their frozen answer/source checks. **C1 failed its historical-label check:**
+the requested note survived and the answer's central fact was correct, but
+the candidate omitted the explicit historical label present in the matched
+baseline. That failure is superseded by the bounded correction above. The
+new generation recorded repository source commit `7a805d5b`, and its Compose
+byte digests differed from the October 8 adapter capture. The
+[independent Compose source check](/DOCS/test_results/2026-10-10-issue-240-source-snapshot-verification.md)
+has now verified both production-ingested Compose digests against exact Git
+bytes at that recorded source commit. The October 8 adapter used different
+bytes; source-byte equivalence between those runs is not claimed. The latest
+feature branch was the tested candidate runtime, not the proven ingested
+repository subject. The measured #240 gate is accepted for PR/merge; wider
+repository generalization ([issue #243](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/243))
+and full source provenance (#180) remain separate work.
+
+The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
+on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source
+`7a805d5b3cee031c44fbe0d9b8048065ce8ef039`) found Q2-Q4 passing
+validated structured checks. Q5 at both k values, Q6, and Q7 had the corrected
+canonical purpose in final context and correct answers. Q1 remained
+incomplete; C2/C3 retained baseline exact-source misses without answer
+regression. The production ingestion service has not deployed the Compose
+endpoint, so the read-only quality run used a source-verified evaluation
+adapter for that one route. A database-backed HTTP test verified the new
+handler locally. Those October 8 findings are superseded by the October 10
+new-generation comparison and corrected full rerun above.
+
+Earlier evidence remains in the [October 4 authority comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md),
+[typed-fact runs](/DOCS/test_results/2026-10-04-issue-240-typed-fact-experiments.md),
+and [standalone structured prototype](/DOCS/test_results/2026-10-04-issue-240-structured-answer-validation.md).
+The [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md)
+and [restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md)
+retain the earlier generation's history.
+
 ## Incremental ingestion & snapshot lineage
 
 Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):

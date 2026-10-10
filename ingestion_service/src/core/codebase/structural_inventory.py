@@ -16,9 +16,12 @@ package/service *ownership* inference, CALLS_SERVICE/DEPENDS_ON architecture
 edges, "most important file" or "where to start reading" heuristics.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from pathlib import Path
+import hashlib
+import json
 import os
+from urllib.parse import urlparse
 
 import yaml
 
@@ -95,6 +98,9 @@ class StructuralInventory:
     test_dirs: list[str]
     docs_dirs: list[str]
     gaps: list[GapNote]
+    # Parsed from the same checkout as ORIENT and committed atomically with its
+    # generation. Older summaries simply lack this optional field.
+    compose_documents: dict[str, dict] = field(default_factory=dict)
 
     def summary_dict(self) -> dict:
         """The JSON blob persisted onto IngestionRequest.structural_summary
@@ -125,6 +131,7 @@ class StructuralInventory:
             "docs_dirs": sorted(self.docs_dirs),
             "heuristic_fields": ["test_dirs", "docs_dirs"],
             "gaps": [asdict(g) for g in self.gaps],
+            "compose_documents": self.compose_documents,
         }
 
 
@@ -190,9 +197,18 @@ def _resolve_entry_point(service_def: dict) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _load_compose_doc(
+    path: Path, relative_path: str, compose_documents: dict[str, dict] | None
+) -> object:
+    if compose_documents is not None and relative_path in compose_documents:
+        return compose_documents[relative_path]["content"]
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
 def find_compose_services(
     files: list[Path],
     repo_root: Path,
+    compose_documents: dict[str, dict] | None = None,
 ) -> tuple[list[ServiceFact], list[GapNote]]:
     services: list[ServiceFact] = []
     gaps: list[GapNote] = []
@@ -202,8 +218,7 @@ def find_compose_services(
             continue
         relative_path = _relative(path, repo_root)
         try:
-            text = path.read_text(encoding="utf-8")
-            doc = yaml.safe_load(text)
+            doc = _load_compose_doc(path, relative_path, compose_documents)
         except Exception as exc:
             gaps.append(
                 GapNote(
@@ -277,6 +292,83 @@ def find_compose_services(
     return sorted(services, key=lambda s: (s.compose_file, s.name)), gaps
 
 
+def snapshot_compose_documents(
+    files: list[Path], repo_root: Path
+) -> dict[str, dict]:
+    """Store bounded Compose source snapshots with a digest of exact bytes."""
+    result: dict[str, dict] = {}
+    total_bytes = 0
+    for path in sorted(files):
+        if not _is_compose_file(path):
+            continue
+        if len(result) >= 32 or total_bytes >= 4 * 1024 * 1024:
+            break
+        try:
+            content = path.read_bytes()
+        except OSError:
+            continue
+        if len(content) > 1024 * 1024 or total_bytes + len(content) > 4 * 1024 * 1024:
+            continue
+        try:
+            document = yaml.safe_load(content)
+        except yaml.YAMLError:
+            continue
+        if not isinstance(document, dict) or not isinstance(
+            document.get("services"), dict
+        ):
+            continue
+        try:
+            serializable = json.loads(json.dumps(document, default=str))
+        except (TypeError, ValueError):
+            continue
+        result[_relative(path, repo_root)] = {
+            "sha256": hashlib.sha256(content).hexdigest(),
+            "content": serializable,
+        }
+        total_bytes += len(content)
+    return dict(sorted(result.items()))
+
+
+def architecture_compose_content(document: dict) -> dict:
+    """Keep only relationship fields; remove credentials and unrelated YAML."""
+    services = {}
+    for name, spec in document.get("services", {}).items():
+        if not isinstance(spec, dict):
+            continue
+        environment = spec.get("environment") or {}
+        if isinstance(environment, list):
+            environment = dict(
+                item.split("=", 1)
+                for item in environment
+                if isinstance(item, str) and "=" in item
+            )
+        if not isinstance(environment, dict):
+            environment = {}
+        safe_environment = {}
+        for key, value in environment.items():
+            try:
+                parsed = urlparse(str(value))
+                hostname = parsed.hostname
+            except ValueError:
+                continue
+            if hostname and parsed.scheme in {
+                "http", "https", "postgres", "postgresql"
+            }:
+                safe_environment[str(key)] = f"{parsed.scheme}://{hostname}"
+        dependencies = spec.get("depends_on") or []
+        if isinstance(dependencies, dict):
+            dependencies = list(dependencies)
+        ports = spec.get("ports") or []
+        services[str(name)] = {
+            "image": str(spec.get("image") or ""),
+            "environment": safe_environment,
+            "depends_on": dependencies if isinstance(dependencies, list) else [],
+            "ports": [item for item in ports if isinstance(item, str)]
+            if isinstance(ports, list) else [],
+        }
+    return {"services": services}
+
+
 def find_heuristic_dirs(files: list[Path], repo_root: Path) -> dict[str, list[str]]:
     test_dirs: set[str] = set()
     docs_dirs: set[str] = set()
@@ -321,7 +413,17 @@ def build_structural_inventory(
 
     languages = classify_languages(files, repo_root)
     manifests = find_manifests(files, repo_root)
-    services, compose_gaps = find_compose_services(files, repo_root)
+    raw_compose_documents = snapshot_compose_documents(files, repo_root)
+    services, compose_gaps = find_compose_services(
+        files, repo_root, raw_compose_documents
+    )
+    compose_documents = {
+        path: {
+            "sha256": entry["sha256"],
+            "content": architecture_compose_content(entry["content"]),
+        }
+        for path, entry in raw_compose_documents.items()
+    }
     heuristic_dirs = find_heuristic_dirs(files, repo_root)
 
     return StructuralInventory(
@@ -333,6 +435,7 @@ def build_structural_inventory(
         test_dirs=heuristic_dirs["test_dirs"],
         docs_dirs=heuristic_dirs["docs_dirs"],
         gaps=compose_gaps,
+        compose_documents=compose_documents,
     )
 
 
