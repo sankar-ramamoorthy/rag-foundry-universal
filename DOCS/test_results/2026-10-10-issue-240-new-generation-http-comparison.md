@@ -82,3 +82,13 @@ control and the frozen gate as required by the protocol. Separately establish
 why the new ingestion generation retains the old corpus source commit while
 its Compose byte digests differ from the earlier capture before claiming the
 latest branch was ingested as the evaluation subject.
+
+## Subsequent resolution
+
+This was the decision at the time of the 10/11 run. The
+[C1 correction and full rerun](/DOCS/test_results/2026-10-10-issue-240-c1-fix-frozen-verification.md)
+later passed 11/11. The
+[source snapshot check](/DOCS/test_results/2026-10-10-issue-240-source-snapshot-verification.md)
+independently matched both production Compose digests to the recorded source
+commit. The older adapter capture had different bytes; the feature branch
+was the candidate runtime and was not proven to be the ingested subject.

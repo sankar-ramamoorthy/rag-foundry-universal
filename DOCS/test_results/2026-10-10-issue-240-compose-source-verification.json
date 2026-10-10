@@ -1,0 +1,21 @@
+{
+  "files": [
+    {
+      "matches": true,
+      "path": "docker-compose.test.yml",
+      "recorded_sha256": "5f6eb00e7dbb48bc2fefef3a7f3f0c4bb13519015a5a72b644f874719dbc1e4f",
+      "source_commit_sha256": "5f6eb00e7dbb48bc2fefef3a7f3f0c4bb13519015a5a72b644f874719dbc1e4f"
+    },
+    {
+      "matches": true,
+      "path": "docker-compose.yml",
+      "recorded_sha256": "a574e85155c3aa6a6d7b90e6de3f56bf500f7ecbcf66dcebe6f0002c2daaa447",
+      "source_commit_sha256": "a574e85155c3aa6a6d7b90e6de3f56bf500f7ecbcf66dcebe6f0002c2daaa447"
+    }
+  ],
+  "generation_id": "efd94377-679d-494d-84af-53b00c83f487",
+  "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+  "scope": "all exposed Compose snapshots only",
+  "source_commit": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+  "verified": true
+}

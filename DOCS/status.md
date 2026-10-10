@@ -99,8 +99,8 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
-**Open; the local frozen answer-quality gate now passes 11/11, while the
-#240 PR/merge gate remains no-go.** The
+**Accepted for PR/merge on measured self-repository evidence; the frozen
+answer/source gate passes 11/11.** The
 `feature/240-repository-overview-followup` branch now has an opt-in HTTP
 structured-answer path for Q1-Q4. Ingestion captures a credential-stripped
 Compose relationship snapshot with source-byte hashes in the ready
@@ -131,7 +131,9 @@ the incident historical. The focused C1 repeat and the complete 11-case
 candidate HTTP pass on ready generation
 `efd94377-679d-494d-84af-53b00c83f487` passed. Q1-Q4 were unchanged;
 Q5-Q7 and C2/C3 retained their required sources and correct answers. This
-C1 correction is local and has not been deployed.
+C1 correction was verified with a local orchestrator against the deployed
+ingestion, vector, and LLM services; its remote deployment remains a separate
+rollout step.
 
 The [October 10 matched 11-case comparison](/DOCS/test_results/2026-10-10-issue-240-new-generation-http-comparison.md)
 used new ready generation `efd94377-679d-494d-84af-53b00c83f487` from
@@ -141,11 +143,16 @@ their frozen answer/source checks. **C1 failed its historical-label check:**
 the requested note survived and the answer's central fact was correct, but
 the candidate omitted the explicit historical label present in the matched
 baseline. That failure is superseded by the bounded correction above. The
-new generation recorded the older repository source commit
-`7a805d5b` even though its Compose byte digests differed from the October 8
-capture. This provenance discrepancy is unresolved; the latest branch has
-not been proven to be the ingested corpus. The #240 PR/merge gate remains
-no-go pending source-snapshot clarification and review of the local correction.
+new generation recorded repository source commit `7a805d5b`, and its Compose
+byte digests differed from the October 8 adapter capture. The
+[independent Compose source check](/DOCS/test_results/2026-10-10-issue-240-source-snapshot-verification.md)
+has now verified both production-ingested Compose digests against exact Git
+bytes at that recorded source commit. The October 8 adapter used different
+bytes; source-byte equivalence between those runs is not claimed. The latest
+feature branch was the tested candidate runtime, not the proven ingested
+repository subject. The measured #240 gate is accepted for PR/merge; wider
+repository generalization ([issue #243](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/243))
+and full source provenance (#180) remain separate work.
 
 The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
 on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source
@@ -157,7 +164,7 @@ regression. The production ingestion service has not deployed the Compose
 endpoint, so the read-only quality run used a source-verified evaluation
 adapter for that one route. A database-backed HTTP test verified the new
 handler locally. Those October 8 findings are superseded by the October 10
-new-generation comparison above; no #240 PR or merge is approved.
+new-generation comparison and corrected full rerun above.
 
 Earlier evidence remains in the [October 4 authority comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md),
 [typed-fact runs](/DOCS/test_results/2026-10-04-issue-240-typed-fact-experiments.md),

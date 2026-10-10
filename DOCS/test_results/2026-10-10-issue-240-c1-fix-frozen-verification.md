@@ -75,3 +75,13 @@ The separate corpus-provenance limitation remains: the new generation still
 reports the older source commit while its persisted Compose byte digests
 differ from the earlier capture. This record does not claim the latest branch
 was the ingested repository subject or that the C1 correction is deployed.
+
+## Subsequent source-byte check
+
+The [independent verification record](/DOCS/test_results/2026-10-10-issue-240-source-snapshot-verification.md)
+later matched both production Compose digests to exact Git bytes at the
+generation's recorded source commit `7a805d5b`. That resolves the narrow
+Compose-byte uncertainty for this generation. The October 8 adapter used
+different local bytes; the feature branch remains the candidate runtime,
+not the proven ingested repository subject. Full-corpus provenance is still
+outside this check.
