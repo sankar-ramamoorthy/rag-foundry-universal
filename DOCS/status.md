@@ -99,9 +99,9 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
-**Accepted for PR/merge on measured self-repository evidence; the frozen
-answer/source gate passes 11/11.** The
-`feature/240-repository-overview-followup` branch now has an opt-in HTTP
+**Merged to `main` via [PR #244](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/244)
+on measured self-repository evidence; the frozen answer/source gate passed
+11/11.** The merged implementation has an opt-in HTTP
 structured-answer path for Q1-Q4. Ingestion captures a credential-stripped
 Compose relationship snapshot with source-byte hashes in the ready
 generation; a generation-matched read endpoint serves it. The orchestrator
@@ -150,7 +150,7 @@ has now verified both production-ingested Compose digests against exact Git
 bytes at that recorded source commit. The October 8 adapter used different
 bytes; source-byte equivalence between those runs is not claimed. The latest
 feature branch was the tested candidate runtime, not the proven ingested
-repository subject. The measured #240 gate is accepted for PR/merge; wider
+repository subject. The measured #240 gate supported the merged PR; wider
 repository generalization ([issue #243](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/243))
 and full source provenance (#180) remain separate work.
 
