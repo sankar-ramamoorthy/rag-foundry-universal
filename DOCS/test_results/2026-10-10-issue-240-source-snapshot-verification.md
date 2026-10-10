@@ -30,6 +30,13 @@ The repository **being analyzed** was recorded as source commit
 `7a805d5b3cee031c44fbe0d9b8048065ce8ef039`, then the `main` head. No
 claim is made that the feature branch itself was ingested as the subject.
 
+[PR #244](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/244)
+merged the candidate to `main` on October 10. Lint, unit tests, and the
+bounded-memory CI job passed on the first attempt. The first integration job
+failed two vector-store ANN result-count assertions; the unchanged job passed
+on one rerun, and all four checks were green at merge. This does not establish
+that the final orchestrator was deployed remotely after the merge.
+
 ## Independent Compose byte check
 
 The generation-scoped Compose endpoint reported the two Compose SHA-256
