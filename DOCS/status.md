@@ -99,7 +99,8 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
-**Open; the 2026-10-10 measured merge gate is still no-go.** The
+**Open; the local frozen answer-quality gate now passes 11/11, while the
+#240 PR/merge gate remains no-go.** The
 `feature/240-repository-overview-followup` branch now has an opt-in HTTP
 structured-answer path for Q1-Q4. Ingestion captures a credential-stripped
 Compose relationship snapshot with source-byte hashes in the ready
@@ -122,6 +123,16 @@ final manifest and citations; both answers satisfied their requested facts.
 Focused tests confirm the frozen Q1-Q4 query strings leave context ordering
 unchanged.
 
+The [C1 correction and full frozen rerun](/DOCS/test_results/2026-10-10-issue-240-c1-fix-frozen-verification.md)
+identify answer synthesis as the historical-label loss stage. A bounded,
+answer-side qualification now labels one unambiguously requested dated note
+only when that note survived final context and its own retrieved text calls
+the incident historical. The focused C1 repeat and the complete 11-case
+candidate HTTP pass on ready generation
+`efd94377-679d-494d-84af-53b00c83f487` passed. Q1-Q4 were unchanged;
+Q5-Q7 and C2/C3 retained their required sources and correct answers. This
+C1 correction is local and has not been deployed.
+
 The [October 10 matched 11-case comparison](/DOCS/test_results/2026-10-10-issue-240-new-generation-http-comparison.md)
 used new ready generation `efd94377-679d-494d-84af-53b00c83f487` from
 deployed ingestion runtime `1b8f4f5`, including its persisted Compose
@@ -129,11 +140,12 @@ snapshot endpoint without an adapter. Candidate Q1-Q7 and C2/C3 passed
 their frozen answer/source checks. **C1 failed its historical-label check:**
 the requested note survived and the answer's central fact was correct, but
 the candidate omitted the explicit historical label present in the matched
-baseline. The new generation recorded the older repository source commit
+baseline. That failure is superseded by the bounded correction above. The
+new generation recorded the older repository source commit
 `7a805d5b` even though its Compose byte digests differed from the October 8
 capture. This provenance discrepancy is unresolved; the latest branch has
 not been proven to be the ingested corpus. The #240 PR/merge gate remains
-no-go pending C1 correction and source-snapshot clarification.
+no-go pending source-snapshot clarification and review of the local correction.
 
 The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
 on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source

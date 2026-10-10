@@ -152,6 +152,7 @@ def run_case(
                 "typed_fact_experiment",
                 "typed_fact_experiment_gap",
                 "structured_answer",
+                "historical_source_qualification",
                 "context_budget",
                 "tokens_before_budget",
                 "tokens_after_budget",

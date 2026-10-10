@@ -2,6 +2,7 @@ from src.retrieval.repository_overview_policy import (
     assess_repository_overview,
     canonical_evidence_ids,
     evidence_obligation,
+    qualify_historical_note_answer,
     render_repository_overview_policy,
     select_current_evidence,
 )
@@ -116,6 +117,70 @@ def test_historical_and_embedded_evidence_survives_explicit_request_only():
     requested, excluded = select_current_evidence(chunks, "explicit_source")
     assert requested == chunks
     assert excluded == []
+
+
+def test_c1_answer_labels_the_requested_historical_note():
+    path = (
+        "DOCS/notes/20260906-repository-understanding-"
+        "trace-and-structural-artifacts.md"
+    )
+    chunks = [
+        {
+            "canonical_id": f"{path}#subject_authority_contamination",
+            "text": (
+                "The my_test_repo fixture was documented inside "
+                "historical/test-result material."
+            ),
+        },
+        {"canonical_id": "DOCS/test_results/other.md#case", "text": "other"},
+    ]
+    answer, trace = qualify_historical_note_answer(
+        "According to the repository-understanding note, what went wrong with "
+        "the my_test_repo answer?",
+        chunks,
+        "The answer described a fixture instead of the selected repository.",
+        enabled=True,
+    )
+    assert answer.startswith(f"The cited note `{path}` records a historical incident.")
+    assert "The answer described a fixture" in answer
+    assert trace == {
+        "historical_source_qualification": {"source": path, "status": "added"}
+    }
+
+
+def test_historical_qualification_does_not_generalize_or_guess():
+    path = "DOCS/notes/20260906-repository-understanding-trace.md"
+    chunks = [{"canonical_id": f"{path}#case", "text": "A historical test incident."}]
+    question = "According to the repository-understanding note, what happened?"
+    answer = "The fixture was described."
+    for query, evidence, enabled in (
+        (question, chunks, False),
+        ("What is shared/smoke_repo used for?", chunks, True),
+        (question, [], True),
+        (question, [{**chunks[0], "text": "A current status note."}], True),
+        (question, chunks + [
+            {"canonical_id": "DOCS/notes/20260907-repository-understanding.md#case",
+             "text": "Another historical incident."}
+        ], True),
+    ):
+        actual, trace = qualify_historical_note_answer(
+            query, evidence, answer, enabled=enabled
+        )
+        assert actual == answer
+        assert trace == {}
+
+
+def test_historical_qualification_does_not_duplicate_existing_label():
+    path = "DOCS/notes/20260906-repository-understanding.md"
+    answer = "This historical note describes a fixture mix-up."
+    actual, trace = qualify_historical_note_answer(
+        "According to the repository-understanding note, what happened?",
+        [{"canonical_id": f"{path}#case", "text": "A historical incident."}],
+        answer,
+        enabled=True,
+    )
+    assert actual == answer
+    assert trace["historical_source_qualification"]["status"] == "already_labeled"
 
 
 def test_purpose_uses_canonical_passage_when_present():

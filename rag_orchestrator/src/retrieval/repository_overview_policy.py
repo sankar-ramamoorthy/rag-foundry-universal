@@ -125,6 +125,56 @@ def select_current_evidence(
     return selected, excluded
 
 
+def qualify_historical_note_answer(
+    query: str,
+    final_chunks: list[dict[str, Any]],
+    answer: str,
+    *,
+    enabled: bool,
+) -> tuple[str, dict[str, Any]]:
+    """Name a requested historical note only when its surviving text proves it.
+
+    This is an answer qualification, not a source selector. Ambiguous, absent,
+    or unlabeled notes leave the model answer unchanged.
+    """
+    if not enabled or not answer.strip():
+        return answer, {}
+    match = re.search(
+        r"\baccording to (?:the )?([a-z0-9]+(?:-[a-z0-9]+)*) note\b",
+        query,
+        re.IGNORECASE,
+    )
+    if match is None:
+        return answer, {}
+    note_name = match.group(1).lower()
+    matching: dict[str, list[str]] = {}
+    for chunk in final_chunks:
+        path = _canonical_id(chunk).split("#", 1)[0]
+        if not path.lower().startswith("docs/notes/"):
+            continue
+        filename = path.rsplit("/", 1)[-1].lower()
+        if not re.match(rf"^\d{{8}}-{re.escape(note_name)}(?:-|\.md$)", filename):
+            continue
+        matching.setdefault(path, []).append(str(chunk.get("text") or ""))
+    if len(matching) != 1:
+        return answer, {}
+    path, passages = next(iter(matching.items()))
+    if not any(re.search(r"\bhistorical\b", text, re.IGNORECASE) for text in passages):
+        return answer, {}
+    if re.search(
+        r"\bhistorical\s+(?:note|source|record)\b|\bnote\b[^.\n]{0,60}\bhistorical\b",
+        answer,
+        re.IGNORECASE,
+    ):
+        status = "already_labeled"
+    else:
+        answer = f"The cited note `{path}` records a historical incident.\n\n{answer}"
+        status = "added"
+    return answer, {
+        "historical_source_qualification": {"source": path, "status": status}
+    }
+
+
 def _provenance_value(entry: dict[str, Any], facet: str) -> Any:
     provenance = entry.get("provenance")
     if not isinstance(provenance, dict):

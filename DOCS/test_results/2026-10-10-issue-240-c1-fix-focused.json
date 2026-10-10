@@ -1,0 +1,667 @@
+{
+  "orchestrator": "http://127.0.0.1:18004",
+  "ingestion": "http://100.105.24.12:8001",
+  "runtime_version": {
+    "service": "rag_orchestrator",
+    "git_sha": "unknown",
+    "build_date": "unknown",
+    "release_version": "dev"
+  },
+  "orient_response": {
+    "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+    "ingestion_id": "efd94377-679d-494d-84af-53b00c83f487",
+    "generation_status": "ready",
+    "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+    "languages": {
+      "java": 4,
+      "javascript": 1,
+      "json": 5,
+      "markdown": 237,
+      "other": 45,
+      "python": 335,
+      "rust": 5,
+      "text": 5,
+      "toml": 8,
+      "typescript": 7,
+      "yaml": 4
+    },
+    "file_counts": {
+      "indexed": 589,
+      "non_indexed": 67,
+      "total": 656
+    },
+    "manifests": [
+      {
+        "kind": "pyproject.toml",
+        "path": "gradio/pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "ingestion_service/pyproject.toml"
+      },
+      {
+        "kind": "Cargo.toml",
+        "path": "ingestion_service/tests/fixtures/rust_repo/crate_a/Cargo.toml"
+      },
+      {
+        "kind": "Cargo.toml",
+        "path": "ingestion_service/tests/fixtures/rust_repo/crate_b/Cargo.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "llm_service/pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "pyproject.toml"
+      },
+      {
+        "kind": "pyproject.toml",
+        "path": "rag_orchestrator/pyproject.toml"
+      }
+    ],
+    "services": [
+      {
+        "name": "ingestion_service",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": "ingestion_service/Dockerfile",
+        "container_name": null,
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "postgres",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": null,
+        "container_name": "ingestion-db-test",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "vector_store_service",
+        "compose_file": "docker-compose.test.yml",
+        "dockerfile": "vector_store_service/Dockerfile",
+        "container_name": null,
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "gradio",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "gradio/Dockerfile",
+        "container_name": "gradio-ui",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "ingestion_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "ingestion_service/Dockerfile",
+        "container_name": "ingestion-service",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "llm_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "llm_service/Dockerfile",
+        "container_name": "llm-service",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "postgres",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": null,
+        "container_name": "ingestion-db",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "rag_orchestrator",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "rag_orchestrator/Dockerfile",
+        "container_name": "rag-orchestrator",
+        "entry_point": null,
+        "entry_point_source": null
+      },
+      {
+        "name": "vector_store_service",
+        "compose_file": "docker-compose.yml",
+        "dockerfile": "vector_store_service/Dockerfile",
+        "container_name": "vector-store-service",
+        "entry_point": null,
+        "entry_point_source": null
+      }
+    ],
+    "test_dirs": [
+      "ingestion_service/tests",
+      "llm_service/tests",
+      "rag_orchestrator/tests",
+      "tests",
+      "vector_store_service/tests"
+    ],
+    "docs_dirs": [
+      "DOCS"
+    ],
+    "heuristic_fields": [
+      "test_dirs",
+      "docs_dirs"
+    ],
+    "gaps": [
+      {
+        "category": "compose_parse",
+        "path": "docker-compose.prod.yml",
+        "reason": "could not parse Compose YAML: could not determine a constructor for the tag '!override'\n  in \"<unicode string>\", line 20, column 14:\n        volumes: !override []\n                 ^"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#ingestion_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#postgres",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.test.yml#vector_store_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#gradio",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#ingestion_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#llm_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#postgres",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#rag_orchestrator",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "entry_point",
+        "path": "docker-compose.yml#vector_store_service",
+        "reason": "no explicit compose 'command:' -- entry point not trivially resolvable without inspecting the image/Dockerfile CMD (out of MVP scope)"
+      },
+      {
+        "category": "route_handler",
+        "path": "ingestion_service/src/api/v1/graph.py:196",
+        "reason": "no handler def found immediately after route decorator"
+      }
+    ],
+    "computed_at": "2026-10-10T18:59:52.552970"
+  },
+  "expected_generation": "efd94377-679d-494d-84af-53b00c83f487",
+  "expected_source_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+  "expected_cases": [
+    "C1"
+  ],
+  "results": [
+    {
+      "case": "C1",
+      "request": {
+        "query": "According to the repository-understanding note, what went wrong with the my_test_repo answer?",
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "top_k": 10,
+        "claim_type": "repository_overview",
+        "rerank": false,
+        "trace_canonical_ids": []
+      },
+      "generation_before": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "efd94377-679d-494d-84af-53b00c83f487",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-10T18:59:52.552970",
+        "parent_generation_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "is_incremental": true
+      },
+      "generation_after": {
+        "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+        "ingestion_id": "efd94377-679d-494d-84af-53b00c83f487",
+        "generation_status": "ready",
+        "commit_sha": "7a805d5b3cee031c44fbe0d9b8048065ce8ef039",
+        "ingested_at": "2026-10-10T18:59:52.552970",
+        "parent_generation_id": "f873147c-a1d1-4891-bb98-972672db8e9a",
+        "is_incremental": true
+      },
+      "elapsed_seconds": 24.5,
+      "trace_id": "00452661e8ab48c691635626ed04d3ce",
+      "model_used": "ollama/Qwen3:4b",
+      "model_alias": "default",
+      "fallback_from": null,
+      "reranked": false,
+      "answer": "The cited note `DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md` records a historical incident.\n\nAccording to the repository-understanding note, the problem with the my_test_repo answer was that the RAG system returned the structure of a small `my_test_repo` fixture (a test repository) instead of the actual repository the user was asking about. This was classified as a \"repository-subject contamination / identity grounding failure\" (section 3.2).\n\nThe evidence shows that when a user asked for the actual repository directory/service/package structure, the system described `my_test_repo`, which was documented inside historical/test-result material. The note states that \"Fixture/example/archive text must not silently redefine repository identity\" - meaning the system should have used the selected `repo_id` as the subject of the query unless the user explicitly asked about another embedded/example repository.\n\nThe document explicitly identifies this as a problem with generic semantic top-k retrieval being a poor primitive for repository-global structural questions, not with the information itself being unknowable.",
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+        "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance"
+      ],
+      "retrieval_plan": {
+        "generation_id": "efd94377-679d-494d-84af-53b00c83f487",
+        "seed_canonical_ids": [
+          "DOCS/adr/ADR-053-source-authority-provenance-model.md#source_authority_subject_provenance_model.decision",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+          "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+          "DOCS/test_results/test results.md#combined_map_files_artifacts_canonical_ids_chunks"
+        ],
+        "expanded_canonical_ids": [
+          "DOCS/adr/ADR-053-source-authority-provenance-model.md#source_authority_subject_provenance_model.decision.classification_is_deterministic_not_llm_based",
+          "DOCS/adr/ADR-053-source-authority-provenance-model.md#source_authority_subject_provenance_model.decision.persistence",
+          "DOCS/adr/ADR-053-source-authority-provenance-model.md#source_authority_subject_provenance_model.decision.selected_repo_binding_and_embedded_subject_override",
+          "DOCS/adr/ADR-053-source-authority-provenance-model.md#source_authority_subject_provenance_model.decision.snapshot_ties_to_existing_generation_lineage",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_3_explicit_repo_name_query",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_4_direct_repository_comparison",
+          "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_5_cross_repo_confirming_case_a_dedicated_diagram_file_invisible_to_retrieval",
+          "DOCS/test_results/test results.md#combined_map_files_artifacts_canonical_ids_chunks.key_points_from_this_map"
+        ],
+        "evidence_trace": null,
+        "final_context_manifest": [
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "document_id": "833c4e02-9e83-41b8-9a05-fe854ae8f86d",
+            "chunk_id": "ad461fd7-35ff-4433-84f6-ad1deb649bcd",
+            "chunk_index": 3,
+            "source_label": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "char_count": 203,
+            "text_sha256": "ba27b8c9251326904ec852f0790fbacd44e45d05face6b9fa6cdf0d76b60f529",
+            "token_count": 459,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 0,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "document_id": "833c4e02-9e83-41b8-9a05-fe854ae8f86d",
+            "chunk_id": "3ec054b8-a07b-4ff5-803e-5df43e15853f",
+            "chunk_index": 5,
+            "source_label": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "char_count": 184,
+            "text_sha256": "d2951de6b41a36b7e6c733a64d6b5ed29d5c79a24f644498883d78a15ce755cc",
+            "token_count": 440,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 1,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "document_id": "833c4e02-9e83-41b8-9a05-fe854ae8f86d",
+            "chunk_id": "af5cce04-0282-43d6-b7ef-89ac8e857869",
+            "chunk_index": 6,
+            "source_label": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "char_count": 140,
+            "text_sha256": "b3e3b96e73a707a3c6578a489736bdc4d03f5110788b20ff5ea696f6bba21e1b",
+            "token_count": 396,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 2,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "document_id": "7ff5b7d3-b5ab-40ce-a705-25967195f250",
+            "chunk_id": "74bacc5a-5963-48f6-90c5-dcc382141d9e",
+            "chunk_index": 2,
+            "source_label": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "char_count": 309,
+            "text_sha256": "5ece9453cbfd1fbc6fd4823c5bb53d2eec722f09efcaa86f45610be899ce3a1c",
+            "token_count": 486,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 0,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "document_id": "7ff5b7d3-b5ab-40ce-a705-25967195f250",
+            "chunk_id": "37d7df93-ee11-4797-b383-5eeaf06fd5ea",
+            "chunk_index": 6,
+            "source_label": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "char_count": 362,
+            "text_sha256": "bfa67e6b09b4e76d5699c4cb8883ce884a591ea3a5dda3a70fcc1549b0ce2e11",
+            "token_count": 541,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 1,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "document_id": "7ff5b7d3-b5ab-40ce-a705-25967195f250",
+            "chunk_id": "3f28b0a8-045f-414c-a6e1-c745a11e1500",
+            "chunk_index": 7,
+            "source_label": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "char_count": 459,
+            "text_sha256": "064064b8c8e592db4b3d653abbac0138e75472c61973e33c0e09f03b869089b6",
+            "token_count": 636,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 2,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+            "document_id": "ce9526bf-d1f8-421f-bae2-cc6bcb5fcfa3",
+            "chunk_id": "010f6fb0-d008-4c20-8342-7eec0caf8751",
+            "chunk_index": 1,
+            "source_label": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+            "char_count": 567,
+            "text_sha256": "37003daf1846437eb62c6a55cd8b068ae3262066cfbe7ed178393a1ab1835c69",
+            "token_count": 762,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 0,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          },
+          {
+            "canonical_id": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+            "document_id": "ce9526bf-d1f8-421f-bae2-cc6bcb5fcfa3",
+            "chunk_id": "3daf7aee-4edc-4f52-9fda-72bc841fa50e",
+            "chunk_index": 0,
+            "source_label": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+            "char_count": 84,
+            "text_sha256": "6ed0056caad675c87280f56a0d436135ac7df3284845232f076a941f72ce6a5b",
+            "token_count": 279,
+            "token_count_method": "utf8_bytes_upper_estimate",
+            "fetch_position": 1,
+            "selection_reason": "seed",
+            "provenance": {
+              "role": {
+                "basis": "path_convention:docs_dir",
+                "value": "documentation"
+              },
+              "subject": {
+                "basis": null,
+                "value": "selected_repository"
+              },
+              "validity": {
+                "declared_status": "unknown"
+              },
+              "derivation": {
+                "status": "source"
+              },
+              "classification": {
+                "scope": "artifact",
+                "schema_version": "provenance-v1",
+                "classifier_version": "role-subject-v2"
+              }
+            }
+          }
+        ],
+        "provenance_diagnostics": [
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "chunk_id": "ad461fd7-35ff-4433-84f6-ad1deb649bcd",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "chunk_id": "3ec054b8-a07b-4ff5-803e-5df43e15853f",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+            "chunk_id": "af5cce04-0282-43d6-b7ef-89ac8e857869",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "chunk_id": "74bacc5a-5963-48f6-90c5-dcc382141d9e",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "chunk_id": "37d7df93-ee11-4797-b383-5eeaf06fd5ea",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+            "chunk_id": "3f28b0a8-045f-414c-a6e1-c745a11e1500",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+            "chunk_id": "010f6fb0-d008-4c20-8342-7eec0caf8751",
+            "concerns": []
+          },
+          {
+            "canonical_id": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+            "chunk_id": "3daf7aee-4edc-4f52-9fda-72bc841fa50e",
+            "concerns": []
+          }
+        ],
+        "repository_overview_policy": {
+          "policy_version": "repository-overview-authority-v1",
+          "status": "qualified_with_non_authoritative_evidence",
+          "gap": null,
+          "findings": [
+            {
+              "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            },
+            {
+              "canonical_id": "DOCS/test_results/2026-09-19-stage-c-authority-aware-sufficiency.md#stage_c_authority_aware_sufficiency.follow_up_finding_incremental_ingestion_silently_dropped_vector_level_provenance",
+              "concerns": [
+                "historical_or_evaluation_note_not_current_structure"
+              ]
+            }
+          ],
+          "inventory_present": true
+        },
+        "policy_selected_canonical_ids": null,
+        "evidence_obligation": "explicit_source",
+        "excluded_evidence": [],
+        "repository_display_name": "sankar-ramamoorthy/rag-foundry-universal",
+        "typed_fact_experiment": null,
+        "typed_fact_experiment_gap": null,
+        "structured_answer": null,
+        "historical_source_qualification": {
+          "source": "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md",
+          "status": "added"
+        },
+        "context_budget": 4096,
+        "tokens_before_budget": 20908,
+        "tokens_after_budget": 4013
+      }
+    }
+  ]
+}

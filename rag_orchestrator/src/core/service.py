@@ -59,6 +59,7 @@ from rag_orchestrator.src.retrieval.repository_overview_policy import (
     assess_repository_overview,
     canonical_evidence_ids,
     evidence_obligation,
+    qualify_historical_note_answer,
     render_repository_overview_policy,
     select_current_evidence,
 )
@@ -1402,6 +1403,14 @@ async def run_rag(
         model=result.get("model"),
         fallback_from=result.get("fallback_from"),
     )
+    answer, qualification_trace = qualify_historical_note_answer(
+        query,
+        chunks_in_final_context,
+        str(result.get("response") or ""),
+        enabled=claim_type == "repository_overview" and claim_selection
+        and obligation == "explicit_source",
+    )
+    retrieval_plan_dict.update(qualification_trace)
 
     # Issue #30 Part 4: canonical IDs / paths, deduplicated, seeds first
     sources = build_sources(chunks_in_final_context)
@@ -1410,11 +1419,11 @@ async def run_rag(
         trace_id,
         "rag.query.completed",
         sources=len(sources),
-        answer_chars=len(result.get("response", "")),
+        answer_chars=len(answer),
     )
 
     return RAGResult(
-        answer=result.get("response", ""),
+        answer=answer,
         sources=sources,
         repo_id=resolved_repo_id,
         retrieval_plan=retrieval_plan_dict,
