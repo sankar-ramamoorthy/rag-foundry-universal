@@ -99,8 +99,8 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
-**Open; the 2026-10-08 measured merge gate is still no-go.** The local
-`feature/240-repository-overview-followup` worktree now has an opt-in HTTP
+**Open; the 2026-10-10 measured merge gate is still no-go.** The
+`feature/240-repository-overview-followup` branch now has an opt-in HTTP
 structured-answer path for Q1-Q4. Ingestion captures a credential-stripped
 Compose relationship snapshot with source-byte hashes in the ready
 generation; a generation-matched read endpoint serves it. The orchestrator
@@ -108,13 +108,11 @@ validates typed ORIENT/graph/Compose facts and renders Q2-Q4 without asking
 the model to restate them. Unrelated queries retain the existing retrieval
 and generation path; the new flag defaults off.
 
-The local Q1 follow-up now renders all required inventory facets directly from
+The Q1 follow-up renders all required inventory facets directly from
 generation-matched ORIENT data, including the full language and manifest lists
-and recorded gaps. Focused HTTP tests and a read-only render of the pinned
-remote ORIENT payload pass. Q1 has not yet been rerun through the frozen live
-HTTP comparison, so the merge decision below remains no-go.
+and recorded gaps. It passed the new-generation frozen HTTP comparison.
 
-A local exact-source preservation correction now orders explicitly named,
+The exact-source preservation correction orders explicitly named,
 already retrieved source passages before the final context-byte budget pass
 when repository-overview claim selection is enabled. It does not change
 retrieval, chunk caps, source policy, or the budget. Read-only local replays
@@ -122,8 +120,20 @@ against the same pinned generation, `top_k=10`, `rerank=false`, and
 `ollama/Qwen3:4b` put the C2 fixture README and C3 exact method into the
 final manifest and citations; both answers satisfied their requested facts.
 Focused tests confirm the frozen Q1-Q4 query strings leave context ordering
-unchanged. The full frozen 11-case HTTP gate and a new production ingestion
-generation remain outstanding; the merge decision stays no-go.
+unchanged.
+
+The [October 10 matched 11-case comparison](/DOCS/test_results/2026-10-10-issue-240-new-generation-http-comparison.md)
+used new ready generation `efd94377-679d-494d-84af-53b00c83f487` from
+deployed ingestion runtime `1b8f4f5`, including its persisted Compose
+snapshot endpoint without an adapter. Candidate Q1-Q7 and C2/C3 passed
+their frozen answer/source checks. **C1 failed its historical-label check:**
+the requested note survived and the answer's central fact was correct, but
+the candidate omitted the explicit historical label present in the matched
+baseline. The new generation recorded the older repository source commit
+`7a805d5b` even though its Compose byte digests differed from the October 8
+capture. This provenance discrepancy is unresolved; the latest branch has
+not been proven to be the ingested corpus. The #240 PR/merge gate remains
+no-go pending C1 correction and source-snapshot clarification.
 
 The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
 on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source
@@ -134,8 +144,8 @@ incomplete; C2/C3 retained baseline exact-source misses without answer
 regression. The production ingestion service has not deployed the Compose
 endpoint, so the read-only quality run used a source-verified evaluation
 adapter for that one route. A database-backed HTTP test verified the new
-handler locally, but a new ready generation from deployed code remains
-unverified. No #240 PR, merge, or production policy deployment is approved.
+handler locally. Those October 8 findings are superseded by the October 10
+new-generation comparison above; no #240 PR or merge is approved.
 
 Earlier evidence remains in the [October 4 authority comparison](/DOCS/test_results/2026-10-04-issue-240-corrected-corpus-authority-comparison.md),
 [typed-fact runs](/DOCS/test_results/2026-10-04-issue-240-typed-fact-experiments.md),
