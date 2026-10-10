@@ -29,6 +29,9 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
     build_sources,
     prepare_chunks_for_agent,
 )
+from rag_orchestrator.src.retrieval.exact_source_preservation import (
+    prioritize_exact_sources,
+)
 from rag_orchestrator.src.retrieval.types import RetrievedChunk, RetrievedContext
 from src.core.reranker import rerank_chunks
 
@@ -1257,6 +1260,13 @@ async def run_rag(
             - conservative_token_count(query),
         ),
     )
+    agent_chunks, preservation_trace = prioritize_exact_sources(
+        agent_chunks,
+        query,
+        context_budget,
+        enabled=claim_type == "repository_overview" and claim_selection,
+    )
+    retrieval_plan_dict.update(preservation_trace)
     assembled = assemble_context(agent_chunks, context_budget)
     chunks_in_final_context = assembled.chunks
     final_context_document_ids = {

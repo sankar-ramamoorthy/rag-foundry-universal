@@ -114,6 +114,17 @@ and recorded gaps. Focused HTTP tests and a read-only render of the pinned
 remote ORIENT payload pass. Q1 has not yet been rerun through the frozen live
 HTTP comparison, so the merge decision below remains no-go.
 
+A local exact-source preservation correction now orders explicitly named,
+already retrieved source passages before the final context-byte budget pass
+when repository-overview claim selection is enabled. It does not change
+retrieval, chunk caps, source policy, or the budget. Read-only local replays
+against the same pinned generation, `top_k=10`, `rerank=false`, and
+`ollama/Qwen3:4b` put the C2 fixture README and C3 exact method into the
+final manifest and citations; both answers satisfied their requested facts.
+Focused tests confirm the frozen Q1-Q4 query strings leave context ordering
+unchanged. The full frozen 11-case HTTP gate and a new production ingestion
+generation remain outstanding; the merge decision stays no-go.
+
 The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
 on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source
 `7a805d5b3cee031c44fbe0d9b8048065ce8ef039`) found Q2-Q4 passing
