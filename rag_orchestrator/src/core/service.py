@@ -65,10 +65,13 @@ from rag_orchestrator.src.retrieval.repository_typed_facts import (
 )
 from rag_orchestrator.src.retrieval.repository_structured_results import (
     build_architecture_result,
+    build_inventory_result,
     build_service_result,
     render_architecture_answer,
+    render_inventory_answer,
     render_service_answer,
     validate_architecture_result,
+    validate_inventory_result,
     validate_service_result,
 )
 
@@ -550,6 +553,8 @@ def _structured_overview_focus(query: str, obligation: str) -> str | None:
         return "q4"
     if obligation != "current_structure":
         return None
+    if question == "i need information about the repo structure.":
+        return "q1"
     if "actual directory, service, and package structure" in question:
         return "q2" if " of this repository" in question else "q3"
     return None
@@ -613,6 +618,29 @@ async def _structured_overview_answer(
 ) -> tuple[str, dict[str, Any], list[str]]:
     if inventory is None:
         raise HTTPException(503, "Current structural inventory unavailable")
+    if focus == "q1":
+        try:
+            result = build_inventory_result(inventory)
+            errors = validate_inventory_result(result, inventory)
+        except (TypeError, ValueError) as exc:
+            raise HTTPException(503, "Incomplete structural inventory") from exc
+        if errors:
+            raise HTTPException(503, "Structural fact validation failed")
+        answer = render_inventory_answer(result)
+        await _verify_generation(repo_id, generation_id)
+        evidence = sorted({
+            *(row["compose_file"] for row in inventory["services"]),
+            *(row["path"] for row in inventory["manifests"]),
+        })
+        return answer, {
+            "focus": focus,
+            "generation_id": generation_id,
+            "evidence_apis": [f"/v1/repos/{repo_id}/orient"],
+            "schema": result["schema"],
+            "result": result,
+            "source_snapshots": {},
+            "validation_errors": errors,
+        }, evidence
     graph = await _fetch_repository_graph(repo_id, generation_id)
     if graph is None:
         raise HTTPException(503, "Current repository graph unavailable")

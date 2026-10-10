@@ -22,10 +22,17 @@ INVENTORY = {
         {"name": "postgres", "compose_file": "docker-compose.yml",
          "dockerfile": None},
     ],
-    "manifests": [],
-    "test_dirs": [],
-    "file_counts": {"total": 2},
-    "languages": {"python": 1},
+    "manifests": [
+        {"kind": "pyproject.toml", "path": "pyproject.toml"},
+        {"kind": "Cargo.toml", "path": "tests/fixtures/crate/Cargo.toml"},
+    ],
+    "test_dirs": ["tests"],
+    "file_counts": {"indexed": 2, "non_indexed": 1, "total": 3},
+    "languages": {"python": 1, "markdown": 1, "rust": 1},
+    "docs_dirs": ["DOCS"],
+    "heuristic_fields": ["docs_dirs", "test_dirs"],
+    "gaps": [{"category": "compose_parse", "path": "docker-compose.prod.yml",
+              "reason": "unsupported YAML tag"}],
 }
 GRAPH = {
     "generation_status": "ready",
@@ -152,6 +159,68 @@ def test_structured_answer_http_uses_validated_facts(monkeypatch, question, focu
         assert "postgres: 5434:5432" in result["answer"]
         assert "DATABASE_URL, not HTTP" in result["answer"]
         assert "docker-compose.yml" in result["sources"]
+
+
+def test_q1_reports_complete_pinned_orient_inventory_without_generation(monkeypatch):
+    client, calls = _client(monkeypatch)
+    response = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+    })
+    assert response.status_code == 200, response.text
+    result = response.json()
+    structured = result["retrieval_plan"]["structured_answer"]
+    assert structured["focus"] == "q1"
+    assert structured["validation_errors"] == []
+    assert structured["result"]["language_counts"] == INVENTORY["languages"]
+    assert structured["result"]["manifests"] == INVENTORY["manifests"]
+    for language, count in INVENTORY["languages"].items():
+        assert f"{language}: {count}" in result["answer"]
+    for manifest in INVENTORY["manifests"]:
+        assert manifest["path"] in result["answer"]
+    assert "indexed: 2" in result["answer"]
+    assert "non_indexed: 1" in result["answer"]
+    assert "tests" in result["answer"]
+    assert "DOCS" in result["answer"]
+    assert "docker-compose.prod.yml" in result["answer"]
+    assert "heuristic" in result["answer"].lower()
+    assert "docker-compose.yml" in result["sources"]
+    assert "pyproject.toml" in result["sources"]
+    assert "/generate" not in calls
+    assert "/v1/graph/repos/r1" not in calls
+
+
+def test_q1_stale_generation_fails_closed(monkeypatch):
+    client, calls = _client(monkeypatch, stale=True)
+    response = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+    })
+    assert response.status_code == 409
+    assert "/generate" not in calls
+
+
+def test_q1_incomplete_inventory_fails_closed(monkeypatch):
+    monkeypatch.delitem(INVENTORY, "languages")
+    client, calls = _client(monkeypatch)
+    response = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+    })
+    assert response.status_code == 503
+    assert "/generate" not in calls
+
+
+def test_q1_default_off_keeps_generation_path(monkeypatch):
+    client, calls = _client(monkeypatch, enabled=False)
+    response = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+    })
+    assert response.status_code == 200, response.text
+    assert response.json()["answer"] == "model answer"
+    assert "structured_answer" not in response.json()["retrieval_plan"]
+    assert "/generate" in calls
 
 
 def test_snapshot_mismatch_and_missing_content_fail_closed(monkeypatch):

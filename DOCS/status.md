@@ -101,12 +101,18 @@ No production/deployment validation is claimed (separate #171 gate).
 
 **Open; the 2026-10-08 measured merge gate is still no-go.** The local
 `feature/240-repository-overview-followup` worktree now has an opt-in HTTP
-structured-answer path for Q2-Q4. Ingestion captures a credential-stripped
+structured-answer path for Q1-Q4. Ingestion captures a credential-stripped
 Compose relationship snapshot with source-byte hashes in the ready
 generation; a generation-matched read endpoint serves it. The orchestrator
 validates typed ORIENT/graph/Compose facts and renders Q2-Q4 without asking
 the model to restate them. Unrelated queries retain the existing retrieval
 and generation path; the new flag defaults off.
+
+The local Q1 follow-up now renders all required inventory facets directly from
+generation-matched ORIENT data, including the full language and manifest lists
+and recorded gaps. Focused HTTP tests and a read-only render of the pinned
+remote ORIENT payload pass. Q1 has not yet been rerun through the frozen live
+HTTP comparison, so the merge decision below remains no-go.
 
 The [matched 11-request comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
 on ready generation `f873147c-a1d1-4891-bb98-972672db8e9a` (source

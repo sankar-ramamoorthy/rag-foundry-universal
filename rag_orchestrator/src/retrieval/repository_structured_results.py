@@ -18,6 +18,123 @@ _SOURCE_TYPES = {
 }
 
 
+def build_inventory_result(inventory: dict[str, Any]) -> dict[str, Any]:
+    """Project the complete ORIENT inventory for a generic structure answer."""
+    counts = inventory.get("file_counts")
+    languages = inventory.get("languages")
+    services = inventory.get("services")
+    manifests = inventory.get("manifests")
+    test_dirs = inventory.get("test_dirs")
+    docs_dirs = inventory.get("docs_dirs")
+    heuristic_fields = inventory.get("heuristic_fields")
+    gaps = inventory.get("gaps")
+    if (
+        not isinstance(counts, dict)
+        or not isinstance(languages, dict)
+        or not isinstance(services, list)
+        or not isinstance(manifests, list)
+        or not isinstance(test_dirs, list)
+        or not isinstance(docs_dirs, list)
+        or not isinstance(heuristic_fields, list)
+        or not isinstance(gaps, list)
+        or any(not isinstance(row, dict) for row in services + manifests + gaps)
+        or any(
+            not isinstance(key, str) or type(value) is not int or value < 0
+            for values in (counts, languages)
+            for key, value in values.items()
+        )
+        or any(
+            not isinstance(item, str)
+            for values in (test_dirs, docs_dirs, heuristic_fields)
+            for item in values
+        )
+        or any(
+            not isinstance(row.get("name"), str)
+            or not isinstance(row.get("compose_file"), str)
+            for row in services
+        )
+        or any(
+            not isinstance(row.get("kind"), str)
+            or not isinstance(row.get("path"), str)
+            for row in manifests
+        )
+        or any(
+            not isinstance(row.get("category"), str)
+            or not isinstance(row.get("reason"), str)
+            or not row["reason"].strip()
+            or (row.get("path") is not None and not isinstance(row["path"], str))
+            for row in gaps
+        )
+    ):
+        raise ValueError("Incomplete ORIENT inventory")
+    service_names = sorted({row["name"] for row in services})
+    manifest_rows = sorted(
+        ({"kind": row["kind"], "path": row["path"]} for row in manifests),
+        key=lambda row: (row["path"], row["kind"]),
+    )
+    gap_rows = sorted(
+        ({"category": row["category"], "path": row.get("path"),
+          "reason": row["reason"]} for row in gaps),
+        key=lambda row: (row["category"], row["path"] or ""),
+    )
+    return {
+        "schema": "repository-inventory-result-v1",
+        "file_counts": dict(sorted(counts.items())),
+        "language_counts": dict(sorted(languages.items())),
+        "service_count": len(service_names),
+        "compose_declaration_count": len(services),
+        "services": service_names,
+        "manifests": manifest_rows,
+        "test_directories": sorted(test_dirs),
+        "docs_directories": sorted(docs_dirs),
+        "heuristic_fields": sorted(heuristic_fields),
+        "gaps": gap_rows,
+    }
+
+
+def validate_inventory_result(
+    result: dict[str, Any], inventory: dict[str, Any]
+) -> list[str]:
+    expected = build_inventory_result(inventory)
+    return [
+        f"{field}_mismatch"
+        for field, value in expected.items()
+        if result.get(field) != value
+    ]
+
+
+def render_inventory_answer(result: dict[str, Any]) -> str:
+    """Render every required Q1 facet, including explicit inventory gaps."""
+    def counts(values: dict[str, int]) -> str:
+        return ", ".join(f"{key}: {value}" for key, value in values.items()) or "none"
+
+    lines = [
+        f"File counts: {counts(result['file_counts'])}.",
+        f"Languages: {counts(result['language_counts'])}.",
+        f"Compose services: {result['service_count']} distinct names across "
+        f"{result['compose_declaration_count']} declarations: "
+        f"{', '.join(result['services']) or 'none'}.",
+        "Manifests: " + (
+            "; ".join(f"{row['path']} ({row['kind']})" for row in result["manifests"])
+            or "none"
+        ) + ".",
+        "Test directories: " + (", ".join(result["test_directories"]) or "none") + ".",
+        "Docs directories: " + (", ".join(result["docs_directories"]) or "none") + ".",
+        "Heuristic inventory fields: "
+        + (", ".join(result["heuristic_fields"]) or "none") + ".",
+    ]
+    if result["gaps"]:
+        lines.append("Unavailable or unresolved facets:")
+        lines.extend(
+            f"- {row['category']} ({row['path'] or 'path unavailable'}): "
+            f"{row['reason'].strip().splitlines()[0]}"
+            for row in result["gaps"]
+        )
+    else:
+        lines.append("Unavailable or unresolved facets: none recorded by ORIENT.")
+    return "\n".join(lines)
+
+
 def build_service_result(
     inventory: dict[str, Any], graph: dict[str, Any]
 ) -> dict[str, Any]:
