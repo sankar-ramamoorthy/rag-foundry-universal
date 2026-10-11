@@ -202,6 +202,16 @@ as structural inventory requests, removed all retrieved passages, and
 answered that indexed `py_mono` files were absent. No retrieval or policy
 correction has been applied for this separate evaluation.
 
+The bounded diagnostic follow-up is
+[issue #254](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/254).
+For the current `Agent.run` method, R1 and its explicit-path variants never
+enter the vector/graph candidate set; explicit R2 reaches graph rank 19,
+fetches chunks 7, 4, and 0, then fails the combined chunk-count stage.
+The global 50-chunk cap is a supported inference pending individual-limit
+attribution. Discovery and survival have separate acceptance criteria;
+these repositories remain development/diagnostic data under
+[ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md).
+
 ## Incremental ingestion & snapshot lineage
 
 Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):

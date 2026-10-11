@@ -225,6 +225,15 @@ against the ordered base-plus-overlay configuration. The issue defines
 focused fixtures and acceptance checks before implementation; it does not
 change the 13-item Phase 6 ordering.
 
+**Evidence-delivery diagnostic follow-up:**
+[#254](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/254)
+defines separate acceptance criteria for exact-symbol candidate discovery
+and attribution of individual chunk limits, under #202's evidence-survival
+workstream. Use synthetic contract tests and pinned development-corpus
+replays under [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
+before proposing retrieval changes. The global-cap explanation remains an
+inference until the limiting rule is measured directly.
+
 **Reordering rationale (#200 ahead of #199, decided 2026-09-19):** #199
 (source authority/subject/provenance) and #200 (bounded evidence-
 sufficiency loop) were originally sequenced #199-then-#200. #200 does not
