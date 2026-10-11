@@ -2,7 +2,7 @@
 title: "ADR-054: Evaluation dataset isolation and generalization"
 date: 2026-10-10
 type: adr
-status: proposed
+status: accepted
 tags: [evaluation, generalization, retrieval-quality]
 related:
   - "[Issue #240 frozen evaluation](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md)"
@@ -14,8 +14,8 @@ related:
 
 # Evaluation dataset isolation and generalization
 
-**Status: Proposed.** This ADR establishes evaluation methodology for
-review; it does not authorize or prescribe a retrieval change.
+**Status: Accepted.** This ADR establishes evaluation methodology for
+future retrieval work; it does not authorize or prescribe a retrieval change.
 
 ## Context
 

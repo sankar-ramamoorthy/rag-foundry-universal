@@ -57,7 +57,7 @@ additive nullable JSON field on `DocumentNode`, no composite authority
 score, no LLM calls in classification.
 
 [ADR-054: evaluation dataset isolation and generalization](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
-— **proposed** — defines how development, regression, and held-out
+— **accepted** — defines how development, regression, and held-out
 repository evaluations are kept distinct before future retrieval tuning.
 
 ## Audit & Planning

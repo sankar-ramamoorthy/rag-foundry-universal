@@ -8,11 +8,11 @@ governed.
 
 ## 2026-10-10
 
-Added proposed [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
+Accepted [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
 to distinguish development/regression repositories from held-out
 generalization tests after the separate #240 and `py-coding-agent` results.
-The ADR records evaluation methodology only; its acceptance and any
-retrieval changes remain separate decisions.
+The owner approved the evaluation methodology; any retrieval changes
+remain separate decisions.
 
 ## 2026-09-18
 
