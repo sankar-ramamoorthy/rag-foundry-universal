@@ -99,6 +99,13 @@ No production/deployment validation is claimed (separate #171 gate).
 
 ## Repository-overview answer quality (#240)
 
+The [per-request controls follow-up](/DOCS/notes/20261010-issue240-per-request-overview-controls.md)
+is implemented locally on `feature/240-per-request-overview-controls` for
+review; it has not been merged or deployed. It adds explicit Gradio query
+mode and request-local feature overrides while retaining the current API
+defaults when overrides are omitted. Its local mechanics checks do not
+replace the merged #240 frozen HTTP result below.
+
 **Merged to `main` via [PR #244](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/244)
 on measured self-repository evidence; the frozen answer/source gate passed
 11/11.** The merged implementation has an opt-in HTTP

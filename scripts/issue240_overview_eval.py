@@ -62,6 +62,21 @@ CASES = (
     ),
 )
 
+CONTROL_ARGS = {
+    "claim_selection": "repository_overview_claim_selection_enabled",
+    "structured_answers": "repository_overview_structured_answers_enabled",
+    "canonical_selection": "repository_overview_canonical_selection_enabled",
+}
+
+
+def control_overrides(args: argparse.Namespace) -> dict[str, bool]:
+    """Translate optional CLI controls without changing legacy defaults."""
+    return {
+        request_key: getattr(args, cli_name) == "on"
+        for cli_name, request_key in CONTROL_ARGS.items()
+        if getattr(args, cli_name) != "inherit"
+    }
+
 
 def fetch(url: str, payload: dict | None = None, timeout: int = 270) -> dict:
     body = json.dumps(payload).encode() if payload is not None else None
@@ -90,6 +105,7 @@ def run_case(
     repo_id: str,
     generation_id: str,
     source_sha: str,
+    controls: dict[str, bool] | None = None,
 ) -> dict:
     name, query, top_k, targets = case
     before = generation(ingestion_url, repo_id, generation_id, source_sha)
@@ -101,6 +117,7 @@ def run_case(
         "rerank": False,
         "trace_canonical_ids": list(targets),
     }
+    request.update(controls or {})
     started = time.monotonic()
     try:
         response = fetch(f"{orchestrator_url}/v1/rag", request, timeout=600)
@@ -145,6 +162,7 @@ def run_case(
                 "final_context_manifest",
                 "provenance_diagnostics",
                 "repository_overview_policy",
+                "repository_overview_controls",
                 "policy_selected_canonical_ids",
                 "evidence_obligation",
                 "excluded_evidence",
@@ -171,7 +189,19 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--cases", nargs="*", default=[])
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument(
+        "--claim-selection", choices=("inherit", "on", "off"), default="inherit"
+    )
+    parser.add_argument(
+        "--structured-answers", choices=("inherit", "on", "off"),
+        default="inherit",
+    )
+    parser.add_argument(
+        "--canonical-selection", choices=("inherit", "on", "off"),
+        default="inherit",
+    )
     args = parser.parse_args()
+    controls = control_overrides(args)
     selected = [case for case in CASES if not args.cases or case[0] in args.cases]
     if not selected:
         raise SystemExit("No matching cases")
@@ -181,6 +211,7 @@ def main() -> None:
             results["expected_generation"] != args.generation_id
             or results["expected_source_sha"] != args.source_sha
             or results["expected_cases"] != [case[0] for case in selected]
+            or results.get("control_overrides", {}) != controls
         ):
             raise RuntimeError("Cannot resume a different pinned evaluation")
         completed = {row["case"] for row in results["results"]}
@@ -202,6 +233,7 @@ def main() -> None:
             "expected_generation": args.generation_id,
             "expected_source_sha": args.source_sha,
             "expected_cases": [case[0] for case in selected],
+            "control_overrides": controls,
             "results": [],
         }
     for case in selected:
@@ -212,6 +244,7 @@ def main() -> None:
             args.repo_id,
             args.generation_id,
             args.source_sha,
+            controls,
         )
         results["results"].append(result)
         args.output.write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
