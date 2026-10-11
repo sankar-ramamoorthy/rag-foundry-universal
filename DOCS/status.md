@@ -222,6 +222,18 @@ the historical retrieval and reproduces the combined chunk-count loss.
 Local/deployed seed-search parity and individual-limit attribution remain
 pending; no retrieval correction or quality improvement is claimed.
 
+A [bounded read-only follow-up](/DOCS/test_results/2026-10-11-issue-254-seed-ranking-and-graph-expansion-checkpoint.md)
+ruled out embedding model/digest, orchestrator code path, ANN
+nondeterminism, and generation tagging as causes of the seed-set
+discrepancy, then confirmed the actual mechanism: a stale duplicate file
+(`agent_backupv1.py`) outranks the authoritative `agent.py` on cosine
+similarity for this query, at both file and method granularity, and graph
+expansion then surfaces the duplicate's `Agent.run` instead of the real
+one. Classified as a retrieval-architecture/evidence-discovery limitation,
+separate from the still-unresolved question of why the deployed-control
+capture's seed set differed (possible incremental-generation retag timing,
+not proven). No fix implemented.
+
 ## Incremental ingestion & snapshot lineage
 
 Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):
