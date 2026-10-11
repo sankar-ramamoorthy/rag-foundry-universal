@@ -244,6 +244,13 @@ class ExpansionRanking:
     expanded_ranked: List[str]
     relation_type_by_canonical_id: Dict[str, str]
     source_seed_by_canonical_id: Dict[str, str]
+    # Issue #257/#254: canonical_ids admitted only because the query
+    # explicitly named them (`expand_mentioned_methods`), not ordinary
+    # CALL/DEFINES-adjacency expansion. Lets `hybrid_retrieve` identify
+    # which *documents* earned the narrow context-allocation priority
+    # bump (#254 follow-up) without re-deriving it from strategy_index,
+    # which this dataclass otherwise discards.
+    explicit_mention_canonical_ids: Set[str]
 
 
 def _rank_expanded_canonical_ids(
@@ -257,7 +264,7 @@ def _rank_expanded_canonical_ids(
     MAX_EXPANDED_DOCS cap (issue #30 Part 3).
     """
     if not seed_canonical_ids:
-        return ExpansionRanking([], {}, {})
+        return ExpansionRanking([], {}, {}, set())
 
     from rag_orchestrator.src.retrieval.codebase_utils import get_cached_graph
 
@@ -273,9 +280,11 @@ def _rank_expanded_canonical_ids(
     # class/method that is itself a seed). Take one additional, bounded,
     # query-driven DEFINES hop when the query explicitly names one of an
     # already-candidate class's methods.
-    candidates = candidates + expand_mentioned_methods(
+    mentioned_candidates = expand_mentioned_methods(
         graph, query, candidates, seed_canonical_ids
     )
+    explicit_mention_cids = {c.node.canonical_id for c in mentioned_candidates}
+    candidates = candidates + mentioned_candidates
     # Preserve relation priority; within a relation prefer query-matching
     # symbols over arbitrary alphabetical truncation under the document cap.
     terms = set(re.findall(r"[a-z0-9]+", query.lower()))
@@ -303,7 +312,10 @@ def _rank_expanded_canonical_ids(
         expanded_ranked.append(cid)
         relation_type_by_cid[cid] = candidate.relation_type
         source_seed_by_cid[cid] = candidate.source_seed_canonical_id
-    return ExpansionRanking(expanded_ranked, relation_type_by_cid, source_seed_by_cid)
+    return ExpansionRanking(
+        expanded_ranked, relation_type_by_cid, source_seed_by_cid,
+        explicit_mention_cids,
+    )
 
 
 async def _fetch_expanded_doc_chunks(
@@ -1006,6 +1018,18 @@ async def hybrid_retrieve(
     all_canonical_ids = seed_canonical_ids | expanded_canonical_ids
     canonical_to_doc = await canonical_to_document_map_http(repo_id, all_canonical_ids)
 
+    # Issue #254 (context-allocation follow-up to #257): documents reached
+    # only via an explicit `ClassName.method_name` mention, for run_rag to
+    # give a narrow, bounded context-allocation priority bump ahead of
+    # ordinary seeds -- never a blanket "all expansion before seeds"
+    # reversal. Computed here, not in run_rag, because only this function
+    # has the canonical_id -> document_id mapping.
+    explicit_mention_document_ids = {
+        canonical_to_doc[cid]
+        for cid in ranking.explicit_mention_canonical_ids
+        if cid in canonical_to_doc
+    }
+
     seed_doc_ids = set(retrieved_chunks_by_document.keys())
 
     # Issue #30 Part 3: cap expansion breadth. Rank order is preserved
@@ -1087,6 +1111,14 @@ async def hybrid_retrieve(
         # in RAGResult.retrieval_plan for inspection.
         "seed_document_ids": sorted(seed_doc_ids),
         "expanded_document_ids": sorted(expansion_metadata.keys()),
+        # Issue #254/#257: documents reached only via an explicit
+        # `ClassName.method_name` mention -- run_rag gives these a bounded
+        # context-allocation priority bump ahead of ordinary seeds. Never
+        # affects which documents are expanded/fetched, only their later
+        # ordering for chunk-budget assembly.
+        "explicit_mention_document_ids": sorted(
+            explicit_mention_document_ids & set(expansion_metadata.keys())
+        ),
         "expansion_metadata": {
             doc_id: {
                 "source_document_id": meta.source_document_id,
@@ -1114,6 +1146,33 @@ async def hybrid_retrieve(
 
     logger.info(f"✅ Hybrid retrieval complete: {retrieval_plan_dict}")
     return retrieved_chunks_by_document, retrieval_plan_dict
+
+
+def _prioritize_explicit_mentions(
+    document_ids: List[str],
+    explicit_mention_document_ids: List[str],
+) -> List[str]:
+    """
+    Issue #254 (context-allocation follow-up to #257): move documents
+    reached only via an explicit `ClassName.method_name` mention ahead of
+    every other document, preserving relative order within each group
+    otherwise. `document_ids` is seeds-then-expansion, in that order;
+    `explicit_mention_document_ids` is the narrow, already-bounded subset
+    of the expansion half that #257 admitted for an explicit mention.
+
+    Deliberately narrow: this does not reorder expansion ahead of seeds
+    in general (issue #30 Part 3's seed-first default is unchanged for
+    every other document), and it never adds or removes a document --
+    only reorders. A no-op (returns `document_ids` unchanged, same
+    object identity) when nothing was explicitly mentioned, so every
+    existing query's behavior is provably unaffected.
+    """
+    if not explicit_mention_document_ids:
+        return document_ids
+    promote = set(explicit_mention_document_ids)
+    prioritized = [doc_id for doc_id in document_ids if doc_id in promote]
+    rest = [doc_id for doc_id in document_ids if doc_id not in promote]
+    return prioritized + rest
 
 
 # ------------------------------------------------------------------
@@ -1190,7 +1249,22 @@ async def run_rag(
     # relies on this dict's insertion order (seeds added before expanded
     # docs) to drop expansion first on truncation. It is NOT the same as
     # the true seed-only set used to build `plan` below (WP-T1a).
-    seed_document_ids = list(retrieved_chunks_by_document.keys())
+    #
+    # Issue #254 (context-allocation follow-up to #257): that seed-before-
+    # expansion ordering is deliberate (issue #30 Part 3) and stays the
+    # default, but it also means a document reached *only* because the
+    # query explicitly named one of its methods was being placed behind
+    # every seed document regardless of that explicit relevance signal --
+    # confirmed live to starve `agent.py#Agent.run`'s chunks out of the
+    # 4096-byte context budget entirely, even though they were correctly
+    # discovered and fetched (#258). `_prioritize_explicit_mentions` moves
+    # just that narrow, already-bounded set of documents (and only those)
+    # ahead of ordinary seeds -- not a blanket "expansion before seeds"
+    # reversal, which would just invert the same bias.
+    seed_document_ids = _prioritize_explicit_mentions(
+        list(retrieved_chunks_by_document.keys()),
+        retrieval_plan_dict.get("explicit_mention_document_ids", []),
+    )
 
     # WP-T1a: build the RetrievalPlan from the actual seed/expanded split
     # and per-document expansion metadata hybrid_retrieve computed, instead
