@@ -101,10 +101,15 @@ No production/deployment validation is claimed (separate #171 gate).
 
 The [per-request controls follow-up](/DOCS/notes/20261010-issue240-per-request-overview-controls.md)
 was merged via [PR #246](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/246)
-and has not been deployed. It adds explicit Gradio query
-mode and request-local feature overrides while retaining the current API
-defaults when overrides are omitted. Its local mechanics checks and CI do not
-replace the merged #240 frozen HTTP result below.
+and is deployed at `f344bd58`. It adds explicit Gradio query mode and
+request-local feature overrides while retaining the current API defaults when
+overrides are omitted. The [production matched frozen comparison](/DOCS/test_results/2026-10-10-issue-240-per-request-controls-production-verification.md)
+passed 11/11 with claim selection and structured answers on, canonical
+selection off, against ready generation `854e8484`; the same-generation
+flag-off baseline passed 2/11. Gradio serves the controls with default-off
+values. ORIENT reports a parsing gap for `docker-compose.prod.yml` because
+of its `!override` tag, so structured Compose evidence in this run covers
+`docker-compose.yml` and `docker-compose.test.yml` only.
 
 **Merged to `main` via [PR #244](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/244)
 on measured self-repository evidence; the frozen answer/source gate passed
@@ -139,8 +144,8 @@ candidate HTTP pass on ready generation
 `efd94377-679d-494d-84af-53b00c83f487` passed. Q1-Q4 were unchanged;
 Q5-Q7 and C2/C3 retained their required sources and correct answers. This
 C1 correction was verified with a local orchestrator against the deployed
-ingestion, vector, and LLM services; its remote deployment remains a separate
-rollout step.
+ingestion, vector, and LLM services. The subsequent deployed runtime was
+verified in the production matched comparison above.
 
 The [October 10 matched 11-case comparison](/DOCS/test_results/2026-10-10-issue-240-new-generation-http-comparison.md)
 used new ready generation `efd94377-679d-494d-84af-53b00c83f487` from

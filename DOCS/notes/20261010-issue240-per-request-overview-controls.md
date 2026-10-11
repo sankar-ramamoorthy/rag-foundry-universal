@@ -2,7 +2,7 @@
 title: "Issue #240 per-request repository-overview controls"
 date: 2026-10-10
 type: note
-status: merged-awaiting-deployment
+status: deployed-evaluated
 tags: [repository-overview, evaluation, gradio, runtime-controls]
 related:
   - "[Current status](/DOCS/status.md)"
@@ -45,5 +45,7 @@ all eight control combinations, strict JSON validation, omitted values,
 normal-mode isolation, and simultaneous requests with opposite structured
 settings. This is a wiring/mechanics check. Equivalence to the prior 11/11
 live result still requires a new pinned-generation HTTP run after deployment.
-The follow-up is merged but has not been deployed. The live pinned-generation
-11-case equivalence check remains pending after deployment.
+The follow-up was deployed at `f344bd58`. The
+[production matched frozen comparison](/DOCS/test_results/2026-10-10-issue-240-per-request-controls-production-verification.md)
+passed 11/11 with the controls above against a new ready generation from the
+same source commit. The flag-off baseline passed 2/11.
