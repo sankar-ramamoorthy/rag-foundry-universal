@@ -168,3 +168,34 @@ def test_manifest_excludes_chunks_dropped_by_token_budget(monkeypatch):
 def test_manifest_is_empty_list_when_nothing_fits_budget(monkeypatch):
     result = _run_rag(monkeypatch, max_total_tokens=0)
     assert result.retrieval_plan["final_context_manifest"] == []
+
+
+@pytest.mark.parametrize("chunk_limit,budget,rule", [
+    (1, 4096, "max_total_chunks"),
+    (50, 3, "context_bytes"),
+])
+def test_detailed_trace_does_not_change_service_context(
+    monkeypatch, chunk_limit, budget, rule,
+):
+    from src.core import service
+
+    settings = service.get_settings().model_copy(
+        update={"MAX_TOTAL_CHUNKS": chunk_limit},
+    )
+    monkeypatch.setattr(service, "get_settings", lambda: settings)
+    baseline = _run_rag(monkeypatch, max_total_tokens=budget)
+    traced = _run_rag(
+        monkeypatch, max_total_tokens=budget,
+        trace_canonical_ids={"helper.py#helper"},
+    )
+    assert "chunk_selection_trace" not in baseline.retrieval_plan
+    assert traced.answer == baseline.answer
+    assert traced.sources == baseline.sources
+    assert traced.retrieval_plan["final_context_manifest"] == (
+        baseline.retrieval_plan["final_context_manifest"]
+    )
+    rows = traced.retrieval_plan["chunk_selection_trace"]
+    assert len(rows) == 1
+    assert rows[0]["rule"] == rule
+    assert rows[0]["canonical_id"] == "helper.py#helper"
+    assert rows[0]["chunk_index"] == 17

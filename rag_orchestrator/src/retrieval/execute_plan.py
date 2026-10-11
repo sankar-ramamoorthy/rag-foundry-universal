@@ -4,6 +4,7 @@ from typing import Iterable, Dict, List
 import logging
 
 from .types import RetrievedContext, RetrievedChunk
+from .chunk_selection_trace import SelectionTrace, record_slice
 from shared.retrieval.retrieval_plan import RetrievalPlan
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ def execute_retrieval_plan(
     retrieved_chunks_by_document: Dict[str, List[RetrievedChunk]],
     top_k_per_document: int = 5,
     debug: bool = False,
+    selection_trace: SelectionTrace | None = None,
 ) -> RetrievedContext:
     """
     Execute a RetrievalPlan using pre-fetched chunks.
@@ -61,8 +63,13 @@ def execute_retrieval_plan(
     # 3️⃣ Use pre-fetched chunks per document
     chunks_by_document: Dict[str, List[RetrievedChunk]] = {}
 
-    for document_id in allowed_document_ids:
+    for doc_position, document_id in enumerate(allowed_document_ids):
         chunks = retrieved_chunks_by_document.get(document_id, [])[:top_k_per_document]
+        record_slice(
+            selection_trace, retrieved_chunks_by_document.get(document_id, []),
+            len(chunks), stage="execute_plan", rule="top_k_per_document",
+            document_position=doc_position, limit=top_k_per_document,
+        )
 
         # Safety invariant: no leakage
         for chunk in chunks:

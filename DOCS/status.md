@@ -212,6 +212,11 @@ attribution. Discovery and survival have separate acceptance criteria;
 these repositories remain development/diagnostic data under
 [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md).
 
+The [local #254 diagnostic checkpoint](/DOCS/test_results/2026-10-11-issue-254-diagnostic-checkpoint.md)
+on `diagnostic/254-discovery-and-chunk-limits` adds synthetic reproductions
+and optional per-chunk exclusion tracing. It is not deployed or merged;
+the instrumented pinned replay and any retrieval correction remain pending.
+
 ## Incremental ingestion & snapshot lineage
 
 Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional, Callable
 
 from .types import RetrievedContext, RetrievedChunk
+from .chunk_selection_trace import SelectionTrace, record, record_slice, record_tail
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)  # Can be overridden externally
@@ -73,7 +74,8 @@ class AssembledContext:
 
 
 def assemble_context(
-    agent_chunks: List[Dict[str, object]], max_total_tokens: int
+    agent_chunks: List[Dict[str, object]], max_total_tokens: int,
+    *, selection_trace: SelectionTrace | None = None,
 ) -> AssembledContext:
     """Select whole passages once, counting labels and separators as well.
 
@@ -83,10 +85,16 @@ def assemble_context(
     parts: List[str] = []
     selected: List[Dict[str, object]] = []
     used = 0
-    for chunk in agent_chunks:
+    for position, chunk in enumerate(agent_chunks):
         part = _render_chunk(chunk)
         cost = conservative_token_count(part) + (2 if parts else 0)
         if used + cost > max_total_tokens:
+            if selection_trace is not None:
+                selection_trace.record(
+                    chunk, stage="context_assembly", rule="context_bytes",
+                    position=position, limit=max_total_tokens, consumed=used,
+                    cost=cost,
+                )
             continue
         parts.append(part)
         selected.append(chunk)
@@ -194,6 +202,7 @@ def prepare_chunks_for_agent(
         Callable[[RetrievedChunk], bool]
     ] = None,  # optional chunk filter
     debug: bool = False,
+    selection_trace: SelectionTrace | None = None,
 ) -> List[Dict[str, object]]:
     """
     Convert RetrievedContext into a deterministic list of chunk
@@ -234,7 +243,7 @@ def prepare_chunks_for_agent(
     final_chunks: List[Dict[str, object]] = []
     total_tokens = 0
 
-    for doc_id in document_order:
+    for doc_position, doc_id in enumerate(document_order):
         chunks: List[RetrievedChunk] = retrieved.chunks_by_document.get(doc_id, [])
         if not chunks:
             logger.debug(f"No chunks found for document_id={doc_id}, skipping")
@@ -242,10 +251,19 @@ def prepare_chunks_for_agent(
 
         # Slice per-document
         selected_chunks = chunks[:max_chunks_per_doc]
+        record_slice(
+            selection_trace, chunks, len(selected_chunks), stage="agent_adapter",
+            rule="max_chunks_per_doc", document_position=doc_position,
+            limit=max_chunks_per_doc,
+        )
 
-        for c in selected_chunks:
+        for position, c in enumerate(selected_chunks):
             # Optional filtering
             if filter_chunk and not filter_chunk(c):
+                record(
+                    selection_trace, c, stage="agent_adapter", rule="filter_chunk",
+                    position=position, document_position=doc_position,
+                )
                 logger.debug(f"Chunk {c.chunk_id} filtered out")
                 continue
 
@@ -271,6 +289,16 @@ def prepare_chunks_for_agent(
             # Token budget enforcement
             chunk_tokens = chunk_token_count(c) if chunk_token_count else 0
             if max_tokens is not None and total_tokens + chunk_tokens > max_tokens:
+                record(
+                    selection_trace, c, stage="agent_adapter", rule="adapter_tokens",
+                    position=position, document_position=doc_position,
+                    limit=max_tokens, consumed=total_tokens, cost=chunk_tokens,
+                )
+                record_tail(
+                    selection_trace, retrieved.chunks_by_document, document_order,
+                    doc_position, position + 1, rule="adapter_tokens",
+                    limit=max_tokens, consumed=total_tokens,
+                )
                 logger.debug(
                     f"Reached max_tokens={max_tokens} "
                     f"after {total_tokens} tokens, stopping"
@@ -281,6 +309,11 @@ def prepare_chunks_for_agent(
             total_tokens += chunk_tokens
 
             if len(final_chunks) >= max_total_chunks:
+                record_tail(
+                    selection_trace, retrieved.chunks_by_document, document_order,
+                    doc_position, position + 1, rule="max_total_chunks",
+                    limit=max_total_chunks, consumed=len(final_chunks),
+                )
                 logger.debug(f"Reached max_total_chunks={max_total_chunks}, stopping")
                 return final_chunks
 

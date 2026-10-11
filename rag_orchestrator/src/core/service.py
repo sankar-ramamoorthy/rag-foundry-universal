@@ -22,6 +22,9 @@ from shared.retrieval.retrieval_plan import (
     RetrievalPlan,
 )
 from rag_orchestrator.src.retrieval.execute_plan import execute_retrieval_plan
+from rag_orchestrator.src.retrieval.chunk_selection_trace import (
+    SelectionTrace, attach_trace, record_removed,
+)
 from rag_orchestrator.src.retrieval.agent_adapter import (
     build_final_context_manifest,
     assemble_context,
@@ -1199,11 +1202,13 @@ async def run_rag(
         expansion_metadata=expansion_metadata,
         constraints=RetrievalConstraints(),
     )
+    chunk_trace = SelectionTrace(trace_canonical_ids) if trace_canonical_ids else None
     retrieved_context = execute_retrieval_plan(
         plan=plan,
         retrieved_chunks_by_document=retrieved_chunks_by_document,
         top_k_per_document=max_chunks_per_doc,
         debug=True,
+        selection_trace=chunk_trace,
     )
 
     agent_chunks_raw = prepare_chunks_for_agent(
@@ -1216,6 +1221,7 @@ async def run_rag(
         max_total_chunks=settings.MAX_TOTAL_CHUNKS,
         filter_chunk=chunk_filter_fn,
         debug=True,
+        selection_trace=chunk_trace,
     )
     agent_chunks = [cast(Dict[str, Any], c) for c in agent_chunks_raw]
 
@@ -1227,6 +1233,7 @@ async def run_rag(
     # without a redeploy.
     rerank_active = settings.RERANK_ENABLED if rerank is None else rerank
     if rerank_active:
+        before_rerank = agent_chunks
         # #170 (WP-R7): CrossEncoder.predict is synchronous CPU/GPU work;
         # off the event loop.
         agent_chunks = await asyncio.to_thread(
@@ -1237,10 +1244,12 @@ async def run_rag(
             model_name=settings.RERANK_MODEL,
         )
         _log_stage(trace_id, "rerank.applied", chunks_kept=len(agent_chunks))
+        record_removed(chunk_trace, before_rerank, agent_chunks, "rerank")
 
     policy_document_ids: set[str] = set()
     obligation = "current_structure"
     if claim_type == "repository_overview":
+        before_policy = agent_chunks
         (
             agent_chunks,
             policy_document_ids,
@@ -1258,6 +1267,7 @@ async def run_rag(
             canonical_selection,
         )
         retrieval_plan_dict.update(selection_trace)
+        record_removed(chunk_trace, before_policy, agent_chunks, "overview_policy")
 
     # WP-T1c: two genuinely distinct survival stages, both computed before
     # the LLM call so the evidence trace and retrieval_plan can report
@@ -1292,7 +1302,10 @@ async def run_rag(
         enabled=claim_type == "repository_overview" and claim_selection,
     )
     retrieval_plan_dict.update(preservation_trace)
-    assembled = assemble_context(agent_chunks, context_budget)
+    assembled = assemble_context(
+        agent_chunks, context_budget, selection_trace=chunk_trace,
+    )
+    attach_trace(chunk_trace, retrieval_plan_dict)
     chunks_in_final_context = assembled.chunks
     final_context_document_ids = {
         cast(str, c["document_id"]) for c in chunks_in_final_context
