@@ -185,6 +185,21 @@ The [frozen protocol](/DOCS/evaluations/2026-10-03-issue-240-frozen-overview-qua
 and [restart handoff](/DOCS/notes/20261003-issue-240-restart-handoff.md)
 retain the earlier generation's history.
 
+## Cross-repository live evaluation (#243)
+
+The [Python coding agent re-ingestion evaluation](/DOCS/test_results/2026-10-10-py-coding-agent-real-repo-verification.md)
+uses its own ready generation and source commit, separate from the #240
+frozen 11-case pass. Ingestion represented all 99 tracked Python files and
+all 573 top-level classes/functions and immediate methods checked against
+the pinned Git source. The graph has 3,388 nodes and 4,606 relationships.
+Retrieval and answer quality did not generalize reliably: natural cross-file
+questions favored historical notes or backup code over current methods, and
+an explicit request for the indexed architectural diagram missed that
+document. Repository Overview mode incorrectly treated code-flow questions
+as structural inventory requests, removed all retrieved passages, and
+answered that indexed `py_mono` files were absent. No retrieval or policy
+correction has been applied for this separate evaluation.
+
 ## Incremental ingestion & snapshot lineage
 
 Issue #196 (WP-S6, spec `specs/006-incremental-ingestion-lineage/`):
