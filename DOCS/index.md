@@ -104,7 +104,10 @@ frontmatter-linked — planned follow-up.
 `DOCS/deployment/` holds operational deployment guidance. Start with
 [Production Docker Compose Release Process](/DOCS/deployment/production-docker-compose.md)
 for the manual production release procedure, provenance checks, validation,
-and rollback rules.
+and rollback rules. [Agent Execution Boundaries](/DOCS/deployment/agent-execution-and-verification.md)
+covers the operator-owned deployment boundary, the local/deployed execution
+model, the four SHAs that can differ, and the limits of HTTP-based
+verification.
 
 `DOCS/releases/` holds production release records. Current release:
 [prod-2026-09-12](/DOCS/releases/2026-09-12-prod-release.md), deployed from

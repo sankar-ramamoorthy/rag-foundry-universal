@@ -7,9 +7,14 @@ tags: [deployment, production, docker-compose, release, provenance]
 related:
   - "[Documentation Index](/DOCS/index.md)"
   - "[RAG Quality Evaluation Methodology](/DOCS/audit/08-RAG-Quality-Evaluation-Methodology.md)"
+  - "[Agent Execution Boundaries](/DOCS/deployment/agent-execution-and-verification.md)"
 ---
 
 # Production Docker Compose Release Process
+
+For the agent/operator boundary — who may run which part of this process,
+and how to reconcile local vs. deployed behavior before deploying — see
+[Agent Execution Boundaries](/DOCS/deployment/agent-execution-and-verification.md).
 
 ## Deployment cadence (2026-09-12, issue #111)
 
