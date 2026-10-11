@@ -218,6 +218,13 @@ for the evidence-gated retrieval-experiment discipline).
 12. [ ] **(deferred, backlog slot only)** General agentic repository investigator — [#207](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/207)
 13. [ ] **(deferred, backlog slot only)** Enterprise/productization surface — [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
 
+**ORIENT correctness follow-up (separate from #240):**
+[#251](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/251)
+— parse Compose `!override` and verify the effective production inventory
+against the ordered base-plus-overlay configuration. The issue defines
+focused fixtures and acceptance checks before implementation; it does not
+change the 13-item Phase 6 ordering.
+
 **Reordering rationale (#200 ahead of #199, decided 2026-09-19):** #199
 (source authority/subject/provenance) and #200 (bounded evidence-
 sufficiency loop) were originally sequenced #199-then-#200. #200 does not

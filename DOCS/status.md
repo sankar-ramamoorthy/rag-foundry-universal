@@ -109,7 +109,9 @@ selection off, against ready generation `854e8484`; the same-generation
 flag-off baseline passed 2/11. Gradio serves the controls with default-off
 values. ORIENT reports a parsing gap for `docker-compose.prod.yml` because
 of its `!override` tag, so structured Compose evidence in this run covers
-`docker-compose.yml` and `docker-compose.test.yml` only.
+`docker-compose.yml` and `docker-compose.test.yml` only. Parsing and
+effective-configuration coverage are tracked separately in
+[issue #251](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/251).
 
 **Merged to `main` via [PR #244](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/244)
 on measured self-repository evidence; the frozen answer/source gate passed
