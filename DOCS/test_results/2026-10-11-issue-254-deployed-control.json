@@ -1,0 +1,811 @@
+{
+    "run_utc":  "2026-10-11T12:58:28.0624114Z",
+    "transport":  "deployed HTTP control",
+    "request":  {
+                    "query":  "Using `py_mono/agent/agent.py#Agent._handle_special_command`, `py_mono/session/session_manager.py#SessionManager.switch_provider`, `py_mono/llm/provider_registry.py#get_provider`, and `py_mono/agent/agent.py#Agent.run`, trace `/provider \u003cname\u003e [model]` to the next LLM generation.",
+                    "repo_id":  "863e770d-651e-5bc5-83d1-a1409693e707",
+                    "top_k":  10,
+                    "rerank":  false,
+                    "trace_canonical_ids":  [
+                                                "py_mono/agent/agent.py#Agent._handle_special_command",
+                                                "py_mono/session/session_manager.py#SessionManager.switch_provider",
+                                                "py_mono/llm/provider_registry.py#get_provider",
+                                                "py_mono/agent/agent.py#Agent.run"
+                                            ],
+                    "claim_type":  "repository_overview",
+                    "repository_overview_claim_selection_enabled":  true,
+                    "repository_overview_structured_answers_enabled":  true,
+                    "repository_overview_canonical_selection_enabled":  false
+                },
+    "generation_before":  {
+                              "repo_id":  "863e770d-651e-5bc5-83d1-a1409693e707",
+                              "ingestion_id":  "24f827d7-a33b-45f7-93f4-ff6e5eaf3856",
+                              "generation_status":  "ready",
+                              "commit_sha":  "f854303e6e44ff95d94792d24868442a28080ba2",
+                              "ingested_at":  "2026-10-11T02:32:55.210182",
+                              "parent_generation_id":  "f1499ec5-c35e-4497-99b3-ebf1ff6d4e05",
+                              "is_incremental":  true
+                          },
+    "generation_after":  {
+                             "repo_id":  "863e770d-651e-5bc5-83d1-a1409693e707",
+                             "ingestion_id":  "24f827d7-a33b-45f7-93f4-ff6e5eaf3856",
+                             "generation_status":  "ready",
+                             "commit_sha":  "f854303e6e44ff95d94792d24868442a28080ba2",
+                             "ingested_at":  "2026-10-11T02:32:55.210182",
+                             "parent_generation_id":  "f1499ec5-c35e-4497-99b3-ebf1ff6d4e05",
+                             "is_incremental":  true
+                         },
+    "elapsed_seconds":  18.6524017,
+    "runtime_version":  {
+                            "service":  "rag_orchestrator",
+                            "git_sha":  "f344bd58ffde5d98f4993bc0a27192b50c8decc3",
+                            "build_date":  "2026-10-11T01:57:32Z",
+                            "release_version":  "prod-2026-10-10-943pm"
+                        },
+    "response":  {
+                     "answer":  "The context does not contain information about the `py_mono` directory or the specific functions (`py_mono/agent/agent.py#Agent._handle_special_command`, `py_mono/session/session_manager.py#SessionManager.switch_provider`, `py_mono/llm/provider_registry.py#get_provider`, `py_mono/agent/agent.py#Agent.run`) mentioned in the question. The provided evidence only describes the repository\u0027s services (`datetime-mcp` and `py-coding-agent`), Compose files, and manifest files (e.g., `pyproject.toml` in `kb-template/`, `mcp_servers/datetime/`, and root), but explicitly does not reference a `py_mono` directory or the code paths requested. Therefore, the trace cannot be completed with the given context.",
+                     "sources":  [
+
+                                 ],
+                     "repo_id":  "863e770d-651e-5bc5-83d1-a1409693e707",
+                     "retrieval_plan":  {
+                                            "generation_id":  "24f827d7-a33b-45f7-93f4-ff6e5eaf3856",
+                                            "trace_id":  "8708b00cb6094a9d84647e229f15077b",
+                                            "seed_canonical_ids":  [
+                                                                       "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision",
+                                                                       "py_mono/agent/agent.py",
+                                                                       "py_mono/agent/agent.py#Agent",
+                                                                       "py_mono/agent/agent_backupv1.py",
+                                                                       "py_mono/agent/agent_backupv1.py#Agent",
+                                                                       "py_mono/main.py",
+                                                                       "py_mono/session/session_manager.py",
+                                                                       "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection",
+                                                                       "specs/011-add-skill-run-telemetry/plan.md#implementation_plan_lightweight_per_skill_run_telemetry_log.summary",
+                                                                       "tests/test_special_commands.py"
+                                                                   ],
+                                            "expanded_canonical_ids":  [
+                                                                           "EXTERNAL_SYMBOL:agent._handle_special_command",
+                                                                           "EXTERNAL_SYMBOL:agent._is_special_command",
+                                                                           "EXTERNAL_SYMBOL:any",
+                                                                           "EXTERNAL_SYMBOL:candidate_dir.mkdir",
+                                                                           "EXTERNAL_SYMBOL:candidate_py_path.read_text",
+                                                                           "EXTERNAL_SYMBOL:data.get",
+                                                                           "EXTERNAL_SYMBOL:dict",
+                                                                           "EXTERNAL_SYMBOL:env_key_vars.get",
+                                                                           "EXTERNAL_SYMBOL:getattr",
+                                                                           "EXTERNAL_SYMBOL:isinstance",
+                                                                           "EXTERNAL_SYMBOL:join",
+                                                                           "EXTERNAL_SYMBOL:json.dumps",
+                                                                           "EXTERNAL_SYMBOL:json.loads",
+                                                                           "EXTERNAL_SYMBOL:key_manager.list_providers",
+                                                                           "EXTERNAL_SYMBOL:len",
+                                                                           "EXTERNAL_SYMBOL:lines.append",
+                                                                           "EXTERNAL_SYMBOL:lines.extend",
+                                                                           "EXTERNAL_SYMBOL:list",
+                                                                           "EXTERNAL_SYMBOL:llm.generate",
+                                                                           "EXTERNAL_SYMBOL:lower",
+                                                                           "EXTERNAL_SYMBOL:next",
+                                                                           "EXTERNAL_SYMBOL:os.getenv",
+                                                                           "EXTERNAL_SYMBOL:pathlib.Path",
+                                                                           "EXTERNAL_SYMBOL:print",
+                                                                           "EXTERNAL_SYMBOL:py_mono.llm.provider_registry.REGISTRY.keys",
+                                                                           "EXTERNAL_SYMBOL:range",
+                                                                           "EXTERNAL_SYMBOL:re.sub",
+                                                                           "EXTERNAL_SYMBOL:registry.list_skills",
+                                                                           "EXTERNAL_SYMBOL:registry.load",
+                                                                           "EXTERNAL_SYMBOL:response.get",
+                                                                           "EXTERNAL_SYMBOL:result.failure_reason",
+                                                                           "EXTERNAL_SYMBOL:result.startswith",
+                                                                           "EXTERNAL_SYMBOL:retained_report_path.exists",
+                                                                           "EXTERNAL_SYMBOL:reversed",
+                                                                           "EXTERNAL_SYMBOL:s.get",
+                                                                           "EXTERNAL_SYMBOL:sections.append",
+                                                                           "EXTERNAL_SYMBOL:self._key_manager.get",
+                                                                           "EXTERNAL_SYMBOL:self._key_manager.has",
+                                                                           "EXTERNAL_SYMBOL:self.memory.append",
+                                                                           "EXTERNAL_SYMBOL:self.playbook_registry.search",
+                                                                           "EXTERNAL_SYMBOL:self.session_manager.get_active_provider",
+                                                                           "EXTERNAL_SYMBOL:self.session_manager.switch_provider",
+                                                                           "EXTERNAL_SYMBOL:self.skill_registry.get",
+                                                                           "EXTERNAL_SYMBOL:self.skill_registry.get_skill_md",
+                                                                           "EXTERNAL_SYMBOL:self.skill_registry.is_approved",
+                                                                           "EXTERNAL_SYMBOL:self.skill_registry.list_skills",
+                                                                           "EXTERNAL_SYMBOL:self.skill_registry.reload_skill",
+                                                                           "EXTERNAL_SYMBOL:self.skill_registry.skill_dir_for",
+                                                                           "EXTERNAL_SYMBOL:self.tools.get",
+                                                                           "EXTERNAL_SYMBOL:self.tools.values",
+                                                                           "EXTERNAL_SYMBOL:skill_dir.exists",
+                                                                           "EXTERNAL_SYMBOL:skill_dir.mkdir",
+                                                                           "EXTERNAL_SYMBOL:skill_md_path.write_text",
+                                                                           "EXTERNAL_SYMBOL:skill_py_path.exists",
+                                                                           "EXTERNAL_SYMBOL:skill_py_path.read_text",
+                                                                           "EXTERNAL_SYMBOL:skills_dir.mkdir",
+                                                                           "EXTERNAL_SYMBOL:sorted",
+                                                                           "EXTERNAL_SYMBOL:split",
+                                                                           "EXTERNAL_SYMBOL:startswith",
+                                                                           "EXTERNAL_SYMBOL:str",
+                                                                           "EXTERNAL_SYMBOL:strip",
+                                                                           "EXTERNAL_SYMBOL:text.split",
+                                                                           "EXTERNAL_SYMBOL:text.startswith",
+                                                                           "EXTERNAL_SYMBOL:text.strip",
+                                                                           "EXTERNAL_SYMBOL:tool.func",
+                                                                           "EXTERNAL_SYMBOL:tool.run",
+                                                                           "EXTERNAL_SYMBOL:tool_call.get",
+                                                                           "EXTERNAL_SYMBOL:tools.append",
+                                                                           "EXTERNAL_SYMBOL:traceback.print_exc",
+                                                                           "EXTERNAL_SYMBOL:user_input.strip",
+                                                                           "EXTERNAL_SYMBOL:uuid.uuid4",
+                                                                           "EXTERNAL_SYMBOL:write_text",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.1_provider_registry",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.2_session_manager",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.3_dynamic_switching_strategies",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.4_cli_provider_commands",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.5_key_management",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.6_key_resolution_order",
+                                                                           "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision.7_security_rules",
+                                                                           "py_mono/agent/agent.py#Agent.__init__",
+                                                                           "py_mono/agent/agent.py#Agent._approval_review_lines",
+                                                                           "py_mono/agent/agent.py#Agent._format_playbooks_for_prompt",
+                                                                           "py_mono/agent/agent.py#Agent._handle_skill_approve",
+                                                                           "py_mono/agent/agent.py#Agent._handle_skill_help",
+                                                                           "py_mono/agent/agent.py#Agent._handle_skill_list",
+                                                                           "py_mono/agent/agent.py#Agent._handle_skill_review",
+                                                                           "py_mono/agent/agent.py#Agent._handle_skill_run",
+                                                                           "py_mono/agent/agent.py#Agent._handle_special_command",
+                                                                           "py_mono/agent/agent.py#Agent._handle_structured_action",
+                                                                           "py_mono/agent/agent.py#Agent._is_special_command",
+                                                                           "py_mono/agent/agent.py#Agent._log",
+                                                                           "py_mono/agent/agent.py#Agent._print_memory",
+                                                                           "py_mono/agent/agent.py#Agent._reload_dynamic_tools",
+                                                                           "py_mono/agent/agent.py#Agent._try_parse_structured_output",
+                                                                           "py_mono/agent/agent.py#Agent.clear_memory",
+                                                                           "py_mono/agent/agent.py#Agent.prune_memory",
+                                                                           "py_mono/agent/agent.py#Agent.run",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent.__init__",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._handle_skill_help",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._handle_skill_list",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._handle_skill_run",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._handle_special_command",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._is_special_command",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._log",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent._print_memory",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent.clear_memory",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent.prune_memory",
+                                                                           "py_mono/agent/agent_backupv1.py#Agent.run",
+                                                                           "py_mono/llm/prompts.py#build_system_prompt",
+                                                                           "py_mono/llm/provider_registry.py#get_provider",
+                                                                           "py_mono/main.py#build_base_tools",
+                                                                           "py_mono/main.py#load_mcp_tools",
+                                                                           "py_mono/main.py#load_skills",
+                                                                           "py_mono/main.py#main",
+                                                                           "py_mono/playbook/playbookregistry.py#PlaybookRegistry",
+                                                                           "py_mono/security/key_manager.py#KeyManager",
+                                                                           "py_mono/security/key_manager.py#KeyManager.set",
+                                                                           "py_mono/session/session_manager.py#SessionManager",
+                                                                           "py_mono/session/session_manager.py#SessionManager.__init__",
+                                                                           "py_mono/session/session_manager.py#SessionManager._resolve_key",
+                                                                           "py_mono/session/session_manager.py#SessionManager._resolve_provider",
+                                                                           "py_mono/session/session_manager.py#SessionManager.get_active_provider",
+                                                                           "py_mono/session/session_manager.py#SessionManager.switch_provider",
+                                                                           "py_mono/session/session_manager.py#SessionManager.use_provider_once",
+                                                                           "py_mono/skill/approval.py#run_skill_safe",
+                                                                           "py_mono/skill/approval_ledger.py#ledger_path_for",
+                                                                           "py_mono/skill/approval_ledger.py#load_ledger",
+                                                                           "py_mono/skill/approval_ledger.py#record_approval",
+                                                                           "py_mono/skill/approval_ledger.py#save_ledger",
+                                                                           "py_mono/skill/base.py#SkillContext",
+                                                                           "py_mono/skill/base.py#SkillRegistry",
+                                                                           "py_mono/skill/diffing.py#candidate_dir_for",
+                                                                           "py_mono/skill/diffing.py#has_candidate",
+                                                                           "py_mono/skill/diffing.py#promote_candidate",
+                                                                           "py_mono/skill/reporting.py#load_lifecycle_report_view",
+                                                                           "py_mono/skill/reporting.py#render_lifecycle_review",
+                                                                           "py_mono/skill/validator.py#validate_skill_py",
+                                                                           "py_mono/tools/tool_loader.py#load_dynamic_tools",
+                                                                           "py_mono/ui/cli.py#start_cli",
+                                                                           "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection.decision_bare_ollama_stays_frozen_new_ollama_auto_carries_the_fallback_behavior",
+                                                                           "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection.decision_env_var_naming",
+                                                                           "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection.decision_one_time_reachability_probe_not_continuous_monitoring",
+                                                                           "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection.decision_registry_based_backend_selection_vs_a_config_file_proxy_layer",
+                                                                           "tests/test_special_commands.py#make_agent",
+                                                                           "tests/test_special_commands.py#make_agent_with_registry",
+                                                                           "tests/test_special_commands.py#test_bare_provider_is_recognized_as_special_command",
+                                                                           "tests/test_special_commands.py#test_bare_provider_shows_usage",
+                                                                           "tests/test_special_commands.py#test_provider_with_trailing_space_only_still_shows_usage",
+                                                                           "tests/test_special_commands.py#test_provider_with_valid_argument_still_switches",
+                                                                           "tests/test_special_commands.py#test_providers_plural_is_unaffected",
+                                                                           "tests/test_special_commands.py#test_skill_help_points_to_candidate_review",
+                                                                           "tests/test_special_commands.py#test_skill_list_marks_pending_candidate",
+                                                                           "tests/test_special_commands.py#test_skill_review_falls_back_to_markdown_when_json_is_corrupt",
+                                                                           "tests/test_special_commands.py#test_skill_review_is_recognized_as_special_command",
+                                                                           "tests/test_special_commands.py#test_skill_review_summarizes_candidate_lifecycle_report",
+                                                                           "tests/test_special_commands.py#write_skill_with_candidate_report"
+                                                                       ],
+                                            "seed_docs":  10,
+                                            "expanded_docs_considered":  156,
+                                            "expanded_docs_used":  20,
+                                            "expanded_docs":  20,
+                                            "total_docs":  29,
+                                            "seed_document_ids":  [
+                                                                      "4c0bd646-36b6-45b1-98c6-dab99b2f6385",
+                                                                      "7e4091e7-1fc6-4385-a07f-3cab48dc05ba",
+                                                                      "928c663c-1b5b-4b4c-a787-5cfbe0400094",
+                                                                      "9c9d81ab-e160-4525-a470-f5854c0acead",
+                                                                      "9d24d255-6a21-4dbf-93bb-0d8de6dd2085",
+                                                                      "b4163182-dde4-4394-a479-e5a521ee106c",
+                                                                      "b91cfa8d-1a9d-42a1-b2cb-ffc69fa16540",
+                                                                      "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                      "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                      "f46321a9-25d0-4403-99f1-71aca767dc94"
+                                                                  ],
+                                            "expanded_document_ids":  [
+                                                                          "11886d41-d8a5-4ac3-99ee-e20fefec22f4",
+                                                                          "162ee782-dbaf-4faa-8727-c88b239711b6",
+                                                                          "1df63689-0e14-4c9f-b976-a6395e9d633b",
+                                                                          "3657319c-c66c-41cc-92ae-045b4e1fc59b",
+                                                                          "4742d641-d94e-43cf-9a29-69ee5bc30ba8",
+                                                                          "49a45154-1a40-4faa-a9c6-56a87804da33",
+                                                                          "6d5c4de3-7709-4d2e-a9d6-05f408f37283",
+                                                                          "7183f37e-cb97-42d3-ac17-5f6ea9725251",
+                                                                          "771a28a1-aa28-4a9f-8d87-6c01fd994183",
+                                                                          "807d7654-fe84-42e7-a350-cd3fdbc16c13",
+                                                                          "8fd6462f-0161-410c-9530-d661f5e1550e",
+                                                                          "b9f561a2-38bf-4a93-a7f5-968fce509495",
+                                                                          "c37ce7c3-5808-41b4-8feb-cb269514f7ff",
+                                                                          "c3a14836-f188-4ee0-93c4-9b8d5f47c94c",
+                                                                          "c3f60851-b7b8-40fa-97e8-f48dbba88d94",
+                                                                          "cb84b4ea-52ee-4557-abc6-d79a1b54bb0d",
+                                                                          "d995202f-1be3-4a09-af98-f14625a12d42",
+                                                                          "e8591da4-6aa2-42ce-a00c-728b527bccb3",
+                                                                          "f707f802-585d-4834-a24f-293b02f9bdc0"
+                                                                      ],
+                                            "expansion_metadata":  {
+                                                                       "7183f37e-cb97-42d3-ac17-5f6ea9725251":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "11886d41-d8a5-4ac3-99ee-e20fefec22f4":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "c3f60851-b7b8-40fa-97e8-f48dbba88d94":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "e8591da4-6aa2-42ce-a00c-728b527bccb3":  {
+                                                                                                                    "source_document_id":  "b91cfa8d-1a9d-42a1-b2cb-ffc69fa16540",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "4742d641-d94e-43cf-9a29-69ee5bc30ba8":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "6d5c4de3-7709-4d2e-a9d6-05f408f37283":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "162ee782-dbaf-4faa-8727-c88b239711b6":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "c37ce7c3-5808-41b4-8feb-cb269514f7ff":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "f707f802-585d-4834-a24f-293b02f9bdc0":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "807d7654-fe84-42e7-a350-cd3fdbc16c13":  {
+                                                                                                                    "source_document_id":  "b91cfa8d-1a9d-42a1-b2cb-ffc69fa16540",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "49a45154-1a40-4faa-a9c6-56a87804da33":  {
+                                                                                                                    "source_document_id":  "b91cfa8d-1a9d-42a1-b2cb-ffc69fa16540",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "771a28a1-aa28-4a9f-8d87-6c01fd994183":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "b9f561a2-38bf-4a93-a7f5-968fce509495":  {
+                                                                                                                    "source_document_id":  "d1dac595-8a41-4878-a115-eff0e0ca959e",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "d995202f-1be3-4a09-af98-f14625a12d42":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "c3a14836-f188-4ee0-93c4-9b8d5f47c94c":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "cb84b4ea-52ee-4557-abc6-d79a1b54bb0d":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "8fd6462f-0161-410c-9530-d661f5e1550e":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "3657319c-c66c-41cc-92ae-045b4e1fc59b":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                },
+                                                                       "1df63689-0e14-4c9f-b976-a6395e9d633b":  {
+                                                                                                                    "source_document_id":  "cee0a92c-f33b-4a6f-9429-d5d688a6609d",
+                                                                                                                    "relation_type":  "DEFINES"
+                                                                                                                }
+                                                                   },
+                                            "chunks_requested_by_document":  {
+                                                                                 "f46321a9-25d0-4403-99f1-71aca767dc94":  3,
+                                                                                 "b91cfa8d-1a9d-42a1-b2cb-ffc69fa16540":  3,
+                                                                                 "7e4091e7-1fc6-4385-a07f-3cab48dc05ba":  3,
+                                                                                 "9d24d255-6a21-4dbf-93bb-0d8de6dd2085":  3,
+                                                                                 "b4163182-dde4-4394-a479-e5a521ee106c":  3,
+                                                                                 "4c0bd646-36b6-45b1-98c6-dab99b2f6385":  3,
+                                                                                 "928c663c-1b5b-4b4c-a787-5cfbe0400094":  3,
+                                                                                 "d1dac595-8a41-4878-a115-eff0e0ca959e":  3,
+                                                                                 "9c9d81ab-e160-4525-a470-f5854c0acead":  3,
+                                                                                 "cee0a92c-f33b-4a6f-9429-d5d688a6609d":  3,
+                                                                                 "7183f37e-cb97-42d3-ac17-5f6ea9725251":  3,
+                                                                                 "11886d41-d8a5-4ac3-99ee-e20fefec22f4":  3,
+                                                                                 "c3f60851-b7b8-40fa-97e8-f48dbba88d94":  3,
+                                                                                 "e8591da4-6aa2-42ce-a00c-728b527bccb3":  3,
+                                                                                 "4742d641-d94e-43cf-9a29-69ee5bc30ba8":  3,
+                                                                                 "6d5c4de3-7709-4d2e-a9d6-05f408f37283":  3,
+                                                                                 "162ee782-dbaf-4faa-8727-c88b239711b6":  3,
+                                                                                 "c37ce7c3-5808-41b4-8feb-cb269514f7ff":  3,
+                                                                                 "f707f802-585d-4834-a24f-293b02f9bdc0":  3,
+                                                                                 "807d7654-fe84-42e7-a350-cd3fdbc16c13":  3,
+                                                                                 "49a45154-1a40-4faa-a9c6-56a87804da33":  3,
+                                                                                 "840b69aa-4163-46b7-a7c4-1d904151eb93":  3,
+                                                                                 "771a28a1-aa28-4a9f-8d87-6c01fd994183":  3,
+                                                                                 "b9f561a2-38bf-4a93-a7f5-968fce509495":  3,
+                                                                                 "d995202f-1be3-4a09-af98-f14625a12d42":  3,
+                                                                                 "c3a14836-f188-4ee0-93c4-9b8d5f47c94c":  3,
+                                                                                 "cb84b4ea-52ee-4557-abc6-d79a1b54bb0d":  3,
+                                                                                 "8fd6462f-0161-410c-9530-d661f5e1550e":  3,
+                                                                                 "3657319c-c66c-41cc-92ae-045b4e1fc59b":  3,
+                                                                                 "1df63689-0e14-4c9f-b976-a6395e9d633b":  3
+                                                                             },
+                                            "chunks_returned_by_document":  {
+                                                                                "f46321a9-25d0-4403-99f1-71aca767dc94":  [
+
+                                                                                                                         ],
+                                                                                "b91cfa8d-1a9d-42a1-b2cb-ffc69fa16540":  [
+                                                                                                                             9
+                                                                                                                         ],
+                                                                                "7e4091e7-1fc6-4385-a07f-3cab48dc05ba":  [
+                                                                                                                             0,
+                                                                                                                             1
+                                                                                                                         ],
+                                                                                "9d24d255-6a21-4dbf-93bb-0d8de6dd2085":  [
+                                                                                                                             1,
+                                                                                                                             3
+                                                                                                                         ],
+                                                                                "b4163182-dde4-4394-a479-e5a521ee106c":  [
+
+                                                                                                                         ],
+                                                                                "4c0bd646-36b6-45b1-98c6-dab99b2f6385":  [
+                                                                                                                             4,
+                                                                                                                             7
+                                                                                                                         ],
+                                                                                "928c663c-1b5b-4b4c-a787-5cfbe0400094":  [
+                                                                                                                             10,
+                                                                                                                             7
+                                                                                                                         ],
+                                                                                "d1dac595-8a41-4878-a115-eff0e0ca959e":  [
+                                                                                                                             2,
+                                                                                                                             7
+                                                                                                                         ],
+                                                                                "9c9d81ab-e160-4525-a470-f5854c0acead":  [
+                                                                                                                             5,
+                                                                                                                             6
+                                                                                                                         ],
+                                                                                "cee0a92c-f33b-4a6f-9429-d5d688a6609d":  [
+
+                                                                                                                         ],
+                                                                                "7183f37e-cb97-42d3-ac17-5f6ea9725251":  [
+                                                                                                                             0,
+                                                                                                                             1
+                                                                                                                         ],
+                                                                                "11886d41-d8a5-4ac3-99ee-e20fefec22f4":  [
+                                                                                                                             0,
+                                                                                                                             1
+                                                                                                                         ],
+                                                                                "c3f60851-b7b8-40fa-97e8-f48dbba88d94":  [
+                                                                                                                             1,
+                                                                                                                             2
+                                                                                                                         ],
+                                                                                "e8591da4-6aa2-42ce-a00c-728b527bccb3":  [
+                                                                                                                             1,
+                                                                                                                             2
+                                                                                                                         ],
+                                                                                "4742d641-d94e-43cf-9a29-69ee5bc30ba8":  [
+                                                                                                                             1,
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "6d5c4de3-7709-4d2e-a9d6-05f408f37283":  [
+                                                                                                                             1,
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "162ee782-dbaf-4faa-8727-c88b239711b6":  [
+                                                                                                                             0,
+                                                                                                                             6
+                                                                                                                         ],
+                                                                                "c37ce7c3-5808-41b4-8feb-cb269514f7ff":  [
+                                                                                                                             4,
+                                                                                                                             5,
+                                                                                                                             1
+                                                                                                                         ],
+                                                                                "f707f802-585d-4834-a24f-293b02f9bdc0":  [
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "807d7654-fe84-42e7-a350-cd3fdbc16c13":  [
+                                                                                                                             3,
+                                                                                                                             1,
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "49a45154-1a40-4faa-a9c6-56a87804da33":  [
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "840b69aa-4163-46b7-a7c4-1d904151eb93":  [
+
+                                                                                                                         ],
+                                                                                "771a28a1-aa28-4a9f-8d87-6c01fd994183":  [
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "b9f561a2-38bf-4a93-a7f5-968fce509495":  [
+                                                                                                                             2,
+                                                                                                                             0,
+                                                                                                                             1
+                                                                                                                         ],
+                                                                                "d995202f-1be3-4a09-af98-f14625a12d42":  [
+                                                                                                                             8,
+                                                                                                                             1,
+                                                                                                                             6
+                                                                                                                         ],
+                                                                                "c3a14836-f188-4ee0-93c4-9b8d5f47c94c":  [
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "cb84b4ea-52ee-4557-abc6-d79a1b54bb0d":  [
+                                                                                                                             0,
+                                                                                                                             1
+                                                                                                                         ],
+                                                                                "8fd6462f-0161-410c-9530-d661f5e1550e":  [
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "3657319c-c66c-41cc-92ae-045b4e1fc59b":  [
+                                                                                                                             0
+                                                                                                                         ],
+                                                                                "1df63689-0e14-4c9f-b976-a6395e9d633b":  [
+                                                                                                                             7,
+                                                                                                                             4,
+                                                                                                                             0
+                                                                                                                         ]
+                                                                            },
+                                            "repository_overview_controls":  {
+                                                                                 "claim_type":  "repository_overview",
+                                                                                 "active":  true,
+                                                                                 "claim_selection_enabled":  true,
+                                                                                 "structured_answers_enabled":  true,
+                                                                                 "canonical_selection_enabled":  false
+                                                                             },
+                                            "evidence_obligation":  "current_structure",
+                                            "excluded_evidence":  [
+                                                                      {
+                                                                          "canonical_id":  "docs/adr/ADR-006-Session-key-management.md#adr_006_provider_registry_session_management_and_key_management.decision",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "specs/011-add-skill-run-telemetry/plan.md#implementation_plan_lightweight_per_skill_run_telemetry_log.summary",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "specs/011-add-skill-run-telemetry/plan.md#implementation_plan_lightweight_per_skill_run_telemetry_log.summary",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "specs/011-add-skill-run-telemetry/plan.md#implementation_plan_lightweight_per_skill_run_telemetry_log.summary",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "specs/002-ollama-dual-backend/research.md#phase_0_research_dual_ollama_backend_selection",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/main.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "tests/test_special_commands.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "tests/test_special_commands.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "tests/test_special_commands.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.get_active_provider",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.get_active_provider",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.switch_provider",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.switch_provider",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._handle_special_command",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._handle_special_command",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent._handle_special_command",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent._handle_special_command",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager._resolve_provider",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager._resolve_provider",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.use_provider_once",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.use_provider_once",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._handle_skill_run",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._handle_skill_run",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._handle_skill_run",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._is_special_command",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent._handle_skill_run",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent._handle_skill_run",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent._handle_skill_run",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent_backupv1.py#Agent._is_special_command",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager.__init__",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager._resolve_key",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager._resolve_key",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/session/session_manager.py#SessionManager._resolve_key",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      },
+                                                                      {
+                                                                          "canonical_id":  "py_mono/agent/agent.py#Agent._handle_skill_approve",
+                                                                          "reason":  "orient_inventory_authoritative_for_structure"
+                                                                      }
+                                                                  ],
+                                            "exact_source_preservation":  [
+                                                                              {
+                                                                                  "target":  "Agent._handle_special_command",
+                                                                                  "kind":  "symbol",
+                                                                                  "status":  "unavailable"
+                                                                              },
+                                                                              {
+                                                                                  "target":  "SessionManager.switch_provider",
+                                                                                  "kind":  "symbol",
+                                                                                  "status":  "unavailable"
+                                                                              },
+                                                                              {
+                                                                                  "target":  "Agent.run",
+                                                                                  "kind":  "symbol",
+                                                                                  "status":  "unavailable"
+                                                                              },
+                                                                              {
+                                                                                  "target":  "py_mono/agent/agent.py",
+                                                                                  "kind":  "path",
+                                                                                  "status":  "unavailable"
+                                                                              },
+                                                                              {
+                                                                                  "target":  "py_mono/session/session_manager.py",
+                                                                                  "kind":  "path",
+                                                                                  "status":  "unavailable"
+                                                                              },
+                                                                              {
+                                                                                  "target":  "py_mono/llm/provider_registry.py",
+                                                                                  "kind":  "path",
+                                                                                  "status":  "unavailable"
+                                                                              }
+                                                                          ],
+                                            "evidence_trace":  [
+                                                                   {
+                                                                       "canonical_id":  "py_mono/agent/agent.py#Agent._handle_special_command",
+                                                                       "document_id":  "c3f60851-b7b8-40fa-97e8-f48dbba88d94",
+                                                                       "found_by_vector":  false,
+                                                                       "found_by_graph":  true,
+                                                                       "expanded_rank":  2,
+                                                                       "survives_cap":  true,
+                                                                       "chunk_fetched":  true,
+                                                                       "survives_chunk_limits":  true,
+                                                                       "reaches_final_context":  false,
+                                                                       "drop_reason":  "dropped_by_reranker",
+                                                                       "survives_rerank":  false
+                                                                   },
+                                                                   {
+                                                                       "canonical_id":  "py_mono/agent/agent.py#Agent.run",
+                                                                       "document_id":  "1df63689-0e14-4c9f-b976-a6395e9d633b",
+                                                                       "found_by_vector":  false,
+                                                                       "found_by_graph":  true,
+                                                                       "expanded_rank":  19,
+                                                                       "survives_cap":  true,
+                                                                       "chunk_fetched":  true,
+                                                                       "survives_chunk_limits":  false,
+                                                                       "reaches_final_context":  false,
+                                                                       "drop_reason":  "dropped_by_chunk_count_limits",
+                                                                       "survives_rerank":  false
+                                                                   },
+                                                                   {
+                                                                       "canonical_id":  "py_mono/llm/provider_registry.py#get_provider",
+                                                                       "document_id":  "0141cbc8-4bd9-4ad3-acbe-6aa074addaf6",
+                                                                       "found_by_vector":  false,
+                                                                       "found_by_graph":  true,
+                                                                       "expanded_rank":  64,
+                                                                       "survives_cap":  false,
+                                                                       "chunk_fetched":  false,
+                                                                       "survives_chunk_limits":  false,
+                                                                       "reaches_final_context":  false,
+                                                                       "drop_reason":  "truncated_by_max_expanded_docs",
+                                                                       "survives_rerank":  false
+                                                                   },
+                                                                   {
+                                                                       "canonical_id":  "py_mono/session/session_manager.py#SessionManager.switch_provider",
+                                                                       "document_id":  "11886d41-d8a5-4ac3-99ee-e20fefec22f4",
+                                                                       "found_by_vector":  false,
+                                                                       "found_by_graph":  true,
+                                                                       "expanded_rank":  1,
+                                                                       "survives_cap":  true,
+                                                                       "chunk_fetched":  true,
+                                                                       "survives_chunk_limits":  true,
+                                                                       "reaches_final_context":  false,
+                                                                       "drop_reason":  "dropped_by_reranker",
+                                                                       "survives_rerank":  false
+                                                                   }
+                                                               ],
+                                            "token_count_method":  "utf8_bytes_upper_estimate",
+                                            "context_budget":  4096,
+                                            "tokens_before_budget":  0,
+                                            "tokens_after_budget":  0,
+                                            "final_context_manifest":  [
+
+                                                                       ],
+                                            "provenance_diagnostics":  [
+
+                                                                       ],
+                                            "repository_overview_policy":  {
+                                                                               "policy_version":  "repository-overview-authority-v1",
+                                                                               "status":  "qualified",
+                                                                               "gap":  null,
+                                                                               "findings":  [
+
+                                                                                            ],
+                                                                               "inventory_present":  true
+                                                                           },
+                                            "repository_display_name":  "sankar-ramamoorthy/py-coding-agent"
+                                        },
+                     "model_used":  "ollama/Qwen3:4b",
+                     "model_alias":  "default",
+                     "fallback_from":  null,
+                     "trace_id":  "8708b00cb6094a9d84647e229f15077b",
+                     "reranked":  false
+                 }
+}

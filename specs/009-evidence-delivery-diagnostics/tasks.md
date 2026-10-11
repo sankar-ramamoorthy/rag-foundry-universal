@@ -6,8 +6,11 @@
 - [x] Add optional chunk exclusion tracing without changing selection.
 - [x] Isolate per-document, global, filter, and byte/token limits in tests.
 - [x] Check trace-on/off context parity through the service pipeline.
-- [ ] Replay pinned R1/R2 with the new diagnostic code locally; record the
+- [x] Replay pinned R1/R2 with the new diagnostic code locally; record the
   runtime difference and verify generation before and after each request.
+- [ ] Establish local/deployed seed-search input and configuration parity:
+  the October 11 local replay differs, while a deployed explicit R2 control
+  reproduces the historical retrieval and combined chunk-count loss.
 - [ ] Attribute the actual replay loss rule and competing allocation; retain
   the historical global-cap explanation as an inference unless separately
   established for that historical run.

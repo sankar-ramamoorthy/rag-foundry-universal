@@ -215,7 +215,12 @@ these repositories remain development/diagnostic data under
 The [local #254 diagnostic checkpoint](/DOCS/test_results/2026-10-11-issue-254-diagnostic-checkpoint.md)
 on `diagnostic/254-discovery-and-chunk-limits` adds synthetic reproductions
 and optional per-chunk exclusion tracing. It is not deployed or merged;
-the instrumented pinned replay and any retrieval correction remain pending.
+the [pinned R1/R2 replay](/DOCS/test_results/2026-10-11-issue-254-pinned-replay.md)
+completed five local requests with generation checks, but their vector seeds
+differ from the historical runs. A fresh deployed explicit R2 control matches
+the historical retrieval and reproduces the combined chunk-count loss.
+Local/deployed seed-search parity and individual-limit attribution remain
+pending; no retrieval correction or quality improvement is claimed.
 
 ## Incremental ingestion & snapshot lineage
 
