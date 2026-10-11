@@ -1,7 +1,7 @@
 # rag_orchestrator/src/api/v1/models.py (UPDATED)
 from typing import List, Literal, Optional, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, StrictBool
 
 
 class RAGQuery(BaseModel):
@@ -33,6 +33,11 @@ class RAGQuery(BaseModel):
             "repository_overview",
         ]
     ] = None
+    # Issue #240: independent request-local overrides. None preserves the
+    # deployment default; explicit False can disable an enabled default.
+    repository_overview_claim_selection_enabled: Optional[StrictBool] = None
+    repository_overview_structured_answers_enabled: Optional[StrictBool] = None
+    repository_overview_canonical_selection_enabled: Optional[StrictBool] = None
     # Issue #240: opt-in canonical targets for live evidence-survival
     # diagnostics. Omitted -> retrieval behavior and response shape unchanged.
     trace_canonical_ids: Optional[List[str]] = None

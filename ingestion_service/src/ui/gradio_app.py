@@ -243,8 +243,34 @@ def _model_line(data: dict) -> str:
     return line
 
 
+def _overview_controls_note(data: dict, query_mode: str) -> str:
+    """Show server-confirmed effective values for an overview experiment."""
+    if query_mode != "repository_overview":
+        return ""
+    controls = data.get("retrieval_plan", {}).get("repository_overview_controls")
+    keys = (
+        ("claim selection", "claim_selection_enabled"),
+        ("structured answers", "structured_answers_enabled"),
+        ("canonical selection", "canonical_selection_enabled"),
+    )
+    if not isinstance(controls, dict) or any(
+        not isinstance(controls.get(key), bool) for _, key in keys
+    ):
+        return "Overview controls: server confirmation unavailable\n\n"
+    values = ", ".join(f"{label} {controls[key]}" for label, key in keys)
+    return f"Overview controls: {values}\n\n"
+
+
 def submit_rag_query(
-    query: str, repo_id: str | None, top_k: int, provider: str | None, model: str | None
+    query: str,
+    repo_id: str | None,
+    top_k: int,
+    provider: str | None,
+    model: str | None,
+    query_mode: str = "normal",
+    claim_selection: bool = False,
+    structured_answers: bool = False,
+    canonical_selection: bool = False,
 ):
     """Submit RAG query with repo_id."""
     try:
@@ -258,7 +284,12 @@ def submit_rag_query(
             "query": query,
             "repo_id": repo_id,
             "top_k": top_k,
+            "repository_overview_claim_selection_enabled": claim_selection,
+            "repository_overview_structured_answers_enabled": structured_answers,
+            "repository_overview_canonical_selection_enabled": canonical_selection,
         }
+        if query_mode == "repository_overview":
+            payload["claim_type"] = "repository_overview"
 
         if provider:
             payload["provider"] = provider
@@ -274,6 +305,7 @@ def submit_rag_query(
         data = response.json()
 
         answer = data.get("answer", "")
+        answer = _overview_controls_note(data, query_mode) + answer
         sources = data.get("sources", [])
         formatted_sources = "\n".join(f"• {s}" for s in sources)
 
@@ -457,6 +489,23 @@ def build_ui():
             lines=3,
         )
 
+        query_mode = gr.Radio(  # type: ignore
+            choices=[("Normal RAG", "normal"),
+                     ("Repository Overview", "repository_overview")],
+            value="normal",
+            label="Query mode",
+        )
+        with gr.Accordion("Repository overview experimental controls", open=False):
+            claim_selection = gr.Checkbox(  # type: ignore
+                label="Overview claim selection", value=False
+            )
+            structured_answers = gr.Checkbox(  # type: ignore
+                label="Structured repository answers", value=False
+            )
+            canonical_selection = gr.Checkbox(  # type: ignore
+                label="Canonical source selection", value=False
+            )
+
         with gr.Row():  # type: ignore
             top_k = gr.Number(  # type: ignore
                 label="📊 Top K Chunks",
@@ -537,7 +586,10 @@ def build_ui():
 
         rag_btn.click(
             fn=submit_rag_query,
-            inputs=[rag_query, repo_dropdown, top_k, provider, model],
+            inputs=[
+                rag_query, repo_dropdown, top_k, provider, model, query_mode,
+                claim_selection, structured_answers, canonical_selection,
+            ],
             outputs=rag_output,
         )
 

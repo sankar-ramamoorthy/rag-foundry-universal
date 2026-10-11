@@ -1,5 +1,8 @@
 """Opt-in structured answers cross the actual /v1/rag HTTP route."""
 
+from concurrent.futures import ThreadPoolExecutor
+from itertools import product
+
 import httpx
 import pytest
 from fastapi import FastAPI
@@ -299,3 +302,154 @@ def test_snapshot_missing_declared_compose_file_fails_closed(monkeypatch):
     })
     assert result.status_code == 503
     assert "/generate" not in calls
+
+
+def test_request_can_enable_structured_answers_without_server_flag(monkeypatch):
+    client, calls = _client(monkeypatch, enabled=False)
+    result = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+        "repository_overview_structured_answers_enabled": True,
+    })
+    assert result.status_code == 200, result.text
+    plan = result.json()["retrieval_plan"]
+    assert plan["structured_answer"]["focus"] == "q1"
+    assert plan["repository_overview_controls"] == {
+        "claim_type": "repository_overview", "active": True,
+        "claim_selection_enabled": False,
+        "structured_answers_enabled": True,
+        "canonical_selection_enabled": False,
+    }
+    assert "/generate" not in calls
+
+
+def test_request_can_disable_enabled_server_default(monkeypatch):
+    client, calls = _client(monkeypatch, enabled=True)
+    result = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+        "repository_overview_structured_answers_enabled": False,
+    })
+    assert result.status_code == 200, result.text
+    assert "structured_answer" not in result.json()["retrieval_plan"]
+    assert not result.json()["retrieval_plan"]["repository_overview_controls"][
+        "structured_answers_enabled"
+    ]
+    assert "/generate" in calls
+
+
+def test_omitted_overrides_preserve_existing_defaults(monkeypatch):
+    client, _ = _client(monkeypatch, enabled=True)
+    result = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+    })
+    assert result.status_code == 200, result.text
+    controls = result.json()["retrieval_plan"]["repository_overview_controls"]
+    assert controls["structured_answers_enabled"] is True
+    assert controls["claim_selection_enabled"] is False
+    assert controls["canonical_selection_enabled"] is False
+    assert result.json()["retrieval_plan"]["structured_answer"]["focus"] == "q1"
+
+
+@pytest.mark.parametrize(
+    "claim,structured,canonical", list(product((False, True), repeat=3))
+)
+def test_independent_request_controls(monkeypatch, claim, structured, canonical):
+    client, _ = _client(monkeypatch, enabled=False)
+    selected = []
+
+    async def select(chunks, _query, _repo, _generation, _embedding,
+                     _per_doc, _total, claim_enabled, canonical_enabled):
+        selected.append((claim_enabled, canonical_enabled))
+        return chunks, set(), "current_structure", {}
+
+    monkeypatch.setattr(service, "_apply_overview_selection", select)
+    result = client.post("/v1/rag", json={
+        "query": "I need information about the repo structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+        "repository_overview_claim_selection_enabled": claim,
+        "repository_overview_structured_answers_enabled": structured,
+        "repository_overview_canonical_selection_enabled": canonical,
+    })
+    assert result.status_code == 200, result.text
+    controls = result.json()["retrieval_plan"]["repository_overview_controls"]
+    assert selected == [(claim, canonical)]
+    assert controls["claim_selection_enabled"] is claim
+    assert controls["structured_answers_enabled"] is structured
+    assert controls["canonical_selection_enabled"] is canonical
+    assert ("structured_answer" in result.json()["retrieval_plan"]) is structured
+
+
+def test_exact_frozen_candidate_combination(monkeypatch):
+    client, _ = _client(monkeypatch, enabled=False)
+
+    async def no_extra_chunk(*_args):
+        return None, []
+
+    monkeypatch.setattr(service, "_fetch_canonical_overview_chunks", no_extra_chunk)
+    result = client.post("/v1/rag", json={
+        "query": "Describe the actual directory, service, and package "
+                 "structure of this repository.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+        "repository_overview_claim_selection_enabled": True,
+        "repository_overview_structured_answers_enabled": True,
+        "repository_overview_canonical_selection_enabled": False,
+    })
+    assert result.status_code == 200, result.text
+    plan = result.json()["retrieval_plan"]
+    assert plan["structured_answer"]["focus"] == "q2"
+    assert plan["repository_overview_controls"]["claim_selection_enabled"]
+    assert plan["repository_overview_controls"]["structured_answers_enabled"]
+    assert not plan["repository_overview_controls"]["canonical_selection_enabled"]
+
+
+@pytest.mark.parametrize("field", [
+    "repository_overview_claim_selection_enabled",
+    "repository_overview_structured_answers_enabled",
+    "repository_overview_canonical_selection_enabled",
+])
+@pytest.mark.parametrize("value", ["true", 1, []])
+def test_request_overrides_require_json_booleans(monkeypatch, field, value):
+    client, _ = _client(monkeypatch, enabled=False)
+    result = client.post("/v1/rag", json={
+        "query": "q", "repo_id": "r1", field: value,
+    })
+    assert result.status_code == 422
+
+
+def test_normal_query_does_not_activate_overview_controls(monkeypatch):
+    client, calls = _client(monkeypatch, enabled=False)
+    result = client.post("/v1/rag", json={
+        "query": "ordinary question", "repo_id": "r1",
+        "repository_overview_claim_selection_enabled": True,
+        "repository_overview_structured_answers_enabled": True,
+        "repository_overview_canonical_selection_enabled": True,
+    })
+    assert result.status_code == 200, result.text
+    plan = result.json()["retrieval_plan"]
+    assert not plan["repository_overview_controls"]["active"]
+    assert "structured_answer" not in plan
+    assert "/generate" in calls
+
+
+def test_concurrent_requests_keep_overrides_isolated(monkeypatch):
+    client, _ = _client(monkeypatch, enabled=False)
+    question = "I need information about the repo structure."
+
+    def ask(enabled):
+        response = client.post("/v1/rag", json={
+            "query": question, "repo_id": "r1",
+            "claim_type": "repository_overview",
+            "repository_overview_structured_answers_enabled": enabled,
+        })
+        assert response.status_code == 200, response.text
+        return response.json()["retrieval_plan"]
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        plans = list(pool.map(ask, (True, False)))
+    assert "structured_answer" in plans[0]
+    assert "structured_answer" not in plans[1]
+    assert plans[0]["repository_overview_controls"]["structured_answers_enabled"]
+    assert not plans[1]["repository_overview_controls"]["structured_answers_enabled"]
+    assert not service.get_settings().REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED

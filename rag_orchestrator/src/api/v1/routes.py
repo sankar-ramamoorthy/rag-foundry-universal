@@ -72,6 +72,15 @@ async def rag_endpoint(rag_query: RAGQuery):
             language=rag_query.language,
             rerank=rag_query.rerank,
             claim_type=rag_query.claim_type,
+            repository_overview_claim_selection_enabled=(
+                rag_query.repository_overview_claim_selection_enabled
+            ),
+            repository_overview_structured_answers_enabled=(
+                rag_query.repository_overview_structured_answers_enabled
+            ),
+            repository_overview_canonical_selection_enabled=(
+                rag_query.repository_overview_canonical_selection_enabled
+            ),
             trace_canonical_ids=(
                 set(rag_query.trace_canonical_ids)
                 if rag_query.trace_canonical_ids

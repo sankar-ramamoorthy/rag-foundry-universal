@@ -1124,8 +1124,26 @@ async def run_rag(
     trace_canonical_ids: Optional[Set[str]] = None,
     rerank: Optional[bool] = None,
     claim_type: Optional[ClaimType] = None,
+    repository_overview_claim_selection_enabled: Optional[bool] = None,
+    repository_overview_structured_answers_enabled: Optional[bool] = None,
+    repository_overview_canonical_selection_enabled: Optional[bool] = None,
 ) -> RAGResult:
     settings = get_settings()
+    claim_selection = (
+        settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
+        if repository_overview_claim_selection_enabled is None
+        else repository_overview_claim_selection_enabled
+    )
+    structured_answers = (
+        settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
+        if repository_overview_structured_answers_enabled is None
+        else repository_overview_structured_answers_enabled
+    )
+    canonical_selection = (
+        settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED
+        if repository_overview_canonical_selection_enabled is None
+        else repository_overview_canonical_selection_enabled
+    )
     trace_id = _new_trace_id()
     _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
 
@@ -1150,6 +1168,13 @@ async def run_rag(
         trace_canonical_ids=trace_canonical_ids,
         trace_id=trace_id,
     )
+    retrieval_plan_dict["repository_overview_controls"] = {
+        "claim_type": claim_type,
+        "active": claim_type == "repository_overview",
+        "claim_selection_enabled": claim_selection,
+        "structured_answers_enabled": structured_answers,
+        "canonical_selection_enabled": canonical_selection,
+    }
     # NOTE: seed_document_ids here means "every document with retrieved
     # chunks, seed and expanded merged" -- prepare_chunks_for_agent below
     # relies on this dict's insertion order (seeds added before expanded
@@ -1215,7 +1240,6 @@ async def run_rag(
 
     policy_document_ids: set[str] = set()
     obligation = "current_structure"
-    claim_selection = settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
     if claim_type == "repository_overview":
         (
             agent_chunks,
@@ -1231,7 +1255,7 @@ async def run_rag(
             max_chunks_per_doc,
             settings.MAX_TOTAL_CHUNKS,
             claim_selection,
-            settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED,
+            canonical_selection,
         )
         retrieval_plan_dict.update(selection_trace)
 
@@ -1331,7 +1355,7 @@ async def run_rag(
             resolved_repo_id,
             retrieval_plan_dict["generation_id"],
             strict_generation=(
-                settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
+                structured_answers
                 and focus is not None
             ),
         )
@@ -1361,7 +1385,7 @@ async def run_rag(
         retrieval_plan_dict.update(typed_trace)
         llm_context = policy_text + "\nRETRIEVED EVIDENCE\n" + context_str
 
-        if settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED and focus:
+        if structured_answers and focus:
             answer, structured_trace, structured_sources = (
                 await _structured_overview_answer(
                     resolved_repo_id,
