@@ -6,6 +6,14 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-10-10
+
+Added proposed [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
+to distinguish development/regression repositories from held-out
+generalization tests after the separate #240 and `py-coding-agent` results.
+The ADR records evaluation methodology only; its acceptance and any
+retrieval changes remain separate decisions.
+
 ## 2026-09-18
 
 Accepted [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)
