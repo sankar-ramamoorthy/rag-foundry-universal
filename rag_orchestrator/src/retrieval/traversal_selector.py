@@ -3,7 +3,7 @@
 Keyword-driven traversal strategy selection.
 """
 from dataclasses import dataclass
-from typing import Dict, List, Callable, Set
+from typing import Dict, List, Callable, Optional, Set, Tuple
 from functools import partial
 import logging
 import re
@@ -348,3 +348,105 @@ def execute_traversals_from_seeds(
             graph, seed_canonical_ids, strategies
         )
     ]
+
+
+# Issue #257: explicit `ClassName.method_name` mentions in the query text
+# only -- PascalCase class, lower/snake method, the common convention
+# across Python/Java/TS/C#. Deliberately never matched against
+# `trace_canonical_ids`: that field is diagnostic-only (see
+# `hybrid_retrieve`'s docstring -- "costs nothing when omitted ... does
+# not affect retrieval behavior either way") and must stay observational.
+_MENTIONED_METHOD_RE = re.compile(r"\b([A-Z][A-Za-z0-9_]*)\.([a-z_][A-Za-z0-9_]*)\b")
+
+
+def _extract_mentioned_methods(query: str) -> Set[Tuple[str, str]]:
+    """(class_name, method_name) pairs the query text explicitly names."""
+    return set(_MENTIONED_METHOD_RE.findall(query))
+
+
+def _simple_name_parts(canonical_id: str) -> Tuple[str, Optional[str]]:
+    """(class_or_module_simple_name, method_simple_name) from a
+    canonical_id's final '#'-fragment. A class/module fragment has no
+    '.' (method_simple_name is None); a method fragment is
+    'ClassName.method_name' (possibly with further dotted nesting, in
+    which case the segment immediately before the last '.' is taken as
+    the class name)."""
+    frag = canonical_id.rsplit("#", 1)[-1] if "#" in canonical_id else canonical_id
+    if "." not in frag:
+        return frag, None
+    class_part, method_part = frag.rsplit(".", 1)
+    return class_part.rsplit(".", 1)[-1], method_part
+
+
+def expand_mentioned_methods(
+    graph: CodebaseGraph,
+    query: str,
+    candidates: List[ExpandedCandidate],
+    seed_canonical_ids: Set[str],
+) -> List[ExpandedCandidate]:
+    """
+    Issue #257: `_seed_and_defines_descendants` already expands a seed
+    that IS a class/method into its own DEFINES descendants (depth 2), so
+    a class named directly by the vector search already surfaces its
+    methods. It never revisits a class that reaches the candidate set
+    only through a *different* seed's non-DEFINES expansion (e.g. CALL,
+    INHERITS) -- that class's own members are then never explored, even
+    when the query explicitly names one of them and the graph already has
+    the DEFINES edge to it (confirmed for #254/#257: `agent.py#Agent`
+    reached `expanded_canonical_ids` this way, but `agent.py#Agent.run`
+    never did, despite the edge existing).
+
+    Bounded and query-driven, not a general multi-hop walk: only classes
+    *already present* in `candidates` (i.e. already structurally relevant
+    via some other signal) are considered, and only when the query
+    explicitly names `ClassName.method_name` for that exact class. An
+    unrelated class elsewhere in the repo with a same-named method (e.g.
+    some other class's own `run`) is never touched, because its name was
+    never mentioned and it was never already a candidate -- this is the
+    negative-control property issue #257 called for, not an incidental
+    side effect.
+
+    Returns only the *new* candidates to merge in (never duplicates an
+    existing seed or candidate); empty when the query mentions nothing or
+    nothing matches. `strategy_index=-1` so an admitted method ranks
+    ahead of ordinary expansion for the `MAX_EXPANDED_DOCS` cap -- it was
+    explicitly asked for by name, not merely adjacent to a seed.
+    """
+    mentioned = _extract_mentioned_methods(query)
+    if not mentioned or graph is None:
+        return []
+
+    wanted_methods_by_class: Dict[str, Set[str]] = {}
+    for class_name, method_name in mentioned:
+        wanted_methods_by_class.setdefault(class_name, set()).add(method_name)
+
+    existing_cids = {c.node.canonical_id for c in candidates} | seed_canonical_ids
+    extra: List[ExpandedCandidate] = []
+    seen_extra: Set[str] = set()
+    for candidate in candidates:
+        cid = candidate.node.canonical_id
+        if cid in seed_canonical_ids:
+            continue  # already covered by _seed_and_defines_descendants
+        class_name, method_part = _simple_name_parts(cid)
+        if method_part is not None:
+            continue  # candidate is itself a method, not a class/module
+        wanted_methods = wanted_methods_by_class.get(class_name)
+        if not wanted_methods:
+            continue
+        for child in traverse_defines(graph, cid, depth=1):
+            child_cid = child.canonical_id
+            if child_cid in existing_cids or child_cid in seen_extra:
+                continue
+            _, child_method = _simple_name_parts(child_cid)
+            if child_method is None or child_method not in wanted_methods:
+                continue
+            seen_extra.add(child_cid)
+            extra.append(
+                ExpandedCandidate(
+                    node=child,
+                    strategy_index=-1,
+                    relation_type="DEFINES",
+                    source_seed_canonical_id=cid,
+                )
+            )
+    return extra

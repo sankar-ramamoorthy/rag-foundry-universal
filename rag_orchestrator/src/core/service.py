@@ -49,6 +49,7 @@ from rag_orchestrator.src.retrieval.evidence_trace import (
 from rag_orchestrator.src.retrieval.traversal_selector import (
     select_traversal_strategies,
     execute_traversals_from_seeds_detailed,
+    expand_mentioned_methods,
 )
 from rag_orchestrator.src.retrieval.codebase_queries import CodebaseGraph
 from rag_orchestrator.src.retrieval.provenance_diagnostics import (
@@ -265,6 +266,15 @@ def _rank_expanded_canonical_ids(
     # F-12: expand from every seed, not just the longest-named one
     candidates = execute_traversals_from_seeds_detailed(
         graph, seed_canonical_ids, strategies
+    )
+    # Issue #257: a class that reaches the candidate set only via a
+    # *different* seed's non-DEFINES expansion never gets its own DEFINES
+    # children explored (`_seed_and_defines_descendants` only covers a
+    # class/method that is itself a seed). Take one additional, bounded,
+    # query-driven DEFINES hop when the query explicitly names one of an
+    # already-candidate class's methods.
+    candidates = candidates + expand_mentioned_methods(
+        graph, query, candidates, seed_canonical_ids
     )
     # Preserve relation priority; within a relation prefer query-matching
     # symbols over arbitrary alphabetical truncation under the document cap.
