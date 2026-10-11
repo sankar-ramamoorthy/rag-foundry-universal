@@ -32,6 +32,18 @@ Requires Ollama running on the host at `http://host.docker.internal:11434` with 
 
 `docker-compose.test.yml` spins up an isolated Postgres (`ingestion_test` db, port 5433) plus `vector_store_service`/`ingestion_service` for integration testing; `.env.test` holds the corresponding env vars.
 
+**Production deployment is operator-owned.** Only the repository owner runs
+`scripts/prod-refresh.sh --deploy`, `git checkout` on the production host, or
+anything else that mutates the running release — read-only `--check` runs are
+the only thing an agent may run there, and only if asked. Before any remote
+testing against the deployed stack, or any attempt to reconcile local vs.
+deployed behavior, read
+[DOCS/deployment/agent-execution-and-verification.md](DOCS/deployment/agent-execution-and-verification.md)
+(local/deployed execution boundaries, the four SHAs that can differ, and the
+limits of HTTP-based verification) and
+[DOCS/deployment/production-docker-compose.md](DOCS/deployment/production-docker-compose.md)
+(the release procedure itself).
+
 ## Dependency management & tooling
 
 Each service (`ingestion_service`, `llm_service`, `rag_orchestrator`, `vector_store_service`, `gradio`) has its **own** `pyproject.toml`/`uv.lock` and is managed independently with `uv`. There is also a root `pyproject.toml`/`uv.lock`. When adding a dependency, add it to the specific service's `pyproject.toml`, not just root.
@@ -93,6 +105,7 @@ linking). Summary:
 - `DOCS/adr/` — architecture decision records; check each ADR's status before relying on it, and read the relevant one before changing graph/identity/embedding/persistence behavior.
 - `DOCS/audit/` — codebase audit findings, scalability/platform/LLM-provider plans, and the roadmap; start at `DOCS/audit/00-Audit-Overview.md`.
 - `DOCS/architecture/` — diagrams and deep-dives (e.g. codebase ingestion flow, repo query ASCII flow, extraction hierarchy model).
+- `DOCS/deployment/` — operational deployment guidance: `production-docker-compose.md` (the release procedure) and `agent-execution-and-verification.md` (operator-owned deployment boundary, local-vs-deployed execution model, the four SHAs that can differ, and HTTP verification limits). Read before any remote testing against the deployed stack.
 - `DOCS/proposals/` — process/tooling proposals under discussion (not yet binding).
 - `DOCS/test_results/` — benchmark/verification evidence tied to specific audit findings.
 - `DOCS/notes/` — ad hoc working notes.
