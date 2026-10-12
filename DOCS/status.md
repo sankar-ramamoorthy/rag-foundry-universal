@@ -203,13 +203,33 @@ answered that indexed `py_mono` files were absent. No retrieval or policy
 correction has been applied for this separate evaluation.
 
 The bounded diagnostic follow-up is
-[issue #254](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/254).
-For the current `Agent.run` method, R1 and its explicit-path variants never
-enter the vector/graph candidate set; explicit R2 reaches graph rank 19,
-fetches chunks 7, 4, and 0, then fails the combined chunk-count stage.
-The global 50-chunk cap is a supported inference pending individual-limit
-attribution. Discovery and survival have separate acceptance criteria;
-these repositories remain development/diagnostic data under
+[issue #254](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/254),
+which traced this to two independent, now-fixed retrieval-pipeline
+defects — [issue #257](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/257)
+(structural discovery: a class reached via non-DEFINES expansion never
+had its own DEFINES children explored, even when the query explicitly
+named one and the edge existed) and a context-allocation follow-up
+(seed-first `document_order` exhausted the byte budget before an
+explicitly-named, already-fetched method's chunks were ever reached).
+Both are merged ([PR #258](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/258),
+[PR #259](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/259))
+and **production-verified** for normal-mode queries: `agent.py#Agent.run`
+is now discovered, fetched, prioritized into final context, and cited
+directly in the generated answer — see the
+[production verification record](/DOCS/test_results/2026-10-11-issue-254-257-production-verification.md)
+for the full before/after pipeline-stage table, deployed SHA, and live
+response evidence.
+
+**Not resolved by this fix, both tracked separately under #254:**
+`repository_overview` mode still excludes the method's evidence via a
+distinct `overview_policy` stage (not the byte budget) — a policy-
+semantics question, not yet evaluated, deliberately not addressed by
+weakening the policy. The original deployed/local seed-set discrepancy
+from the earlier diagnostic checkpoint also remains an unresolved
+diagnostic observation (embedding model, code path, and ANN determinism
+were each individually ruled out as causes; the remaining candidate,
+incremental-generation retag-timing drift, was never proven). These
+repositories remain development/diagnostic data under
 [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md).
 
 ## Incremental ingestion & snapshot lineage
