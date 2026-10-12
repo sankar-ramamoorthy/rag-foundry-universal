@@ -72,16 +72,22 @@ is substantially closed as of WP-R4/#167 (2026-09-18). The
 informs the amended [004 specification](/specs/004-bounded-ingestion-memory/spec.md).
 
 The active next tranche is **Phase 6** in
-[`07-Roadmap.md`](/DOCS/audit/07-Roadmap.md#phase-6--repository-intelligence-and-incremental-ingestion-foundation) —
+[`07-Roadmap.md`](/DOCS/audit/07-Roadmap.md#phase-6--repository-document-and-coding-agent-intelligence) —
 13 prioritized issues (#196-#208) covering incremental ingestion/snapshot
 lineage, repository intelligence (ORIENT/TRACE/IMPACT), provenance/source
-authority, and related foundation work. Items 1-3 (#196, #197, #198) and
-their fast-follows (#216, #220, #221) have shipped. #200 Stage A
-(mechanical bounded evidence sufficiency, A0-A5) has shipped — see
-[status](/DOCS/status.md); its full frozen live-evaluation gate remains
-open. Next is #199 (source authority / subject / provenance, ADR-053
-proposed, not yet implemented), then a #200 Stage C follow-up combining
-both.
+authority, and related foundation work, **reorganized 2026-10-12** under
+R/A/D/E/O/P workstream labels (every issue number and shipped checkbox
+preserved; see the roadmap for the full reconciliation). Items 1-3
+(#196, #197, #198) and their fast-follows (#216, #220, #221) have
+shipped. #200 Stage A (mechanical bounded evidence sufficiency, its own
+internal A0-A5 stage labels — distinct from the roadmap's new `AG0`-`AG5`
+coding-agent items) has shipped — see [status](/DOCS/status.md); its full
+frozen live-evaluation gate remains open. Next is #199 (source authority /
+subject / provenance, ADR-053 proposed, not yet implemented), then a #200
+Stage C follow-up combining both. Separately, #254's normal-mode evidence-
+delivery symptom is production-verified resolved (#257, PRs #258-#260);
+#254 stays open for its overview-policy and historical seed-set questions
+— see the [production verification record](/DOCS/test_results/2026-10-11-issue-254-257-production-verification.md).
 
 Start at [[audit/00-Audit-Overview]] — the audit subtree's own index
 (codebase findings, scalability/platform/LLM-provider plans, the roadmap,
@@ -123,6 +129,11 @@ authority-aware sufficiency checks. Its
 [code findings](/DOCS/notes/2026-09-19-phase-6-sufficiency-findings.md)
 record the inspected baseline and implementation seams. This is proposed work,
 not a shipped capability.
+
+[The roadmap-reorientation proposal](/DOCS/proposals/2026-10-11-roadmap-reorientation-agent-ready-intelligence.md)
+(`status: integrated`, 2026-10-12) — reconciled and integrated into
+`07-Roadmap.md`'s Phase 6 (above); kept as the historical rationale record,
+not a live planning document.
 
 `DOCS/proposals/` — process/tooling proposals under discussion, not yet
 binding: [[proposals/sdd-spec-kit-adoption]],

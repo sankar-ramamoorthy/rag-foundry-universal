@@ -576,7 +576,7 @@ two narrow follow-ups (#176 post-delete ANN, #191 migration-gate
 tooling) remain open. Full per-item detail is below, kept for its
 issue/PR-numbered evidence trail. **What comes next is tracked as a new
 roadmap tranche, not restated here** — see
-[`07-Roadmap.md`'s Phase 6](/DOCS/audit/07-Roadmap.md#phase-6--repository-intelligence-and-incremental-ingestion-foundation)
+[`07-Roadmap.md`'s Phase 6](/DOCS/audit/07-Roadmap.md#phase-6--repository-document-and-coding-agent-intelligence)
 and issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208).
 
 - The [September 16 architecture audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
