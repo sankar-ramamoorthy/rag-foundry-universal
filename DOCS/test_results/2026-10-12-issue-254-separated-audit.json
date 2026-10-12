@@ -1,0 +1,31 @@
+{
+  "status": "verified",
+  "requests_verified": 6,
+  "original_question_and_evidence_unchanged": true,
+  "same_scoring_model_template_pin_no_fallback": true,
+  "manual_score_hashes_and_totals_verified": true,
+  "contract_added_prompt_bytes": 1089,
+  "evidence_bytes": 4024,
+  "automatic_evidence_bytes": 3952,
+  "literal_source_manifests_verified": true,
+  "candidate_runtime_files_unchanged": {
+    "rag_orchestrator/src/retrieval/repository_overview_policy.py": "fd68a5b2e5a3ef826906ca424f11f88241793a07f4b2b828ed8f785000f5ed2f",
+    "rag_orchestrator/src/core/service.py": "9aa20b5323b16350561e18fc5ab396638c7871df86218cddbb6335d6272a3b84"
+  },
+  "automatic_coverage_review": {
+    "primary_statement_witnesses": {
+      "input": true,
+      "provider": true,
+      "extraction": true,
+      "dispatch": true,
+      "feedback": false
+    },
+    "startup_handoff": false,
+    "assistant_call_record": false,
+    "memory_initializer": false,
+    "branch_relationships_preserved": false,
+    "full_behavioral_completeness": false,
+    "judgment": "Statement witnesses manually reviewed after selection; not an execution-path certification. No model requests use this incomplete selector output."
+  },
+  "limits": "Self-reported runtime identity; defaults stochastic; full source supplied to offline selector; no held-out validation; frozen evidence excludes system-memory initializer."
+}

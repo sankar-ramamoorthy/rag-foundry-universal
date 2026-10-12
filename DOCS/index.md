@@ -25,6 +25,11 @@ abandoned dated-snapshot convention, archived 2026-09-18 — see
 
 ## Documentation Standard
 
+[README accuracy policy](/DOCS/standards/readme-accuracy.md) requires product
+descriptions to match implementation and validation, with development progress
+kept in `DOCS/status.md`. The [PR review checklist](/.github/pull_request_template.md)
+records the applicable accuracy and license checks.
+
 New or substantially-edited docs follow
 [the OKF documentation standard](/DOCS/standards/okf-documentation.md)
 (frontmatter + linking conventions). [`DOCS/log.md`](/DOCS/log.md)
@@ -157,14 +162,44 @@ confirms two merged retrieval-pipeline fixes (structural discovery past a
 one-hop expansion limit; context-allocation priority for explicitly-named
 methods) against the live deployed stack — the authoritative method is
 now discovered, fetched, and cited in the generated answer for normal-
-mode queries. Repository-overview-mode exclusion and the historical
-seed-set discrepancy remain open, separate questions under #254.
+mode queries. The [October 12 overview control comparison](/DOCS/test_results/2026-10-12-issue-254-overview-control-comparison.md)
+records 30 matched pinned requests: overview correctness improves, but
+claim selection removes explicit-path method evidence and produces false
+code-absence answers. This confirmed regression and the historical seed-set
+discrepancy remain open, separate work under #254.
+The [local policy candidate](/DOCS/test_results/2026-10-12-issue-254-policy-candidate.md)
+preserves R1 implementation/CLI evidence and all eight overview passes in
+30 additional matched requests, but its answer gate still fails. It remains
+unmerged and undeployed; held-out #243 evaluation is not claimed complete.
+The [agent-loop completeness diagnosis](/DOCS/test_results/2026-10-12-issue-254-loop-evidence-completeness.md)
+records two unchanged observed replays and the actual generation payload:
+provider/feedback passages are not fetched, exact `main`/full CLI passages
+lose to byte capacity, and equivalent file-level startup/CLI handoffs survive.
+It corrects the candidate report's `main` chunk-count attribution and keeps
+incomplete delivery separate from incorrect synthesis and independent C1 grounding.
+The [fixed-cap complete-evidence experiment](/DOCS/test_results/2026-10-12-issue-254-complete-evidence-experiment.md)
+then fits five normal-flow transition witnesses in 4024 evidence bytes and
+compares three matched pairs with the unchanged captured candidate context.
+Memory-input/feedback explanation improves to 3/3, while full factual/attribution
+acceptance remains 0/3. This is a manual source-excerpt oracle with state-dependency
+limits, not an implemented selector or a completed #243 evaluation.
+The [separate automatic-coverage and frozen-evidence grounding tests](/DOCS/test_results/2026-10-12-issue-254-separated-investigations.md)
+find that a 3952-byte offline AST selection still misses feedback/startup and
+branch relationships. A six-call explicit answer-contract comparison passes
+0/3 full-loop gates in each arm and gives no scored improvement. No runtime
+policy is changed; state dependencies remain unresolved and #243 is deferred.
 
 
 `DOCS/test_results/` — benchmark and verification records tied to specific
 audit findings.
 
 ## Evaluations
+
+The current focus is the [D0 document-RAG baseline](/DOCS/evaluations/2026-10-12-document-rag-baseline.md),
+with twelve frozen synthetic development cases. Execution is pending corpus
+isolation; no document quality score is claimed. [#254 is deliberately deferred](/DOCS/notes/2026-10-12-issue-254-deferred.md)
+with the failed acceptance gate open, candidate preserved, C1 separate and #243
+held-out evaluation untouched.
 
 `DOCS/evaluations/` — pre-registered evaluation question/candidate sets
 (defined before the experiment runs, distinct from `DOCS/test_results/`'s

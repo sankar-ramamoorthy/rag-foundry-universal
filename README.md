@@ -1,35 +1,41 @@
 ﻿# rag-foundry-universal
 
-**Read-only code intelligence for understanding unfamiliar repositories.**
-
-Combines semantic search with a deterministic code graph to answer questions
-about implementation, dependencies, and repository structure. Supports Python,
-TypeScript/JavaScript, Rust, and Java, alongside Markdown and uploaded documents.
-
 [![CI](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml/badge.svg)](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/workflows/ci.yml)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/sankar-ramamoorthy/rag-foundry-universal)
 
-In a **10-question baseline**, graph expansion recovered relevant evidence for
-**two questions missed by the top-five vector results**. The project also covers
-operational concerns that affect answer reliability: ingestion recovery,
-repository generation consistency, bounded context selection, and traceable
-source evidence. See [measured results](#measured-results) for scope and limitations.
+**Read-only exploration of code repositories and documents, with traceable source evidence.**
+
+Finding a relevant file is only the first step in understanding an unfamiliar
+project. You also need to see how components connect and which sources support
+an explanation.
+
+RAG-FOUNDRY-UNIVERSAL combines similarity search with relationships extracted
+from code to help users locate implementations, find callers and dependencies,
+and investigate potential change impact. It provides natural-language answers
+and structured queries, and records which source passages were supplied to the
+language model. It supports Python, TypeScript/JavaScript, Rust, and Java,
+alongside Markdown and uploaded documents.
+
+Structural analysis has limits, and generated explanations can be incomplete
+or incorrect. The system analyzes indexed sources without modifying them.
+
+## What you can do
+
+- **Explore a repository:** Find services, startup points, configuration files,
+  and where functionality is implemented.
+- **Trace relationships:** Find callers, dependencies, and connected symbols
+  within the supported structural analysis.
+- **Investigate potential change impact:** Identify callers and dependents that
+  may be affected by a change.
+- **Ask questions and inspect evidence:** Retrieve code and documents with source
+  references, and inspect bounded structural checks for supported relationships
+  and unresolved gaps. These checks do not certify complete execution-flow evidence.
 
 **Hardware:** plan for GPU-backed embedding and generation, locally or through
 remote inference endpoints. The current system is not intended as a CPU-friendly
 local setup.
 
 ## See it in action
-
-Ask questions such as:
-
-- What calls this function, and which source relationships support the answer?
-- Which services, manifests, and entry points exist in this repository?
-- Which callers or dependents might be affected by changing a symbol?
-- What does the documentation say about this implementation?
-
-The system exposes both generated answers and deterministic structural queries.
-It reads indexed source; it does not modify the repositories it analyzes.
 
 ![Graph-aware query showing callers of GraphAssembler.assemble and the edges it produces](DOCS/assets/screenshots/graph-aware-rag-query-example.png)
 
@@ -43,10 +49,9 @@ provides seeds; traversal follows extracted call, import, inheritance,
 containment, and documentation relationships. Explicit repository overview,
 trace, and impact endpoints use structural evidence without an LLM router.
 
-**Measure before adding retrieval complexity.** The initial evaluation separated
-retrieval failures from answer-generation failures. It did not justify enabling
-a reranker by default. An optional reranker remains available for controlled
-comparisons; adding a component is not treated as evidence of better answers.
+**Make reranking optional.** A cross-encoder reranker is available through
+configuration and per-request overrides, and is disabled by default. Its
+availability does not establish better retrieval or answer quality.
 
 **Track what actually reaches the model.** Context selection returns the exact
 selected passages. A final-context manifest records source identities and text
@@ -62,53 +67,6 @@ servable previous snapshot is not a current guarantee.
 **Avoid redundant embedding work.** Incremental ingestion reuses embeddings for
 unchanged files and records generation lineage. Files are still parsed to rebuild
 structure; this is not a claim that every ingestion stage scales only with the diff.
-
-## Measured results
-
-### Retrieval and answer quality
-
-The August 2026 baseline used **10 known-answer questions: five code questions
-and five document questions**.
-
-| Measurement | Result |
-| --- | --- |
-| Expected source in the top-five raw vector results | 7/10 |
-| Expected source recovered by production retrieval with five vector seeds and graph expansion | 9/10 |
-| End-to-end answer pass rate | 9/10 |
-
-The expanded retrieval pool can contain more than five artifacts, so the first
-two rows are not an equal-sized final-result comparison. This is a small,
-project-specific baseline, not a general accuracy guarantee. Retrieval success
-and answer correctness are evaluated separately.
-
-[Baseline questions, methodology, and failure analysis](DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md)
-
-A later, separate eight-question evaluation compared improved passage selection
-and context delivery against the earlier implementation: **5/8 versus 3/8**.
-These are different question sets and should not be read as a longitudinal
-accuracy trend. The report includes the regression analysis and budget tradeoff.
-
-[Passage-selection evaluation](DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)
-
-### Ingestion and search performance
-
-A synthetic repository with **2,000 files, 56,000 artifacts, and 104,000
-relationships**, measured on a laptop with PostgreSQL/pgvector in Docker:
-
-| Stage | Measured result |
-| --- | --- |
-| Source extraction and graph construction | 42.7 s |
-| Atomic graph persistence | 25.7 s |
-| Chunking 54,000 artifacts | 1.2 s |
-| Filtered vector search, k=10 | 61.7 ms p95 |
-
-These are historical component measurements, not current end-to-end latency
-claims. Embedding was the dominant cost: about 2.2 chunks/second on CPU Ollama.
-That historical CPU measurement illustrates the bottleneck; it is not a practical
-hardware recommendation for the current system. The benchmark does not
-demonstrate million-artifact scale.
-
-[Benchmark setup and measurements](DOCS/test_results/Phase-1-Exit-Report.md)
 
 ## Architecture
 
@@ -147,7 +105,8 @@ LiteLLM, Gradio, Docker Compose, pytest, and GitHub Actions.
 ## Current capabilities and limits
 
 - **Code intelligence:** Python, TypeScript/JavaScript, Rust, and Java extraction;
-  repository inventory; bounded call tracing; candidate impact analysis.
+  repository inventory; bounded call tracing; candidate impact analysis;
+  generation-checked evidence assessment with explicit sufficiency and gaps.
 - **Document retrieval:** Markdown, PDF, office documents, CSV, text, and OCR inputs.
 - **Repository maintenance:** incremental embedding reuse, source/generation
   lineage, serialized ingestion/deletion, and interrupted-job recovery.
@@ -157,8 +116,20 @@ LiteLLM, Gradio, Docker Compose, pytest, and GitHub Actions.
 Static analysis cannot resolve every runtime call or external dependency. Trace
 results expose unresolved boundaries and truncation; impact results describe
 candidates, not guaranteed breakage. Graph retrieval still loads a repository
-into an in-memory cache. Source-authority and subject-aware sufficiency checks
-are planned work, not a current guarantee.
+into an in-memory cache. Evidence assessment checks bounded structural
+obligations; it does not establish source authority or complete behavioral
+coverage. Generated explanations can omit transitions or misattribute actions
+even when relevant code is retained. Source manifests identify delivered evidence;
+they do not certify the correctness of an answer or its citations.
+
+Document retrieval searches the non-code corpus; the simple-query API does not
+provide repository isolation. Supported input formats do not establish reliable
+OCR, table interpretation, or multi-passage synthesis for every document.
+
+Evaluation results are specific to their recorded corpora, settings and source
+generations. Historical measurements, validation scope, milestones and known
+issues are maintained in [project status](DOCS/status.md), with links to the
+underlying reports; they are not general accuracy or performance guarantees.
 
 [Current status and known limitations](DOCS/status.md) ·
 [Roadmap](DOCS/audit/07-Roadmap.md) · [Documentation index](DOCS/index.md)
@@ -221,7 +192,16 @@ curl --get 'http://localhost:8004/v1/repos/<repo_id>/trace' \
     --data-urlencode 'start=<canonical_id_or_symbol>'
 curl --get 'http://localhost:8004/v1/repos/<repo_id>/impact' \
     --data-urlencode 'start=<canonical_id_or_symbol>'
+
+# Assess bounded structural evidence and report unmet obligations.
+curl -X POST 'http://localhost:8004/v1/repos/<repo_id>/evidence' \
+    -H "Content-Type: application/json" \
+    -d '{"mode":"trace","start":"<canonical_id_or_symbol>"}'
 ```
+
+The evidence endpoint supports `orient`, `trace`, and `impact` modes. It returns
+structured evidence and an obligation assessment; optional explanation generation
+does not turn a partial assessment into complete evidence.
 
 ## Testing and deployment
 

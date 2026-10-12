@@ -1,0 +1,694 @@
+{
+  "status": "complete",
+  "wire_manifest_and_assembly_agree": true,
+  "assembly_replay_exact": true,
+  "candidate_source_unchanged": true,
+  "tracked_chunk_states": [
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "ae99145e-2295-4e2e-ae05-b02d40fb4574",
+      "ordinal": 0,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "ae99145e-2295-4e2e-ae05-b02d40fb4574",
+        "position": 8,
+        "cost": 261,
+        "consumed_before": 3569,
+        "remaining_before": 527,
+        "selected": true
+      }
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "6c68dd62-d2e4-4f09-acea-fce8b2fb0c06",
+      "ordinal": 1,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "b195d04a-18c5-4e0f-ba8e-e5c34dba4b3e",
+      "ordinal": 2,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "1c973082-8c33-4ac2-bbbe-2c7d41bd4aa8",
+      "ordinal": 3,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "8cb15bfd-6688-4d0e-bcef-be3c176549cd",
+      "ordinal": 4,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "728a9d35-9670-4417-b601-ec80eb2be0e2",
+      "ordinal": 5,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "1932f2e7-11f6-4cfa-aa3a-26bcc657543b",
+      "ordinal": 6,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "0e34503f-b123-4997-94c7-f73ebb9b8948",
+      "ordinal": 7,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "0e34503f-b123-4997-94c7-f73ebb9b8948",
+        "position": 2,
+        "cost": 478,
+        "consumed_before": 650,
+        "remaining_before": 3446,
+        "selected": true
+      }
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "37353567-8972-4a7e-b730-e29ec673c0ce",
+      "ordinal": 8,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+      "ordinal": 9,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+        "position": 5,
+        "cost": 460,
+        "consumed_before": 2106,
+        "remaining_before": 1990,
+        "selected": true
+      }
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "cfe059a5-a026-46bb-a117-2eddb6f440ac",
+      "ordinal": 10,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "72f3044a-4394-4b82-8538-20de1a6131d2",
+      "ordinal": 11,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "1b2bdd23-eb5c-4efb-9c75-0def1271830e",
+      "ordinal": 12,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "43b6e05e-f779-46a1-a574-7f70f78f753b",
+      "ordinal": 13,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "e8b7d711-1cf2-43fc-9bdc-d2b4c253b225",
+      "ordinal": 14,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/main.py#main",
+      "chunk_id": "7dd42350-9377-4abf-8015-6b08ce3cf4b7",
+      "ordinal": 0,
+      "first_loss": "context_budget",
+      "delivered": false,
+      "budget_evaluation": {
+        "chunk_id": "7dd42350-9377-4abf-8015-6b08ce3cf4b7",
+        "position": 24,
+        "cost": 1481,
+        "consumed_before": 4061,
+        "remaining_before": 35,
+        "selected": false
+      }
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/ui/cli.py#start_cli",
+      "chunk_id": "e709f1d2-58b0-4007-9e38-472b0be593a3",
+      "ordinal": 0,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "e709f1d2-58b0-4007-9e38-472b0be593a3",
+        "position": 10,
+        "cost": 231,
+        "consumed_before": 3830,
+        "remaining_before": 266,
+        "selected": true
+      }
+    },
+    {
+      "arm": "candidate",
+      "canonical_id": "py_mono/ui/cli.py#start_cli",
+      "chunk_id": "dae67e0e-d6c0-4c8d-8f16-cb0e14880e9e",
+      "ordinal": 1,
+      "first_loss": "context_budget",
+      "delivered": false,
+      "budget_evaluation": {
+        "chunk_id": "dae67e0e-d6c0-4c8d-8f16-cb0e14880e9e",
+        "position": 13,
+        "cost": 986,
+        "consumed_before": 4061,
+        "remaining_before": 35,
+        "selected": false
+      }
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "ae99145e-2295-4e2e-ae05-b02d40fb4574",
+      "ordinal": 0,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "ae99145e-2295-4e2e-ae05-b02d40fb4574",
+        "position": 2,
+        "cost": 261,
+        "consumed_before": 936,
+        "remaining_before": 3160,
+        "selected": true
+      }
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "6c68dd62-d2e4-4f09-acea-fce8b2fb0c06",
+      "ordinal": 1,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "b195d04a-18c5-4e0f-ba8e-e5c34dba4b3e",
+      "ordinal": 2,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "1c973082-8c33-4ac2-bbbe-2c7d41bd4aa8",
+      "ordinal": 3,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "8cb15bfd-6688-4d0e-bcef-be3c176549cd",
+      "ordinal": 4,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "728a9d35-9670-4417-b601-ec80eb2be0e2",
+      "ordinal": 5,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "1932f2e7-11f6-4cfa-aa3a-26bcc657543b",
+      "ordinal": 6,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "0e34503f-b123-4997-94c7-f73ebb9b8948",
+      "ordinal": 7,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "0e34503f-b123-4997-94c7-f73ebb9b8948",
+        "position": 0,
+        "cost": 476,
+        "consumed_before": 0,
+        "remaining_before": 4096,
+        "selected": true
+      }
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "37353567-8972-4a7e-b730-e29ec673c0ce",
+      "ordinal": 8,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+      "ordinal": 9,
+      "first_loss": null,
+      "delivered": true,
+      "budget_evaluation": {
+        "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+        "position": 1,
+        "cost": 460,
+        "consumed_before": 476,
+        "remaining_before": 3620,
+        "selected": true
+      }
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "cfe059a5-a026-46bb-a117-2eddb6f440ac",
+      "ordinal": 10,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "72f3044a-4394-4b82-8538-20de1a6131d2",
+      "ordinal": 11,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "1b2bdd23-eb5c-4efb-9c75-0def1271830e",
+      "ordinal": 12,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "43b6e05e-f779-46a1-a574-7f70f78f753b",
+      "ordinal": 13,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "e8b7d711-1cf2-43fc-9bdc-d2b4c253b225",
+      "ordinal": 14,
+      "first_loss": "not_fetched",
+      "delivered": false,
+      "budget_evaluation": null
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/main.py#main",
+      "chunk_id": "7dd42350-9377-4abf-8015-6b08ce3cf4b7",
+      "ordinal": 0,
+      "first_loss": "context_budget",
+      "delivered": false,
+      "budget_evaluation": {
+        "chunk_id": "7dd42350-9377-4abf-8015-6b08ce3cf4b7",
+        "position": 47,
+        "cost": 1481,
+        "consumed_before": 4036,
+        "remaining_before": 60,
+        "selected": false
+      }
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/ui/cli.py#start_cli",
+      "chunk_id": "e709f1d2-58b0-4007-9e38-472b0be593a3",
+      "ordinal": 0,
+      "first_loss": "context_budget",
+      "delivered": false,
+      "budget_evaluation": {
+        "chunk_id": "e709f1d2-58b0-4007-9e38-472b0be593a3",
+        "position": 24,
+        "cost": 231,
+        "consumed_before": 4036,
+        "remaining_before": 60,
+        "selected": false
+      }
+    },
+    {
+      "arm": "overview_off",
+      "canonical_id": "py_mono/ui/cli.py#start_cli",
+      "chunk_id": "dae67e0e-d6c0-4c8d-8f16-cb0e14880e9e",
+      "ordinal": 1,
+      "first_loss": "context_budget",
+      "delivered": false,
+      "budget_evaluation": {
+        "chunk_id": "dae67e0e-d6c0-4c8d-8f16-cb0e14880e9e",
+        "position": 25,
+        "cost": 986,
+        "consumed_before": 4036,
+        "remaining_before": 60,
+        "selected": false
+      }
+    }
+  ],
+  "transition_states": [
+    {
+      "transition": "user_message_append",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "6c68dd62-d2e4-4f09-acea-fce8b2fb0c06",
+      "ordinal": 1,
+      "within_document_rank_one_based": 8,
+      "source_anchor": "\"role\": \"user\"",
+      "source_line": 641,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "6c68dd62-d2e4-4f09-acea-fce8b2fb0c06",
+          "ordinal": 1,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "6c68dd62-d2e4-4f09-acea-fce8b2fb0c06",
+          "ordinal": 1,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        }
+      ]
+    },
+    {
+      "transition": "active_provider",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "b195d04a-18c5-4e0f-ba8e-e5c34dba4b3e",
+      "ordinal": 2,
+      "within_document_rank_one_based": 13,
+      "source_anchor": "llm = self.session_manager.get_active_provider()",
+      "source_line": 650,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "b195d04a-18c5-4e0f-ba8e-e5c34dba4b3e",
+          "ordinal": 2,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "b195d04a-18c5-4e0f-ba8e-e5c34dba4b3e",
+          "ordinal": 2,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        }
+      ]
+    },
+    {
+      "transition": "provider_generate_and_response",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "8cb15bfd-6688-4d0e-bcef-be3c176549cd",
+      "ordinal": 4,
+      "within_document_rank_one_based": 9,
+      "source_anchor": "response = llm.generate(",
+      "source_line": 684,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "8cb15bfd-6688-4d0e-bcef-be3c176549cd",
+          "ordinal": 4,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "8cb15bfd-6688-4d0e-bcef-be3c176549cd",
+          "ordinal": 4,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        }
+      ]
+    },
+    {
+      "transition": "tool_call_name_args",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "728a9d35-9670-4417-b601-ec80eb2be0e2",
+      "ordinal": 5,
+      "within_document_rank_one_based": 6,
+      "source_anchor": "tool_name = tool_call.get(\"name\")",
+      "source_line": 699,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "728a9d35-9670-4417-b601-ec80eb2be0e2",
+          "ordinal": 5,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "728a9d35-9670-4417-b601-ec80eb2be0e2",
+          "ordinal": 5,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        }
+      ]
+    },
+    {
+      "transition": "assistant_tool_call_record",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "37353567-8972-4a7e-b730-e29ec673c0ce",
+      "ordinal": 8,
+      "within_document_rank_one_based": 4,
+      "source_anchor": "\"tool_calls\": [",
+      "source_line": 727,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "37353567-8972-4a7e-b730-e29ec673c0ce",
+          "ordinal": 8,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "37353567-8972-4a7e-b730-e29ec673c0ce",
+          "ordinal": 8,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        }
+      ]
+    },
+    {
+      "transition": "agent_dispatch",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+      "ordinal": 9,
+      "within_document_rank_one_based": 2,
+      "source_anchor": "result = tool.run(**args)",
+      "source_line": 746,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+          "ordinal": 9,
+          "first_loss": null,
+          "delivered": true,
+          "budget_evaluation": {
+            "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+            "position": 5,
+            "cost": 460,
+            "consumed_before": 2106,
+            "remaining_before": 1990,
+            "selected": true
+          }
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+          "ordinal": 9,
+          "first_loss": null,
+          "delivered": true,
+          "budget_evaluation": {
+            "chunk_id": "92d778c7-87a0-462d-a149-8a2247ed4c19",
+            "position": 1,
+            "cost": 460,
+            "consumed_before": 476,
+            "remaining_before": 3620,
+            "selected": true
+          }
+        }
+      ]
+    },
+    {
+      "transition": "tool_result_memory_and_continue",
+      "canonical_id": "py_mono/agent/agent.py#Agent.run",
+      "chunk_id": "cfe059a5-a026-46bb-a117-2eddb6f440ac",
+      "ordinal": 10,
+      "within_document_rank_one_based": 5,
+      "source_anchor": "\"role\": \"tool\"",
+      "source_line": 755,
+      "states": [
+        {
+          "arm": "candidate",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "cfe059a5-a026-46bb-a117-2eddb6f440ac",
+          "ordinal": 10,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        },
+        {
+          "arm": "overview_off",
+          "canonical_id": "py_mono/agent/agent.py#Agent.run",
+          "chunk_id": "cfe059a5-a026-46bb-a117-2eddb6f440ac",
+          "ordinal": 10,
+          "first_loss": "not_fetched",
+          "delivered": false,
+          "budget_evaluation": null
+        }
+      ]
+    }
+  ],
+  "source_sha256": {
+    "py_mono/agent/agent.py": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844",
+    "py_mono/main.py": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7",
+    "py_mono/ui/cli.py": "1577c3bc15b4ffbb5b19abbafe0601ebd5bcfe25b9425005960153f965f99d47"
+  },
+  "semantic_handoffs": {
+    "candidate": {
+      "agent = Agent(": [
+        {
+          "canonical_id": "py_mono/main.py",
+          "ordinal": 10,
+          "chunk_id": "f06a8707-3f5c-40d4-b1c7-d1bf86b939fc"
+        }
+      ],
+      "start_cli(agent)": [
+        {
+          "canonical_id": "py_mono/main.py",
+          "ordinal": 10,
+          "chunk_id": "f06a8707-3f5c-40d4-b1c7-d1bf86b939fc"
+        }
+      ],
+      "agent.run(prompt)": [
+        {
+          "canonical_id": "py_mono/ui/cli.py",
+          "ordinal": 3,
+          "chunk_id": "26cf90ca-897d-4708-88e5-5f55f5dca2c5"
+        }
+      ],
+      "llm.generate(": [],
+      "\"role\": \"tool\"": []
+    },
+    "overview_off": {
+      "agent = Agent(": [],
+      "start_cli(agent)": [],
+      "agent.run(prompt)": [],
+      "llm.generate(": [],
+      "\"role\": \"tool\"": []
+    }
+  },
+  "source_verification": [
+    {
+      "path": "py_mono/agent/agent.py",
+      "url": "https://raw.githubusercontent.com/sankar-ramamoorthy/py-coding-agent/f854303e6e44ff95d94792d24868442a28080ba2/py_mono/agent/agent.py",
+      "sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844",
+      "matches_captured_pinned_source": true
+    },
+    {
+      "path": "py_mono/main.py",
+      "url": "https://raw.githubusercontent.com/sankar-ramamoorthy/py-coding-agent/f854303e6e44ff95d94792d24868442a28080ba2/py_mono/main.py",
+      "sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7",
+      "matches_captured_pinned_source": true
+    },
+    {
+      "path": "py_mono/ui/cli.py",
+      "url": "https://raw.githubusercontent.com/sankar-ramamoorthy/py-coding-agent/f854303e6e44ff95d94792d24868442a28080ba2/py_mono/ui/cli.py",
+      "sha256": "1577c3bc15b4ffbb5b19abbafe0601ebd5bcfe25b9425005960153f965f99d47",
+      "matches_captured_pinned_source": true
+    }
+  ]
+}

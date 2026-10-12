@@ -26,6 +26,39 @@ This is where ADR/issue/PR-numbered detail belongs — `README.md` links
 here rather than embedding it, so the README stays a stable reference
 document.
 
+## README maintenance and validation records
+
+The [README accuracy policy](/DOCS/standards/readme-accuracy.md) is formalized and
+the [PR template](/.github/pull_request_template.md) includes applicable product,
+validation, setup and license checks. The README now describes the bounded
+evidence API, separates supported formats from demonstrated reliability, and
+states current behavior-grounding and document-corpus isolation limits.
+Historical benchmark narrative is retained here and in its source reports.
+
+The README and `LICENSE` already agreed on Apache License 2.0. The five service
+Dockerfiles incorrectly declared MIT in OCI image labels; their source labels
+are corrected to `Apache-2.0`. Existing deployed images were not rebuilt or
+relabeled by this maintenance change. Third-party licenses are unchanged.
+
+Historical measurements, not current accuracy/performance guarantees:
+
+- The [August ten-question baseline](/DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md)
+  used five code and five document questions: expected evidence in 7/10 top-five
+  vector results versus 9/10 after graph expansion, and a recorded 9/10 answer
+  pass rate. Expansion increases the candidate pool; this is not an equal-sized
+  final-result comparison or independent generalization evidence.
+- The [September eight-question passage comparison](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md)
+  found at least partial expected-substring matches in 5/8 improved-delivery
+  answers versus 3/8 legacy answers. Full matches were 3/8 in both. This is a
+  different question set, not a longitudinal accuracy trend.
+- The [synthetic component benchmark](/DOCS/test_results/Phase-1-Exit-Report.md)
+  used 2,000 files, 56,000 artifacts and 104,000 relationships: extraction/graph
+  construction 42.7 s, persistence 25.7 s, chunking 54,000 artifacts 1.2 s,
+  filtered vector search at k=10 61.7 ms p95. Historical CPU Ollama embedding
+  throughput was about 2.2 chunks/second. These component measurements do not
+  establish current end-to-end latency, practical CPU-only operation or
+  million-artifact scale.
+
 ## Language / codebase graph support
 
 - **Python** — tree-sitter-based extraction, the production default
@@ -189,6 +222,18 @@ retain the earlier generation's history.
 
 ## Cross-repository live evaluation (#243)
 
+**Prioritization decision, 2026-10-12:** #254 is deliberately deferred with its
+acceptance gate still failed/open; its current research sequence is complete.
+The unmerged candidate, source snapshots and failing regression gates are
+preserved. C1 remains separate and #243's held-out evaluation stays untouched.
+See the [deferral and architectural requirements](/DOCS/notes/2026-10-12-issue-254-deferred.md).
+The immediate focus is the [D0 document-RAG baseline](/DOCS/evaluations/2026-10-12-document-rag-baseline.md):
+four synthetic documents and twelve frozen development questions, covering
+evidence, citations, tables, multi-passage reasoning and abstention.
+Execution awaits an isolated test stack or supplied original documents and
+ingestion IDs; local Docker is unavailable and no end-to-end document score is
+claimed. Read-only agent/MCP and scalability are later focus areas.
+
 The [Python coding agent re-ingestion evaluation](/DOCS/test_results/2026-10-10-py-coding-agent-real-repo-verification.md)
 uses its own ready generation and source commit, separate from the #240
 frozen 11-case pass. Ingestion represented all 99 tracked Python files and
@@ -221,10 +266,52 @@ for the full before/after pipeline-stage table, deployed SHA, and live
 response evidence.
 
 **Not resolved by this fix, both tracked separately under #254:**
-`repository_overview` mode still excludes the method's evidence via a
-distinct `overview_policy` stage (not the byte budget) — a policy-
-semantics question, not yet evaluated, deliberately not addressed by
-weakening the policy. The original deployed/local seed-set discrepancy
+The [October 12 matched overview control comparison](/DOCS/test_results/2026-10-12-issue-254-overview-control-comparison.md)
+completed 30 pinned requests. Overview questions improved from 1/8 to 8/8;
+strict full-suite acceptance was 10/11 versus 2/11, with a false historical
+attribution preventing an unqualified 11/11. Claim selection alone removes
+the current `Agent.run` evidence for the explicit-path flow question and
+produces false code-absence answers; normal and overview flag-off retain
+it. The no-code-regression gate fails. The method phrasing retains evidence
+in all four arms but answers still confuse `Agent.run` with `Skill.run`.
+No production policy was changed. A subsequent
+[local policy candidate](/DOCS/test_results/2026-10-12-issue-254-policy-candidate.md)
+completed another 30 matched requests: it classifies the explicit code-flow
+question as behavior, preserves current implementation and exact CLI evidence,
+and retains all eight overview passes. Its answer gate still fails: R1 invents
+prompt-to-tool parsing and omits result feedback, the simpler method answer
+does not explain the loop, and C1 adds unsupported historical detail. The
+candidate is unmerged and undeployed; 397 passing local tests do not override
+that live result. The subsequent
+[bounded loop-completeness diagnosis](/DOCS/test_results/2026-10-12-issue-254-loop-evidence-completeness.md)
+separates missing provider/feedback passages (indexed but below the three-chunk
+artifact fetch cut) from exact `main`/full CLI passages (fetched but excluded
+by remaining byte capacity). It corrects the candidate report's earlier
+chunk-count attribution for `main`. File-level startup and CLI handoffs do
+reach the generation payload, while the full current agent loop does not;
+the new answer also misattributes delivered agent dispatch to the LLM. C1's
+unsupported historical detail remains an independent grounding defect. No
+classification, prompt, retrieval setting, budget or production change was
+made during this diagnosis. The subsequent
+[fixed-cap complete-evidence experiment](/DOCS/test_results/2026-10-12-issue-254-complete-evidence-experiment.md)
+fits all five requested normal-flow transition witnesses in 4024 of 4096
+evidence bytes, using verbatim pinned source excerpts. Six matched generation
+calls preserve question, model, prompt template and policy envelope. Input-memory
+and result-feedback explanation each improve from 0/3 to 3/3, but full factual
+and actor-attribution acceptance remains 0/3 due to omissions and residual errors.
+The manual oracle omits some state dependencies, including constructor system-memory
+initialization, so it does not isolate all remaining failures as model-only.
+No production policy or budget change was made; #243 remains deferred.
+The [separate automatic-coverage and grounding investigations](/DOCS/test_results/2026-10-12-issue-254-separated-investigations.md)
+also fail their bounded gates. An offline query-seeded Python AST selector fits
+3952 bytes but omits feedback/startup and loses branch relationships. Six
+frozen-evidence generation calls test an explicit answer contract: factual
+obligations score 7/15 control versus 4/15 treatment, actor attribution 9/15
+versus 8/15, and full-loop acceptance 0/3 in both. This contract gives no
+demonstrated grounding improvement; initializer dependencies remain unresolved.
+The candidate remains unchanged, unmerged and undeployed; C1 stays separate
+and #243 remains deferred.
+The original deployed/local seed-set discrepancy
 from the earlier diagnostic checkpoint also remains an unresolved
 diagnostic observation (embedding model, code path, and ANN determinism
 were each individually ruled out as causes; the remaining candidate,

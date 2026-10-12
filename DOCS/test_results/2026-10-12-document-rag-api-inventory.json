@@ -1,0 +1,3562 @@
+{
+  "ingestion": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "Rag Foundry",
+      "version": "0.1.0"
+    },
+    "paths": {
+      "/version": {
+        "get": {
+          "tags": [
+            "operations"
+          ],
+          "summary": "Version",
+          "operationId": "version_version_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object",
+                    "title": "Response Version Version Get"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/health": {
+        "get": {
+          "summary": "Health Check",
+          "operationId": "health_check_health_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/ingest/file": {
+        "post": {
+          "tags": [
+            "ingestion"
+          ],
+          "summary": "Ingest File",
+          "operationId": "ingest_file_v1_ingest_file_post",
+          "requestBody": {
+            "content": {
+              "multipart/form-data": {
+                "schema": {
+                  "$ref": "#/components/schemas/Body_ingest_file_v1_ingest_file_post"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "202": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/IngestResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/ingest/{ingestion_id}": {
+        "get": {
+          "tags": [
+            "ingestion"
+          ],
+          "summary": "Ingest Status",
+          "operationId": "ingest_status_v1_ingest__ingestion_id__get",
+          "parameters": [
+            {
+              "name": "ingestion_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Ingestion Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/IngestResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/summary": {
+        "post": {
+          "tags": [
+            "summary"
+          ],
+          "summary": "Save Summary",
+          "operationId": "save_summary_v1_summary_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SummaryPayload"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/ingest-repo": {
+        "post": {
+          "tags": [
+            "codebase_ingest"
+          ],
+          "summary": "Ingest Repo",
+          "operationId": "ingest_repo_v1_ingest_repo_post",
+          "requestBody": {
+            "content": {
+              "application/x-www-form-urlencoded": {
+                "schema": {
+                  "$ref": "#/components/schemas/Body_ingest_repo_v1_ingest_repo_post"
+                }
+              }
+            }
+          },
+          "responses": {
+            "202": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/RepoIngestResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/ingest-repo/{ingestion_id}": {
+        "get": {
+          "tags": [
+            "codebase_ingest"
+          ],
+          "summary": "Get Repo Ingest Status",
+          "operationId": "get_repo_ingest_status_v1_ingest_repo__ingestion_id__get",
+          "parameters": [
+            {
+              "name": "ingestion_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Ingestion Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/RepoIngestResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos": {
+        "get": {
+          "tags": [
+            "repos"
+          ],
+          "summary": "List Repos",
+          "description": "List all complete repositories with metadata.",
+          "operationId": "list_repos_v1_repos_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "items": {
+                      "$ref": "#/components/schemas/RepoSummary"
+                    },
+                    "type": "array",
+                    "title": "Response List Repos V1 Repos Get"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/generation": {
+        "get": {
+          "tags": [
+            "repos"
+          ],
+          "summary": "Get Repo Generation",
+          "description": "#168 (WP-R5): the cheap half of generation resolution -- callers that\nonly need to know \"has this repo's servable generation changed\" (e.g.\nrag_orchestrator's graph cache) must not have to fetch the full graph\n(GET /v1/graph/repos/{repo_id}) just to find out. Backed by the same\ndb_utils.resolve_current_generation/generation_status logic #166 added,\nwhich is a single indexed lookup, not a full node/relationship export.\n\nIssue #196: also surfaces snapshot lineage (commit_sha, ingested_at,\nparent_generation_id, is_incremental) for the current generation, only\nwhen it is actually \"completed\" -- resolve_current_generation already\nreturns None otherwise, so lineage naturally stays unpopulated for a\nrepo with no stable generation to describe.",
+          "operationId": "get_repo_generation_v1_repos__repo_id__generation_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/RepoGenerationResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/compose-snapshot": {
+        "get": {
+          "tags": [
+            "repos"
+          ],
+          "summary": "Get Repo Compose Snapshot",
+          "description": "Return Compose content captured during the selected ready ingestion.",
+          "operationId": "get_repo_compose_snapshot_v1_repos__repo_id__compose_snapshot_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            },
+            {
+              "name": "generation_id",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Expected ready generation ID",
+                "title": "Generation Id"
+              },
+              "description": "Expected ready generation ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}": {
+        "delete": {
+          "tags": [
+            "repos"
+          ],
+          "summary": "Delete Repo",
+          "description": "Hard-delete a repository and everything derived from it (issue #158).\nSee _delete_repo_sync for the full behavior; this route only offloads\nthat synchronous work off the event loop (#170 / WP-R7).",
+          "operationId": "delete_repo_v1_repos__repo_id__delete",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/RepoDeleteResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/graph/repos/{repo_id}/nodes": {
+        "get": {
+          "tags": [
+            "graph"
+          ],
+          "summary": "Get Nodes By Canonical Ids",
+          "description": "Convert canonical_ids \u2192 document_ids for graph traversal.\n\nExample:\n    /v1/graph/repos/<repo_id>/nodes?canonical_ids=file.py,file.py#function\n\nIssue #107: a large combined seed+expansion canonical_id set (a few\nhundred IDs is common on a dense repo/query) can overflow the\nserver's URL/header length limit here, returning a 400 that looks\nto callers like \"nothing matched\" rather than a request-size error.\nPrefer POST /repos/{repo_id}/nodes/lookup for any caller whose\ncanonical_id count isn't small and fixed (this GET form stays for\nsmall/ad hoc lookups, e.g. from a browser or curl).",
+          "operationId": "get_nodes_by_canonical_ids_v1_graph_repos__repo_id__nodes_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            },
+            {
+              "name": "canonical_ids",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "description": "Comma-separated canonical_ids",
+                "title": "Canonical Ids"
+              },
+              "description": "Comma-separated canonical_ids"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CanonicalLookupResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/graph/repos/{repo_id}/nodes/lookup": {
+        "post": {
+          "tags": [
+            "graph"
+          ],
+          "summary": "Post Nodes By Canonical Ids",
+          "description": "POST variant of GET /repos/{repo_id}/nodes (issue #107): canonical_ids\ntravel in the JSON request body instead of the query string, so a\nlarge canonical_id batch can't hit the URL/header length limit that\nsilently turns into an empty, indistinguishable-from-\"nothing\nmatched\" result for the caller. This is the endpoint\nrag_orchestrator's canonical_to_document_map_http uses.",
+          "operationId": "post_nodes_by_canonical_ids_v1_graph_repos__repo_id__nodes_lookup_post",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanonicalLookupRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/CanonicalLookupResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/graph/repos/{repo_id}": {
+        "get": {
+          "tags": [
+            "graph"
+          ],
+          "summary": "Get Full Graph",
+          "description": "Export the entire graph (nodes and relationships) for the given repository.\n\nReturns:\n    nodes: list of GraphNode\n    relationships: dict of {from_canonical_id: [{to_canonical_id, relation_type}]}\n    total_nodes: int\n\nExample:\n    /v1/graph/repos/<repo_id>",
+          "operationId": "get_full_graph_v1_graph_repos__repo_id__get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/FullGraphResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/graph/docs/{document_id}/relationships": {
+        "get": {
+          "tags": [
+            "graph"
+          ],
+          "summary": "Get Document Relationships",
+          "description": "Return outgoing relationships for a single document.\nUsed by rag_orchestrator simple_service to expand retrieval plan\nvia traversal_planner.expand_retrieval_plan().\n\nExample:\n    /v1/graph/docs/486dcf66-c9ba-4f99-9dd6-296e81039c48/relationships",
+          "operationId": "get_document_relationships_v1_graph_docs__document_id__relationships_get",
+          "parameters": [
+            {
+              "name": "document_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Document Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/DocumentRelationshipsResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/chunks/{ingestion_id}": {
+        "get": {
+          "tags": [
+            "chunks"
+          ],
+          "summary": "Get Chunks By Ingestion",
+          "description": "Return all chunk texts for a given ingestion_id.\nNo vector similarity \u2014 pure DB lookup.\nCalled by llm_service to fetch content for summarization.",
+          "operationId": "get_chunks_by_ingestion_v1_chunks__ingestion_id__get",
+          "parameters": [
+            {
+              "name": "ingestion_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Ingestion Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ChunkTextResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/orient": {
+        "get": {
+          "tags": [
+            "orient"
+          ],
+          "summary": "Get Repo Orient",
+          "description": "Every field is read straight from persisted rows/JSON written once at\ningestion time -- no recomputation, no vector search, no LLM call, no\nwall-clock \"now\" (computed_at is the generation's finished_at). The\nsame generation always returns byte-identical JSON.",
+          "operationId": "get_repo_orient_v1_repos__repo_id__orient_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/OrientResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/": {
+        "get": {
+          "summary": "Root",
+          "operationId": "root__get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Body_ingest_file_v1_ingest_file_post": {
+          "properties": {
+            "file": {
+              "type": "string",
+              "format": "binary",
+              "title": "File"
+            },
+            "metadata": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Metadata"
+            }
+          },
+          "type": "object",
+          "required": [
+            "file"
+          ],
+          "title": "Body_ingest_file_v1_ingest_file_post"
+        },
+        "Body_ingest_repo_v1_ingest_repo_post": {
+          "properties": {
+            "git_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Git Url"
+            },
+            "local_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Local Path"
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            },
+            "force_full_rebuild": {
+              "type": "boolean",
+              "title": "Force Full Rebuild",
+              "default": false
+            }
+          },
+          "type": "object",
+          "title": "Body_ingest_repo_v1_ingest_repo_post"
+        },
+        "CanonicalLookupRequest": {
+          "properties": {
+            "canonical_ids": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Canonical Ids"
+            }
+          },
+          "type": "object",
+          "required": [
+            "canonical_ids"
+          ],
+          "title": "CanonicalLookupRequest"
+        },
+        "CanonicalLookupResponse": {
+          "properties": {
+            "nodes": {
+              "items": {
+                "$ref": "#/components/schemas/GraphNode"
+              },
+              "type": "array",
+              "title": "Nodes"
+            },
+            "total": {
+              "type": "integer",
+              "title": "Total"
+            }
+          },
+          "type": "object",
+          "required": [
+            "nodes",
+            "total"
+          ],
+          "title": "CanonicalLookupResponse"
+        },
+        "ChunkTextResponse": {
+          "properties": {
+            "ingestion_id": {
+              "type": "string",
+              "title": "Ingestion Id"
+            },
+            "chunks": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Chunks"
+            },
+            "count": {
+              "type": "integer",
+              "title": "Count"
+            }
+          },
+          "type": "object",
+          "required": [
+            "ingestion_id",
+            "chunks",
+            "count"
+          ],
+          "title": "ChunkTextResponse"
+        },
+        "DocumentRelationshipsResponse": {
+          "properties": {
+            "document_id": {
+              "type": "string",
+              "title": "Document Id"
+            },
+            "relationships": {
+              "items": {
+                "$ref": "#/components/schemas/RelationshipItem"
+              },
+              "type": "array",
+              "title": "Relationships"
+            },
+            "total": {
+              "type": "integer",
+              "title": "Total"
+            }
+          },
+          "type": "object",
+          "required": [
+            "document_id",
+            "relationships",
+            "total"
+          ],
+          "title": "DocumentRelationshipsResponse"
+        },
+        "FullGraphResponse": {
+          "properties": {
+            "nodes": {
+              "items": {
+                "$ref": "#/components/schemas/GraphNode"
+              },
+              "type": "array",
+              "title": "Nodes"
+            },
+            "relationships": {
+              "additionalProperties": true,
+              "type": "object",
+              "title": "Relationships"
+            },
+            "total_nodes": {
+              "type": "integer",
+              "title": "Total Nodes"
+            },
+            "generation_status": {
+              "type": "string",
+              "title": "Generation Status",
+              "default": "ready"
+            }
+          },
+          "type": "object",
+          "required": [
+            "nodes",
+            "relationships",
+            "total_nodes"
+          ],
+          "title": "FullGraphResponse"
+        },
+        "GapNoteModel": {
+          "properties": {
+            "category": {
+              "type": "string",
+              "title": "Category"
+            },
+            "path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Path"
+            },
+            "reason": {
+              "type": "string",
+              "title": "Reason"
+            }
+          },
+          "type": "object",
+          "required": [
+            "category",
+            "reason"
+          ],
+          "title": "GapNoteModel"
+        },
+        "GraphNode": {
+          "properties": {
+            "document_id": {
+              "type": "string",
+              "title": "Document Id"
+            },
+            "canonical_id": {
+              "type": "string",
+              "title": "Canonical Id"
+            },
+            "relative_path": {
+              "type": "string",
+              "title": "Relative Path"
+            },
+            "title": {
+              "type": "string",
+              "title": "Title"
+            },
+            "doc_type": {
+              "type": "string",
+              "title": "Doc Type"
+            },
+            "provenance": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provenance"
+            }
+          },
+          "type": "object",
+          "required": [
+            "document_id",
+            "canonical_id",
+            "relative_path",
+            "title",
+            "doc_type"
+          ],
+          "title": "GraphNode"
+        },
+        "HTTPValidationError": {
+          "properties": {
+            "detail": {
+              "items": {
+                "$ref": "#/components/schemas/ValidationError"
+              },
+              "type": "array",
+              "title": "Detail"
+            }
+          },
+          "type": "object",
+          "title": "HTTPValidationError"
+        },
+        "IngestResponse": {
+          "properties": {
+            "ingestion_id": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ingestion Id",
+              "description": "Server-generated identifier for this ingestion request"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "accepted",
+                "running",
+                "completed",
+                "failed"
+              ],
+              "title": "Status",
+              "description": "Current ingestion status",
+              "examples": [
+                "accepted",
+                "running",
+                "completed"
+              ]
+            }
+          },
+          "type": "object",
+          "required": [
+            "ingestion_id",
+            "status"
+          ],
+          "title": "IngestResponse",
+          "description": "Response model for ingestion creation and status checks."
+        },
+        "ManifestEntry": {
+          "properties": {
+            "kind": {
+              "type": "string",
+              "title": "Kind"
+            },
+            "path": {
+              "type": "string",
+              "title": "Path"
+            }
+          },
+          "type": "object",
+          "required": [
+            "kind",
+            "path"
+          ],
+          "title": "ManifestEntry"
+        },
+        "OrientResponse": {
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "ingestion_id": {
+              "type": "string",
+              "title": "Ingestion Id"
+            },
+            "generation_status": {
+              "type": "string",
+              "title": "Generation Status"
+            },
+            "commit_sha": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Commit Sha"
+            },
+            "languages": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object",
+              "title": "Languages"
+            },
+            "file_counts": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object",
+              "title": "File Counts"
+            },
+            "manifests": {
+              "items": {
+                "$ref": "#/components/schemas/ManifestEntry"
+              },
+              "type": "array",
+              "title": "Manifests"
+            },
+            "services": {
+              "items": {
+                "$ref": "#/components/schemas/ServiceEntry"
+              },
+              "type": "array",
+              "title": "Services"
+            },
+            "test_dirs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Test Dirs"
+            },
+            "docs_dirs": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Docs Dirs"
+            },
+            "heuristic_fields": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Heuristic Fields"
+            },
+            "gaps": {
+              "items": {
+                "$ref": "#/components/schemas/GapNoteModel"
+              },
+              "type": "array",
+              "title": "Gaps"
+            },
+            "computed_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Computed At"
+            }
+          },
+          "type": "object",
+          "required": [
+            "repo_id",
+            "ingestion_id",
+            "generation_status",
+            "languages",
+            "file_counts",
+            "manifests",
+            "services",
+            "test_dirs",
+            "docs_dirs",
+            "heuristic_fields",
+            "gaps"
+          ],
+          "title": "OrientResponse"
+        },
+        "RelationshipItem": {
+          "properties": {
+            "target_document_id": {
+              "type": "string",
+              "title": "Target Document Id"
+            },
+            "relation_type": {
+              "type": "string",
+              "title": "Relation Type"
+            }
+          },
+          "type": "object",
+          "required": [
+            "target_document_id",
+            "relation_type"
+          ],
+          "title": "RelationshipItem"
+        },
+        "RepoDeleteResponse": {
+          "properties": {
+            "status": {
+              "type": "string",
+              "title": "Status"
+            },
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "ingestion_ids": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Ingestion Ids"
+            },
+            "nodes_deleted": {
+              "type": "integer",
+              "title": "Nodes Deleted"
+            },
+            "ingestion_requests_deleted": {
+              "type": "integer",
+              "title": "Ingestion Requests Deleted"
+            }
+          },
+          "type": "object",
+          "required": [
+            "status",
+            "repo_id",
+            "ingestion_ids",
+            "nodes_deleted",
+            "ingestion_requests_deleted"
+          ],
+          "title": "RepoDeleteResponse"
+        },
+        "RepoGenerationResponse": {
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "ingestion_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingestion Id"
+            },
+            "generation_status": {
+              "type": "string",
+              "title": "Generation Status"
+            },
+            "commit_sha": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Commit Sha"
+            },
+            "ingested_at": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingested At"
+            },
+            "parent_generation_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Parent Generation Id"
+            },
+            "is_incremental": {
+              "type": "boolean",
+              "title": "Is Incremental",
+              "default": false
+            }
+          },
+          "type": "object",
+          "required": [
+            "repo_id",
+            "generation_status"
+          ],
+          "title": "RepoGenerationResponse"
+        },
+        "RepoIngestResponse": {
+          "properties": {
+            "ingestion_id": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ingestion Id"
+            },
+            "status": {
+              "type": "string",
+              "title": "Status"
+            },
+            "embed_progress": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Embed Progress"
+            }
+          },
+          "type": "object",
+          "required": [
+            "ingestion_id",
+            "status"
+          ],
+          "title": "RepoIngestResponse"
+        },
+        "RepoSummary": {
+          "properties": {
+            "id": {
+              "type": "string",
+              "title": "Id"
+            },
+            "name": {
+              "type": "string",
+              "title": "Name"
+            },
+            "display_name": {
+              "type": "string",
+              "title": "Display Name"
+            },
+            "status": {
+              "type": "string",
+              "title": "Status"
+            },
+            "ingestion_id": {
+              "type": "string",
+              "title": "Ingestion Id"
+            },
+            "ingested_at": {
+              "type": "string",
+              "format": "date-time",
+              "title": "Ingested At"
+            },
+            "file_count": {
+              "type": "integer",
+              "title": "File Count"
+            },
+            "node_count": {
+              "type": "integer",
+              "title": "Node Count"
+            },
+            "source_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Type"
+            },
+            "git_url": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Git Url"
+            },
+            "local_path": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Local Path"
+            },
+            "branch": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Branch"
+            }
+          },
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "display_name",
+            "status",
+            "ingestion_id",
+            "ingested_at",
+            "file_count",
+            "node_count"
+          ],
+          "title": "RepoSummary"
+        },
+        "ServiceEntry": {
+          "properties": {
+            "name": {
+              "type": "string",
+              "title": "Name"
+            },
+            "compose_file": {
+              "type": "string",
+              "title": "Compose File"
+            },
+            "dockerfile": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dockerfile"
+            },
+            "container_name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Container Name"
+            },
+            "entry_point": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entry Point"
+            },
+            "entry_point_source": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entry Point Source"
+            }
+          },
+          "type": "object",
+          "required": [
+            "name",
+            "compose_file"
+          ],
+          "title": "ServiceEntry"
+        },
+        "SummaryPayload": {
+          "properties": {
+            "ingestion_id": {
+              "type": "string",
+              "title": "Ingestion Id"
+            },
+            "summary": {
+              "type": "string",
+              "title": "Summary"
+            }
+          },
+          "type": "object",
+          "required": [
+            "ingestion_id",
+            "summary"
+          ],
+          "title": "SummaryPayload"
+        },
+        "ValidationError": {
+          "properties": {
+            "loc": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array",
+              "title": "Location"
+            },
+            "msg": {
+              "type": "string",
+              "title": "Message"
+            },
+            "type": {
+              "type": "string",
+              "title": "Error Type"
+            }
+          },
+          "type": "object",
+          "required": [
+            "loc",
+            "msg",
+            "type"
+          ],
+          "title": "ValidationError"
+        }
+      }
+    }
+  },
+  "vector": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "Vector Store Service",
+      "version": "0.1.0"
+    },
+    "paths": {
+      "/version": {
+        "get": {
+          "tags": [
+            "operations"
+          ],
+          "summary": "Version",
+          "operationId": "version_version_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object",
+                    "title": "Response Version Version Get"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/ingestions": {
+        "post": {
+          "summary": "Create Ingestion",
+          "operationId": "create_ingestion_v1_ingestions_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestionCreate"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/vectors/batch": {
+        "post": {
+          "tags": [
+            "vectors"
+          ],
+          "summary": "Add Vectors",
+          "description": "Add a batch of vectors to the store.",
+          "operationId": "add_vectors_v1_vectors_batch_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorBatchRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/vectors/search": {
+        "post": {
+          "tags": [
+            "vectors"
+          ],
+          "summary": "Similarity Search",
+          "description": "Search for similar vectors - MS6 RAG compatible.",
+          "operationId": "similarity_search_v1_vectors_search_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorSearchRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/vectors/by-ingestion/{ingestion_id}": {
+        "delete": {
+          "tags": [
+            "vectors"
+          ],
+          "summary": "Delete By Ingestion",
+          "description": "Delete all vectors for a given ingestion_id.",
+          "operationId": "delete_by_ingestion_v1_vectors_by_ingestion__ingestion_id__delete",
+          "parameters": [
+            {
+              "name": "ingestion_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Ingestion Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/vectors/retag": {
+        "post": {
+          "tags": [
+            "vectors"
+          ],
+          "summary": "Retag Vectors",
+          "description": "Re-tag reused artifacts' vectors to a new ingestion_id (issue #196).",
+          "operationId": "retag_vectors_v1_vectors_retag_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorRetagRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/vectors/search-by-doc": {
+        "post": {
+          "tags": [
+            "vectors"
+          ],
+          "summary": "Search By Document",
+          "description": "Return chunks for a specific document_id \u2014 used for graph expansion.",
+          "operationId": "search_by_document_v1_vectors_search_by_doc_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VectorSearchByDocRequest"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/health": {
+        "get": {
+          "summary": "Health Check",
+          "operationId": "health_check_health_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "HTTPValidationError": {
+          "properties": {
+            "detail": {
+              "items": {
+                "$ref": "#/components/schemas/ValidationError"
+              },
+              "type": "array",
+              "title": "Detail"
+            }
+          },
+          "type": "object",
+          "title": "HTTPValidationError"
+        },
+        "IngestionCreate": {
+          "properties": {
+            "ingestion_id": {
+              "type": "string",
+              "title": "Ingestion Id"
+            },
+            "source_type": {
+              "type": "string",
+              "title": "Source Type"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object",
+              "title": "Metadata"
+            }
+          },
+          "type": "object",
+          "required": [
+            "ingestion_id",
+            "source_type",
+            "metadata"
+          ],
+          "title": "IngestionCreate"
+        },
+        "ValidationError": {
+          "properties": {
+            "loc": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array",
+              "title": "Location"
+            },
+            "msg": {
+              "type": "string",
+              "title": "Message"
+            },
+            "type": {
+              "type": "string",
+              "title": "Error Type"
+            }
+          },
+          "type": "object",
+          "required": [
+            "loc",
+            "msg",
+            "type"
+          ],
+          "title": "ValidationError"
+        },
+        "VectorBatchRequest": {
+          "properties": {
+            "records": {
+              "items": {
+                "$ref": "#/components/schemas/VectorRecordAPI"
+              },
+              "type": "array",
+              "title": "Records"
+            }
+          },
+          "type": "object",
+          "required": [
+            "records"
+          ],
+          "title": "VectorBatchRequest"
+        },
+        "VectorMetadataAPI": {
+          "properties": {
+            "ingestion_id": {
+              "type": "string",
+              "title": "Ingestion Id"
+            },
+            "chunk_id": {
+              "type": "string",
+              "title": "Chunk Id"
+            },
+            "chunk_index": {
+              "type": "integer",
+              "title": "Chunk Index"
+            },
+            "chunk_strategy": {
+              "type": "string",
+              "title": "Chunk Strategy"
+            },
+            "chunk_text": {
+              "type": "string",
+              "title": "Chunk Text"
+            },
+            "source_metadata": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Metadata",
+              "default": {}
+            },
+            "provider": {
+              "type": "string",
+              "title": "Provider",
+              "default": "mock"
+            },
+            "document_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Document Id"
+            }
+          },
+          "type": "object",
+          "required": [
+            "ingestion_id",
+            "chunk_id",
+            "chunk_index",
+            "chunk_strategy",
+            "chunk_text"
+          ],
+          "title": "VectorMetadataAPI"
+        },
+        "VectorRecordAPI": {
+          "properties": {
+            "vector": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array",
+              "title": "Vector"
+            },
+            "metadata": {
+              "$ref": "#/components/schemas/VectorMetadataAPI"
+            }
+          },
+          "type": "object",
+          "required": [
+            "vector",
+            "metadata"
+          ],
+          "title": "VectorRecordAPI"
+        },
+        "VectorRetagRequest": {
+          "properties": {
+            "document_ids": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Document Ids"
+            },
+            "new_ingestion_id": {
+              "type": "string",
+              "title": "New Ingestion Id"
+            },
+            "provenance_by_document_id": {
+              "anyOf": [
+                {
+                  "additionalProperties": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provenance By Document Id"
+            }
+          },
+          "type": "object",
+          "required": [
+            "document_ids",
+            "new_ingestion_id"
+          ],
+          "title": "VectorRetagRequest"
+        },
+        "VectorSearchByDocRequest": {
+          "properties": {
+            "document_id": {
+              "type": "string",
+              "title": "Document Id"
+            },
+            "k": {
+              "type": "integer",
+              "maximum": 100.0,
+              "minimum": 1.0,
+              "title": "K",
+              "default": 3
+            },
+            "query_vector": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "number"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Query Vector"
+            },
+            "ingestion_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingestion Id"
+            },
+            "repo_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repo Id"
+            }
+          },
+          "type": "object",
+          "required": [
+            "document_id"
+          ],
+          "title": "VectorSearchByDocRequest"
+        },
+        "VectorSearchRequest": {
+          "properties": {
+            "query_vector": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array",
+              "title": "Query Vector"
+            },
+            "k": {
+              "type": "integer",
+              "title": "K",
+              "default": 5
+            },
+            "metadata_filter": {
+              "anyOf": [
+                {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Metadata Filter"
+            }
+          },
+          "type": "object",
+          "required": [
+            "query_vector"
+          ],
+          "title": "VectorSearchRequest"
+        }
+      }
+    }
+  },
+  "rag": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "RAG Orchestrator",
+      "version": "0.1.0"
+    },
+    "paths": {
+      "/version": {
+        "get": {
+          "tags": [
+            "operations"
+          ],
+          "summary": "Version",
+          "operationId": "version_version_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "additionalProperties": {
+                      "type": "string"
+                    },
+                    "type": "object",
+                    "title": "Response Version Version Get"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/rag": {
+        "post": {
+          "summary": "Rag Endpoint",
+          "operationId": "rag_endpoint_v1_rag_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RAGQuery"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/RAGResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/models": {
+        "get": {
+          "summary": "List Models",
+          "description": "WP-M5: pass through the llm_service model menu so the UI can\nbuild its dropdown without reaching llm_service directly.",
+          "operationId": "list_models_v1_models_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/orient": {
+        "get": {
+          "summary": "Get Repo Orient",
+          "description": "Issue #216: thin passthrough to ingestion_service's deterministic\nORIENT endpoint (issue #197) -- no vector search, no graph expansion,\nno LLM call, entirely outside run_rag()'s retrieval path. Unlike\n/models above, this preserves ingestion_service's own 404 (no\ncompleted generation) and 409 (generation predates ORIENT) rather\nthan collapsing every failure into one generic status: a caller\nneeds to tell \"this repo has no ORIENT data\" apart from \"ingestion_\nservice is unreachable\" to act correctly (e.g. re-ingest vs. retry).\n\nIssue #200: the fetch/error-handling itself now lives in\n`evidence_service.fetch_orient_response` (shared with the\ngeneration-fenced ORIENT evidence workflow); this route is purely\nthe thin HTTP passthrough.",
+          "operationId": "get_repo_orient_v1_repos__repo_id__orient_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/trace": {
+        "get": {
+          "summary": "Trace Endpoint",
+          "description": "Issue #198: ordered, per-hop-evidenced path from a resolved\nstarting symbol -- computed fresh from the already-cached full-repo\ngraph (no vector search, no LLM, nothing persisted). Fails clearly\n(404/409/400) rather than silently truncating or guessing.",
+          "operationId": "trace_endpoint_v1_repos__repo_id__trace_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            },
+            {
+              "name": "start",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Start"
+              }
+            },
+            {
+              "name": "relation_types",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "CALL",
+                "title": "Relation Types"
+              }
+            },
+            {
+              "name": "direction",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "type": "string",
+                "default": "forward",
+                "title": "Direction"
+              }
+            },
+            {
+              "name": "max_depth",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Max Depth"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/TraceResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/impact": {
+        "get": {
+          "summary": "Impact Endpoint",
+          "description": "Issue #198: candidate-affected-set (reverse CALL/IMPORTS/INHERITS/\nOVERRIDES) from a resolved starting symbol -- a candidate set, not a\nguarantee of breakage. Same fail-clearly bar as /trace.",
+          "operationId": "impact_endpoint_v1_repos__repo_id__impact_get",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            },
+            {
+              "name": "start",
+              "in": "query",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Start"
+              }
+            },
+            {
+              "name": "max_depth",
+              "in": "query",
+              "required": false,
+              "schema": {
+                "anyOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Max Depth"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ImpactResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/rag/simple": {
+        "post": {
+          "summary": "Simple Rag Endpoint",
+          "description": "Simple RAG for regular documents - no graph traversal.",
+          "operationId": "simple_rag_endpoint_v1_rag_simple_post",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleRAGQuery"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/SimpleRAGResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/v1/repos/{repo_id}/evidence": {
+        "post": {
+          "summary": "Evidence Endpoint",
+          "description": "Issue #200 (Stage A3): bounded evidence-sufficiency workflow --\ninitial mode computation, mechanical obligation assessment (Stage\nA1), and at most one bounded repair (Stage A2), generation-fenced\nthroughout (`evidence_service.py`). Read-only: no writes, no LLM\ncall, no generated answer (that's Stage A4).\n\nA missing/ambiguous start or an unmet obligation is a normal\n*result* -- `status=\"partial\"`/`\"needs_clarification\"` in the\nresponse body -- not an HTTP error. Only infra/lifecycle failures\n(repository not ready, generation changed mid-request, ingestion_\nservice unreachable) raise.",
+          "operationId": "evidence_endpoint_v1_repos__repo_id__evidence_post",
+          "parameters": [
+            {
+              "name": "repo_id",
+              "in": "path",
+              "required": true,
+              "schema": {
+                "type": "string",
+                "title": "Repo Id"
+              }
+            }
+          ],
+          "requestBody": {
+            "required": true,
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvidenceRequest"
+                }
+              }
+            }
+          },
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/EvidenceResponse"
+                  }
+                }
+              }
+            },
+            "422": {
+              "description": "Validation Error",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/HTTPValidationError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/health": {
+        "get": {
+          "summary": "Health Check",
+          "operationId": "health_check_health_get",
+          "responses": {
+            "200": {
+              "description": "Successful Response",
+              "content": {
+                "application/json": {
+                  "schema": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "AuthorityAssessmentModel": {
+          "properties": {
+            "policy_version": {
+              "type": "string",
+              "title": "Policy Version"
+            },
+            "claim_type": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Claim Type"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "authority_qualified",
+                "authority_unqualified",
+                "authority_unknown",
+                "not_evaluated"
+              ],
+              "title": "Status"
+            },
+            "findings": {
+              "items": {
+                "$ref": "#/components/schemas/AuthorityFindingModel"
+              },
+              "type": "array",
+              "title": "Findings"
+            }
+          },
+          "type": "object",
+          "required": [
+            "policy_version",
+            "status",
+            "findings"
+          ],
+          "title": "AuthorityAssessmentModel"
+        },
+        "AuthorityFindingModel": {
+          "properties": {
+            "canonical_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Canonical Id"
+            },
+            "chunk_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Chunk Id"
+            },
+            "concerns": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Concerns"
+            }
+          },
+          "type": "object",
+          "required": [
+            "concerns"
+          ],
+          "title": "AuthorityFindingModel"
+        },
+        "EvidenceAssessmentModel": {
+          "properties": {
+            "policy_version": {
+              "type": "string",
+              "title": "Policy Version"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "satisfied",
+                "partial",
+                "needs_clarification"
+              ],
+              "title": "Status"
+            },
+            "obligations": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object",
+              "title": "Obligations"
+            },
+            "reason_codes": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Reason Codes"
+            },
+            "evidence": {
+              "items": {
+                "$ref": "#/components/schemas/EvidenceItemModel"
+              },
+              "type": "array",
+              "title": "Evidence"
+            },
+            "missing_obligations": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Missing Obligations"
+            }
+          },
+          "type": "object",
+          "required": [
+            "policy_version",
+            "status",
+            "obligations",
+            "reason_codes",
+            "evidence",
+            "missing_obligations"
+          ],
+          "title": "EvidenceAssessmentModel"
+        },
+        "EvidenceItemModel": {
+          "properties": {
+            "identity": {
+              "type": "string",
+              "title": "Identity"
+            },
+            "kind": {
+              "type": "string",
+              "title": "Kind"
+            },
+            "supporting": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Supporting"
+            }
+          },
+          "type": "object",
+          "required": [
+            "identity",
+            "kind"
+          ],
+          "title": "EvidenceItemModel"
+        },
+        "EvidenceRequest": {
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "orient",
+                "trace",
+                "impact"
+              ],
+              "title": "Mode"
+            },
+            "start": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start"
+            },
+            "relation_types": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Relation Types"
+            },
+            "direction": {
+              "type": "string",
+              "title": "Direction",
+              "default": "forward"
+            },
+            "max_depth": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Depth"
+            },
+            "required_facets": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Required Facets"
+            },
+            "required_target": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Required Target"
+            },
+            "explanation_query": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Explanation Query"
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model"
+            },
+            "claim_type": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "implemented_behavior",
+                    "design_rationale",
+                    "test_contract",
+                    "repository_overview"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Claim Type"
+            }
+          },
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "title": "EvidenceRequest"
+        },
+        "EvidenceResponse": {
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "mode": {
+              "type": "string",
+              "title": "Mode"
+            },
+            "assessment": {
+              "$ref": "#/components/schemas/EvidenceAssessmentModel"
+            },
+            "steps": {
+              "items": {
+                "$ref": "#/components/schemas/EvidenceStepModel"
+              },
+              "type": "array",
+              "title": "Steps"
+            },
+            "stop_reason": {
+              "type": "string",
+              "title": "Stop Reason"
+            },
+            "explanation": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ExplanationModel"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "authority": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/AuthorityAssessmentModel"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "type": "object",
+          "required": [
+            "repo_id",
+            "mode",
+            "assessment",
+            "steps",
+            "stop_reason"
+          ],
+          "title": "EvidenceResponse"
+        },
+        "EvidenceStepModel": {
+          "properties": {
+            "action": {
+              "type": "string",
+              "title": "Action"
+            },
+            "reason": {
+              "type": "string",
+              "title": "Reason"
+            },
+            "outcome": {
+              "type": "string",
+              "title": "Outcome"
+            }
+          },
+          "type": "object",
+          "required": [
+            "action",
+            "reason",
+            "outcome"
+          ],
+          "title": "EvidenceStepModel"
+        },
+        "ExplanationModel": {
+          "properties": {
+            "answer": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Answer"
+            },
+            "model_used": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Used"
+            },
+            "model_alias": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Alias"
+            },
+            "fallback_from": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fallback From"
+            },
+            "skipped_reason": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Skipped Reason"
+            }
+          },
+          "type": "object",
+          "title": "ExplanationModel"
+        },
+        "GapNoteModel": {
+          "properties": {
+            "canonical_id": {
+              "type": "string",
+              "title": "Canonical Id"
+            },
+            "reason": {
+              "type": "string",
+              "title": "Reason"
+            }
+          },
+          "type": "object",
+          "required": [
+            "canonical_id",
+            "reason"
+          ],
+          "title": "GapNoteModel"
+        },
+        "HTTPValidationError": {
+          "properties": {
+            "detail": {
+              "items": {
+                "$ref": "#/components/schemas/ValidationError"
+              },
+              "type": "array",
+              "title": "Detail"
+            }
+          },
+          "type": "object",
+          "title": "HTTPValidationError"
+        },
+        "HopModel": {
+          "properties": {
+            "canonical_id": {
+              "type": "string",
+              "title": "Canonical Id"
+            },
+            "file_path": {
+              "type": "string",
+              "title": "File Path"
+            },
+            "hop_index": {
+              "type": "integer",
+              "title": "Hop Index"
+            },
+            "relation_type": {
+              "type": "string",
+              "title": "Relation Type"
+            },
+            "parent_canonical_id": {
+              "type": "string",
+              "title": "Parent Canonical Id"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object",
+              "title": "Metadata",
+              "default": {}
+            }
+          },
+          "type": "object",
+          "required": [
+            "canonical_id",
+            "file_path",
+            "hop_index",
+            "relation_type",
+            "parent_canonical_id"
+          ],
+          "title": "HopModel"
+        },
+        "ImpactBasisModel": {
+          "properties": {
+            "relation_type": {
+              "type": "string",
+              "title": "Relation Type"
+            },
+            "hop_distance": {
+              "type": "integer",
+              "title": "Hop Distance"
+            },
+            "path": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Path"
+            },
+            "metadata": {
+              "additionalProperties": true,
+              "type": "object",
+              "title": "Metadata",
+              "default": {}
+            }
+          },
+          "type": "object",
+          "required": [
+            "relation_type",
+            "hop_distance",
+            "path"
+          ],
+          "title": "ImpactBasisModel"
+        },
+        "ImpactCandidateModel": {
+          "properties": {
+            "canonical_id": {
+              "type": "string",
+              "title": "Canonical Id"
+            },
+            "file_path": {
+              "type": "string",
+              "title": "File Path"
+            },
+            "basis": {
+              "items": {
+                "$ref": "#/components/schemas/ImpactBasisModel"
+              },
+              "type": "array",
+              "title": "Basis"
+            }
+          },
+          "type": "object",
+          "required": [
+            "canonical_id",
+            "file_path",
+            "basis"
+          ],
+          "title": "ImpactCandidateModel"
+        },
+        "ImpactResponse": {
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "resolved_start": {
+              "$ref": "#/components/schemas/ResolvedStartModel"
+            },
+            "relation_types_considered": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Relation Types Considered"
+            },
+            "max_depth": {
+              "type": "integer",
+              "title": "Max Depth"
+            },
+            "candidates": {
+              "items": {
+                "$ref": "#/components/schemas/ImpactCandidateModel"
+              },
+              "type": "array",
+              "title": "Candidates"
+            },
+            "truncated": {
+              "type": "boolean",
+              "title": "Truncated"
+            }
+          },
+          "type": "object",
+          "required": [
+            "repo_id",
+            "resolved_start",
+            "relation_types_considered",
+            "max_depth",
+            "candidates",
+            "truncated"
+          ],
+          "title": "ImpactResponse"
+        },
+        "RAGQuery": {
+          "properties": {
+            "query": {
+              "type": "string",
+              "title": "Query"
+            },
+            "repo_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repo Id"
+            },
+            "top_k": {
+              "type": "integer",
+              "title": "Top K",
+              "default": 5
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model"
+            },
+            "language": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Language"
+            },
+            "rerank": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rerank"
+            },
+            "claim_type": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "implemented_behavior",
+                    "design_rationale",
+                    "test_contract",
+                    "repository_overview"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Claim Type"
+            },
+            "repository_overview_claim_selection_enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository Overview Claim Selection Enabled"
+            },
+            "repository_overview_structured_answers_enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository Overview Structured Answers Enabled"
+            },
+            "repository_overview_canonical_selection_enabled": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repository Overview Canonical Selection Enabled"
+            },
+            "trace_canonical_ids": {
+              "anyOf": [
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Trace Canonical Ids"
+            }
+          },
+          "type": "object",
+          "required": [
+            "query"
+          ],
+          "title": "RAGQuery"
+        },
+        "RAGResponse": {
+          "properties": {
+            "answer": {
+              "type": "string",
+              "title": "Answer"
+            },
+            "sources": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Sources"
+            },
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "retrieval_plan": {
+              "additionalProperties": true,
+              "type": "object",
+              "title": "Retrieval Plan"
+            },
+            "model_used": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Used"
+            },
+            "model_alias": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Alias"
+            },
+            "fallback_from": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fallback From"
+            },
+            "trace_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Trace Id"
+            },
+            "reranked": {
+              "type": "boolean",
+              "title": "Reranked",
+              "default": false
+            }
+          },
+          "type": "object",
+          "required": [
+            "answer",
+            "sources",
+            "repo_id",
+            "retrieval_plan"
+          ],
+          "title": "RAGResponse"
+        },
+        "ResolvedStartModel": {
+          "properties": {
+            "canonical_id": {
+              "type": "string",
+              "title": "Canonical Id"
+            },
+            "file_path": {
+              "type": "string",
+              "title": "File Path"
+            }
+          },
+          "type": "object",
+          "required": [
+            "canonical_id",
+            "file_path"
+          ],
+          "title": "ResolvedStartModel"
+        },
+        "SimpleRAGQuery": {
+          "properties": {
+            "query": {
+              "type": "string",
+              "title": "Query"
+            },
+            "repo_id": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Repo Id"
+            },
+            "top_k": {
+              "type": "integer",
+              "title": "Top K",
+              "default": 5
+            },
+            "provider": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider"
+            },
+            "model": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model"
+            },
+            "rerank": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Rerank"
+            }
+          },
+          "type": "object",
+          "required": [
+            "query"
+          ],
+          "title": "SimpleRAGQuery"
+        },
+        "SimpleRAGResponse": {
+          "properties": {
+            "final_context_manifest": {
+              "items": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "array",
+              "title": "Final Context Manifest",
+              "default": []
+            },
+            "answer": {
+              "type": "string",
+              "title": "Answer"
+            },
+            "sources": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Sources"
+            },
+            "model_used": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Used"
+            },
+            "model_alias": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Model Alias"
+            },
+            "fallback_from": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fallback From"
+            },
+            "reranked": {
+              "type": "boolean",
+              "title": "Reranked",
+              "default": false
+            }
+          },
+          "type": "object",
+          "required": [
+            "answer",
+            "sources"
+          ],
+          "title": "SimpleRAGResponse"
+        },
+        "TraceResponse": {
+          "properties": {
+            "repo_id": {
+              "type": "string",
+              "title": "Repo Id"
+            },
+            "resolved_start": {
+              "$ref": "#/components/schemas/ResolvedStartModel"
+            },
+            "relation_types": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array",
+              "title": "Relation Types"
+            },
+            "direction": {
+              "type": "string",
+              "title": "Direction"
+            },
+            "max_depth": {
+              "type": "integer",
+              "title": "Max Depth"
+            },
+            "hops": {
+              "items": {
+                "$ref": "#/components/schemas/HopModel"
+              },
+              "type": "array",
+              "title": "Hops"
+            },
+            "truncated": {
+              "type": "boolean",
+              "title": "Truncated"
+            },
+            "depth_limited": {
+              "type": "boolean",
+              "title": "Depth Limited"
+            },
+            "gaps": {
+              "items": {
+                "$ref": "#/components/schemas/GapNoteModel"
+              },
+              "type": "array",
+              "title": "Gaps"
+            }
+          },
+          "type": "object",
+          "required": [
+            "repo_id",
+            "resolved_start",
+            "relation_types",
+            "direction",
+            "max_depth",
+            "hops",
+            "truncated",
+            "depth_limited",
+            "gaps"
+          ],
+          "title": "TraceResponse"
+        },
+        "ValidationError": {
+          "properties": {
+            "loc": {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array",
+              "title": "Location"
+            },
+            "msg": {
+              "type": "string",
+              "title": "Message"
+            },
+            "type": {
+              "type": "string",
+              "title": "Error Type"
+            },
+            "input": {
+              "title": "Input"
+            },
+            "ctx": {
+              "type": "object",
+              "title": "Context"
+            }
+          },
+          "type": "object",
+          "required": [
+            "loc",
+            "msg",
+            "type"
+          ],
+          "title": "ValidationError"
+        }
+      }
+    }
+  }
+}

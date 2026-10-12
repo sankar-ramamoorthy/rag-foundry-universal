@@ -93,6 +93,13 @@ Per `docs-archive/Rules-to-help-me-coding.md`: this repo follows **Test-Guided D
 
 ## Documentation map
 
+**README accuracy:** `README.md` describes the current product, not development
+status. Check claims against implementation, defaults and relevant validation;
+keep milestones, issues and progress in `DOCS/status.md`. Follow
+[the README accuracy policy](DOCS/standards/readme-accuracy.md) and record the
+applicable check in [.github/pull_request_template.md](.github/pull_request_template.md).
+Project license declarations must match `LICENSE` (Apache-2.0).
+
 Start at `DOCS/index.md` for the full map. **Documentation standard:**
 new or substantially-edited knowledge-bearing docs under `DOCS/` follow
 `DOCS/standards/okf-documentation.md` (OKF v0.2-based frontmatter +

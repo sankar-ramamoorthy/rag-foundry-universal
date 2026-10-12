@@ -1,0 +1,491 @@
+{
+  "protocol": "query lexical overlap + nearest local definition closure; named-owner priority + marginal UTF-8 byte utility; literal AST statement/header spans; no oracle inputs to selector",
+  "scope": "Offline full pinned source pool, not the live k=3 chunk pool; no automatic source acquisition or production claim",
+  "selector_sha256": "6c7a1d0e751ef2be6e80f30f42efc2d256a6f9f41f5abb2f2188ed8ceea2b005",
+  "pin": {
+    "repo_id": "863e770d-651e-5bc5-83d1-a1409693e707",
+    "ingestion_id": "24f827d7-a33b-45f7-93f4-ff6e5eaf3856",
+    "generation_status": "ready",
+    "commit_sha": "f854303e6e44ff95d94792d24868442a28080ba2",
+    "ingested_at": "2026-10-11T02:32:55.210182",
+    "parent_generation_id": "f1499ec5-c35e-4497-99b3-ebf1ff6d4e05",
+    "is_incremental": true
+  },
+  "question": "Using `py_mono/main.py#main`, `py_mono/ui/cli.py#start_cli`, and `py_mono/agent/agent.py#Agent.run`, trace a normal user prompt through a tool call and the tool result returning to the LLM.",
+  "budget": 4096,
+  "selection": {
+    "evidence": "[Source: py_mono/main.py#main]\n    base_tools = build_base_tools()\n\n[Source: py_mono/main.py#main]\n    if ENABLE_DYNAMIC_TOOLS:\n        dynamic_tools = load_dynamic_tools()\n        if dynamic_tools:\n            print(f\"\ud83d\udd27 Loaded {len(dynamic_tools)} dynamic tool(s): {[t.name for t in dynamic_tools]}\")\n\n[Source: py_mono/main.py#main]\n        dynamic_tools = []\n\n[Source: py_mono/main.py#main]\n    mcp_tools = load_mcp_tools()\n\n[Source: py_mono/main.py#main]\n    tools = base_tools + dynamic_tools + mcp_tools\n\n[Source: py_mono/main.py#main]\n    if os.getenv(\"LLM_MASTER_KEY\"):\n        key_manager = KeyManager()\n\n[Source: py_mono/main.py#main]\n    session_manager = SessionManager(\n        default_provider=LLM_PROVIDER,\n        key_manager=key_manager,\n    )\n\n[Source: py_mono/ui/cli.py#start_cli]\n    while True:\n        try:\n            prompt = input(\"> \").strip()\n\n[Source: py_mono/ui/cli.py#start_cli]\n        if _is_key_command(prompt):\n            response = _handle_key_command(prompt, agent.session_manager)\n\n[Source: py_mono/ui/cli.py#start_cli]\n            response = agent.run(prompt)\n\n[Source: py_mono/agent/agent.py#Agent.run]\n        user_input_stripped = user_input.strip()\n\n[Source: py_mono/agent/agent.py#Agent.run]\n        if self._is_special_command(user_input_stripped):\n            reply = self._handle_special_command(user_input_stripped)\n\n[Source: py_mono/agent/agent.py#Agent.run]\n        self.memory.append(\n            {\n                \"role\": \"user\",\n                \"content\": user_input,\n            }\n        )\n\n[Source: py_mono/agent/agent.py#Agent.run]\n        for step in range(self.max_steps):\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            llm = self.session_manager.get_active_provider()\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            latest_user_msg = next(\n                (m[\"content\"] for m in reversed(self.memory) if m[\"role\"] == \"user\"),\n                user_input\n            )\n            self._log(f\"latest_user_msg {latest_user_msg} \")\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            playbooks = self.playbook_registry.search(latest_user_msg)\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            base_system = self.memory[0][\"content\"]\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            playbook_text = self._format_playbooks_for_prompt(playbooks)\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            if playbook_text:\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                augmented_system = base_system\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            messages = [\n                {\n                    \"role\": \"system\",\n                    \"content\": augmented_system,\n                }\n            ] + self.memory[1:]\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            response = llm.generate(\n                messages=messages,#self.memory,\n                tools=list(self.tools.values()),\n            )\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            tool_call = response.get(\"tool_call\")\n\n[Source: py_mono/agent/agent.py#Agent.run]\n            if tool_call:\n                self.tool_call_count += 1\n                tool_name = tool_call.get(\"name\")\n                args = tool_call.get(\"args\") or {}\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                tool_call_id = str(uuid.uuid4())\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                current_call = (tool_name, json.dumps(args, sort_keys=True))\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                self.last_tool_call = current_call\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                tool = self.tools.get(tool_name)\n                if not tool:\n                    result = f\"[TOOL ERROR] Unknown tool: {tool_name}\"\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                    try:\n                        result = tool.run(**args)\n\n[Source: py_mono/agent/agent.py#Agent.run]\n                self._log(f\"TOOL [{tool_name}] RESULT:\", result)",
+    "evidence_bytes": 3952,
+    "manifest": [
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 106,
+        "last_line": 106,
+        "text": "    base_tools = build_base_tools()",
+        "text_sha256": "81f57733a67b811f6fd422bb4b37cf801206232c07a11ac6e88e8620bd605ec9",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 110,
+        "last_line": 113,
+        "text": "    if ENABLE_DYNAMIC_TOOLS:\n        dynamic_tools = load_dynamic_tools()\n        if dynamic_tools:\n            print(f\"\ud83d\udd27 Loaded {len(dynamic_tools)} dynamic tool(s): {[t.name for t in dynamic_tools]}\")",
+        "text_sha256": "cd28a5888785865cb7c724b2c0519521907b21366a09a7ac51acbbba0a3c8b8a",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 115,
+        "last_line": 115,
+        "text": "        dynamic_tools = []",
+        "text_sha256": "2d420f33175849fb08dac8c3f169dec05cb2759eb731c1a7b0b007af0034b245",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 119,
+        "last_line": 119,
+        "text": "    mcp_tools = load_mcp_tools()",
+        "text_sha256": "9c8133a61cc6ea1d3edf67f562f5f708aa609593c9738475b83ff500855e2cc9",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 123,
+        "last_line": 123,
+        "text": "    tools = base_tools + dynamic_tools + mcp_tools",
+        "text_sha256": "9b4afe4ede2f5c1de47443b172a5e9a89cd9b3246e12f08ee4138caa37bf96e3",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 127,
+        "last_line": 128,
+        "text": "    if os.getenv(\"LLM_MASTER_KEY\"):\n        key_manager = KeyManager()",
+        "text_sha256": "efb96fef59c147fdfbb1fef5ff2132c7ade84496f174f5a91875ec9aa20734db",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/main.py#main",
+        "first_line": 132,
+        "last_line": 135,
+        "text": "    session_manager = SessionManager(\n        default_provider=LLM_PROVIDER,\n        key_manager=key_manager,\n    )",
+        "text_sha256": "433ac21d9ec440364a0ebd77891cf19a26e95e57a2fb869f8e41e9a3823fadf2",
+        "source_sha256": "88743b6eee91e4bac0899987b5ec62e42ba18b8896221565b225ebf1d219e6a7"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py#start_cli",
+        "first_line": 37,
+        "last_line": 39,
+        "text": "    while True:\n        try:\n            prompt = input(\"> \").strip()",
+        "text_sha256": "6b6060fbf9a3f18858d2ef55e3d8f4d4fa25d16adaaf8e0cb0f7224a0c344e58",
+        "source_sha256": "1577c3bc15b4ffbb5b19abbafe0601ebd5bcfe25b9425005960153f965f99d47"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py#start_cli",
+        "first_line": 51,
+        "last_line": 52,
+        "text": "        if _is_key_command(prompt):\n            response = _handle_key_command(prompt, agent.session_manager)",
+        "text_sha256": "1a48f79e377d2d4d61c130626e6a11595dbeea3fdc9ae82a1327c9eb026ede44",
+        "source_sha256": "1577c3bc15b4ffbb5b19abbafe0601ebd5bcfe25b9425005960153f965f99d47"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py#start_cli",
+        "first_line": 56,
+        "last_line": 56,
+        "text": "            response = agent.run(prompt)",
+        "text_sha256": "d5ef13282e989b5b6fc2ce234e0f05eb9ed922c614fce610ebdd07215158d680",
+        "source_sha256": "1577c3bc15b4ffbb5b19abbafe0601ebd5bcfe25b9425005960153f965f99d47"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 629,
+        "last_line": 629,
+        "text": "        user_input_stripped = user_input.strip()",
+        "text_sha256": "6267fa4eb490b521878d54d3702a267463b7454e191a59de943a1fd17a11c568",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 631,
+        "last_line": 632,
+        "text": "        if self._is_special_command(user_input_stripped):\n            reply = self._handle_special_command(user_input_stripped)",
+        "text_sha256": "d20b608108e65d59d601056d41eaafc4bc352b4d0f7ac924aa1b0b8433d4b69b",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 639,
+        "last_line": 644,
+        "text": "        self.memory.append(\n            {\n                \"role\": \"user\",\n                \"content\": user_input,\n            }\n        )",
+        "text_sha256": "0839be75ee022794108d68ad3e791f1f7ad25c55e193826d50253f236a991547",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 646,
+        "last_line": 646,
+        "text": "        for step in range(self.max_steps):",
+        "text_sha256": "cb6ec04088281e458c75908c9ecf34ad00cefdb330b7c17b97d54c29d5cd47cb",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 650,
+        "last_line": 650,
+        "text": "            llm = self.session_manager.get_active_provider()",
+        "text_sha256": "2b4978d6dd24e15d703a7143e996c15aac9791de03d9d9e74e09336ad2ba8d39",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 654,
+        "last_line": 658,
+        "text": "            latest_user_msg = next(\n                (m[\"content\"] for m in reversed(self.memory) if m[\"role\"] == \"user\"),\n                user_input\n            )\n            self._log(f\"latest_user_msg {latest_user_msg} \")",
+        "text_sha256": "f2b9cc7a1824e46deb54fadd40448d83d4115683dcc77b2c209cae089d859296",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 661,
+        "last_line": 661,
+        "text": "            playbooks = self.playbook_registry.search(latest_user_msg)",
+        "text_sha256": "f7ab4ee83a57f2abcaaf89505281709d5446605958c6b8b4fab972437f963fbd",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 665,
+        "last_line": 665,
+        "text": "            base_system = self.memory[0][\"content\"]",
+        "text_sha256": "355a958b3cbdef0c12dfcab30fb4012b3b3d0b72b312c931e2ab01eccfbaa89b",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 667,
+        "last_line": 667,
+        "text": "            playbook_text = self._format_playbooks_for_prompt(playbooks)",
+        "text_sha256": "f3c2fc468067a9ff84032ad12eba3370226b4b7265f8c4fe9db209471a72d83f",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 669,
+        "last_line": 669,
+        "text": "            if playbook_text:",
+        "text_sha256": "64c53cc47a9087a028391468b5178a42bda8b29b3d4707d5f41948b06b0847d5",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 672,
+        "last_line": 672,
+        "text": "                augmented_system = base_system",
+        "text_sha256": "a1473618e286cdd08e24c24d8d67e4d339f0a0e794ca9fcfcc76c65de01e104b",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 676,
+        "last_line": 681,
+        "text": "            messages = [\n                {\n                    \"role\": \"system\",\n                    \"content\": augmented_system,\n                }\n            ] + self.memory[1:]",
+        "text_sha256": "082e0f08896fa993060cce13211f5124931b8430e2cad523f20f3cd5feb0af8f",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 684,
+        "last_line": 687,
+        "text": "            response = llm.generate(\n                messages=messages,#self.memory,\n                tools=list(self.tools.values()),\n            )",
+        "text_sha256": "b4920c7a9aa71358a5ae3299f8f16d69abda3e708248bf07303bfcf504e5d3c9",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 691,
+        "last_line": 691,
+        "text": "            tool_call = response.get(\"tool_call\")",
+        "text_sha256": "bdb1a8f570281b5ecff09735db543a3fcbe0868f9a22dd1964b1b0a70bb68a87",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 697,
+        "last_line": 700,
+        "text": "            if tool_call:\n                self.tool_call_count += 1\n                tool_name = tool_call.get(\"name\")\n                args = tool_call.get(\"args\") or {}",
+        "text_sha256": "d788e35f0023c6b1f511af257f027927a7451b9976f8ba5e684670b883c68cc2",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 702,
+        "last_line": 702,
+        "text": "                tool_call_id = str(uuid.uuid4())",
+        "text_sha256": "b38f683a51d975a12eeaf18f796518c0ee320fc2bd232aa73f783118e267a2b1",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 705,
+        "last_line": 705,
+        "text": "                current_call = (tool_name, json.dumps(args, sort_keys=True))",
+        "text_sha256": "a109b5413e5862e1477dc2023ca60936f84a6bf4fe17c59c44fe09680a587f08",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 710,
+        "last_line": 710,
+        "text": "                self.last_tool_call = current_call",
+        "text_sha256": "c6cfd27d878e77bad93a17f04f061a681d2c417fd183c5414e5790853bae7770",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 741,
+        "last_line": 743,
+        "text": "                tool = self.tools.get(tool_name)\n                if not tool:\n                    result = f\"[TOOL ERROR] Unknown tool: {tool_name}\"",
+        "text_sha256": "f88212687e295e3d8d9fa8f3d8a20c8b07718b714967c3fd5b936eb5c1608eb4",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 745,
+        "last_line": 746,
+        "text": "                    try:\n                        result = tool.run(**args)",
+        "text_sha256": "5b79c6a31870be68bc4c22bb752022a80629756e3214bc339d597d8d8440351a",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "first_line": 750,
+        "last_line": 750,
+        "text": "                self._log(f\"TOOL [{tool_name}] RESULT:\", result)",
+        "text_sha256": "9b468c177eb693fb6dc3c0ab4d2b9e9be914f5ff0ef13ec939e4db432b4b2a94",
+        "source_sha256": "99bab133ae5491a3b72fb1b9685e0cdc1b99f83efdf1180182a4e2277094f844"
+      }
+    ],
+    "accepted_seeds": [
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 119,
+        "trial_bytes": 63
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 629,
+        "trial_bytes": 156
+      },
+      {
+        "canonical": "py_mono/ui/cli.py#start_cli",
+        "utility": 1,
+        "seed_line": 39,
+        "trial_bytes": 265
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 106,
+        "trial_bytes": 333
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 698,
+        "trial_bytes": 532
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 702,
+        "trial_bytes": 625
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 650,
+        "trial_bytes": 730
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 111,
+        "trial_bytes": 836
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 115,
+        "trial_bytes": 895
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 123,
+        "trial_bytes": 978
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 113,
+        "trial_bytes": 1110
+      },
+      {
+        "canonical": "py_mono/ui/cli.py#start_cli",
+        "utility": 1,
+        "seed_line": 52,
+        "trial_bytes": 1259
+      },
+      {
+        "canonical": "py_mono/ui/cli.py#start_cli",
+        "utility": 1,
+        "seed_line": 56,
+        "trial_bytes": 1339
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 632,
+        "trial_bytes": 1511
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 639,
+        "trial_bytes": 1692
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 654,
+        "trial_bytes": 1899
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 658,
+        "trial_bytes": 1960
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 661,
+        "trial_bytes": 2075
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 667,
+        "trial_bytes": 2192
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 132,
+        "trial_bytes": 2443
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 684,
+        "trial_bytes": 3120
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 691,
+        "trial_bytes": 3214
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 699,
+        "trial_bytes": 3264
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 700,
+        "trial_bytes": 3315
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 705,
+        "trial_bytes": 3436
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 710,
+        "trial_bytes": 3531
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 743,
+        "trial_bytes": 3675
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 741,
+        "trial_bytes": 3724
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 746,
+        "trial_bytes": 3843
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 750,
+        "trial_bytes": 3952
+      }
+    ],
+    "budget_rejected_seeds": [
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 3,
+        "seed_line": 753,
+        "trial_bytes": 4236
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 2,
+        "seed_line": 723,
+        "trial_bytes": 4608
+      },
+      {
+        "canonical": "py_mono/main.py#main",
+        "utility": 1,
+        "seed_line": 138,
+        "trial_bytes": 4296
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 776,
+        "trial_bytes": 4368
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 786,
+        "trial_bytes": 4592
+      },
+      {
+        "canonical": "py_mono/agent/agent.py#Agent.run",
+        "utility": 1,
+        "seed_line": 780,
+        "trial_bytes": 4744
+      }
+    ],
+    "unresolved_dependencies": "Attribute state and external callable initializers are not resolved by this spike"
+  }
+}

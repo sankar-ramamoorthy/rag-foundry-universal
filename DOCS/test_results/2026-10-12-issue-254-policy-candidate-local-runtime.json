@@ -1,0 +1,44 @@
+{
+  "local_settings": {
+    "EMBEDDING_PROVIDER": "ollama",
+    "OLLAMA_BASE_URL": "http://100.105.24.12:11434",
+    "OLLAMA_EMBED_MODEL": "mxbai-embed-large:latest",
+    "OLLAMA_BATCH_SIZE": 50,
+    "MAX_EXPANDED_DOCS": 20,
+    "EXPANDED_DOC_CHUNKS": 3,
+    "MAX_TOTAL_CHUNKS": 50,
+    "CONTEXT_WINDOW_TOKENS": 8192,
+    "PROMPT_RESERVE_TOKENS": 1024,
+    "OUTPUT_RESERVE_TOKENS": 2048,
+    "MAX_CONCURRENT_DOC_FETCHES": 8,
+    "DOC_TYPE_TIE_BREAK_ENABLED": false,
+    "DOC_TYPE_TIE_BREAK_SEED_POOL_SIZE": 100,
+    "DOC_TYPE_TIE_BREAK_EPSILON": 0.03,
+    "IMPLEMENTATION_DOC_TYPES": [
+      "javascript source",
+      "rust source",
+      "java source",
+      "typescript source",
+      "python source"
+    ],
+    "RERANK_ENABLED": false,
+    "RERANK_MODEL": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+    "RERANK_TOP_K": 10,
+    "REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED": false,
+    "REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED": false,
+    "REPOSITORY_OVERVIEW_TYPED_FACT_EXPERIMENT": "",
+    "REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED": false,
+    "VECTOR_STORE_URL": "http://100.105.24.12:8002",
+    "LLM_SERVICE_URL": "http://100.105.24.12:8003",
+    "INGESTION_SERVICE_URL": "http://100.105.24.12:8001",
+    "GRAPH_CACHE_MAX_REPOS": 32,
+    "TRACE_MAX_DEPTH": 6,
+    "TRACE_MAX_NODES": 300,
+    "IMPACT_MAX_DEPTH": 4,
+    "IMPACT_MAX_CANDIDATES": 300
+  },
+  "changed_source_sha256": {
+    "rag_orchestrator/src/retrieval/repository_overview_policy.py": "fd68a5b2e5a3ef826906ca424f11f88241793a07f4b2b828ed8f785000f5ed2f",
+    "rag_orchestrator/src/core/service.py": "9aa20b5323b16350561e18fc5ab396638c7871df86218cddbb6335d6272a3b84"
+  }
+}

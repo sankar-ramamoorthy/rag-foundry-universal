@@ -1,0 +1,172 @@
+{
+  "method": "Manual review against the unchanged frozen five factual and five attribution obligations. Scores count met requirements, not true-sentence percentages. Actor judgments assess the implementing component separately from mechanics and literal citation accuracy; a file label can identify its component while failing canonical citation precision.",
+  "factual_order": [
+    "input",
+    "provider",
+    "extraction",
+    "dispatch",
+    "feedback"
+  ],
+  "attribution_order": [
+    "startup_owner",
+    "input_owner",
+    "decision_owner",
+    "dispatch_owner",
+    "feedback_owner"
+  ],
+  "results": [
+    {
+      "pair": 1,
+      "arm": "frozen",
+      "factual": [
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "attribution": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "review": "Correct user-role memory, lookup/run, and tool-role memory for subsequent LLM processing in the Agent.run loop. Visible generate arguments are reproduced but active-provider acquisition is omitted. No name/args extraction or main startup. The closing statement attributes the whole processing loop to Agent.run, including execution and feedback.",
+      "citation_review": "CLI and Agent.run identified; main omitted. Invents tool_call_entry in a purported source snippet and calls exit/quit key-command examples. Datetime-service guesses exceed the frozen source.",
+      "unsupported_memory_slice_role": false,
+      "initializer_marked_unknown": false,
+      "response_sha256": "f6d72631530a5b8cbfd9001c5facdad73f75374c1113c91a53ac2c964b36812f"
+    },
+    {
+      "pair": 1,
+      "arm": "contract",
+      "factual": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "attribution": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "review": "Correct normal input/user-memory and role-tool memory/next-iteration feedback. Agent is explicitly named as the execution and memory owner. Provider acquisition/arguments, name/args extraction, lookup/run and main are absent or replaced with nonexistent calls.",
+      "citation_review": "Invents self.llm.generate(messages), tool.execute(tool_call), prompt = input(\">>> \") and assistant record shape. Uses #Agent instead of supplied #Agent.run. Its claim that all references match source is false.",
+      "unsupported_memory_slice_role": false,
+      "initializer_marked_unknown": false,
+      "response_sha256": "382727290188284d56815a8c5969920b5f9e6390209fd0a824a8488b167a8c08"
+    },
+    {
+      "pair": 2,
+      "arm": "contract",
+      "factual": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "attribution": [
+        0,
+        0,
+        0,
+        1,
+        1
+      ],
+      "review": "All five complete factual obligations have omissions: user-role append, provider arguments/acquisition, name/args extraction, lookup, and role-tool memory are not explained. Agent.run is correctly identified as executor and owner of result append/next LLM call. Calling the CLI loop startup does not account for main.",
+      "citation_review": "Correct Agent.run tool_call response getter and tool.run expression. Several quote cells are ellipsis paraphrases rather than literal source; main omitted. input() omits the actual prompt and strip operation.",
+      "unsupported_memory_slice_role": false,
+      "initializer_marked_unknown": false,
+      "response_sha256": "2d016f4d20f6ca6fefbd9cc5473d8fb6dfd91389ce7585982dec4346764b7149"
+    },
+    {
+      "pair": 2,
+      "arm": "frozen",
+      "factual": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "attribution": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "review": "Correct user-role append and role-tool memory reused on the next iteration. Agent owns input memory, execution, and feedback. Omits provider arguments/acquisition, actual field extraction, lookup/argument dispatch and main.",
+      "citation_review": "CLI/Agent.run identified; main omitted. Illustrative tool_call uses arguments instead of actual args. Examples are disclosed as illustrative, not literal excerpts.",
+      "unsupported_memory_slice_role": false,
+      "initializer_marked_unknown": false,
+      "response_sha256": "632aadfc4bdc7324171159ef204afbd96f54eaaa07ba3d26068965097faaf383"
+    },
+    {
+      "pair": 3,
+      "arm": "frozen",
+      "factual": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "attribution": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "review": "Correct normal-path user-role memory and Agent-owned tool-role feedback into the second LLM call. Omits provider parameters/acquisition, extraction, lookup/run and main. The later always-next-iteration statement is an unsupported generalization beyond the declared normal-path scope; max_steps and pruning qualify the broader claim.",
+      "citation_review": "CLI/Agent.run location table is correct for normal input and memory operations; main omitted. Datetime outputs are examples. No literal support for final-answer branches is in the frozen excerpt set.",
+      "unsupported_memory_slice_role": false,
+      "initializer_marked_unknown": false,
+      "response_sha256": "a41e416758063b47048b534a398997c68c48166482cbe324cc689c5a54161ad8"
+    },
+    {
+      "pair": 3,
+      "arm": "contract",
+      "factual": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "attribution": [
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "review": "CLI and agent-file rows correctly own input, user-memory, execution and role-tool feedback to the next generation. Provider argument expression is present but active acquisition is absent. No name/args extraction, tool lookup or main. Calls the trace typical AI pseudocode and adds an unrelated framework analogy.",
+      "citation_review": "Basename file labels identify components but lack requested canonical methods. Invents build_messages/process_response/execute_tool/append_result handoffs. Replaces canonical assistant record with [tool_call], calls tool a function and self.tools a list; multiple snippet cells are rewritten pseudocode despite the literal-quote instruction.",
+      "unsupported_memory_slice_role": false,
+      "initializer_marked_unknown": false,
+      "response_sha256": "3ae3742d03622be4c289fbcdfb4b076f219ca0bf051a3b6c0f78ca45a85bb873"
+    }
+  ],
+  "totals": {
+    "frozen": {
+      "factual": 7,
+      "attribution": 9,
+      "full_loop": 0,
+      "runs": 3
+    },
+    "contract": {
+      "factual": 4,
+      "attribution": 8,
+      "full_loop": 0,
+      "runs": 3
+    }
+  },
+  "limits": "Three stochastic paired runs on one development question. No statistical superiority claim. State-dependency omission remains in both arms; no capability ceiling is established. Literal/source citation defects are reviewed separately from actor attribution."
+}
