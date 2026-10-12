@@ -867,7 +867,7 @@ async def _apply_overview_selection(
     if selected_ids:
         trace["policy_selected_canonical_ids"] = selected_found
     if claim_selection:
-        chunks, excluded = select_current_evidence(chunks, obligation)
+        chunks, excluded = select_current_evidence(chunks, obligation, query=query)
         trace["evidence_obligation"] = obligation
         trace["excluded_evidence"] = excluded
     return chunks, policy_document_ids, obligation, trace

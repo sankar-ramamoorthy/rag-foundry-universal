@@ -8,6 +8,7 @@ from src.retrieval.repository_overview_policy import (
 )
 from src.core.service import _prepend_policy_chunks
 from src.retrieval.agent_adapter import build_final_context_manifest
+import pytest
 
 
 def _provenance(role: str, subject: str = "selected_repository") -> dict:
@@ -94,6 +95,56 @@ def test_frozen_questions_have_distinct_evidence_obligations():
         "shared/config/service_urls.py",
         "README.md#architecture",
     )
+
+
+@pytest.mark.parametrize("query", [
+    "Using `src/launcher.py#launch` and `src/engine.py#Engine.execute`, "
+    "trace an input through a tool call and its result returning to the model.",
+    "How does Engine.execute process files in the repository structure?",
+    "Explain the execution flow through src/engine.rs in the architecture.",
+    "Trace a request through src/handler.ts and src/client.ts.",
+    "What does `Engine.execute` do in this directory?",
+])
+def test_code_behavior_is_not_replaced_by_inventory(query):
+    assert evidence_obligation(query) == "current_behavior"
+
+
+@pytest.mark.parametrize("obligation", [
+    "current_structure", "current_architecture", "repository_purpose",
+])
+def test_direct_current_implementation_survives_claim_selection(obligation):
+    chunks = [
+        {"canonical_id": "src/engine.py#Engine.execute", "text": "implementation",
+         "provenance": _provenance("implementation")},
+        {"canonical_id": "src/unrelated.py#Other.run", "text": "unrelated"},
+        {"canonical_id": "README.md#architecture", "text": "architecture"},
+        {"canonical_id": "CLAUDE.md#claude_md.what_this_project_is",
+         "text": "purpose"},
+    ]
+    selected, excluded = select_current_evidence(
+        chunks, obligation, query="Describe structure around Engine.execute."
+    )
+    assert chunks[0] in selected
+    assert all(e["canonical_id"] != chunks[0]["canonical_id"] for e in excluded)
+    assert chunks[1] not in selected
+
+
+def test_explicit_file_preservation_keeps_authority_and_subject_boundaries():
+    chunks = [
+        {"canonical_id": "src/engine.py#Engine.execute",
+         "provenance": _provenance("implementation")},
+        {"canonical_id": "examples/engine.py#Engine.execute",
+         "provenance": _provenance("example_fixture", "embedded_subject")},
+        {"canonical_id": "docs-archive/engine.py#Engine.execute",
+         "provenance": _provenance("historical")},
+    ]
+    selected, excluded = select_current_evidence(
+        chunks, "current_structure",
+        query="Describe the files src/engine.py, examples/engine.py, "
+              "and docs-archive/engine.py.",
+    )
+    assert selected == chunks[:1]
+    assert len(excluded) == 2
 
 
 def test_historical_and_embedded_evidence_survives_explicit_request_only():

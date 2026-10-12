@@ -23,6 +23,15 @@ _ARCHITECTURE_IDS = (
     "shared/config/service_urls.py",
     "README.md#architecture",
 )
+_CODE_FILE = re.compile(
+    r"(?<![\w/])(?:[\w.-]+/)*[\w.-]+\.(?:py|ts|tsx|js|jsx|rs|java)\b"
+)
+_QUALIFIED_SYMBOL = re.compile(r"\b[A-Z]\w*\.[A-Za-z_]\w*\b")
+_BEHAVIOR_REQUEST = re.compile(
+    r"\b(?:what does|how does|explain|trace|execution|flow|calls?|invokes?|"
+    r"returns?|process(?:es|ing)?|handles?|dispatch(?:es)?|runs?)\b",
+    re.IGNORECASE,
+)
 
 
 def evidence_obligation(query: str) -> str:
@@ -42,6 +51,13 @@ def evidence_obligation(query: str) -> str:
         )
     ):
         return "explicit_source"
+    # A named implementation and a behavior request take precedence over
+    # incidental inventory/architecture words. Inventory is not evidence
+    # of how an implementation executes.
+    if (_CODE_FILE.search(query) or _QUALIFIED_SYMBOL.search(query)) and (
+        _BEHAVIOR_REQUEST.search(query)
+    ):
+        return "current_behavior"
     if any(
         term in question
         for term in (
@@ -95,7 +111,7 @@ def canonical_evidence_ids(obligation: str) -> tuple[str, ...]:
 
 
 def select_current_evidence(
-    chunks: list[dict[str, Any]], obligation: str
+    chunks: list[dict[str, Any]], obligation: str, *, query: str = ""
 ) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
     """Exclude non-current passages only for current-fact obligations."""
     if obligation == "explicit_source":
@@ -109,9 +125,23 @@ def select_current_evidence(
     excluded = []
     for chunk in chunks:
         concerns = _entry_concerns(chunk)
-        if obligation == "current_structure":
+        # Claim-specific inventory/canonical selection must not discard a
+        # directly named current implementation. Authority/subject checks
+        # still apply: naming an archived or fixture source cannot make it
+        # current implementation evidence.
+        path, _, symbol = _canonical_id(chunk).partition("#")
+        named_implementation = bool(
+            _CODE_FILE.fullmatch(path)
+            and any(
+                re.search(rf"(?<![\w/]){re.escape(target)}(?![\w/])", query)
+                for target in (path, symbol)
+                if target
+            )
+        )
+        if obligation == "current_structure" and not named_implementation:
             concerns.insert(0, "orient_inventory_authoritative_for_structure")
-        elif has_selected_evidence and _canonical_id(chunk) not in selected_ids:
+        elif (has_selected_evidence and not named_implementation
+              and _canonical_id(chunk) not in selected_ids):
             concerns.insert(0, "outside_selected_claim_evidence")
         if concerns:
             excluded.append(

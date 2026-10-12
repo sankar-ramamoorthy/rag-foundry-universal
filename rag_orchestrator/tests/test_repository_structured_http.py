@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from src.api.v1 import routes
 from src.core import service
+from rag_orchestrator.src.retrieval.types import RetrievedChunk
 
 pytestmark = pytest.mark.unit
 ORIGINAL_ASYNC_CLIENT = httpx.AsyncClient
@@ -223,6 +224,46 @@ def test_q1_default_off_keeps_generation_path(monkeypatch):
     assert response.status_code == 200, response.text
     assert response.json()["answer"] == "model answer"
     assert "structured_answer" not in response.json()["retrieval_plan"]
+    assert "/generate" in calls
+
+
+@pytest.mark.parametrize("structured", [False, True])
+def test_code_flow_http_keeps_current_implementation_in_overview_mode(
+    monkeypatch, structured,
+):
+    client, calls = _client(monkeypatch)
+    canonical_id = "src/engine.py#Engine.execute"
+    chunk = RetrievedChunk(
+        chunk_id="c1", document_id="d1", score=0.8,
+        text="Dispatch the tool, append its result, then invoke the model again.",
+        canonical_id=canonical_id, metadata={"canonical_id": canonical_id},
+    )
+
+    async def retrieve(*_, **__):
+        return {"d1": [chunk]}, {
+            "seed_document_ids": ["d1"], "expanded_document_ids": [],
+            "expansion_metadata": {}, "generation_id": "g1",
+        }
+
+    monkeypatch.setattr(service, "hybrid_retrieve", retrieve)
+    response = client.post("/v1/rag", json={
+        "query": "Using src/engine.py#Engine.execute, trace execution through "
+                 "a tool call in this repository structure.",
+        "repo_id": "r1", "claim_type": "repository_overview",
+        "repository_overview_claim_selection_enabled": True,
+        "repository_overview_structured_answers_enabled": structured,
+        "repository_overview_canonical_selection_enabled": False,
+    })
+    assert response.status_code == 200, response.text
+    result = response.json()
+    plan = result["retrieval_plan"]
+    assert plan["evidence_obligation"] == "current_behavior"
+    assert canonical_id in result["sources"]
+    assert [e["canonical_id"] for e in plan["final_context_manifest"]] == [
+        canonical_id
+    ]
+    assert plan["excluded_evidence"] == []
+    assert "structured_answer" not in plan
     assert "/generate" in calls
 
 
