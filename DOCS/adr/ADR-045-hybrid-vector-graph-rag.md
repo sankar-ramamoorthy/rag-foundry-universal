@@ -2,7 +2,7 @@
 title: "ADR-045: Hybrid Vector+Graph RAG Pipeline with Repo Selection"
 date: 2026-02-20
 type: adr
-status: proposed
+status: accepted
 tags: [adr, retrieval, graph]
 related:
   - "[[ADR-030-unified-artifact-graph]]"
@@ -10,6 +10,11 @@ related:
 ---
 
 ## **DOCS\adr\ADR-045-hybrid-vector-graph-rag.md*
+
+> [!note] Status corrected to accepted (2026-10-12)
+> This is the literal production `hybrid_retrieve` pipeline in
+> `rag_orchestrator/src/core/service.py` — the #257/#254 fix this session
+> operated directly on it. Frontmatter never caught up with that reality.
 
 ***
 

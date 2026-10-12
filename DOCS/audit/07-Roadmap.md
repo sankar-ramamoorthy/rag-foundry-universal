@@ -120,31 +120,50 @@ adds these release-blocking work packages. Their
 entry points. Priority order is not a strict dependency chain; independent
 health/readiness corrections can ship while memory validation is prepared.
 
-- [ ] WP-R1 — bounded ingestion memory, [#160](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/160);
-  amended [004 spec](/specs/004-bounded-ingestion-memory/spec.md), planning PR #164.
-- [ ] WP-R2 — orphan recovery and admission, [#161](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/161).
-  In progress in draft PR #177; [tasks/rollout](/specs/005-production-correctness/issues/recovery.md),
+> [!note] Checkboxes corrected 2026-10-12
+> WP-R1-R7 below were left unchecked despite their issues having been
+> closed since 2026-09-18 — confirmed directly against live GitHub state.
+> "Closed" is the issue-tracker fact; it is not the same claim as "every
+> mandatory live gate passed" (see `HANDOFF.md`'s completion ledger and
+> [the spec's status line](/specs/005-production-correctness/spec.md) for
+> that narrower bar) — the paragraph below this list already says as much
+> and is unchanged.
+
+- [x] WP-R1 — bounded ingestion memory, [#160](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/160)
+  (closed 2026-09-18); amended [004 spec](/specs/004-bounded-ingestion-memory/spec.md), planning PR #164.
+- [x] WP-R2 — orphan recovery and admission, [#161](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/161)
+  (closed 2026-09-18); [tasks/rollout](/specs/005-production-correctness/issues/recovery.md),
   [ownership decision](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md).
-- [ ] WP-R3 — ingestion/delete/serving consistency, [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166), related #144.
-- [ ] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167), related #91/#141/#145/#149/#156.
+- [x] WP-R3 — ingestion/delete/serving consistency, [#166](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/166)
+  (closed 2026-09-18), related #144.
+- [x] WP-R4 — evidence delivery and context truthfulness, [#167](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/167)
+  (closed 2026-09-18), related #91/#141/#145/#149/#156.
   Code merged to main via PR #192 (2026-09-18); [mechanics verification](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)
   and [quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md) both complete, net positive.
   Production/deployment validation remains a separate #171 gate.
   September 17 follow-up: [#176](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/176)
-  tracks zero ANN results after bulk-delete churn reproduced in CI;
+  tracks zero ANN results after bulk-delete churn reproduced in CI, **still open**;
   [plan](/specs/005-production-correctness/issues/post-delete-ann.md), production impact unverified.
-- [ ] WP-R5 — source pinning and generation-aware graph cache, [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168).
-- [ ] WP-R6 — healthcheck correctness and runtime provenance, [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169).
-  Implementation merged in PR #172 with green CI; Linux gates pending:
+- [x] WP-R5 — source pinning and generation-aware graph cache, [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168)
+  (closed 2026-09-18).
+- [x] WP-R6 — healthcheck correctness and runtime provenance, [#169](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/169)
+  (closed 2026-09-18). Implementation merged in PR #172 with green CI; Linux gates pending:
   [evidence](/DOCS/test_results/2026-09-16-healthchecks-provenance-issue-169.md).
-- [ ] WP-R7 — bounded blocking-I/O isolation, [#170](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/170).
-- [ ] WP-R8 — current Linux full-lifecycle release validation, [#171](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/171).
+- [x] WP-R7 — bounded blocking-I/O isolation, [#170](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/170)
+  (closed 2026-09-18).
+- [ ] WP-R8 — current Linux full-lifecycle release validation, [#171](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/171)
+  (**open** — the one remaining unchecked item in this track).
 
 Each work package has its own implementation PR, acceptance evidence and KB
 updates. Code merged is not production validated. Do not mark this track
 complete until pinned memory, recovery, clean retrieval evaluation and current
 Linux ingest/query/delete/redeploy gates pass. September 12 was a successful
 controlled release; WP-R8 verifies the current revision, not a first-ever one.
+Related, still-open follow-ups split out of this track: [#176](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/176)
+(post-delete ANN recall, above), [#180](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/180)
+(ingestion source-revision provenance), [#181](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/181)
+(evaluation three-revision provenance), and [#191](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/191)
+(deployment schema-compatibility gate).
 
 ### Existing scale and operate work
 
@@ -240,7 +259,7 @@ behind the 2026-10-12 reorganization).
 
 ### R — Repository correctness and intelligence (highest immediate priority; items 4-5, 7-8 plus #251/#254/#243/#91 below)
 
-- [ ] (item 4, next) **#200** — Bounded evidence-sufficiency loop for structural workflows. **Decided 2026-10-12: stays under R, not Coding-Agent Integration (AG3).** Evidence sufficiency is a foundational capability independent of consumer — it applies to ORIENT, TRACE, IMPACT, and ordinary RAG queries alike. AG3 (below) consumes #200 but does not own it, so the project does not build separate sufficiency logic for a human-facing chatbot and a coding agent. Reordering rationale (ahead of #199, decided 2026-09-19) below is unchanged.
+- [ ] (item 4, next) **#200** — Bounded evidence-sufficiency loop for structural workflows. **Status corrected 2026-10-12: its own internal Stage A (mechanical bounded evidence sufficiency, internal sub-stages labeled `A0`-`A5` — unrelated to this phase's new `AG0`-`AG5` coding-agent items) has already shipped** (see [status](/DOCS/status.md)/[index](/DOCS/index.md)); the box above stays unchecked only because its full frozen live-evaluation gate remains open, not because no work has started — do not read `[ ]` here as "not begun." Next is a Stage C follow-up combining Stage A with #199. **Decided 2026-10-12: stays under R, not Coding-Agent Integration (AG3).** Evidence sufficiency is a foundational capability independent of consumer — it applies to ORIENT, TRACE, IMPACT, and ordinary RAG queries alike. AG3 (below) consumes #200 but does not own it, so the project does not build separate sufficiency logic for a human-facing chatbot and a coding agent. Reordering rationale (ahead of #199, decided 2026-09-19) below is unchanged.
 - [ ] (item 5) **#199** — Source authority / subject / provenance model ([ADR-053](/DOCS/adr/ADR-053-source-authority-provenance-model.md), `status: proposed`, not yet implemented).
 - [ ] (item 7) **#202** — Context/evidence survival improvements beyond WP-R4. **Parent workstream for #254** (below, unchanged relationship) — #202 addresses the broader problem of preserving authoritative evidence through the retrieval pipeline; #254 investigated one concrete instance of it.
 - [ ] (item 8) **#203** — Architecture facts and derived views (also feeds P's derived-view work, below).
@@ -375,4 +394,5 @@ graph LR
 > 9. **Red-star track substantially closed; Phase 6 opened (2026-09-18):** WP-R4/#167 merged (PR #192) and its ADR accepted (PR #193) with a net-positive frozen-question quality evaluation — see [the quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md). Its one non-blocking follow-up is tracked as [#194](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/194) (budget calibration — an evidence-gated experiment, explicitly not scheduled to run immediately). New Phase 6 above formalizes the 13-item post-R4 backlog as issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208), superseding `specs/005-production-correctness/spec.md`'s old "blue-star work remains deferred" placeholder. Next up: Phase 6 items 1-2 (incremental ingestion + snapshot lineage, ORIENT) — status/README updates are a separate, explicitly deferred follow-on task, not part of this update.
 > 10. **Phase 6 items 1-3 shipped (2026-09-19):** #196 (PR #214), #197 (PR #215) plus its orchestrator exposure ([#216](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/216)/PR #218), #198 (PR #219), and two #197 fast-follows filed and shipped the same day — relationship-metadata graph-export preservation ([#220](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/220)/PR #222) and mechanically derived endpoint/service/HTTP-call facts ([#221](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/221)/PR #223) — are all merged to `main`, CI green throughout, each independently live-verified against this repo's own real services (not just unit tests). **Reordered #200 ahead of #199** (rationale above the exit-criteria section) — #200's next up, not #199.
 > 11. **#254's normal-mode symptom fixed and Phase 6 reorganized into R/A/D/E/O/P (2026-10-12):** #257 (structural discovery, [PR #258](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/258)) and a context-allocation priority fix ([PR #259](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/259)) resolved #254's original normal-mode failure, production-verified in [PR #260](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/260) — `agent.py#Agent.run` now reaches final context and is cited by the live generated answer. #257 closed; #254 stays open for the overview-policy and historical seed-set questions, above. Separately, reconciled [the roadmap-reorientation proposal](/DOCS/proposals/2026-10-11-roadmap-reorientation-agent-ready-intelligence.md) against live GitHub issue state, the OKF standard, and the three 2026-10-04 research notes (all read in full; internally consistent, no contradictions found) — **Option B approved**: Phase 6's items 4-13 (plus #251/#254) are now grouped under R/A/D/E/O/P workstream labels in place, every issue number and shipped checkbox preserved unchanged, new AG0-AG5/D0-D5/decision-model-experiment items added as explicitly unscoped (no issues filed; `AG`, not `A`, to avoid colliding with #200's own existing internal A0-A5 stage labels below), and a provisional "Next Evaluation Gate" checklist added (not a permanent commitment). #200 decided to stay under R, not AG3; #254 decided to stay linked to parent #202. The proposal document itself is now marked `status: integrated` and kept as the historical rationale record.
+> 12. **Status-drift sweep (2026-10-12):** a follow-up audit of other docs for the same stale-status pattern found four confirmed cases, now corrected: (1) five foundational ADRs (ADR-032, ADR-043, ADR-044, ADR-045) still said `status: proposed` despite being fully implemented and depended upon for ~8 months — promoted to `accepted`; ADR-039 was superseded by ADR-040 (same date) rather than independently accepted — marked `superseded`. (2) `specs/005-production-correctness/spec.md`'s header said "Planned" and its work-package table had no status markers, despite `HANDOFF.md` and live GitHub state showing WP-R1-R7 (#160/#161/#166/#167/#168/#169/#170) all closed 2026-09-18 — header and table corrected, only WP-R8/#171 and split-off follow-ups #176/#180/#181/#191 remain open. (3) This document's own Phase 4 WP-R1-R7 checkboxes were left unchecked despite the same closures — corrected to `[x]`; WP-R8 stays `[ ]`, the one genuinely open item. (4) Phase 6's #200 entry (above, item 4) read as "not begun" — corrected to note its own internal Stage A has already shipped, with only the full live-evaluation gate still open. None of these four corrections change what work remains outstanding (WP-R8, #171, #176, #180, #181, #191, #199, #200's Stage C, #202-#208 are all still genuinely open) — they correct stale status text, not actual scope.
 

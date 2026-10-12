@@ -2,11 +2,18 @@
 title: "ADR-039: Code Artifact Embedding Strategy for Repository Ingestion"
 date: 2026-02-15
 type: adr
-status: proposed
+status: superseded
 tags: [adr, embedding, code]
 related:
   - "[[ADR-038-pipeline-construction-ownership]]"
+  - "[[ADR-040-code-intelligence-embedding-strategy]]"
 ---
+
+> [!note] Superseded 2026-10-12
+> Superseded by [ADR-040](/DOCS/adr/ADR-040-code-intelligence-embedding-strategy.md)
+> (same date, 2026-02-15, explicitly lists this ADR as related), which
+> formalized the phased artifact-level embedding architecture this ADR
+> proposed. Kept for historical rationale; not current decision status.
 
 # 📘 ADR-039
 
@@ -14,7 +21,7 @@ related:
 
 ### Status
 
-Proposed
+Superseded by ADR-040
 
 ### Date
 

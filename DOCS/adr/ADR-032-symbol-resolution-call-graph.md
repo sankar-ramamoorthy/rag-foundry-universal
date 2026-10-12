@@ -2,7 +2,7 @@
 title: "ADR-032: Layered Symbol Resolution & Deterministic Call Graph Model"
 date: 2026-02-13
 type: adr
-status: proposed
+status: accepted
 tags: [adr, call-graph, symbol-resolution]
 related:
   - "[[ADR-030-unified-artifact-graph]]"
@@ -11,9 +11,15 @@ related:
 
 ## DOCS\adr\ADR-032-symbol-resolution-call-graph.md
 
+> [!note] Status corrected to accepted (2026-10-12)
+> This architecture has been fully implemented and depended upon as
+> settled fact for ~8 months (e.g. `CLAUDE.md`'s "Call resolution &
+> DEFINES edges" reference; the #257 fix this session operated directly
+> on this call graph). Frontmatter never caught up with that reality.
+
 # ADR-032 — Layered Symbol Resolution & Deterministic Call Graph Model
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-02-13
 **Related ADRs:** ADR-030 (Unified Artifact Graph), ADR-031 (Canonical Identity Model)
 

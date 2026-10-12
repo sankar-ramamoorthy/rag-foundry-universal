@@ -2,9 +2,13 @@
 title: "ADR-044: Promote Document Graph ORM Models to Shared Platform Layer"
 date: 2026-02-17
 type: adr
-status: proposed
+status: accepted
 tags: [adr, shared-layer, architecture]
 ---
+
+> [!note] Status corrected to accepted (2026-10-12)
+> `shared/models/` is this promotion, in production use across every
+> service. Frontmatter never caught up with that reality.
 
 # 📘 ADR-044 — Promote Graph ORM Models to Shared Platform Layer
 #  DOCS/architecture/platform-graph-architecture-expanded.md
