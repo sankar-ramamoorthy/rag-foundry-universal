@@ -1,17 +1,22 @@
 ---
 title: "ADR-043: Markdown Section Extraction into Unified Artifact Graph"
 type: adr
-status: proposed
+status: accepted
 tags: [adr, markdown, extraction]
 ---
 
 ## DOCS\adr\ADR-043-MarkdownExtractor.md
 
+> [!note] Status corrected to accepted (2026-10-12)
+> Shipped and depended upon — ADR-048 (Cross-Artifact-Linking, accepted)
+> builds directly on this extractor's output. Frontmatter never caught
+> up with that reality.
+
 # 📍 1. **Markdown Section Extractor ADR**
 
 **ADR-XYZ — Markdown Section Extraction into Unified Artifact Graph**
 
-**Status:** Proposed
+**Status:** Accepted
 **Context:**
 The repository ingestion system currently extracts structured Python AST artifacts and PDFs, storing them as graph nodes in the Unified Artifact Graph (UAG). Markdown files contain critical documentation and should also be represented as structured artifacts in the graph for RAG retrieval and reasoning.
 

@@ -1,8 +1,15 @@
 # Specification: production correctness programme
 
 Created: 2026-09-16
-Status: Planned; delivery in separate issue-backed PRs
-Tracking issues: #160, #161, #166, #167, #168, #169, #170, #171, #180, #181
+Status: Mostly closed (2026-10-12) — WP-R1-R7 (#160, #161, #166, #167,
+  #168, #169, #170) all closed 2026-09-18; WP-R8 (#171) and the
+  split-off follow-ups #176/#180/#181/#191 remain open. See
+  [HANDOFF.md](./HANDOFF.md) for the completion ledger and
+  [DOCS/status.md](/DOCS/status.md) for the maintained current-state
+  summary; do not infer closure alone as full live-validation proof —
+  `HANDOFF.md` notes mandatory live memory/recovery/quality/release
+  gates as a separate, narrower completion bar from "issue closed."
+Tracking issues: #160, #161, #166, #167, #168, #169, #170, #171, #176, #180, #181, #191
 Roadmap: Phase 4 / WP-R1 through WP-R8
 Audit: [September 16](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
 
@@ -16,18 +23,23 @@ behavior does not satisfy the full objective.
 
 ## Work packages and acceptance ownership
 
-| Package | Issue | Contract/spec | Completion evidence |
-| --- | --- | --- | --- |
-| WP-R1 bounded ingestion memory | #160 | [004 spec](../004-bounded-ingestion-memory/spec.md) | Normalized parity, bounded buffers, PostgreSQL tests, pinned Linux/DocsGPT memory runs |
-| WP-R2 recovery/admission | #161 | Recovery contract below; [implementation tasks](./issues/recovery.md) | Hard-death reconciliation, live-worker protection, bounded concurrent work |
-| WP-R3 corpus lifecycle | #166; related #144 | [lifecycle](./issues/lifecycle.md) | Durable attempt identity, retry cleanup, mutation exclusion and truthful serving state |
-| WP-R4 evidence delivery | #167; related #91/#141/#145/#149/#156 | [evidence](./issues/evidence.md) | Exact prompt/manifest agreement and pinned uncontaminated stage/quality evaluation |
-| WP-R5 generation-aware cache freshness | #168 | [freshness](./issues/freshness.md) | Generation-consistent queries and bounded, invalidated graph caches |
-| WP-R6 health/provenance | #169 | [health](./issues/health.md) | Real probe success/failure, correct ports and runtime revision |
-| WP-R7 blocking I/O | #170 | [async](./issues/async.md) | Unrelated requests remain responsive under controlled slow operations/saturation |
-| WP-R8 current release | #171 | [release](./issues/release.md) | Current Linux full lifecycle and container provenance/release evidence |
-| Ingestion source-revision provenance (split from #168) | #180 | issue body only, not yet spec'd | Pinned Git ref, resolved commit SHA, and config fingerprint recorded per ingestion |
-| Evaluation three-revision provenance (split from #168) | #181 | issue body only, not yet spec'd | Runtime/corpus/ground-truth revisions pinned independently in eval records |
+Status column added 2026-10-12, sourced from live GitHub issue state —
+issue-closed is not the same claim as "mandatory live gates passed" (see
+`HANDOFF.md`'s completion ledger for that narrower bar).
+
+| Package | Issue | Status | Contract/spec | Completion evidence |
+| --- | --- | --- | --- | --- |
+| WP-R1 bounded ingestion memory | #160 | **Closed** 2026-09-18 | [004 spec](../004-bounded-ingestion-memory/spec.md) | Normalized parity, bounded buffers, PostgreSQL tests, pinned Linux/DocsGPT memory runs |
+| WP-R2 recovery/admission | #161 | **Closed** 2026-09-18 | Recovery contract below; [implementation tasks](./issues/recovery.md) | Hard-death reconciliation, live-worker protection, bounded concurrent work |
+| WP-R3 corpus lifecycle | #166; related #144 | **Closed** 2026-09-18 | [lifecycle](./issues/lifecycle.md) | Durable attempt identity, retry cleanup, mutation exclusion and truthful serving state |
+| WP-R4 evidence delivery | #167; related #91/#141/#145/#149/#156 | **Closed** 2026-09-18 | [evidence](./issues/evidence.md) | Exact prompt/manifest agreement and pinned uncontaminated stage/quality evaluation |
+| WP-R5 generation-aware cache freshness | #168 | **Closed** 2026-09-18 | [freshness](./issues/freshness.md) | Generation-consistent queries and bounded, invalidated graph caches |
+| WP-R6 health/provenance | #169 | **Closed** 2026-09-18 | [health](./issues/health.md) | Real probe success/failure, correct ports and runtime revision |
+| WP-R7 blocking I/O | #170 | **Closed** 2026-09-18 | [async](./issues/async.md) | Unrelated requests remain responsive under controlled slow operations/saturation |
+| WP-R8 current release | #171 | **Open** | [release](./issues/release.md) | Current Linux full lifecycle and container provenance/release evidence |
+| Ingestion source-revision provenance (split from #168) | #180 | **Open** | issue body only, not yet spec'd | Pinned Git ref, resolved commit SHA, and config fingerprint recorded per ingestion |
+| Evaluation three-revision provenance (split from #168) | #181 | **Open** | issue body only, not yet spec'd | Runtime/corpus/ground-truth revisions pinned independently in eval records |
+| Deployment schema-compatibility gate | #191 | **Open** | issue body only, not yet spec'd | Prod never runs deployed code behind an unapplied migration without detection |
 
 ## Recovery/admission contract (#161)
 
