@@ -141,6 +141,13 @@ the branch, production, and publication state.
 The [October 8 HTTP structured-answer comparison](/DOCS/test_results/2026-10-08-issue-240-http-structured-comparison.md)
 records the later matched 11-request result and its remaining merge gate.
 
+Issue #257/#254's [production verification](/DOCS/test_results/2026-10-11-issue-254-257-production-verification.md)
+confirms two merged retrieval-pipeline fixes (structural discovery past a
+one-hop expansion limit; context-allocation priority for explicitly-named
+methods) against the live deployed stack — the authoritative method is
+now discovered, fetched, and cited in the generated answer for normal-
+mode queries. Repository-overview-mode exclusion and the historical
+seed-set discrepancy remain open, separate questions under #254.
 
 
 `DOCS/test_results/` — benchmark and verification records tied to specific
