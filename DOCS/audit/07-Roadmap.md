@@ -180,9 +180,26 @@ controlled release; WP-R8 verifies the current revision, not a first-ever one.
 
 **Exit criteria:** demo flow — SSO login → connect private polyglot repo → nightly incremental ingest → PR opened → bot comments callers-of-changed-code → dev asks follow-ups in web UI with model of choice.
 
-## Phase 6 — Repository intelligence and incremental ingestion foundation
-*Theme: stop asking semantic top-k to reconstruct a repository, and stop
-re-processing what hasn't changed.*
+## Phase 6 — Repository, document, and coding-agent intelligence
+*Theme: stop asking semantic top-k to reconstruct a repository, stop
+re-processing what hasn't changed, and make repository evidence
+consumable by both human users and external coding agents.*
+
+> [!important] Two primary consumers (added 2026-10-12, reconciling
+> [the roadmap-reorientation proposal](/DOCS/proposals/2026-10-11-roadmap-reorientation-agent-ready-intelligence.md))
+> RAG-FOUNDRY-UNIVERSAL has two long-term consumers of the evidence this
+> phase builds: **human users** exploring repositories and documents
+> through questions, traces, architecture views, and grounded
+> explanations; and **coding agents** consuming structured,
+> machine-readable evidence to investigate bugs, understand dependencies,
+> assess changes, and eventually propose fixes. This has implications for
+> API contracts, source identities, provenance, uncertainty reporting,
+> benchmarking, and MCP integration — MCP is an integration surface, not
+> the underlying intelligence capability itself. **Core distinction:**
+> retrieval relevance is not source authority; source discovery is not
+> evidence delivery; evidence delivery is not answer correctness; bug
+> localization is not proof a patch is correct. Each boundary needs
+> explicit contracts and evaluation.
 
 Numbered after Phase 5 in this document, but **priority-wise this phase's
 first two items slot in immediately after Phase 4's red-star track, ahead
@@ -195,44 +212,82 @@ the legacy runtime with no blocking findings. This phase supersedes
 [`specs/005-production-correctness/spec.md`](/specs/005-production-correctness/spec.md)'s
 old placeholder line ("the blue-star product work remains deferred") with
 an actual prioritized 13-item list, filed as GitHub issues #196-#208.
+**2026-10-12 reorganization:** items 4-13 below are now grouped by the
+workstream labels (R/A/D/E/O/P) from the roadmap-reorientation proposal,
+instead of one flat list — every issue number, shipped checkbox, and
+dated decision from the original list is preserved unchanged; nothing was
+replaced or renumbered away. New sub-items (AG0-AG5, D0-D5 minus #204,
+decision-model experiment) have **no GitHub issue filed yet** — do not
+treat them as shipped APIs or preapproved work.
 
 Ordering and design rationale are not repeated here — see each issue for
 its problem statement, proposed direction, and prior-art links (the 2026-09-07
 [repository-intelligence architecture audit](/DOCS/audit/2026-09-07-repository-intelligence-architecture-audit.md),
 the [ORIENT/TRACE/IMPACT notes](/DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md),
-[WP-S6](/DOCS/audit/04-Scalability-Plan.md) for incremental ingestion, and
+[WP-S6](/DOCS/audit/04-Scalability-Plan.md) for incremental ingestion,
 [09-Retrieval-Technique-Decision-Gates](/DOCS/audit/09-Retrieval-Technique-Decision-Gates.md)
-for the evidence-gated retrieval-experiment discipline).
+for the evidence-gated retrieval-experiment discipline, and the 2026-10-04
+research notes on [repository intelligence](/DOCS/research/2026-10-04-repository-intelligence-research-lessons.md),
+[document intelligence](/DOCS/research/2026-10-04-document-intelligence-research-lessons.md),
+and [evaluation method](/DOCS/research/2026-10-04-evaluation-and-experimental-method-lessons.md)
+behind the 2026-10-12 reorganization).
+
+### Shipped (items 1-3)
 
 1. [x] Incremental ingestion + repository/file snapshot lineage — [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196), shipped via PR #212-#214
 2. [x] ORIENT — repository intelligence / structural inventory foundation — [#197](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/197), shipped via PR #215 (+ orchestrator exposure #216/PR #218, relationship-metadata export #220/PR #222, service-topology facts #221/PR #223)
 3. [x] TRACE / IMPACT bounded structural query modes — [#198](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/198), shipped via PR #219
-4. [ ] **(next, reordered ahead of #199 2026-09-19 — see rationale below)** Bounded evidence-sufficiency loop for structural workflows — [#200](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/200)
-5. [ ] Source authority / subject / provenance model — [#199](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/199)
-6. [ ] Evidence-driven retrieval experiments (keep the decision-gate process current) — [#201](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/201)
-7. [ ] Context/evidence survival improvements beyond WP-R4 — [#202](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/202)
-8. [ ] Architecture facts and derived views — [#203](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/203)
-9. [ ] JIT OCR / selective heavy-parse escalation — [#204](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/204)
-10. [ ] Durable ingestion/work execution (beyond orphan recovery) — [#205](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/205)
-11. [ ] Bounded graph/query scaling — [#206](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/206)
-12. [ ] **(deferred, backlog slot only)** General agentic repository investigator — [#207](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/207)
-13. [ ] **(deferred, backlog slot only)** Enterprise/productization surface — [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208)
 
-**ORIENT correctness follow-up (separate from #240):**
-[#251](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/251)
-— parse Compose `!override` and verify the effective production inventory
-against the ordered base-plus-overlay configuration. The issue defines
-focused fixtures and acceptance checks before implementation; it does not
-change the 13-item Phase 6 ordering.
+### R — Repository correctness and intelligence (highest immediate priority; items 4-5, 7-8 plus #251/#254/#243/#91 below)
 
-**Evidence-delivery diagnostic follow-up:**
-[#254](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/254)
-defines separate acceptance criteria for exact-symbol candidate discovery
-and attribution of individual chunk limits, under #202's evidence-survival
-workstream. Use synthetic contract tests and pinned development-corpus
-replays under [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
-before proposing retrieval changes. The global-cap explanation remains an
-inference until the limiting rule is measured directly.
+- [ ] (item 4, next) **#200** — Bounded evidence-sufficiency loop for structural workflows. **Decided 2026-10-12: stays under R, not Coding-Agent Integration (AG3).** Evidence sufficiency is a foundational capability independent of consumer — it applies to ORIENT, TRACE, IMPACT, and ordinary RAG queries alike. AG3 (below) consumes #200 but does not own it, so the project does not build separate sufficiency logic for a human-facing chatbot and a coding agent. Reordering rationale (ahead of #199, decided 2026-09-19) below is unchanged.
+- [ ] (item 5) **#199** — Source authority / subject / provenance model ([ADR-053](/DOCS/adr/ADR-053-source-authority-provenance-model.md), `status: proposed`, not yet implemented).
+- [ ] (item 7) **#202** — Context/evidence survival improvements beyond WP-R4. **Parent workstream for #254** (below, unchanged relationship) — #202 addresses the broader problem of preserving authoritative evidence through the retrieval pipeline; #254 investigated one concrete instance of it.
+- [ ] (item 8) **#203** — Architecture facts and derived views (also feeds P's derived-view work, below).
+- [ ] **#251** (ORIENT correctness follow-up, separate from #240) — parse Compose `!override` and verify the effective production inventory against the ordered base-plus-overlay configuration. Focused fixtures/acceptance checks defined before implementation; does not change this phase's ordering.
+- [ ] **#254** (evidence-delivery diagnostic follow-up, linked to parent **#202**) — defines separate acceptance criteria for exact-symbol candidate discovery and attribution of individual chunk limits. **Normal-mode symptom: production-verified resolved (2026-10-11/12).** #257 (structural discovery, [PR #258](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/258)) and a context-allocation priority fix ([PR #259](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/259)) corrected two independent defects; `agent.py#Agent.run` now reaches final context and is directly cited by the live generated answer on the deployed stack — see [the production verification record](/DOCS/test_results/2026-10-11-issue-254-257-production-verification.md) ([PR #260](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/260)). **#254 stays open** for two separate, unresolved questions: (1) whether `repository_overview` mode should exclude method-level passages for an explicit code-behavior question — confirmed excluded by a distinct `overview_policy` stage, not the byte budget; correctness not yet evaluated, and the policy should not be weakened just to make this one case pass; (2) the historical deployed/local seed-set discrepancy for the same logical generation — embedding model, orchestrator code path, and ANN determinism were each individually ruled out as causes; **do not present inferred generation-retag drift as a demonstrated cause.** Use synthetic contract tests and pinned development-corpus replays under [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md) before proposing further retrieval changes.
+- [ ] **#243** — Evaluate repository-overview generalization on held-out repositories, under [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md). At least one held-out corpus (self-repository, a separate Python project, a polyglot project, configuration-heavy cases where feasible); do not infer generalization from the self-repository alone.
+- [ ] **#91** — Same-relation-type candidate overload truncates authoritative evidence past `MAX_EXPANDED_DOCS` (open since 2026-09-06, still unaddressed). Characterize recurrence before choosing an intervention, per issue #89's discipline.
+
+**R exit gate:** predeclared case-by-case answer and exact-source obligations across multiple pinned repositories; negative and historical controls; baseline vs. candidate; acceptable latency/regression profile.
+
+### A — Coding-agent integration and bug investigation (new 2026-10-12; no GitHub issues filed yet)
+
+> Make coding agents a first-class external consumer of the repository-intelligence layer (R, above) — not a competing full coding agent by default. Sub-items below are labeled `AG0`-`AG5` (not `A0`-`A5`) to avoid colliding with #200's own, unrelated internal stage labels (`A0`-`A5`) referenced in [`DOCS/index.md`](/DOCS/index.md) and [`DOCS/status.md`](/DOCS/status.md).
+
+- **AG0 — Agent-ready evidence contracts.** Additive, versioned machine-readable contracts (repository/snapshot identity, canonical symbol ID, file path/line/span, evidence type, relationship, role/authority facets, source hashes, confidence/unknown status, completeness/limits, causal trace IDs). Require source-revision agreement or an explicit mismatch warning before suggesting edit locations; preserve read-only default.
+- **AG1 — Read-only MCP proof of value.** A small selected tool set (illustrative names only, not promised APIs: `orient_repository`, `find_symbols`/`get_symbol_evidence`, `trace_execution`, `analyze_impact`), reusing existing validated services rather than a broad new control plane. Gate: a real coding agent with/without the MCP, over matched source snapshots and permissions, shows measurable improvement — not merely successful tool invocation.
+- **AG2 — Bug-localization benchmark.** Held-out, reproducible issue scenarios (bug report/failing test, known root cause, expected symbol/file, realistic distractors, source revision); compare the same agent with/without RAG-FOUNDRY-UNIVERSAL.
+- **AG3 — Bounded retrieval repair and sufficiency.** Extends **#200** (owned by R, above — AG3 consumes it, does not own it) from structural endpoints to ordinary queries: at most one or a few bounded, targeted follow-ups, never unconstrained recursion. **#207** (deferred below) is reserved for adaptive multi-step investigation only after this measurably fails.
+- **AG4 — Patch-impact analysis** (later, evidence-gated). Given a proposed diff: conservative structural impact plus unknowns; the calling agent still edits and runs tests.
+- **AG5 — Evidence-backed fix proposals** (vision; not committed). Only after AG2/AG4 demonstrate quality; sandboxed execution and human review required.
+
+### D — Document intelligence (parallel next tranche)
+
+Existing: **#204** (JIT OCR / selective heavy-parse escalation) — related, but does not cover this whole track alone. New, unscoped (no issues filed): **D0** pinned document corpus/reliability baseline, **D1** bounded ingestion lifecycle (observable accepted/parsing/OCR/chunking/embedding/ready/failed stages — HTTP 202 is not success), **D2** structured page/block representation and provenance, **D3** structure-aware chunking, **D4** selective OCR/visual escalation, **D5** provider comparison and optional GPU isolation. See [Document Intelligence Research Lessons](/DOCS/research/2026-10-04-document-intelligence-research-lessons.md) for the evidence behind this sequencing (a real ingestion OOM/Exit 137 event, structure loss on a tabular screenshot via plain OCR, licensing/hardware constraints on GPU OCR candidates).
+
+### E — Shared evaluation and experimentation (continuous, not a terminal phase)
+
+- [ ] (item 6) **#201** — Evidence-driven retrieval experiments (keep the decision-gate process current) — already filed, unchanged.
+- Required trajectory: `source → parser/extractor → index → vector/structural seed → graph expansion → candidate selection → chunk fetch → context survival → claim use in final answer`. Pin runtime/indexed-source/generation and retrieval/model/prompt/parser settings; freeze development and held-out sets before experiments; require GO/NO-GO/INVESTIGATE decisions; no PR/merge after a failed applicable quality gate. See [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md) (first cross-link from this document) and [Evaluation and Experimental Method Lessons](/DOCS/research/2026-10-04-evaluation-and-experimental-method-lessons.md).
+- **Decision-model experiment** (Jev/Laya/Kev/AnyJev/CLM): preserved as a **research candidate**, not a commitment or prerequisite. Begin in shadow mode if pursued; not synonymous with #207.
+
+### O — Operations, scaling, and security (continuous; see also Phase 4's production-correctness track above)
+
+- [ ] (item 10) **#205** — Durable ingestion/work execution (beyond orphan recovery).
+- [ ] (item 11) **#206** — Bounded graph/query scaling.
+- Confirm current status/evidence for #171, #176, #180, #181, #191 (Phase 4, above) before reprioritizing. The historical same-generation seed-set discrepancy noted under #254 (R, above) is still unresolved — do not claim lifecycle drift without new direct proof.
+
+### P — Product experience and explanation (incremental, after evidence correctness)
+
+- #203 (R, above) feeds derived architecture/trace views here; never let a generated diagram silently become independent source truth.
+- New, unscoped: a focused evidence/graph explorer prototype before any wholesale Gradio replacement or enterprise UX; public educational material using #254/#257 as the worked example, distinguishing Claude Code's execution/investigation, ChatGPT's hypotheses/review, and the operator's authorization/deployment.
+- Productization itself stays under #208 (deferred, below).
+
+### Deferred, backlog slot only (items 12-13, unchanged)
+
+12. [ ] General agentic repository investigator — [#207](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/207) (AG3, above, must measurably fail first)
+13. [ ] Enterprise/productization surface — [#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208) (P, above)
 
 **Reordering rationale (#200 ahead of #199, decided 2026-09-19):** #199
 (source authority/subject/provenance) and #200 (bounded evidence-
@@ -262,7 +317,27 @@ unit tests alone) before item 3 seriously starts. Items 12-13 stay out of
 scope until items 2-5 and 7-8 have demonstrated concretely what bounded,
 deterministic workflows cannot do — "agentic" is not a substitute for
 fixing evidence quality, and productization is not what should dominate
-this tranche.
+this tranche. The same discipline now applies to AG3/AG2 relative to AG4/AG5,
+and to D0-D3 relative to D4/D5.
+
+### Next Evaluation Gate (provisional checkpoint, added 2026-10-12 — not a permanent roadmap commitment)
+
+A near-term planning checkpoint, not new backlog items — do **not** file a
+GitHub issue for each line below automatically; let the evaluation itself
+tell us which line turns into real implementation work worth its own
+issue.
+
+- [ ] Reconcile current issues, merged PRs, published status, and
+  deployment verification against this phase's text; correct stale
+  issue/roadmap claims.
+- [ ] Freeze an overview-policy explicit-code vs. global-overview control-case comparison and record a baseline (feeds #254's open overview-policy question, above).
+- [ ] Prepare at least one independent-repository regression/held-out plan under [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md) (feeds #243, above).
+- [ ] Draft the AG0 machine-readable evidence contract (additive, no breaking API change) and identify one safe read-only MCP tool pilot (AG1).
+- [ ] Define the agent A/B experiment (same checkout, source revision, tools/permissions, issue set, metrics) **before** building the AG1 integration.
+- [ ] Start a D0 document-benchmark case inventory with OOM/table/layout cases.
+- [ ] Publish GO/NO-GO/INVESTIGATE decisions and issue mappings for the above, without silently expanding implementation scope.
+
+**Exit criteria:** each checklist item above produces either a recorded decision (with evidence) or an explicit next experiment — not a default transition into unscoped implementation work.
 
 ---
 
@@ -279,7 +354,7 @@ graph LR
   P275 --> P4[Phase 4<br/>Scale + Ops]
   P3 --> P5[Phase 5<br/>Enterprise]
   P4 --> P5
-  P4 --> P6[Phase 6<br/>Repo intelligence +<br/>incremental ingestion]
+  P4 --> P6[Phase 6<br/>Repo + document +<br/>coding-agent intelligence]
   P6 -.priority, not sequence.-> P5
 ```
 
@@ -299,4 +374,5 @@ graph LR
 > 8. **`WP-T1` done (2026-09-12):** [issue #100](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/100), planning doc [[WP-T1-retrieval-evidence-trace]] — extended the existing `evidence_trace.py` instrumentation (issue #89/PR #90) into a complete, automatic, query-level evidence trace (trace ID, chunk-index detail, token-budget stage, final-context manifest) across PRs #102-#105. `WP-T1e`'s first live run ([DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md](/DOCS/test_results/2026-09-12-wp-t1e-evidence-survival-run.md)) found two clean cases of correct evidence reaching final context with generation still failing — the strongest signal yet that the next lever is generation reliability, not another retrieval-side fix — plus two follow-up issues, both now resolved: [#107](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/107) (a real canonical-lookup URL-length bug, fixed in PR #109) and [#106](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/106) (corpus self-contamination, resolved as a process decision — [DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md](/DOCS/notes/20260912-self-ingestion-eval-corpus-policy.md)). Deliberately separate from Phase 4's `WP-E5 Observability` (generic ops tracing/metrics/logging) and from `08-RAG-Quality-Evaluation-Methodology`'s own `WP-Q1`/`Q2`/`Q3` naming (already used for chunking/retrieval/generation quality, executed as `WP-Q0`).
 > 9. **Red-star track substantially closed; Phase 6 opened (2026-09-18):** WP-R4/#167 merged (PR #192) and its ADR accepted (PR #193) with a net-positive frozen-question quality evaluation — see [the quality evaluation](/DOCS/test_results/2026-09-18-wp-r4-quality-evaluation.md). Its one non-blocking follow-up is tracked as [#194](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/194) (budget calibration — an evidence-gated experiment, explicitly not scheduled to run immediately). New Phase 6 above formalizes the 13-item post-R4 backlog as issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208), superseding `specs/005-production-correctness/spec.md`'s old "blue-star work remains deferred" placeholder. Next up: Phase 6 items 1-2 (incremental ingestion + snapshot lineage, ORIENT) — status/README updates are a separate, explicitly deferred follow-on task, not part of this update.
 > 10. **Phase 6 items 1-3 shipped (2026-09-19):** #196 (PR #214), #197 (PR #215) plus its orchestrator exposure ([#216](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/216)/PR #218), #198 (PR #219), and two #197 fast-follows filed and shipped the same day — relationship-metadata graph-export preservation ([#220](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/220)/PR #222) and mechanically derived endpoint/service/HTTP-call facts ([#221](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/221)/PR #223) — are all merged to `main`, CI green throughout, each independently live-verified against this repo's own real services (not just unit tests). **Reordered #200 ahead of #199** (rationale above the exit-criteria section) — #200's next up, not #199.
+> 11. **#254's normal-mode symptom fixed and Phase 6 reorganized into R/A/D/E/O/P (2026-10-12):** #257 (structural discovery, [PR #258](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/258)) and a context-allocation priority fix ([PR #259](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/259)) resolved #254's original normal-mode failure, production-verified in [PR #260](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/260) — `agent.py#Agent.run` now reaches final context and is cited by the live generated answer. #257 closed; #254 stays open for the overview-policy and historical seed-set questions, above. Separately, reconciled [the roadmap-reorientation proposal](/DOCS/proposals/2026-10-11-roadmap-reorientation-agent-ready-intelligence.md) against live GitHub issue state, the OKF standard, and the three 2026-10-04 research notes (all read in full; internally consistent, no contradictions found) — **Option B approved**: Phase 6's items 4-13 (plus #251/#254) are now grouped under R/A/D/E/O/P workstream labels in place, every issue number and shipped checkbox preserved unchanged, new AG0-AG5/D0-D5/decision-model-experiment items added as explicitly unscoped (no issues filed; `AG`, not `A`, to avoid colliding with #200's own existing internal A0-A5 stage labels below), and a provisional "Next Evaluation Gate" checklist added (not a permanent commitment). #200 decided to stay under R, not AG3; #254 decided to stay linked to parent #202. The proposal document itself is now marked `status: integrated` and kept as the historical rationale record.
 
