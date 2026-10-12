@@ -1,1 +1,3 @@
 *.sh text eol=lf
+DOCS/evaluations/document-rag-d0/*.md text eol=lf
+DOCS/evaluations/document-rag-d0/questions.json text eol=lf

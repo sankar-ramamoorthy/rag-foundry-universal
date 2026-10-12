@@ -1,0 +1,575 @@
+{
+  "complete_matrix": true,
+  "validated_requests": 30,
+  "source_hashes_unchanged": true,
+  "runtime_corpus_controls_match": true,
+  "context_budget": 4096,
+  "all_reranked": false,
+  "matches": [
+    {
+      "case": "R1",
+      "identical_seed_ids": true,
+      "identical_expanded_ids": true,
+      "identical_final_manifests": false
+    },
+    {
+      "case": "R1_method",
+      "identical_seed_ids": true,
+      "identical_expanded_ids": true,
+      "identical_final_manifests": true
+    }
+  ],
+  "policy_counterfactual": {
+    "kind": "local selector counterfactual over captured final-manifest identities/provenance; not a second HTTP answer run",
+    "old_policy_sha256": "15b95ec6f9602fe56fc9a03ee4110fd933e282f450211e652a78f1be9aaeb4a7",
+    "original_obligation": "current_structure",
+    "candidate_obligation": "current_behavior",
+    "input_entries": 10,
+    "original_selected": 0,
+    "candidate_selected": 10,
+    "original_excluded": [
+      {
+        "canonical_id": "py_mono/main.py",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/main.py",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/main.py",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/agent/agent.py#Agent.run",
+        "reason": "orient_inventory_authoritative_for_structure"
+      },
+      {
+        "canonical_id": "py_mono/ui/cli.py#start_cli",
+        "reason": "orient_inventory_authoritative_for_structure"
+      }
+    ],
+    "candidate_excluded": []
+  },
+  "measurements": [
+    {
+      "dataset": "frozen240",
+      "case": "Q1",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_1_generic_repo_structure_query",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+        "scripts/issue240_overview_eval.py",
+        "DOCS/test_results/2026-09-20-issue-240-orientation-failure-localization.md#issue_240_orientation_failure_localization_run.production_follow_up_2026_10_03"
+      ],
+      "elapsed_seconds": 52.82
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q1",
+      "arm": "candidate",
+      "obligation": "current_structure",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "docker-compose.test.yml",
+        "docker-compose.yml",
+        "gradio/pyproject.toml",
+        "ingestion_service/pyproject.toml",
+        "ingestion_service/tests/fixtures/rust_repo/crate_a/Cargo.toml",
+        "ingestion_service/tests/fixtures/rust_repo/crate_b/Cargo.toml",
+        "llm_service/pyproject.toml",
+        "pyproject.toml",
+        "rag_orchestrator/pyproject.toml"
+      ],
+      "elapsed_seconds": 3.69
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q2",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination"
+      ],
+      "elapsed_seconds": 30.83
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q2",
+      "arm": "candidate",
+      "obligation": "current_structure",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "docker-compose.test.yml",
+        "docker-compose.yml"
+      ],
+      "elapsed_seconds": 7.88
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q3",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments.4_2_explicit_actual_directory_query",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.4_orient_me_experiments",
+        "docs-archive/DOCS-docgraph/PROJECT_PLAN.md#project_plan_rag_foundry_docgraph.5_folder_structure",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.10_proposed_product_use_case_framing",
+        "docs-archive/DOCS-docgraph/detailed_architecture_20260207.md#detailed_architecture_rag_foundry_docgraph_current_state"
+      ],
+      "elapsed_seconds": 32.57
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q3",
+      "arm": "candidate",
+      "obligation": "current_structure",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "docker-compose.test.yml",
+        "docker-compose.yml"
+      ],
+      "elapsed_seconds": 7.6
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q4",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+        "DOCS/architecture/ms4-codebase-persistence-ingestion.md#ms4_design_document_persistence_ingestion_integration_2.architecture_diagram",
+        "scripts/issue240_overview_eval.py",
+        "DOCS/evaluations/2026-10-03-issue-240-frozen-overview-quality.md#issue_240_frozen_repository_overview_quality_evaluation.questions_and_expected_evidence"
+      ],
+      "elapsed_seconds": 19.56
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q4",
+      "arm": "candidate",
+      "obligation": "current_architecture",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "README.md#architecture",
+        "shared/config/service_urls.py",
+        "docker-compose.test.yml",
+        "docker-compose.yml"
+      ],
+      "elapsed_seconds": 10.36
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q5",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+        "DOCS/test_results/2026-09-20-issue-240-orientation-failure-localization.md",
+        "scripts/issue240_overview_eval.py"
+      ],
+      "elapsed_seconds": 26.18
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q5",
+      "arm": "candidate",
+      "obligation": "repository_purpose",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "CLAUDE.md#claude_md.what_this_project_is"
+      ],
+      "elapsed_seconds": 18.61
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q5k20",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.1_why_this_note_exists",
+        "DOCS/test_results/2026-09-20-issue-240-orientation-failure-localization.md",
+        "scripts/issue240_overview_eval.py",
+        "DOCS/research/2026-10-04-repository-intelligence-research-lessons.md#11_orient_is_not_ordinary_semantic_rag.lesson_6"
+      ],
+      "elapsed_seconds": 37.99
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q5k20",
+      "arm": "candidate",
+      "obligation": "repository_purpose",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "CLAUDE.md#claude_md.what_this_project_is"
+      ],
+      "elapsed_seconds": 33.36
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q6",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/log.md#documentation_log.2026_08_27",
+        "DOCS/log.md#documentation_log.2026_08_30",
+        "DOCS/notes/20260915-reranker-built-ahead-of-evaluation-gate-decision.md#decision_build_the_optional_reranker_before_re_running_the_evaluation_gate_2026_09_15.related",
+        "CLAUDE.md#claude_md.what_this_project_is",
+        "README_VISION.md#rag_foundry_universal_vision_context.what_this_project_is",
+        "DOCS/test_results/2026-09-13-clean-specimen-canonical-to-document-mapping.md#clean_specimen_correct_evidence_reached_the_prompt_generation_fabricated_a_citation.setup"
+      ],
+      "elapsed_seconds": 24.92
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q6",
+      "arm": "candidate",
+      "obligation": "repository_purpose",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "CLAUDE.md#claude_md.what_this_project_is"
+      ],
+      "elapsed_seconds": 34.8
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q7",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/architecture/codebase-ingestion.md#codebase_ingestion_architecture.2_resolution_phase.purpose_2",
+        "docs-archive/DOCS-docgraph/DESIGN/MS4_Retrieval_plan_notes.md#1_retrievalplan_is_purely_declarative_data_only",
+        "DOCS/architecture/codebase-ingestion.md#codebase_ingestion_architecture.2_resolution_phase",
+        "README.md#see_it_in_action",
+        "DOCS/architecture/codebase-ingestion.md#codebase_ingestion_architecture.1_extraction_phase",
+        "DOCS/adr/ADR-041-code-artifact-persistence-embedding-strategy.md#adr_041_code_artifact_persistence_strategy_embedding_text_and_handling_relationships.1_context"
+      ],
+      "elapsed_seconds": 31.19
+    },
+    {
+      "dataset": "frozen240",
+      "case": "Q7",
+      "arm": "candidate",
+      "obligation": "repository_purpose",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "CLAUDE.md#claude_md.what_this_project_is"
+      ],
+      "elapsed_seconds": 24.26
+    },
+    {
+      "dataset": "frozen240",
+      "case": "C1",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/test_results/2026-09-20-issue-240-orientation-failure-localization.md#issue_240_orientation_failure_localization_run.production_follow_up_2026_10_03",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination"
+      ],
+      "elapsed_seconds": 29.9
+    },
+    {
+      "dataset": "frozen240",
+      "case": "C1",
+      "arm": "candidate",
+      "obligation": "explicit_source",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "DOCS/test_results/2026-09-20-issue-240-orientation-failure-localization.md#issue_240_orientation_failure_localization_run.production_follow_up_2026_10_03",
+        "DOCS/notes/20260906-repository-understanding-trace-and-structural-artifacts.md#repository_understanding_trace_and_structural_artifact_findings.3_important_methodological_finding_evaluation_source_contamination.3_2_subject_authority_contamination"
+      ],
+      "elapsed_seconds": 34.45
+    },
+    {
+      "dataset": "frozen240",
+      "case": "C2",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "specs/001-rag-quality-baseline/quickstart.md#quickstart_rag_quality_baseline_wp_q0.prerequisites",
+        "DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md#wp_q0_rag_quality_baseline_evidence.environment_verification_t001_t002",
+        "specs/001-rag-quality-baseline/spec.md#feature_specification_rag_quality_baseline_wp_q0.assumptions",
+        "specs/001-rag-quality-baseline/quickstart.md#quickstart_rag_quality_baseline_wp_q0.1_ingest_the_corpus",
+        "specs/001-rag-quality-baseline/research.md#phase_0_research_rag_quality_baseline_wp_q0.decision_1_which_documents_make_up_the_2_3_representative_documents"
+      ],
+      "elapsed_seconds": 36.98
+    },
+    {
+      "dataset": "frozen240",
+      "case": "C2",
+      "arm": "candidate",
+      "obligation": "explicit_source",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "shared/smoke_repo/README.md#smoke_repo_live_smoke_test_fixture",
+        "specs/001-rag-quality-baseline/quickstart.md#quickstart_rag_quality_baseline_wp_q0.prerequisites",
+        "DOCS/test_results/2026-08-27-wp-q0-rag-quality-baseline.md#wp_q0_rag_quality_baseline_evidence.environment_verification_t001_t002",
+        "specs/001-rag-quality-baseline/spec.md#feature_specification_rag_quality_baseline_wp_q0.assumptions",
+        "DOCS/releases/prod-release-template.md#production_release_record_template.rag_smoke_query"
+      ],
+      "elapsed_seconds": 27.44
+    },
+    {
+      "dataset": "frozen240",
+      "case": "C3",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler",
+        "README.md#see_it_in_action"
+      ],
+      "elapsed_seconds": 22.14
+    },
+    {
+      "dataset": "frozen240",
+      "case": "C3",
+      "arm": "candidate",
+      "obligation": "current_behavior",
+      "agent_run_final": false,
+      "agent_run_source": false,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler.assemble",
+        "ingestion_service/src/core/codebase/graph_assembler.py#GraphAssembler",
+        "README.md#see_it_in_action"
+      ],
+      "elapsed_seconds": 33.49
+    },
+    {
+      "dataset": "agent",
+      "case": "R1",
+      "arm": "normal",
+      "obligation": null,
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/agent/agent.py#Agent.run",
+        "docs/adr/ADR-003-Pi-mono-style-minimal-agent-loop.md#adr_003_pi_mono_style_minimal_agent_loop.consequences.example_flow",
+        "docs/adr/ADR-003-Pi-mono-style-minimal-agent-loop.md#adr_003_pi_mono_style_minimal_agent_loop",
+        "py_mono/main.py"
+      ],
+      "elapsed_seconds": 71.18
+    },
+    {
+      "dataset": "agent",
+      "case": "R1",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/agent/agent.py#Agent.run",
+        "docs/adr/ADR-003-Pi-mono-style-minimal-agent-loop.md#adr_003_pi_mono_style_minimal_agent_loop.consequences.example_flow",
+        "docs/adr/ADR-003-Pi-mono-style-minimal-agent-loop.md#adr_003_pi_mono_style_minimal_agent_loop",
+        "py_mono/main.py"
+      ],
+      "elapsed_seconds": 33.32
+    },
+    {
+      "dataset": "agent",
+      "case": "R1",
+      "arm": "claim_only",
+      "obligation": "current_behavior",
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": true,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/main.py",
+        "py_mono/ui/cli.py",
+        "py_mono/agent/agent.py#Agent.run",
+        "py_mono/ui/cli.py#start_cli"
+      ],
+      "elapsed_seconds": 89.46
+    },
+    {
+      "dataset": "agent",
+      "case": "R1",
+      "arm": "candidate",
+      "obligation": "current_behavior",
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": true,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/main.py",
+        "py_mono/ui/cli.py",
+        "py_mono/agent/agent.py#Agent.run",
+        "py_mono/ui/cli.py#start_cli"
+      ],
+      "elapsed_seconds": 95.3
+    },
+    {
+      "dataset": "agent",
+      "case": "R1_method",
+      "arm": "normal",
+      "obligation": null,
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/agent/agent.py#Agent.run",
+        "tests/test_skill_load_gating.py",
+        "docs/adr/ADR-010-Agent-Skills-Layer.md#docs_adr_adr_010_agent_skills_layer_md.5_base_classes",
+        "specs/018-isolated-worker-execution/quickstart.md#quickstart_isolated_worker_execution"
+      ],
+      "elapsed_seconds": 26.46
+    },
+    {
+      "dataset": "agent",
+      "case": "R1_method",
+      "arm": "overview_off",
+      "obligation": null,
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/agent/agent.py#Agent.run",
+        "tests/test_skill_load_gating.py",
+        "docs/adr/ADR-010-Agent-Skills-Layer.md#docs_adr_adr_010_agent_skills_layer_md.5_base_classes",
+        "specs/018-isolated-worker-execution/quickstart.md#quickstart_isolated_worker_execution"
+      ],
+      "elapsed_seconds": 25.67
+    },
+    {
+      "dataset": "agent",
+      "case": "R1_method",
+      "arm": "claim_only",
+      "obligation": "current_behavior",
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/agent/agent.py#Agent.run",
+        "tests/test_skill_load_gating.py",
+        "docs/adr/ADR-010-Agent-Skills-Layer.md#docs_adr_adr_010_agent_skills_layer_md.5_base_classes",
+        "specs/018-isolated-worker-execution/quickstart.md#quickstart_isolated_worker_execution"
+      ],
+      "elapsed_seconds": 20.04
+    },
+    {
+      "dataset": "agent",
+      "case": "R1_method",
+      "arm": "candidate",
+      "obligation": "current_behavior",
+      "agent_run_final": true,
+      "agent_run_source": true,
+      "start_cli_final": false,
+      "main_method_final": false,
+      "sources": [
+        "py_mono/agent/agent.py#Agent.run",
+        "tests/test_skill_load_gating.py",
+        "docs/adr/ADR-010-Agent-Skills-Layer.md#docs_adr_adr_010_agent_skills_layer_md.5_base_classes",
+        "specs/018-isolated-worker-execution/quickstart.md#quickstart_isolated_worker_execution"
+      ],
+      "elapsed_seconds": 27.31
+    }
+  ],
+  "answer_gate": "failed: claim-on R1 invents prompt parsing and omits result-to-LLM feedback; source survival is not an answer pass"
+}

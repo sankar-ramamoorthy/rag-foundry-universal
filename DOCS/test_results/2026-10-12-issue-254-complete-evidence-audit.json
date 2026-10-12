@@ -1,0 +1,53 @@
+{
+  "status": "verified",
+  "planned_requests": 6,
+  "completed_unique_requests": 6,
+  "pinned_source_excerpt_fidelity": true,
+  "identical_question_and_fixed_envelope": true,
+  "matched_models_templates_generations": true,
+  "no_fallback": true,
+  "source_manifest_bytes_plus_separators": 4024,
+  "complete_evidence_bytes": 4024,
+  "candidate_evidence_bytes": 4061,
+  "evidence_cap": 4096,
+  "coverage": {
+    "candidate": {
+      "input": false,
+      "provider": false,
+      "extraction": false,
+      "dispatch": true,
+      "feedback": false
+    },
+    "complete_evidence": {
+      "input": true,
+      "provider": true,
+      "extraction": true,
+      "dispatch": true,
+      "feedback": true
+    }
+  },
+  "manual_scores_bound_to_actual_answers": true,
+  "candidate_runtime_source_unchanged": true,
+  "source_snapshot_dependency_limit": "Initial system-memory assignment not included in minimal excerpts",
+  "local_main_tracking_sha": "24d956184d566753fe5ac80f57132191a4f7c3e1",
+  "aggregate": {
+    "candidate": {
+      "factual_total": 2,
+      "attribution_total": 3,
+      "out_of_each": 15,
+      "full_loop_passes": 0,
+      "runs": 3,
+      "correct_memory_input": 0,
+      "correct_memory_feedback": 0
+    },
+    "complete_evidence": {
+      "factual_total": 7,
+      "attribution_total": 8,
+      "out_of_each": 15,
+      "full_loop_passes": 0,
+      "runs": 3,
+      "correct_memory_input": 3,
+      "correct_memory_feedback": 3
+    }
+  }
+}

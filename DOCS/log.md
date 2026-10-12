@@ -6,6 +6,14 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-10-12
+
+Formalized [README accuracy and product documentation policy](/DOCS/standards/readme-accuracy.md):
+the README describes current product behavior; milestones, issues and progress
+remain in `DOCS/status.md`. Added an applicable accuracy check to the PR template
+and linked the policy from the contributor guidance and documentation index.
+Project licensing declarations must match Apache-2.0 in `LICENSE`.
+
 ## 2026-10-10
 
 Accepted [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)

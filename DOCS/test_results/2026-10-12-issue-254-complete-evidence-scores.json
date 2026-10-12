@@ -1,0 +1,220 @@
+{
+  "judging": "manual, against preregistered obligations and pinned full source; scores count obligations, not fraction of true sentences",
+  "results": [
+    {
+      "pair": 1,
+      "arm": "candidate",
+      "answer_sha256": "82086f328276c91728ffc80463ddfcd146bbe622b7355e45fd3cc39a4a916833",
+      "factual_obligations": {
+        "input": 0,
+        "provider": 0,
+        "extraction": 0,
+        "dispatch": 1,
+        "feedback": 0
+      },
+      "factual_total": 1,
+      "attribution_obligations": {
+        "startup_owner": 0,
+        "input_owner": 0,
+        "decision_owner": 0,
+        "dispatch_owner": 1,
+        "feedback_owner": 0
+      },
+      "attribution_total": 1,
+      "full_loop_pass": false,
+      "notes": [
+        "No normal user-memory append, active-provider/messages/tools invocation, or returned-call field extraction.",
+        "Feedback mechanism is absent and the answer says the tool result is the only input returning to the LLM.",
+        "Dispatch is explicitly assigned to the agent in the main explanation; the final arrow summary is ambiguous but does not erase that explicit attribution."
+      ],
+      "citation_review": {
+        "main": "omitted",
+        "start_cli": "correct file/function reference",
+        "Agent.run": "file reference present; quoted code renames args to arguments and adds non-source comments"
+      }
+    },
+    {
+      "pair": 1,
+      "arm": "complete_evidence",
+      "answer_sha256": "4eae32ea2e85507ae252f0d2e402e1e979692973d78ccad81688d6050f247a76",
+      "factual_obligations": {
+        "input": 1,
+        "provider": 0,
+        "extraction": 0,
+        "dispatch": 0,
+        "feedback": 1
+      },
+      "factual_total": 2,
+      "attribution_obligations": {
+        "startup_owner": 0,
+        "input_owner": 1,
+        "decision_owner": 0,
+        "dispatch_owner": 1,
+        "feedback_owner": 1
+      },
+      "attribution_total": 3,
+      "full_loop_pass": false,
+      "notes": [
+        "Correct user-role append and tool-role memory/next-iteration feedback.",
+        "Provider explanation incorrectly says memory[1:] excludes the initial user prompt; active-provider/tools details omitted.",
+        "Name/argument extraction and actual lookup/run invocation are not explained.",
+        "main startup ownership omitted."
+      ],
+      "citation_review": {
+        "main": "omitted",
+        "start_cli": "correct file/function reference",
+        "Agent.run": "file reference for memory/feedback correct; memory-slice interpretation false"
+      }
+    },
+    {
+      "pair": 2,
+      "arm": "complete_evidence",
+      "answer_sha256": "dff653a10793dc34c8928055c9e6e4b7e39802310a6e15d6a96589ef62282e02",
+      "factual_obligations": {
+        "input": 1,
+        "provider": 0,
+        "extraction": 0,
+        "dispatch": 0,
+        "feedback": 1
+      },
+      "factual_total": 2,
+      "attribution_obligations": {
+        "startup_owner": 0,
+        "input_owner": 1,
+        "decision_owner": 0,
+        "dispatch_owner": 0,
+        "feedback_owner": 1
+      },
+      "attribution_total": 2,
+      "full_loop_pass": false,
+      "notes": [
+        "Correct user-message append, tool-result memory and next-iteration consumption.",
+        "Provider invocation/messages/tools and returned-call name/argument extraction omitted.",
+        "Tool execution is passive; no lookup/run details or named executor.",
+        "main startup ownership omitted; concise trace has no observed contradiction in its core memory/feedback claims."
+      ],
+      "citation_review": {
+        "main": "omitted",
+        "start_cli": "correct file/function reference",
+        "Agent.run": "correct file/function reference for memory/feedback"
+      }
+    },
+    {
+      "pair": 2,
+      "arm": "candidate",
+      "answer_sha256": "a23300585147137ddac79c7949e1ca75961fc70451d37e18be3409f915281731",
+      "factual_obligations": {
+        "input": 0,
+        "provider": 0,
+        "extraction": 0,
+        "dispatch": 1,
+        "feedback": 0
+      },
+      "factual_total": 1,
+      "attribution_obligations": {
+        "startup_owner": 0,
+        "input_owner": 0,
+        "decision_owner": 0,
+        "dispatch_owner": 1,
+        "feedback_owner": 0
+      },
+      "attribution_total": 1,
+      "full_loop_pass": false,
+      "notes": [
+        "Invents determination of tool name from raw input.",
+        "Returns tool output/error directly to CLI rather than explaining memory feedback.",
+        "Provider invocation, user-role append, and result-memory mechanism omitted."
+      ],
+      "citation_review": {
+        "main": "omitted",
+        "start_cli": "correct file/function reference",
+        "Agent.run": "file reference present but prompt parsing/direct-result claims are unsupported"
+      }
+    },
+    {
+      "pair": 3,
+      "arm": "candidate",
+      "answer_sha256": "4d24a9751bfac7b99f0f82036512beb31dcd6039345abe5bf60e6b8051632306",
+      "factual_obligations": {
+        "input": 0,
+        "provider": 0,
+        "extraction": 0,
+        "dispatch": 0,
+        "feedback": 0
+      },
+      "factual_total": 0,
+      "attribution_obligations": {
+        "startup_owner": 0,
+        "input_owner": 0,
+        "decision_owner": 0,
+        "dispatch_owner": 1,
+        "feedback_owner": 0
+      },
+      "attribution_total": 1,
+      "full_loop_pass": false,
+      "notes": [
+        "Execution is placed within agent.run, but lookup/invocation details are omitted.",
+        "No normal user-memory append, provider call parameters, or returned-call field extraction.",
+        "Feedback is guessed from a special-command docstring and external framework analogies, without the memory/next-generate mechanism."
+      ],
+      "citation_review": {
+        "main": "omitted",
+        "start_cli": "bare function name only",
+        "Agent.run": "bare function name only; no source-bound citation"
+      }
+    },
+    {
+      "pair": 3,
+      "arm": "complete_evidence",
+      "answer_sha256": "11b4b5fff03db0e5715c489de5e0367a177b329c987804743ccdd66e55d3ad70",
+      "factual_obligations": {
+        "input": 1,
+        "provider": 0,
+        "extraction": 1,
+        "dispatch": 0,
+        "feedback": 1
+      },
+      "factual_total": 3,
+      "attribution_obligations": {
+        "startup_owner": 0,
+        "input_owner": 1,
+        "decision_owner": 0,
+        "dispatch_owner": 1,
+        "feedback_owner": 1
+      },
+      "attribution_total": 3,
+      "full_loop_pass": false,
+      "notes": [
+        "Correct user/assistant/tool memory sequence and next-iteration feedback; agent execution ownership correct.",
+        "Active-provider/messages/tools invocation and explicit agent name/argument reading are omitted. The returned response JSON does correctly locate name/args inside tool_call, so factual extraction provenance receives credit.",
+        "self.tools.get is used as the example of execution, conflating lookup with tool.run invocation.",
+        "Prompt passing is incorrectly source-bound to main, which constructs the agent and starts CLI."
+      ],
+      "citation_review": {
+        "main": "misplaced: labels CLI prompt-to-run routing as from main",
+        "start_cli": "correct canonical reference for input",
+        "Agent.run": "correct canonical references for memory; lookup-versus-invocation explanation inaccurate"
+      }
+    }
+  ],
+  "aggregate": {
+    "candidate": {
+      "factual_total": 2,
+      "attribution_total": 3,
+      "out_of_each": 15,
+      "full_loop_passes": 0,
+      "runs": 3,
+      "correct_memory_input": 0,
+      "correct_memory_feedback": 0
+    },
+    "complete_evidence": {
+      "factual_total": 7,
+      "attribution_total": 8,
+      "out_of_each": 15,
+      "full_loop_passes": 0,
+      "runs": 3,
+      "correct_memory_input": 3,
+      "correct_memory_feedback": 3
+    }
+  }
+}
