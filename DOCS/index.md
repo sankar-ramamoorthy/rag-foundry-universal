@@ -38,6 +38,16 @@ changes, structural migrations.
 
 ## Decisions
 
+The [October 14 code-evidence experiment decisions](/DOCS/evaluations/2026-10-14-code-evidence-experiment-decisions.md)
+record the authorized local scope, baseline metrics, fixed-byte constraints and
+separate discovery, passage-coverage and context-allocation experiments following
+the [LightRAG forensics](/DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md).
+The [E1 case manifest](/DOCS/evaluations/code-evidence-e1/README.md) is frozen;
+the [completed baseline report](/DOCS/test_results/2026-10-14-code-evidence-e1-results.md)
+records six captures, incomplete implementation evidence and a later full-graph
+timeout during prototype control setup. Prototype quality remains unverified.
+No production selection policy is adopted.
+
 `DOCS/adr/` — check each ADR's own `status` field before relying on it;
 don't assume numeric order implies currency.
 
@@ -195,9 +205,20 @@ audit findings.
 
 ## Evaluations
 
+The [local D0 attempt](/DOCS/test_results/2026-10-12-document-rag-local-ingestion-blocker.md)
+resolves Docker isolation but finds Markdown upload's IR/legacy-consumer mismatch:
+HTTP admission followed by terminal failure, with zero answer requests. Ingestion
+repair precedes baseline execution, native formats and MCP.
+
+The [D0 post-deployment preflight](/DOCS/test_results/2026-10-12-document-rag-post-deploy-preflight.md)
+verifies frozen source bytes and a ready index, but repository fixtures are tagged
+as code and excluded by the document path. The baseline awaits isolated document
+uploads; it has no answer-quality score.
+
 The current focus is the [D0 document-RAG baseline](/DOCS/evaluations/2026-10-12-document-rag-baseline.md),
-with twelve frozen synthetic development cases. Execution is pending corpus
-isolation; no document quality score is claimed. [#254 is deliberately deferred](/DOCS/notes/2026-10-12-issue-254-deferred.md)
+with twelve frozen synthetic development cases. Corpus isolation is now available,
+but Markdown upload fails at the IR consumer; no document quality score is claimed.
+[#254 is deliberately deferred](/DOCS/notes/2026-10-12-issue-254-deferred.md)
 with the failed acceptance gate open, candidate preserved, C1 separate and #243
 held-out evaluation untouched.
 

@@ -80,6 +80,36 @@ Historical measurements, not current accuracy/performance guarantees:
 
 ## RAG quality
 
+**Decision, 2026-10-14:** the
+[code-evidence experiment protocol](/DOCS/evaluations/2026-10-14-code-evidence-experiment-decisions.md)
+is agreed for experiment design, baseline capture and local prototypes only.
+Direct PostgreSQL inspection is complete for the three inspected LightRAG
+functions; the [forensic report](/DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md)
+confirms stored implementation coverage and evidence-selection/delivery losses.
+The [E1 manifest](/DOCS/evaluations/code-evidence-e1/README.md) now freezes six
+cases across two diagnostic repositories. The
+[completed baseline](/DOCS/test_results/2026-10-14-code-evidence-e1-results.md)
+records all six actual generation requests: targets discovered 6/6, selected
+5/6, present in final context 3/6; operations covered 6/26 and dependency
+expressions 6/20. All contexts fit 4096 bytes and none passes the complete
+evidence/answer gate. Local prototype definitions are prepared, but the first
+unchanged control timed out downloading LightRAG's full graph before any
+selector arm ran. Prototype quality and full semantic efficiency remain
+unverified; no production candidate is proposed.
+The [4096-byte feasibility oracle](/DOCS/test_results/2026-10-21-e1-4096-byte-evidence-feasibility.md)
+(#264/#265, offline, knows the frozen witnesses, so a bound and not a selector
+result) shows the cap is not the binding constraint: exact witness statements
+fit in all six cases (0.7-2.0 KB). Cheapest whole stored chunks fit in 5/6 (F3
+needs 7,397 B; L1/L2 have 129 B slack). The passage-only contract's contiguous
+windows are infeasible in 4/6 even with an oracle, and stored chunks are not
+source-faithful (stripped indentation, normalized blank lines). The open
+problem is evidence granularity; statement-level delivery versus a bounded
+multi-step workflow is undecided and unimplemented.
+Measure discovery, evidence delivery and answer faithfulness separately, keep
+the 4096-byte cap fixed, and combine only independently successful mechanisms.
+No retrieval-policy merge or production deployment is authorized. #254 remains
+parked with its candidate unmerged; C1 stays separate and #243 stays untouched.
+
 WP-R4/#167 on `fix/wp-r4-evidence-delivery` (commit `cbb84d7`): passage
 selection, final-context provenance and generation-scoped retrieval are
 implemented and code-reviewed clean against ADR-052, with full local
@@ -230,9 +260,31 @@ See the [deferral and architectural requirements](/DOCS/notes/2026-10-12-issue-2
 The immediate focus is the [D0 document-RAG baseline](/DOCS/evaluations/2026-10-12-document-rag-baseline.md):
 four synthetic documents and twelve frozen development questions, covering
 evidence, citations, tables, multi-passage reasoning and abstention.
-Execution awaits an isolated test stack or supplied original documents and
-ingestion IDs; local Docker is unavailable and no end-to-end document score is
-claimed. Read-only agent/MCP and scalability are later focus areas.
+No end-to-end document score is claimed; execution is currently blocked by the
+Markdown upload/IR defect described below. The
+[post-deployment preflight](/DOCS/test_results/2026-10-12-document-rag-post-deploy-preflight.md)
+now verifies deployed/runtime and indexed source `109f12d`, ready generation
+`60d5ed0a-a294-4276-890f-741d7cad5c41`, and all four frozen source-byte hashes.
+Their sixteen root-document chunks have `source_type: code`, so the document
+pipeline excludes them; repository re-ingestion does not fulfill document upload.
+No baseline answers have been requested and no retrieval policy has been changed.
+
+Docker is now available and an isolated local stack has been initialized.
+The [first document upload fails](/DOCS/test_results/2026-10-12-document-rag-local-ingestion-blocker.md):
+`MarkdownSectionExtractor` emits `ExtractionResult`, but `run_with_sections`
+still iterates legacy dictionary artifacts. One upload was accepted then failed;
+three uploads and all twelve answer requests remain unexecuted. A narrow
+upload/IR integration repair with identity/relationship/text/terminal-status
+regression coverage is the immediate blocker. No runtime fix, prompt change or
+retrieval-filter workaround was applied; the local diagnostic stack is stopped
+with its data retained.
+
+The agreed **Document Intelligence Quality** workstream has separate gates:
+run the twelve frozen Markdown cases, diagnose blocking defects, then evaluate
+native PDFs, scanned documents and complex tables with parser/retrieval/generation
+failures distinguished. Proceed afterward to a narrow read-only MCP evidence
+pilot. Broader scalability follows these priorities unless an operational
+regression intervenes. #254 and #243 stay deferred.
 
 The [Python coding agent re-ingestion evaluation](/DOCS/test_results/2026-10-10-py-coding-agent-real-repo-verification.md)
 uses its own ready generation and source commit, separate from the #240

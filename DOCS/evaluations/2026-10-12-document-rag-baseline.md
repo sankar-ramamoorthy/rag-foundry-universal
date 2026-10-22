@@ -2,7 +2,7 @@
 title: "D0: bounded document-RAG development baseline"
 date: 2026-10-12
 type: evaluation-protocol
-status: prepared-awaiting-isolated-stack
+status: blocked-by-markdown-ingestion-defect
 tags: [document-rag, evaluation, d0, frozen-baseline]
 related:
   - "[Deferred #254 decision](/DOCS/notes/2026-10-12-issue-254-deferred.md)"
@@ -12,6 +12,19 @@ related:
 ---
 
 # Bounded document-RAG development baseline
+
+The isolated local stack is now available, but the
+[first Markdown upload failed](/DOCS/test_results/2026-10-12-document-rag-local-ingestion-blocker.md)
+at the extractor/consumer interface (`ExtractionResult` versus legacy dictionary
+artifacts). HTTP admission succeeded; terminal ingestion failed. The other three
+uploads and all twelve answer requests remain unexecuted. A narrow ingestion
+compatibility repair is the next gate; do not expand to native formats or MCP yet.
+
+Current [post-deployment preflight](/DOCS/test_results/2026-10-12-document-rag-post-deploy-preflight.md)
+confirms the frozen sources were re-ingested as repository artifacts at `109f12d`,
+but their sixteen root-document chunks are tagged `source_type: code` and excluded
+by document RAG. This does not replace uploaded-file ingestion. No baseline
+answers have been requested; an isolated document stack is still required.
 
 The next workstream is D0 document evaluation. This initial corpus is a small
 synthetic **development** benchmark, separate from #243's held-out repositories.
@@ -100,9 +113,10 @@ generation. Do not treat that field as demonstrated corpus isolation.
 There is also no public per-document generation-pinning argument for this path.
 These are preflight observations, **not proposed fixes**.
 
-The Docker engine is unavailable in the current local environment. The frozen
-synthetic fixtures have not been ingested, no document answers have been
-requested, and **no end-to-end score is claimed**. Execute on an isolated test
+At initial preflight, the Docker engine was unavailable. It is now available and
+the isolated local stack has been initialized, but the first upload fails as
+recorded above. No document answers have been requested and **no end-to-end
+score is claimed**. Execute on an isolated test
 stack containing only these four documents. Alternatively, replace this initial
 corpus before any answers with user-supplied original documents and ingestion
 IDs, explicitly accounting for corpus-wide retrieval and distractors.
