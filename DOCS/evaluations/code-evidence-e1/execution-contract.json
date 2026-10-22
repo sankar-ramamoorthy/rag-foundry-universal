@@ -1,0 +1,50 @@
+{
+  "scope": "Local experimental replay; service versions are self-reported",
+  "models": [
+    {
+      "name": "mxbai-embed-large:latest",
+      "digest": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
+      "size": 669615493,
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "bert",
+        "families": [
+          "bert"
+        ],
+        "parameter_size": "334M",
+        "quantization_level": "F16",
+        "context_length": 512,
+        "embedding_length": 1024
+      }
+    },
+    {
+      "name": "Qwen3:4b",
+      "digest": "359d7dd4bcdab3d86b87d73ac27966f4dbb9f5efdfcc75d34a8764a09474fae7",
+      "size": 2497293931,
+      "details": {
+        "parent_model": "",
+        "format": "gguf",
+        "family": "qwen3",
+        "families": [
+          "qwen3"
+        ],
+        "parameter_size": "4.0B",
+        "quantization_level": "Q4_K_M",
+        "context_length": 262144,
+        "embedding_length": 2560
+      }
+    }
+  ],
+  "local_system_prompt_sha256": "834c863ea127dc370a0314d3934fcccf013e5da3ee6a142dac97b1af30974323",
+  "prompt_attestation": "Local prompt file only; deployed file hash not independently exposed",
+  "context_cap_bytes": 4096,
+  "top_k": 20,
+  "max_expanded_docs": 20,
+  "expanded_doc_chunks": 3,
+  "adapter_max_chunks_per_doc": 5,
+  "adapter_max_total_chunks": 50,
+  "rerank": false,
+  "overview_flags": false,
+  "runtime_code_changes": []
+}

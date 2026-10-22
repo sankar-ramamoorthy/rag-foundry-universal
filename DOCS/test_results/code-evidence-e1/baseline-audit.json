@@ -1,0 +1,679 @@
+{
+  "status": "six-case-baseline-capture-complete",
+  "audited_at": "2026-10-15T01:58:35.963354+00:00",
+  "scope": "Actual local generation requests against live services; not production orchestrator wire",
+  "cases": [
+    {
+      "case_id": "L1",
+      "target_discovered": true,
+      "target_survived": true,
+      "target_in_final_context": true,
+      "target_stage_trace": {
+        "canonical_id": "lightrag/operate.py#_build_query_context",
+        "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+        "found_by_vector": true,
+        "found_by_graph": false,
+        "expanded_rank": null,
+        "survives_cap": false,
+        "chunk_fetched": true,
+        "survives_chunk_limits": true,
+        "reaches_final_context": true,
+        "drop_reason": null,
+        "survives_rerank": true
+      },
+      "operations": {
+        "satisfied": 0,
+        "required": 4,
+        "details": [
+          {
+            "name": "Stage 2 dispatch",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Entity limit operation",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Relationship limit operation",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Combined remainder and consumer",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "dependencies": {
+        "satisfied": 0,
+        "required": 4,
+        "details": [
+          {
+            "name": "Stage 3 uses truncated graph results",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Entity branch and input",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Relationship branch and input",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Graph cost is calculated before remainder",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "delivered_bytes": 3960,
+      "unique_relevant_bytes_lower_bound": 1702,
+      "useful_fraction_of_delivered_lower_bound": 0.4297979797979798,
+      "duplicate_relevant_bytes_lower_bound": 587,
+      "answer_review": {
+        "factual_correctness": "Incomplete and incorrect total-budget guarantee",
+        "actor_attribution": "Identifies context builder and Stage 4 helper; omits responsible truncation helper",
+        "grounding": "Claims final context will not exceed limit despite absent arithmetic and contrary pinned implementation",
+        "full_answer_acceptance": false
+      },
+      "source_payload_bytes": 3726,
+      "label_separator_bytes": 234,
+      "fully_satisfied_operation_expression_bytes": 0,
+      "operation_expression_fraction_of_cap": 0.0,
+      "efficiency_interpretation": "Source-membership proxy is not semantic relevance; exact frozen-operation expression bytes are reported separately. Neither certifies completeness."
+    },
+    {
+      "case_id": "L2",
+      "target_discovered": true,
+      "target_survived": false,
+      "target_in_final_context": false,
+      "target_stage_trace": {
+        "canonical_id": "lightrag/operate.py#_build_query_context",
+        "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+        "found_by_vector": false,
+        "found_by_graph": true,
+        "expanded_rank": 50,
+        "survives_cap": false,
+        "chunk_fetched": false,
+        "survives_chunk_limits": false,
+        "reaches_final_context": false,
+        "drop_reason": "truncated_by_max_expanded_docs",
+        "survives_rerank": false
+      },
+      "operations": {
+        "satisfied": 0,
+        "required": 4,
+        "details": [
+          {
+            "name": "Stage 2 dispatch",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Entity limit operation",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Relationship limit operation",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Combined remainder and consumer",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "dependencies": {
+        "satisfied": 0,
+        "required": 4,
+        "details": [
+          {
+            "name": "Stage 3 uses truncated graph results",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Entity branch and input",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Relationship branch and input",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Graph cost is calculated before remainder",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "delivered_bytes": 3940,
+      "unique_relevant_bytes_lower_bound": 0,
+      "useful_fraction_of_delivered_lower_bound": 0.0,
+      "duplicate_relevant_bytes_lower_bound": 0,
+      "answer_review": {
+        "factual_correctness": "Wrong implementation target; abstains on token interactions",
+        "actor_attribution": "Attributes internal construction to public _rag_instance.aquery",
+        "grounding": "Example call establishes public entry point, not responsibility for building context",
+        "full_answer_acceptance": false
+      },
+      "source_payload_bytes": 3616,
+      "label_separator_bytes": 324,
+      "fully_satisfied_operation_expression_bytes": 0,
+      "operation_expression_fraction_of_cap": 0.0,
+      "efficiency_interpretation": "Source-membership proxy is not semantic relevance; exact frozen-operation expression bytes are reported separately. Neither certifies completeness."
+    },
+    {
+      "case_id": "L3",
+      "target_discovered": true,
+      "target_survived": true,
+      "target_in_final_context": true,
+      "target_stage_trace": {
+        "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+        "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+        "found_by_vector": true,
+        "found_by_graph": false,
+        "expanded_rank": null,
+        "survives_cap": false,
+        "chunk_fetched": true,
+        "survives_chunk_limits": true,
+        "reaches_final_context": true,
+        "drop_reason": null,
+        "survives_rerank": true
+      },
+      "operations": {
+        "satisfied": 3,
+        "required": 4,
+        "details": [
+          {
+            "name": "Entity limit operation",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Relationship limit operation",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          },
+          {
+            "name": "Entity fields removed",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          },
+          {
+            "name": "Relationship fields removed",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "dependencies": {
+        "satisfied": 3,
+        "required": 3,
+        "details": [
+          {
+            "name": "Entity branch and input",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          },
+          {
+            "name": "Relationship branch and input",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          },
+          {
+            "name": "Independent limits loaded",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "delivered_bytes": 4065,
+      "unique_relevant_bytes_lower_bound": 1589,
+      "useful_fraction_of_delivered_lower_bound": 0.39089790897908977,
+      "duplicate_relevant_bytes_lower_bound": 224,
+      "answer_review": {
+        "factual_correctness": "Core limits and removed fields correct; negative total-limit conclusion agrees with full source",
+        "actor_attribution": "Incorrectly locates atruncate_list_by_token_size in operate.py instead of its imported utility definition",
+        "grounding": "Entity truncation call absent; its explanation is inferred, and incomplete supplied excerpts cannot prove function-wide absence of a total cap",
+        "full_answer_acceptance": false
+      },
+      "source_payload_bytes": 3742,
+      "label_separator_bytes": 323,
+      "fully_satisfied_operation_expression_bytes": 224,
+      "operation_expression_fraction_of_cap": 0.0546875,
+      "efficiency_interpretation": "Source-membership proxy is not semantic relevance; exact frozen-operation expression bytes are reported separately. Neither certifies completeness."
+    },
+    {
+      "case_id": "F1",
+      "target_discovered": true,
+      "target_survived": true,
+      "target_in_final_context": true,
+      "target_stage_trace": {
+        "canonical_id": "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context",
+        "document_id": "3b4a768b-1bee-4290-b17a-fe726ed19764",
+        "found_by_vector": true,
+        "found_by_graph": false,
+        "expanded_rank": null,
+        "survives_cap": false,
+        "chunk_fetched": true,
+        "survives_chunk_limits": true,
+        "reaches_final_context": true,
+        "drop_reason": null,
+        "survives_rerank": true
+      },
+      "operations": {
+        "satisfied": 3,
+        "required": 4,
+        "details": [
+          {
+            "name": "Render before accounting",
+            "satisfied": true,
+            "expressions_present": [
+              true
+            ]
+          },
+          {
+            "name": "Separator-inclusive cost",
+            "satisfied": true,
+            "expressions_present": [
+              true
+            ]
+          },
+          {
+            "name": "Skip oversize passage",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          },
+          {
+            "name": "UTF-8 counting",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "dependencies": {
+        "satisfied": 3,
+        "required": 3,
+        "details": [
+          {
+            "name": "Counter initialized",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true
+            ]
+          },
+          {
+            "name": "Loop survives skipped item",
+            "satisfied": true,
+            "expressions_present": [
+              true,
+              true,
+              true
+            ]
+          },
+          {
+            "name": "Only selected items returned",
+            "satisfied": true,
+            "expressions_present": [
+              true
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "delivered_bytes": 4038,
+      "unique_relevant_bytes_lower_bound": 489,
+      "useful_fraction_of_delivered_lower_bound": 0.12109955423476969,
+      "duplicate_relevant_bytes_lower_bound": 0,
+      "answer_review": {
+        "factual_correctness": "Correct skip/continue and separators; incorrect description of actual UTF-8 byte accounting as token estimation",
+        "actor_attribution": "Correct assembler attribution; missing helper implementation prevents supported byte explanation",
+        "grounding": "Three supported operations; byte-counter inference conflicts with pinned helper source",
+        "full_answer_acceptance": false
+      },
+      "source_payload_bytes": 3346,
+      "label_separator_bytes": 692,
+      "fully_satisfied_operation_expression_bytes": 113,
+      "operation_expression_fraction_of_cap": 0.027587890625,
+      "efficiency_interpretation": "Source-membership proxy is not semantic relevance; exact frozen-operation expression bytes are reported separately. Neither certifies completeness."
+    },
+    {
+      "case_id": "F2",
+      "target_discovered": true,
+      "target_survived": true,
+      "target_in_final_context": false,
+      "target_stage_trace": {
+        "canonical_id": "rag_orchestrator/src/retrieval/codebase_utils.py#get_cached_graph_with_generation",
+        "document_id": "160bf02c-d06f-470b-a59a-dacd88758711",
+        "found_by_vector": true,
+        "found_by_graph": false,
+        "expanded_rank": null,
+        "survives_cap": false,
+        "chunk_fetched": true,
+        "survives_chunk_limits": true,
+        "reaches_final_context": false,
+        "drop_reason": "dropped_by_token_budget",
+        "survives_rerank": true
+      },
+      "operations": {
+        "satisfied": 0,
+        "required": 5,
+        "details": [
+          {
+            "name": "Resolve generation each call",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          },
+          {
+            "name": "Empty-generation return",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          },
+          {
+            "name": "Matching cached return",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          },
+          {
+            "name": "Reload and store",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "LRU eviction",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "dependencies": {
+        "satisfied": 0,
+        "required": 3,
+        "details": [
+          {
+            "name": "No generation condition",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          },
+          {
+            "name": "Warm-hit condition",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          },
+          {
+            "name": "Locked lookup and LRU refresh",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "delivered_bytes": 4050,
+      "unique_relevant_bytes_lower_bound": 0,
+      "useful_fraction_of_delivered_lower_bound": 0.0,
+      "duplicate_relevant_bytes_lower_bound": 0,
+      "answer_review": {
+        "factual_correctness": "Wrong no-ready-generation behavior; falsely denies force_reload; omits LRU bound",
+        "actor_attribution": "Treats caller/ADR material as implementation of cache function",
+        "grounding": "Claims zero stale data and unsupported absence of a parameter; required body never delivered",
+        "full_answer_acceptance": false
+      },
+      "source_payload_bytes": 3110,
+      "label_separator_bytes": 940,
+      "fully_satisfied_operation_expression_bytes": 0,
+      "operation_expression_fraction_of_cap": 0.0,
+      "efficiency_interpretation": "Source-membership proxy is not semantic relevance; exact frozen-operation expression bytes are reported separately. Neither certifies completeness."
+    },
+    {
+      "case_id": "F3",
+      "target_discovered": true,
+      "target_survived": true,
+      "target_in_final_context": false,
+      "target_stage_trace": {
+        "canonical_id": "rag_orchestrator/src/core/service.py#run_rag",
+        "document_id": "59dc946e-cd12-45c5-9239-2407fe1c3f92",
+        "found_by_vector": true,
+        "found_by_graph": false,
+        "expanded_rank": null,
+        "survives_cap": false,
+        "chunk_fetched": true,
+        "survives_chunk_limits": true,
+        "reaches_final_context": false,
+        "drop_reason": "dropped_by_token_budget",
+        "survives_rerank": true
+      },
+      "operations": {
+        "satisfied": 0,
+        "required": 5,
+        "details": [
+          {
+            "name": "Adapter caps",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Budget min",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Assemble selected passages",
+            "satisfied": false,
+            "expressions_present": [
+              false
+            ]
+          },
+          {
+            "name": "Manifest uses assembled selection",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Generation receives context",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "dependencies": {
+        "satisfied": 0,
+        "required": 3,
+        "details": [
+          {
+            "name": "Reserve deductions",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Context taken from assembled result",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          },
+          {
+            "name": "Overview alternative is conditional",
+            "satisfied": false,
+            "expressions_present": [
+              false,
+              false
+            ]
+          }
+        ],
+        "scope": "expression-and-source coverage; branch coherence requires review"
+      },
+      "delivered_bytes": 3963,
+      "unique_relevant_bytes_lower_bound": 0,
+      "useful_fraction_of_delivered_lower_bound": 0.0,
+      "duplicate_relevant_bytes_lower_bound": 0,
+      "answer_review": {
+        "factual_correctness": "Falsely says byte allowance is unimplemented and uses word counting; misses assembled-context/manifest handoff",
+        "actor_attribution": "Confuses adapter output with final generation context and stages of limit enforcement",
+        "grounding": "Archived handover descriptions are delivered and used as current-product authority; ADR-052 passage is only a heading",
+        "full_answer_acceptance": false
+      },
+      "source_payload_bytes": 2963,
+      "label_separator_bytes": 1000,
+      "fully_satisfied_operation_expression_bytes": 0,
+      "operation_expression_fraction_of_cap": 0.0,
+      "efficiency_interpretation": "Source-membership proxy is not semantic relevance; exact frozen-operation expression bytes are reported separately. Neither certifies completeness."
+    }
+  ],
+  "totals": {
+    "discovered": 6,
+    "survived": 5,
+    "target_in_final_context": 3,
+    "operations_satisfied": 6,
+    "operations_required": 26,
+    "dependency_expressions_satisfied": 6,
+    "dependencies_required": 20,
+    "full_answer_acceptance": 0
+  },
+  "checks": {
+    "manifest_payload_identity": true,
+    "source_chunk_hashes": true,
+    "all_contexts_within_4096_bytes": true,
+    "generation_stable_and_scoped": true,
+    "runtime_sha_stable": true,
+    "requested_model_no_fallback": true
+  },
+  "prototypes": "No completed unchanged control replay; no selector arm evaluated",
+  "answer_scoring_scope": "Manual qualitative source-based assessment of factual correctness, actor attribution and grounding; no unregistered numeric fact/actor aggregate"
+}

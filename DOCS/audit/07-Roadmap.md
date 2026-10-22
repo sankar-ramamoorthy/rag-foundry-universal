@@ -265,7 +265,9 @@ experimental sequence is completed research; preserve the regression gates and
 [architectural requirements](/DOCS/notes/2026-10-12-issue-254-deferred.md).
 C1 remains separate; #243 held-out evaluation is deferred and untouched. Immediate
 focus moves to the [bounded D0 document baseline](/DOCS/evaluations/2026-10-12-document-rag-baseline.md),
-then read-only agent/MCP interface work and scalability. This changes current
+then native PDF/scanned-document/complex-table evaluation, followed by a narrow
+read-only agent/MCP evidence pilot. Broader scalability follows unless an
+operational regression intervenes. This changes current
 focus, not historical completion or issue membership in the workstreams.
 
 - [ ] (item 4, next) **#200** — Bounded evidence-sufficiency loop for structural workflows. **Status corrected 2026-10-12: its own internal Stage A (mechanical bounded evidence sufficiency, internal sub-stages labeled `A0`-`A5` — unrelated to this phase's new `AG0`-`AG5` coding-agent items) has already shipped** (see [status](/DOCS/status.md)/[index](/DOCS/index.md)); the box above stays unchecked only because its full frozen live-evaluation gate remains open, not because no work has started — do not read `[ ]` here as "not begun." Next is a Stage C follow-up combining Stage A with #199. **Decided 2026-10-12: stays under R, not Coding-Agent Integration (AG3).** Evidence sufficiency is a foundational capability independent of consumer — it applies to ORIENT, TRACE, IMPACT, and ordinary RAG queries alike. AG3 (below) consumes #200 but does not own it, so the project does not build separate sufficiency logic for a human-facing chatbot and a coding agent. Reordering rationale (ahead of #199, decided 2026-09-19) below is unchanged.
@@ -291,6 +293,18 @@ focus, not historical completion or issue membership in the workstreams.
 - **AG5 — Evidence-backed fix proposals** (vision; not committed). Only after AG2/AG4 demonstrate quality; sandboxed execution and human review required.
 
 ### D — Document intelligence (parallel next tranche)
+
+**Current Document Intelligence Quality workstream:** execute the twelve frozen
+Markdown cases, diagnose blocking defects before expansion, then run a separately
+frozen native-PDF/scanned-document/complex-table gate. Separate parser,
+retrieval/context-survival and generation failures. The narrow MCP evidence pilot
+follows these document gates. [Post-deployment preflight](/DOCS/test_results/2026-10-12-document-rag-post-deploy-preflight.md)
+finds repository-ingested fixtures excluded by the document source-type filter;
+the isolated local stack is now available but its
+[first Markdown upload fails at the IR consumer](/DOCS/test_results/2026-10-12-document-rag-local-ingestion-blocker.md).
+A narrow ingestion compatibility repair is the next blocking task before the
+twelve questions. No answer-quality score is claimed, and removing the source
+filter is not a proposed solution.
 
 Existing: **#204** (JIT OCR / selective heavy-parse escalation) — related, but does not cover this whole track alone. New, unscoped (no issues filed): **D0** pinned document corpus/reliability baseline, **D1** bounded ingestion lifecycle (observable accepted/parsing/OCR/chunking/embedding/ready/failed stages — HTTP 202 is not success), **D2** structured page/block representation and provenance, **D3** structure-aware chunking, **D4** selective OCR/visual escalation, **D5** provider comparison and optional GPU isolation. See [Document Intelligence Research Lessons](/DOCS/research/2026-10-04-document-intelligence-research-lessons.md) for the evidence behind this sequencing (a real ingestion OOM/Exit 137 event, structure loss on a tabular screenshot via plain OCR, licensing/hardware constraints on GPU OCR candidates).
 
@@ -355,6 +369,8 @@ comparison below has completed research, while its applicable answer gate fails;
 further #254 work and independent #243 execution are deliberately deferred.
 The [D0 protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md) has four
 synthetic sources and twelve frozen questions; execution awaits corpus isolation.
+That setup prerequisite is now resolved by the local evaluation stack; the
+current blocker is the Markdown upload/IR contract failure recorded above.
 
 A near-term planning checkpoint, not new backlog items — do **not** file a
 GitHub issue for each line below automatically; let the evaluation itself
