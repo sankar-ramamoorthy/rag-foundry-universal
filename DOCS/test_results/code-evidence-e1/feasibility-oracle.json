@@ -1,0 +1,314 @@
+{
+  "cap_bytes": 4096,
+  "chunker_validation": {
+    "checked": 8,
+    "matched": 8,
+    "mismatches": []
+  },
+  "chunk_faithfulness": {
+    "lightrag/operate.py#_apply_token_truncation": {
+      "chunks": 19,
+      "chunks_not_verbatim_source": 6,
+      "max_chunk_chars": 1375
+    },
+    "lightrag/operate.py#_build_context_str": {
+      "chunks": 17,
+      "chunks_not_verbatim_source": 1,
+      "max_chunk_chars": 1112
+    },
+    "lightrag/operate.py#_build_query_context": {
+      "chunks": 10,
+      "chunks_not_verbatim_source": 4,
+      "max_chunk_chars": 746
+    },
+    "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context": {
+      "chunks": 3,
+      "chunks_not_verbatim_source": 1,
+      "max_chunk_chars": 427
+    },
+    "rag_orchestrator/src/retrieval/agent_adapter.py#conservative_token_count": {
+      "chunks": 1,
+      "chunks_not_verbatim_source": 0,
+      "max_chunk_chars": 167
+    },
+    "rag_orchestrator/src/retrieval/codebase_utils.py#get_cached_graph_with_generation": {
+      "chunks": 7,
+      "chunks_not_verbatim_source": 1,
+      "max_chunk_chars": 684
+    },
+    "rag_orchestrator/src/core/service.py#run_rag": {
+      "chunks": 17,
+      "chunks_not_verbatim_source": 0,
+      "max_chunk_chars": 1000
+    }
+  },
+  "cases": {
+    "L1": {
+      "fragments": 17,
+      "unlocated_fragments": [],
+      "fragments_split_across_chunks": [],
+      "exact_statements_bytes": 1971,
+      "exact_statements_parts": 12,
+      "contiguous_span_bytes": 3677,
+      "whole_chunk_bytes": 3967,
+      "whole_chunk_count": 9,
+      "docs": {
+        "lightrag/operate.py#_build_query_context": {
+          "source_bytes": 4644,
+          "chunks": 10,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            3,
+            4
+          ],
+          "contiguous_window_chunks": 2,
+          "contiguous_window_bytes": 1120
+        },
+        "lightrag/operate.py#_apply_token_truncation": {
+          "source_bytes": 9050,
+          "chunks": 19,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            10,
+            11,
+            12,
+            13
+          ],
+          "contiguous_window_chunks": 4,
+          "contiguous_window_bytes": 1679
+        },
+        "lightrag/operate.py#_build_context_str": {
+          "source_bytes": 8142,
+          "chunks": 17,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            5,
+            7,
+            9
+          ],
+          "contiguous_window_chunks": 5,
+          "contiguous_window_bytes": 2230
+        }
+      },
+      "window_chunks_total": 11,
+      "contiguous_window_bytes": 5049,
+      "fits": {
+        "exact_statements": true,
+        "contiguous_span": true,
+        "whole_chunks": true,
+        "contiguous_windows": false
+      },
+      "passage_only_contract_window_ok": true,
+      "passage_only_contract_feasible": false
+    },
+    "L2": {
+      "fragments": 17,
+      "unlocated_fragments": [],
+      "fragments_split_across_chunks": [],
+      "exact_statements_bytes": 1971,
+      "exact_statements_parts": 12,
+      "contiguous_span_bytes": 3677,
+      "whole_chunk_bytes": 3967,
+      "whole_chunk_count": 9,
+      "docs": {
+        "lightrag/operate.py#_build_query_context": {
+          "source_bytes": 4644,
+          "chunks": 10,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            3,
+            4
+          ],
+          "contiguous_window_chunks": 2,
+          "contiguous_window_bytes": 1120
+        },
+        "lightrag/operate.py#_apply_token_truncation": {
+          "source_bytes": 9050,
+          "chunks": 19,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            10,
+            11,
+            12,
+            13
+          ],
+          "contiguous_window_chunks": 4,
+          "contiguous_window_bytes": 1679
+        },
+        "lightrag/operate.py#_build_context_str": {
+          "source_bytes": 8142,
+          "chunks": 17,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            5,
+            7,
+            9
+          ],
+          "contiguous_window_chunks": 5,
+          "contiguous_window_bytes": 2230
+        }
+      },
+      "window_chunks_total": 11,
+      "contiguous_window_bytes": 5049,
+      "fits": {
+        "exact_statements": true,
+        "contiguous_span": true,
+        "whole_chunks": true,
+        "contiguous_windows": false
+      },
+      "passage_only_contract_window_ok": true,
+      "passage_only_contract_feasible": false
+    },
+    "L3": {
+      "fragments": 14,
+      "unlocated_fragments": [],
+      "fragments_split_across_chunks": [],
+      "exact_statements_bytes": 1450,
+      "exact_statements_parts": 8,
+      "contiguous_span_bytes": 4552,
+      "whole_chunk_bytes": 2232,
+      "whole_chunk_count": 5,
+      "docs": {
+        "lightrag/operate.py#_apply_token_truncation": {
+          "source_bytes": 9050,
+          "chunks": 19,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            3,
+            10,
+            11,
+            12,
+            13
+          ],
+          "contiguous_window_chunks": 11,
+          "contiguous_window_bytes": 5211
+        }
+      },
+      "window_chunks_total": 11,
+      "contiguous_window_bytes": 5231,
+      "fits": {
+        "exact_statements": true,
+        "contiguous_span": false,
+        "whole_chunks": true,
+        "contiguous_windows": false
+      },
+      "passage_only_contract_window_ok": false,
+      "passage_only_contract_feasible": false
+    },
+    "F1": {
+      "fragments": 11,
+      "unlocated_fragments": [],
+      "fragments_split_across_chunks": [],
+      "exact_statements_bytes": 697,
+      "exact_statements_parts": 4,
+      "contiguous_span_bytes": 619,
+      "whole_chunk_bytes": 754,
+      "whole_chunk_count": 2,
+      "docs": {
+        "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context": {
+          "source_bytes": 769,
+          "chunks": 3,
+          "strategy": "sentence",
+          "chunk_indices": [
+            2
+          ],
+          "contiguous_window_chunks": 1,
+          "contiguous_window_bytes": 502
+        },
+        "rag_orchestrator/src/retrieval/agent_adapter.py#conservative_token_count": {
+          "source_bytes": 167,
+          "chunks": 1,
+          "strategy": "sentence",
+          "chunk_indices": [
+            0
+          ],
+          "contiguous_window_chunks": 1,
+          "contiguous_window_bytes": 250
+        }
+      },
+      "window_chunks_total": 2,
+      "contiguous_window_bytes": 754,
+      "fits": {
+        "exact_statements": true,
+        "contiguous_span": true,
+        "whole_chunks": true,
+        "contiguous_windows": true
+      },
+      "passage_only_contract_window_ok": true,
+      "passage_only_contract_feasible": true
+    },
+    "F2": {
+      "fragments": 12,
+      "unlocated_fragments": [],
+      "fragments_split_across_chunks": [],
+      "exact_statements_bytes": 1229,
+      "exact_statements_parts": 7,
+      "contiguous_span_bytes": 1328,
+      "whole_chunk_bytes": 2052,
+      "whole_chunk_count": 4,
+      "docs": {
+        "rag_orchestrator/src/retrieval/codebase_utils.py#get_cached_graph_with_generation": {
+          "source_bytes": 3200,
+          "chunks": 7,
+          "strategy": "paragraph",
+          "chunk_indices": [
+            3,
+            4,
+            5,
+            6
+          ],
+          "contiguous_window_chunks": 4,
+          "contiguous_window_bytes": 2046
+        }
+      },
+      "window_chunks_total": 4,
+      "contiguous_window_bytes": 2052,
+      "fits": {
+        "exact_statements": true,
+        "contiguous_span": true,
+        "whole_chunks": true,
+        "contiguous_windows": true
+      },
+      "passage_only_contract_window_ok": true,
+      "passage_only_contract_feasible": true
+    },
+    "F3": {
+      "fragments": 17,
+      "unlocated_fragments": [],
+      "fragments_split_across_chunks": [],
+      "exact_statements_bytes": 1719,
+      "exact_statements_parts": 11,
+      "contiguous_span_bytes": 8366,
+      "whole_chunk_bytes": 7397,
+      "whole_chunk_count": 7,
+      "docs": {
+        "rag_orchestrator/src/core/service.py#run_rag": {
+          "source_bytes": 14508,
+          "chunks": 17,
+          "strategy": "simple",
+          "chunk_indices": [
+            5,
+            8,
+            9,
+            10,
+            11,
+            13,
+            14
+          ],
+          "contiguous_window_chunks": 10,
+          "contiguous_window_bytes": 10550
+        }
+      },
+      "window_chunks_total": 10,
+      "contiguous_window_bytes": 10568,
+      "fits": {
+        "exact_statements": true,
+        "contiguous_span": false,
+        "whole_chunks": false,
+        "contiguous_windows": false
+      },
+      "passage_only_contract_window_ok": false,
+      "passage_only_contract_feasible": false
+    }
+  }
+}
