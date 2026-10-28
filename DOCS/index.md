@@ -48,7 +48,7 @@ records six captures, incomplete implementation evidence and a later full-graph
 timeout during prototype control setup. Prototype quality remains unverified.
 No production selection policy is adopted.
 The [statement-level delivery contract](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md)
-(#276, **proposed, not frozen**) specifies the experiment that the
+(#276, **accepted and frozen** 2026-10-28; checksum recorded) specifies the experiment that the
 [structural-context oracle](/DOCS/test_results/2026-10-28-e1-structural-context-feasibility.md)
 makes worth testing, including the held-out case plan required by ADR-054.
 
@@ -80,8 +80,8 @@ score, no LLM calls in classification.
 repository evaluations are kept distinct before future retrieval tuning.
 
 [ADR-055: node-text read endpoint](/DOCS/adr/ADR-055-node-text-read-endpoint.md)
-— **proposed**, not implemented — records that no ingestion_service endpoint
-returns a node's original source text by canonical id and proposes one bounded,
+— **accepted** (2026-10-28), not implemented — records that no ingestion_service endpoint
+returns a node's original source text by canonical id and decides on one bounded,
 generation-fenced, read-only `POST` endpoint, for the statement-level E1
 experiment (#276). Accepting it authorizes no implementation by itself.
 
