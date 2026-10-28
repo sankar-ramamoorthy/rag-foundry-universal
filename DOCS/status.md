@@ -105,6 +105,14 @@ windows are infeasible in 4/6 even with an oracle, and stored chunks are not
 source-faithful (stripped indentation, normalized blank lines). The open
 problem is evidence granularity; statement-level delivery versus a bounded
 multi-step workflow is undecided and unimplemented.
+The [structural-context oracle](/DOCS/test_results/2026-10-28-e1-structural-context-feasibility.md)
+(#276, offline, oracle-selected evidence) adds the enclosing signature and
+branch/loop/`try` headers to each witness statement, with explicit omission
+markers and verbatim source lines only. That fits 4096 bytes in all six cases
+(L1/L2 with 170 bytes of slack, so marginally), but adding the local definitions
+the statements read exceeds the cap in three of six (L1, L2, F3). Signatures are
+the largest structural cost (up to 27% of a case). Whether a selector can find
+this evidence without knowing the witnesses is untested.
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains
