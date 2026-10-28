@@ -1,0 +1,77 @@
+{
+  "environment": {
+    "git_sha": "a476b39aba12",
+    "git_dirty": false,
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.12.0",
+    "cpus": 8,
+    "machine_total_mb": 8369
+  },
+  "fixture": {
+    "nodes": 5000,
+    "text_mb": 10.1,
+    "relationships": 15000
+  },
+  "results": [
+    {
+      "concurrent_exports": 1,
+      "export_seconds": {
+        "min": 1.78,
+        "median": 1.78,
+        "max": 1.78
+      },
+      "wall_seconds": 1.94,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "4a8a3c934a508e2d"
+      ],
+      "version_probe_max_seconds": 1.25,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 155,
+      "peak_rss_mb": 214
+    },
+    {
+      "concurrent_exports": 2,
+      "export_seconds": {
+        "min": 2.04,
+        "median": 2.75,
+        "max": 3.46
+      },
+      "wall_seconds": 3.61,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "4a8a3c934a508e2d"
+      ],
+      "version_probe_max_seconds": 2.69,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 156,
+      "peak_rss_mb": 216
+    },
+    {
+      "concurrent_exports": 4,
+      "export_seconds": {
+        "min": 2.2,
+        "median": 4.15,
+        "max": 6.14
+      },
+      "wall_seconds": 6.28,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "4a8a3c934a508e2d"
+      ],
+      "version_probe_max_seconds": 5.24,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 155,
+      "peak_rss_mb": 218
+    }
+  ],
+  "distinct_hashes": [
+    "4a8a3c934a508e2d"
+  ]
+}
