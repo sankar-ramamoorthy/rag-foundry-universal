@@ -113,6 +113,13 @@ markers and verbatim source lines only. That fits 4096 bytes in all six cases
 the statements read exceeds the cap in three of six (L1, L2, F3). Signatures are
 the largest structural cost (up to 27% of a case). Whether a selector can find
 this evidence without knowing the witnesses is untested.
+The #276 [statement-level delivery contract](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md)
+(delivered-block format, required structure rules R1-R7, selector boundary,
+scoring, fallback behaviour, and the ADR-054 held-out plan) and
+[ADR-055](/DOCS/adr/ADR-055-node-text-read-endpoint.md) (a proposed bounded,
+generation-fenced node-text endpoint, since no current API returns a node's
+source) are **proposed, not accepted or frozen**; nothing is implemented, and the
+experiment stays blocked on a trustworthy control replay (#270).
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains
