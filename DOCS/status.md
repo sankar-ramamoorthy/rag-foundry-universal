@@ -827,8 +827,10 @@ prose docs and already-committed result JSON still mention the old address
 (history is left as written); the prototype scripts stay unmerged for an
 experiment branch. Two `llm_service` tests
 (`test_models_endpoint_universal_without_remote_env`,
-`test_no_params_uses_local_ollama_default`) fail on a machine whose `.env` sets
-`REMOTE_OLLAMA_BASE_URL`; this predates #268 and is not addressed here.
+`test_no_params_uses_local_ollama_default`) fail on the maintainer's machine
+because local configuration changes the default model (`Qwen3:4b` instead of the
+expected `phi4-mini:latest`) and adds a `remote` alias; they fail identically
+without #268's changes. The overriding config source is not yet identified.
 
 ## Production release
 
