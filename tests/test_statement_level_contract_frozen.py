@@ -44,3 +44,30 @@ def test_go_rate_is_not_decided_inside_the_frozen_contract():
     addendum = DIRECTORY / "statement-level-contract-addendum-go-rate.md"
     if addendum.exists():  # once the owner fixes it, it must name a rate
         assert re.search(r"\d", addendum.read_text(encoding="utf-8"))
+
+
+ADDENDUM = DIRECTORY / "statement-level-contract-addendum-go-rate.md"
+ADDENDUM_CHECKSUM = DIRECTORY / "statement-level-contract-addendum-go-rate.sha256"
+
+
+def test_go_rate_addendum_matches_its_recorded_checksum():
+    recorded = ADDENDUM_CHECKSUM.read_text(encoding="utf-8").strip()
+    assert re.fullmatch(r"[0-9a-f]{64}", recorded)
+    actual = hashlib.sha256(_text(ADDENDUM).encode("utf-8")).hexdigest()
+    assert actual == recorded, (
+        "the GO-rate addendum changed after it was frozen; supersede it with a "
+        "new dated addendum committed before the held-out manifest is frozen"
+    )
+
+
+def test_go_rate_addendum_binds_to_the_exact_frozen_contract():
+    contract_hash = CHECKSUM.read_text(encoding="utf-8").strip()
+    assert contract_hash in _text(ADDENDUM)
+
+
+def test_go_rate_addendum_states_the_chosen_rule_and_keeps_answers_out_of_it():
+    text = _text(ADDENDUM)
+    for needle in ("**k >= 10** of 12", "**wins >= 5**", "at least **3 of its 4**",
+                   "exactly 12 cases over 3 repositories",
+                   "Answer correctness (S8) does not decide GO"):
+        assert needle in text, needle
