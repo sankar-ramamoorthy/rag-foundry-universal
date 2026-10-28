@@ -20,6 +20,8 @@ jobs:
         run: uv sync --frozen
       - name: Ruff
         run: uv run ruff check .
+      - name: No tailnet addresses in code/config
+        run: python scripts/check_private_addresses.py
 
   unit-tests:
     runs-on: ubuntu-latest

@@ -1,0 +1,37 @@
+{
+  "checked_at": "2026-10-15T00:45:22.965902+00:00",
+  "scope": "Read-only post-restart connectivity check; does not establish failure cause",
+  "results": [
+    {
+      "port": 5434,
+      "tcp_connected": true
+    },
+    {
+      "port": 8001,
+      "tcp_connected": true,
+      "http_error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))"
+    },
+    {
+      "port": 8002,
+      "tcp_connected": true,
+      "http_error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))"
+    },
+    {
+      "port": 8003,
+      "tcp_connected": true,
+      "http_error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))"
+    },
+    {
+      "port": 8004,
+      "tcp_connected": true,
+      "http_error": "ConnectionError(ProtocolError('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)))"
+    },
+    {
+      "port": 11434,
+      "tcp_connected": true,
+      "http_status": 200
+    }
+  ],
+  "postgres_connection_attempt": "Earlier psycopg handshake timed out despite TCP acceptance",
+  "fresh_completed_baseline_cases": 0
+}

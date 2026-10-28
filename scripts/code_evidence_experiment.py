@@ -14,6 +14,7 @@ import hashlib
 import importlib
 import json
 import logging
+import os
 import runpy
 import subprocess
 import sys
@@ -24,6 +25,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 DIRECTORY = ROOT / "DOCS/evaluations/code-evidence-e1"
 RESULTS = ROOT / "DOCS/test_results/code-evidence-e1"
+# Bulky raw captures: git-ignored, tracked via DOCS/test_results/raw-index.json.
+RAW = ROOT / "DOCS/test_results/_raw/code-evidence-e1"
 F = "rag_orchestrator/src/"
 L = "lightrag/operate.py#"
 REPOS = {
@@ -579,14 +582,14 @@ def install_observers(service: Any):
     observed: dict = {}
 
     def checkpoint(event: str, **details) -> None:
-        RESULTS.mkdir(parents=True, exist_ok=True)
+        RAW.mkdir(parents=True, exist_ok=True)
         record = {
             "at": datetime.now(timezone.utc).isoformat(),
             "case": observed.get("case_id"),
             "event": event,
             **details,
         }
-        with (RESULTS / "capture-events.jsonl").open("a", encoding="utf-8") as log:
+        with (RAW / "capture-events.jsonl").open("a", encoding="utf-8") as log:
             log.write(json.dumps(record) + "\n")
 
     def observe_sync_request(client, method, url, **kwargs):
@@ -671,7 +674,7 @@ async def baseline(args: argparse.Namespace) -> None:
     logging.disable(logging.CRITICAL)
     try:
         for case in manifest["cases"]:
-            path = RESULTS / f"baseline-{case['id']}.json"
+            path = RAW / f"baseline-{case['id']}.json"
             if path.exists():
                 print(f"{case['id']}: existing baseline preserved", flush=True)
                 continue
@@ -746,8 +749,10 @@ async def fetch_versions(client: Any, host: str) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("freeze", "baseline"))
-    parser.add_argument("--host", default="http://100.105.24.12")
+    parser.add_argument("--host", default=os.environ.get("E1_HOST"))
     args = parser.parse_args()
+    if args.command == "baseline" and not args.host:
+        parser.error("baseline needs --host or E1_HOST (e.g. http://<host>)")
     if args.command == "freeze":
         freeze()
     else:

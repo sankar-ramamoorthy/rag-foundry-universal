@@ -199,7 +199,7 @@ async def test_ollama_fetch_uses_tags_endpoint(monkeypatch):
     models, stale, configured = await model_catalog.get_catalog(
         "tailscaleollamalinux",
         "ollama",
-        {"api_base": "http://100.105.24.12:11434"},
+        {"api_base": "http://remote-ollama.example.invalid:11434"},
     )
     assert stale is False
     assert configured is True

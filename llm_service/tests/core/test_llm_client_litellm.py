@@ -61,13 +61,13 @@ async def test_remote_env_promotes_remote_default(capture, monkeypatch):
     machine-specific config, never committed."""
     from src.core.model_registry import reset_registry
 
-    monkeypatch.setenv("REMOTE_OLLAMA_BASE_URL", "http://100.105.24.12:11434")
+    monkeypatch.setenv("REMOTE_OLLAMA_BASE_URL", "http://remote-ollama.example.invalid:11434")
     monkeypatch.setenv("LLM_DEFAULT_ALIAS", "remote")
     reset_registry()
     try:
         result = await llm_client.generate_completion(context="c", query="q")
         assert capture["model"] == "ollama/Qwen3:4b"
-        assert capture["api_base"] == "http://100.105.24.12:11434"
+        assert capture["api_base"] == "http://remote-ollama.example.invalid:11434"
         assert result["model_alias"] == "default"
     finally:
         reset_registry()

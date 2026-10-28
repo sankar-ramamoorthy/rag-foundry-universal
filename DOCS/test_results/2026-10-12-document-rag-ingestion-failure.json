@@ -1,0 +1,157 @@
+{
+  "status": "confirmed-ingestion-contract-defect",
+  "job": {
+    "ingestion_id": "8022bcb0-af3f-4c89-8f34-e2fd80f14a39",
+    "status": "failed"
+  },
+  "admission_http_status": 202,
+  "admission_status": "accepted",
+  "fixture": "operations.md",
+  "extractor_results": [
+    {
+      "filename": "operations.md",
+      "return_type": "ExtractionResult",
+      "symbol_count": 5,
+      "consumer_iteration_error": "'ExtractionResult' object is not iterable",
+      "symbols": [
+        {
+          "name": "operations",
+          "kind": "MARKDOWN_MODULE",
+          "symbol_path": null,
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Cedar operations handbook \u2014 synthetic evaluation source",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_operations_handbook_synthetic_evaluation_source",
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Intake",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_operations_handbook_synthetic_evaluation_source.intake",
+          "parent_symbol_path": "cedar_operations_handbook_synthetic_evaluation_source"
+        },
+        {
+          "name": "Escalation",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_operations_handbook_synthetic_evaluation_source.escalation",
+          "parent_symbol_path": "cedar_operations_handbook_synthetic_evaluation_source"
+        },
+        {
+          "name": "Closure",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_operations_handbook_synthetic_evaluation_source.closure",
+          "parent_symbol_path": "cedar_operations_handbook_synthetic_evaluation_source"
+        }
+      ]
+    },
+    {
+      "filename": "retention-obsolete.md",
+      "return_type": "ExtractionResult",
+      "symbol_count": 3,
+      "consumer_iteration_error": "'ExtractionResult' object is not iterable",
+      "symbols": [
+        {
+          "name": "retention-obsolete",
+          "kind": "MARKDOWN_MODULE",
+          "symbol_path": null,
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Cedar obsolete retention note \u2014 synthetic evaluation distractor",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_obsolete_retention_note_synthetic_evaluation_distractor",
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Superseded schedule",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_obsolete_retention_note_synthetic_evaluation_distractor.superseded_schedule",
+          "parent_symbol_path": "cedar_obsolete_retention_note_synthetic_evaluation_distractor"
+        }
+      ]
+    },
+    {
+      "filename": "retention.md",
+      "return_type": "ExtractionResult",
+      "symbol_count": 5,
+      "consumer_iteration_error": "'ExtractionResult' object is not iterable",
+      "symbols": [
+        {
+          "name": "retention",
+          "kind": "MARKDOWN_MODULE",
+          "symbol_path": null,
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Cedar case-record retention \u2014 synthetic evaluation source",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_case_record_retention_synthetic_evaluation_source",
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Current schedule",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_case_record_retention_synthetic_evaluation_source.current_schedule",
+          "parent_symbol_path": "cedar_case_record_retention_synthetic_evaluation_source"
+        },
+        {
+          "name": "Preservation exception",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_case_record_retention_synthetic_evaluation_source.preservation_exception",
+          "parent_symbol_path": "cedar_case_record_retention_synthetic_evaluation_source"
+        },
+        {
+          "name": "Missing information",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_case_record_retention_synthetic_evaluation_source.missing_information",
+          "parent_symbol_path": "cedar_case_record_retention_synthetic_evaluation_source"
+        }
+      ]
+    },
+    {
+      "filename": "service-levels.md",
+      "return_type": "ExtractionResult",
+      "symbol_count": 4,
+      "consumer_iteration_error": "'ExtractionResult' object is not iterable",
+      "symbols": [
+        {
+          "name": "service-levels",
+          "kind": "MARKDOWN_MODULE",
+          "symbol_path": null,
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Cedar service-level table \u2014 synthetic evaluation source",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_service_level_table_synthetic_evaluation_source",
+          "parent_symbol_path": null
+        },
+        {
+          "name": "Severity and coverage",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_service_level_table_synthetic_evaluation_source.severity_and_coverage",
+          "parent_symbol_path": "cedar_service_level_table_synthetic_evaluation_source"
+        },
+        {
+          "name": "Interpretation",
+          "kind": "MARKDOWN_SECTION",
+          "symbol_path": "cedar_service_level_table_synthetic_evaluation_source.interpretation",
+          "parent_symbol_path": "cedar_service_level_table_synthetic_evaluation_source"
+        }
+      ]
+    }
+  ],
+  "consumer": "IngestionPipeline.run_with_sections directly iterates ExtractionResult and expects dictionary artifacts",
+  "runtime_changed": false,
+  "baseline_answers_requested": 0,
+  "remaining_uploads_attempted": 0,
+  "service_log_excerpt": [
+    "ingestion_service-1  | INFO:     172.18.0.1:55456 - \"GET /v1/ingest/8022bcb0-af3f-4c89-8f34-e2fd80f14a39 HTTP/1.1\" 200 OK",
+    "ingestion_service-1  | ERROR:src.api.v1.ingest:\u274c Background ingestion failed: 8022bcb0-af3f-4c89-8f34-e2fd80f14a39 - 'ExtractionResult' object is not iterable",
+    "ingestion_service-1  | INFO:     172.18.0.1:55472 - \"GET /v1/ingest/8022bcb0-af3f-4c89-8f34-e2fd80f14a39 HTTP/1.1\" 200 OK",
+    "ingestion_service-1  | INFO:     172.18.0.1:45190 - \"GET /v1/ingest/8022bcb0-af3f-4c89-8f34-e2fd80f14a39 HTTP/1.1\" 200 OK",
+    "ingestion_service-1  | INFO:     172.18.0.1:57550 - \"GET /v1/ingest/8022bcb0-af3f-4c89-8f34-e2fd80f14a39 HTTP/1.1\" 200 OK"
+  ]
+}

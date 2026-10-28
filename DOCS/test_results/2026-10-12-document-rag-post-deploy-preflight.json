@@ -1,0 +1,1035 @@
+{
+  "checked_utc": "2026-10-12T23:16:18.566932+00:00",
+  "status": "execution-blocked",
+  "versions": {
+    "ingestion": {
+      "service": "ingestion_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-12T21:36:30Z",
+      "release_version": "prod-2026-10-12-1731pm"
+    },
+    "vector": {
+      "service": "vector_store_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-12T21:36:30Z",
+      "release_version": "prod-2026-10-12-1731pm"
+    },
+    "llm": {
+      "service": "llm_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-12T21:36:30Z",
+      "release_version": "prod-2026-10-12-1731pm"
+    },
+    "orchestrator": {
+      "service": "rag_orchestrator",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-12T21:36:30Z",
+      "release_version": "prod-2026-10-12-1731pm"
+    }
+  },
+  "generation": {
+    "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+    "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+    "generation_status": "ready",
+    "commit_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+    "ingested_at": "2026-10-12T23:07:45.323513",
+    "parent_generation_id": "854e8484-7144-45c4-951b-ad8bc647c4bf",
+    "is_incremental": true
+  },
+  "documents": [
+    {
+      "node": {
+        "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+        "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+        "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+        "title": "operations",
+        "doc_type": "markdown_module",
+        "provenance": {
+          "role": {
+            "value": "documentation",
+            "basis": "path_convention:docs_dir"
+          },
+          "subject": {
+            "value": "selected_repository",
+            "basis": null
+          },
+          "derivation": {
+            "status": "source"
+          },
+          "validity": {
+            "declared_status": "frozen"
+          },
+          "classification": {
+            "schema_version": "provenance-v1",
+            "classifier_version": "role-subject-v2",
+            "scope": "artifact"
+          }
+        }
+      },
+      "source_url": "https://raw.githubusercontent.com/sankar-ramamoorthy/rag-foundry-universal/109f12d83ab83a306318423be618c195f8c4e6ea/DOCS/evaluations/document-rag-d0/operations.md",
+      "source_sha256": "50d28648914c8268431fe81e0c6b376fc19aff4fdbaf5d1ed354cec514638350",
+      "chunks": [
+        {
+          "chunk_id": "94ec8795-97e3-459e-8ecc-6624ffc38111",
+          "text": "---\ntitle: \"Cedar operations handbook (synthetic fixture)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: frozen\ntags: [document-rag, synthetic]\nrelated:\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar operations handbook \u2014 synthetic evaluation source\n\n## Intake\n\nEach incident receives a case identifier before triage.",
+          "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 0,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "---\ntitle: \"Cedar operations handbook (synthetic fixture)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: frozen\ntags: [document-rag, synthetic]\nrelated:\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar operations handbook \u2014 synthetic evaluation source\n\n## Intake\n\nEach incident receives a case identifier before triage.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "5644754a-06cc-4164-924b-27806c54a462",
+          "text": "The intake coordinator\nowns this step. The coordinator must record the affected service and observed\nstart time. This handbook does not specify an incident-reporting telephone number.",
+          "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 1,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "The intake coordinator\nowns this step. The coordinator must record the affected service and observed\nstart time. This handbook does not specify an incident-reporting telephone number.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "9515f411-8a05-454a-8fc6-0af417b6e92a",
+          "text": "## Escalation\n\nThe on-call analyst classifies the incident using the service-level table. An urgent incident goes to the duty manager within 15 minutes of classification.",
+          "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 2,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "## Escalation\n\nThe on-call analyst classifies the incident using the service-level table. An urgent incident goes to the duty manager within 15 minutes of classification.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "9a8db0ee-59a0-4d1f-bf9f-9ed998f54cc9",
+          "text": "A standard incident goes to the queue owner within 2 hours of classification. The clock starts at classification, not when the user first reports the issue.",
+          "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 3,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "A standard incident goes to the queue owner within 2 hours of classification. The clock starts at classification, not when the user first reports the issue.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "608d11df-10b2-4092-a55d-8f70090c180f",
+          "text": "## Closure\n\nThe duty manager approves closure for urgent incidents. The queue owner approves\nclosure for standard incidents. Approval and the recovery time are recorded in\nthe case log.",
+          "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 4,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "## Closure\n\nThe duty manager approves closure for urgent incidents. The queue owner approves\nclosure for standard incidents. Approval and the recovery time are recorded in\nthe case log.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "2ffa277e-705f-4bb1-b212-27115f189118",
+          "text": "Closing a case does not shorten its retention period. ",
+          "document_id": "91958de0-38c1-4b98-8241-efcd12569476",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 5,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "Closing a case does not shorten its retention period. ",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/operations.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/operations.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        }
+      ],
+      "source_types": [
+        "code"
+      ],
+      "noncode_eligible_chunks": 0
+    },
+    {
+      "node": {
+        "document_id": "aa545d69-99bf-433f-8757-beff24d6dd77",
+        "canonical_id": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+        "relative_path": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+        "title": "retention-obsolete",
+        "doc_type": "markdown_module",
+        "provenance": {
+          "role": {
+            "value": "documentation",
+            "basis": "path_convention:docs_dir"
+          },
+          "subject": {
+            "value": "selected_repository",
+            "basis": null
+          },
+          "derivation": {
+            "status": "source"
+          },
+          "validity": {
+            "declared_status": "obsolete"
+          },
+          "classification": {
+            "schema_version": "provenance-v1",
+            "classifier_version": "role-subject-v2",
+            "scope": "artifact"
+          }
+        }
+      },
+      "source_url": "https://raw.githubusercontent.com/sankar-ramamoorthy/rag-foundry-universal/109f12d83ab83a306318423be618c195f8c4e6ea/DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+      "source_sha256": "3fbdcb989e8c9b8777abcd492d1b5105fdfc323f9e950802c7ce08a194c187b1",
+      "chunks": [
+        {
+          "chunk_id": "e19819ae-ee76-4c7f-a91d-6bee53ee5032",
+          "text": "---\ntitle: \"Cedar obsolete retention note (synthetic distractor)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: obsolete\ntags: [document-rag, synthetic, obsolete]\nrelated:\n  - \"[Current fixture](./retention.md)\"\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar obsolete retention note \u2014 synthetic evaluation distractor\n\n## Superseded schedule\n\nThis note is obsolete and is not the current retention policy.",
+          "document_id": "aa545d69-99bf-433f-8757-beff24d6dd77",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 0,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "---\ntitle: \"Cedar obsolete retention note (synthetic distractor)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: obsolete\ntags: [document-rag, synthetic, obsolete]\nrelated:\n  - \"[Current fixture](./retention.md)\"\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar obsolete retention note \u2014 synthetic evaluation distractor\n\n## Superseded schedule\n\nThis note is obsolete and is not the current retention policy.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "obsolete"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention-obsolete.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "698bc071-60a8-451d-92a6-895acfb723d0",
+          "text": "Its former\nschedule retained urgent case logs for 90 days and standard case logs for\n30 days after closure. Use the separately titled current case-record retention\npolicy for current questions. ",
+          "document_id": "aa545d69-99bf-433f-8757-beff24d6dd77",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 1,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "Its former\nschedule retained urgent case logs for 90 days and standard case logs for\n30 days after closure. Use the separately titled current case-record retention\npolicy for current questions. ",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "obsolete"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention-obsolete.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        }
+      ],
+      "source_types": [
+        "code"
+      ],
+      "noncode_eligible_chunks": 0
+    },
+    {
+      "node": {
+        "document_id": "cb401271-49ff-47cb-9131-d8b7381a863d",
+        "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md",
+        "relative_path": "DOCS/evaluations/document-rag-d0/retention.md",
+        "title": "retention",
+        "doc_type": "markdown_module",
+        "provenance": {
+          "role": {
+            "value": "documentation",
+            "basis": "path_convention:docs_dir"
+          },
+          "subject": {
+            "value": "selected_repository",
+            "basis": null
+          },
+          "derivation": {
+            "status": "source"
+          },
+          "validity": {
+            "declared_status": "frozen"
+          },
+          "classification": {
+            "schema_version": "provenance-v1",
+            "classifier_version": "role-subject-v2",
+            "scope": "artifact"
+          }
+        }
+      },
+      "source_url": "https://raw.githubusercontent.com/sankar-ramamoorthy/rag-foundry-universal/109f12d83ab83a306318423be618c195f8c4e6ea/DOCS/evaluations/document-rag-d0/retention.md",
+      "source_sha256": "cdf8939ebd70fe6399988a74263929468fc3baee94a601eae2496e43921ed5be",
+      "chunks": [
+        {
+          "chunk_id": "8f65f85d-b0fd-4dcc-8e97-e3466a7a6029",
+          "text": "---\ntitle: \"Cedar case-record retention (synthetic fixture)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: frozen\ntags: [document-rag, synthetic]\nrelated:\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar case-record retention \u2014 synthetic evaluation source\n\n## Current schedule\n\nUrgent case logs are retained for 180 days after closure.",
+          "document_id": "cb401271-49ff-47cb-9131-d8b7381a863d",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 0,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "---\ntitle: \"Cedar case-record retention (synthetic fixture)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: frozen\ntags: [document-rag, synthetic]\nrelated:\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar case-record retention \u2014 synthetic evaluation source\n\n## Current schedule\n\nUrgent case logs are retained for 180 days after closure.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "bd001ebf-27ee-43b9-95af-61b68ca8a79b",
+          "text": "Standard case logs\nare retained for 60 days after closure. The records steward owns deletion. The case identifier must be retained in the deletion audit trail.",
+          "document_id": "cb401271-49ff-47cb-9131-d8b7381a863d",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 1,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "Standard case logs\nare retained for 60 days after closure. The records steward owns deletion. The case identifier must be retained in the deletion audit trail.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "02dc3cc4-33e1-4578-9639-201ff258a1f8",
+          "text": "## Preservation exception\n\nIf a case is under a preservation hold, deletion is suspended even after the\nnormal retention period expires. The compliance lead releases the hold in\nwriting.",
+          "document_id": "cb401271-49ff-47cb-9131-d8b7381a863d",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 2,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "## Preservation exception\n\nIf a case is under a preservation hold, deletion is suspended even after the\nnormal retention period expires. The compliance lead releases the hold in\nwriting.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "a6733493-2dce-4048-af8e-0be1465296f0",
+          "text": "After release, the records steward applies the original closure-based\nschedule; release does not restart the retention clock.",
+          "document_id": "cb401271-49ff-47cb-9131-d8b7381a863d",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 3,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "After release, the records steward applies the original closure-based\nschedule; release does not restart the retention clock.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "2a36b605-edf4-45d3-8289-4f00023944cc",
+          "text": "## Missing information\n\nThis policy specifies no backup retention period and no monetary deletion fee. ",
+          "document_id": "cb401271-49ff-47cb-9131-d8b7381a863d",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 4,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "## Missing information\n\nThis policy specifies no backup retention period and no monetary deletion fee. ",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/retention.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/retention.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        }
+      ],
+      "source_types": [
+        "code"
+      ],
+      "noncode_eligible_chunks": 0
+    },
+    {
+      "node": {
+        "document_id": "bc9cdcdb-0f0d-4e10-83bf-024623aaeceb",
+        "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md",
+        "relative_path": "DOCS/evaluations/document-rag-d0/service-levels.md",
+        "title": "service-levels",
+        "doc_type": "markdown_module",
+        "provenance": {
+          "role": {
+            "value": "documentation",
+            "basis": "path_convention:docs_dir"
+          },
+          "subject": {
+            "value": "selected_repository",
+            "basis": null
+          },
+          "derivation": {
+            "status": "source"
+          },
+          "validity": {
+            "declared_status": "frozen"
+          },
+          "classification": {
+            "schema_version": "provenance-v1",
+            "classifier_version": "role-subject-v2",
+            "scope": "artifact"
+          }
+        }
+      },
+      "source_url": "https://raw.githubusercontent.com/sankar-ramamoorthy/rag-foundry-universal/109f12d83ab83a306318423be618c195f8c4e6ea/DOCS/evaluations/document-rag-d0/service-levels.md",
+      "source_sha256": "c9200e7fa58b92f4926532e1b3381d3a83d6014cd32eebb225a5715928820187",
+      "chunks": [
+        {
+          "chunk_id": "a3da2b06-0f6c-4a14-b434-1fd987fe9bc5",
+          "text": "---\ntitle: \"Cedar service-level table (synthetic fixture)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: frozen\ntags: [document-rag, synthetic, tables]\nrelated:\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar service-level table \u2014 synthetic evaluation source\n\n## Severity and coverage\n\n| Service | Urgent threshold | Coverage | Standard target |\n| --- | --- | --- | --- |\n| Atlas | Outage longer than 10 minutes | 24 hours daily | 8 hours |\n| Beacon | Outage longer than 20 minutes | Weekdays 09:00\u201317:00 UTC | 16 hours |\n| Cobalt | Outage longer than 30 minutes | 24 hours daily | 24 hours |\n\n## Interpretation\n\nAn outage equal to the threshold is standard; only a longer outage is urgent.",
+          "document_id": "bc9cdcdb-0f0d-4e10-83bf-024623aaeceb",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 0,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "---\ntitle: \"Cedar service-level table (synthetic fixture)\"\ndate: 2026-10-12\ntype: evaluation-fixture\nstatus: frozen\ntags: [document-rag, synthetic, tables]\nrelated:\n  - \"[Baseline protocol](/DOCS/evaluations/2026-10-12-document-rag-baseline.md)\"\n---\n\n# Cedar service-level table \u2014 synthetic evaluation source\n\n## Severity and coverage\n\n| Service | Urgent threshold | Coverage | Standard target |\n| --- | --- | --- | --- |\n| Atlas | Outage longer than 10 minutes | 24 hours daily | 8 hours |\n| Beacon | Outage longer than 20 minutes | Weekdays 09:00\u201317:00 UTC | 16 hours |\n| Cobalt | Outage longer than 30 minutes | 24 hours daily | 24 hours |\n\n## Interpretation\n\nAn outage equal to the threshold is standard; only a longer outage is urgent.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/service-levels.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "8d579bf6-80f9-4be9-ba83-c0592097d2ba",
+          "text": "Coverage is a staffing window, not the escalation deadline. Standard target\nmeans time to first mitigation, not approval to close a case. All durations in\nthe table are elapsed time.",
+          "document_id": "bc9cdcdb-0f0d-4e10-83bf-024623aaeceb",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 1,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "Coverage is a staffing window, not the escalation deadline. Standard target\nmeans time to first mitigation, not approval to close a case. All durations in\nthe table are elapsed time.",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/service-levels.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        },
+        {
+          "chunk_id": "3e5d5289-f21a-4dc4-bdff-296a1d5e4f27",
+          "text": "No automatic exclusion of weekends is specified. ",
+          "document_id": "bc9cdcdb-0f0d-4e10-83bf-024623aaeceb",
+          "score": 0.0,
+          "metadata": {
+            "ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+            "chunk_index": 2,
+            "chunk_strategy": "sentence",
+            "source_metadata": {
+              "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+              "doc_type": "markdown_module",
+              "language": null,
+              "provider": "ollama",
+              "chunk_text": "No automatic exclusion of weekends is specified. ",
+              "provenance": {
+                "role": {
+                  "basis": "path_convention:docs_dir",
+                  "value": "documentation"
+                },
+                "subject": {
+                  "basis": null,
+                  "value": "selected_repository"
+                },
+                "validity": {
+                  "declared_status": "frozen"
+                },
+                "derivation": {
+                  "status": "source"
+                },
+                "classification": {
+                  "scope": "artifact",
+                  "schema_version": "provenance-v1",
+                  "classifier_version": "role-subject-v2"
+                }
+              },
+              "source_type": "code",
+              "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md",
+              "chunker_name": "text_chunker",
+              "relative_path": "DOCS/evaluations/document-rag-d0/service-levels.md",
+              "chunk_strategy": "sentence",
+              "chunker_params": {
+                "overlap": 20,
+                "chunk_size": 200
+              },
+              "source_metadata": {
+                "canonical_id": "DOCS/evaluations/document-rag-d0/service-levels.md"
+              }
+            },
+            "provider": "ollama"
+          }
+        }
+      ],
+      "source_types": [
+        "code"
+      ],
+      "noncode_eligible_chunks": 0
+    }
+  ],
+  "document_path_filter": {
+    "source_type": {
+      "ne": "code"
+    }
+  },
+  "isolation": "No corpus filter forwarded by simple endpoint; full production corpus isolation not established",
+  "interpretation": "Repository-ingested Markdown is not uploaded-document ingestion. Source-type exclusion is intentional; no claim of a retrieval regression or parser failure.",
+  "answers_requested": 0,
+  "production_mutations": 0,
+  "next_requirement": "Isolated document stack with uploaded fixtures; do not change source-type filtering for this baseline"
+}

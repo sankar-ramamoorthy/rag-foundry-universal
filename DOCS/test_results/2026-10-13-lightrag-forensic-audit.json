@@ -1,0 +1,500 @@
+{
+  "status": "verified",
+  "live_requests": 5,
+  "observed_local_replays": 1,
+  "generation_after": {
+    "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+    "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+    "generation_status": "ready",
+    "commit_sha": "4d0afc1bc36e6a34d4a5895b68efe9413748627a",
+    "ingested_at": "2026-10-13T02:05:33.531663",
+    "parent_generation_id": null,
+    "is_incremental": false
+  },
+  "versions_after": {
+    "ingestion": {
+      "service": "ingestion_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-13T12:37:04Z",
+      "release_version": "prod-2026-10-13-0835am"
+    },
+    "vector": {
+      "service": "vector_store_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-13T12:37:04Z",
+      "release_version": "prod-2026-10-13-0835am"
+    },
+    "llm": {
+      "service": "llm_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-13T12:37:04Z",
+      "release_version": "prod-2026-10-13-0835am"
+    },
+    "rag": {
+      "service": "rag_orchestrator",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "2026-10-13T12:37:04Z",
+      "release_version": "prod-2026-10-13-0835am"
+    }
+  },
+  "explicit_final_manifest_matches_local_observer": true,
+  "actual_generate_context_matches_assembly": true,
+  "context_bytes": 3960,
+  "budget": 4096,
+  "complete_function_labeled_bytes": 5102,
+  "assembly_costs": [
+    {
+      "canonical_id": "lightrag/operate.py",
+      "chunk_index": 289,
+      "chunk_id": "967dee35-5899-439b-b56f-8eba72c4c30d",
+      "used_before": 0,
+      "cost": 1030,
+      "remaining_before": 4096,
+      "kept": true
+    },
+    {
+      "canonical_id": "lightrag/operate.py",
+      "chunk_index": 232,
+      "chunk_id": "30d66c0a-ae3e-4bfe-ae20-6b6665b87149",
+      "used_before": 1030,
+      "cost": 1032,
+      "remaining_before": 3066,
+      "kept": true
+    },
+    {
+      "canonical_id": "lightrag/operate.py",
+      "chunk_index": 291,
+      "chunk_id": "4fd9d6ca-25c8-4604-8cfd-a4cbe1d08e13",
+      "used_before": 2062,
+      "cost": 1032,
+      "remaining_before": 2034,
+      "kept": true
+    },
+    {
+      "canonical_id": "lightrag/operate.py",
+      "chunk_index": 2,
+      "chunk_id": "ccda56b3-658e-42f5-b527-9c274ff873f0",
+      "used_before": 3094,
+      "cost": 1032,
+      "remaining_before": 1002,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py",
+      "chunk_index": 292,
+      "chunk_id": "f28cc632-b230-416c-b458-47e45e7b19bc",
+      "used_before": 3094,
+      "cost": 1032,
+      "remaining_before": 1002,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_query_context",
+      "chunk_index": 0,
+      "chunk_id": "c87e180f-6317-4b0c-a787-8f18ef9d0de9",
+      "used_before": 3094,
+      "cost": 655,
+      "remaining_before": 1002,
+      "kept": true
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_query_context",
+      "chunk_index": 9,
+      "chunk_id": "b86bbcc8-069b-45b8-a15b-722ab850c122",
+      "used_before": 3749,
+      "cost": 479,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_query_context",
+      "chunk_index": 6,
+      "chunk_id": "e1429a41-f23a-4956-a98d-09f9a129d049",
+      "used_before": 3749,
+      "cost": 797,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "AGENTS.md#repository_guidelines.key_implementation_patterns.query_configuration",
+      "chunk_index": 0,
+      "chunk_id": "6efcccca-b919-4775-aae6-d7fdec9a0b36",
+      "used_before": 3749,
+      "cost": 650,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py",
+      "chunk_index": 5,
+      "chunk_id": "4f0325f2-5581-498b-81f4-272018065c5f",
+      "used_before": 3749,
+      "cost": 1061,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py",
+      "chunk_index": 21,
+      "chunk_id": "65453d20-f25b-401e-9fee-2045eb447cd2",
+      "used_before": 3749,
+      "cost": 1061,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py",
+      "chunk_index": 25,
+      "chunk_id": "04316d1d-6c27-448b-80cb-be1f904d568b",
+      "used_before": 3749,
+      "cost": 1061,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_context_str",
+      "chunk_index": 0,
+      "chunk_id": "ea67ed9b-1f6a-4f8e-b556-016c51e4410d",
+      "used_before": 3749,
+      "cost": 1163,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_context_str",
+      "chunk_index": 16,
+      "chunk_id": "d273d59b-ea72-4ac9-8e7b-09f528c758b2",
+      "used_before": 3749,
+      "cost": 890,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_context_str",
+      "chunk_index": 13,
+      "chunk_id": "40f19ebb-d7ab-44f5-963a-7ee190ce88a6",
+      "used_before": 3749,
+      "cost": 547,
+      "remaining_before": 347,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context",
+      "chunk_index": 0,
+      "chunk_id": "5c51e194-b021-45e1-8ab2-0c0e28374f10",
+      "used_before": 3749,
+      "cost": 211,
+      "remaining_before": 347,
+      "kept": true
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py#_fake_build_query_context",
+      "chunk_index": 0,
+      "chunk_id": "8b5297d8-fc53-43ba-b400-e9f366f382be",
+      "used_before": 3960,
+      "cost": 213,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "examples/lightrag_ag2_multiagent_demo.py",
+      "chunk_index": 7,
+      "chunk_id": "1654cc43-e148-4dc4-96ee-0639937c35c1",
+      "used_before": 3960,
+      "cost": 1053,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "examples/lightrag_ag2_multiagent_demo.py",
+      "chunk_index": 2,
+      "chunk_id": "8cc9387f-6871-4808-b375-cd392c736142",
+      "used_before": 3960,
+      "cost": 1053,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "examples/lightrag_ag2_multiagent_demo.py",
+      "chunk_index": 5,
+      "chunk_id": "58f0839a-a29a-4352-88ef-da5219f78ab7",
+      "used_before": 3960,
+      "cost": 1053,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_kg_chunk_selection.py",
+      "chunk_index": 4,
+      "chunk_id": "c02c4f5b-5270-4239-b60b-6021f57db604",
+      "used_before": 3960,
+      "cost": 505,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_kg_chunk_selection.py",
+      "chunk_index": 0,
+      "chunk_id": "fdf9b978-2fe1-487a-834c-5ea22896cca5",
+      "used_before": 3960,
+      "cost": 505,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_kg_chunk_selection.py",
+      "chunk_index": 3,
+      "chunk_id": "f7a5faf0-33c2-4dde-9f92-359b5183246e",
+      "used_before": 3960,
+      "cost": 461,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py#_budget",
+      "chunk_index": 0,
+      "chunk_id": "c5677c58-fe3c-46ba-b272-0160eb49d04c",
+      "used_before": 3960,
+      "cost": 559,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py#_legacy_answer_cache_key",
+      "chunk_index": 4,
+      "chunk_id": "eff02591-a31b-4e83-a2a7-59c4825220ea",
+      "used_before": 3960,
+      "cost": 723,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py#_legacy_answer_cache_key",
+      "chunk_index": 3,
+      "chunk_id": "e11c6f2c-b483-4c7f-aabc-bc8bb404bcaf",
+      "used_before": 3960,
+      "cost": 232,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py#_legacy_answer_cache_key",
+      "chunk_index": 0,
+      "chunk_id": "908937a9-f366-4ca7-8dee-64823e19bea0",
+      "used_before": 3960,
+      "cost": 284,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py",
+      "chunk_index": 12,
+      "chunk_id": "04ecc3f1-621c-4ec9-96fb-2b87aec12dfc",
+      "used_before": 3960,
+      "cost": 1063,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py",
+      "chunk_index": 1,
+      "chunk_id": "58f84d79-17a0-4f88-8a2e-7c79e3e3c0ef",
+      "used_before": 3960,
+      "cost": 1063,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_conversation_history.py",
+      "chunk_index": 7,
+      "chunk_id": "f8239405-59e2-4a4f-b2cd-991be6b4ff79",
+      "used_before": 3960,
+      "cost": 1063,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "tests/llm/test_query_cache_kg_chunk_selection.py#stub_query_context",
+      "chunk_index": 0,
+      "chunk_id": "fb675cc9-c6b1-4c7f-ac54-ec1ec077e632",
+      "used_before": 3960,
+      "cost": 645,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+      "chunk_index": 3,
+      "chunk_id": "13125aa7-40af-4f21-9978-af1b6b3eb370",
+      "used_before": 3960,
+      "cost": 547,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+      "chunk_index": 0,
+      "chunk_id": "c8469b20-c0e2-49d2-9a96-c7f825eeb3f9",
+      "used_before": 3960,
+      "cost": 505,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+      "chunk_index": 9,
+      "chunk_id": "8ce8ea58-3117-4f6a-8c3f-15aeb942105f",
+      "used_before": 3960,
+      "cost": 498,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_most_related_entities_from_relationships",
+      "chunk_index": 0,
+      "chunk_id": "47b460c8-3f8d-43b1-b901-aa83189807ef",
+      "used_before": 3960,
+      "cost": 1132,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_related_text_unit_from_entities",
+      "chunk_index": 2,
+      "chunk_id": "5d0d0f68-f792-46a9-bb78-cc11724ddc45",
+      "used_before": 3960,
+      "cost": 617,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_related_text_unit_from_entities",
+      "chunk_index": 3,
+      "chunk_id": "924ea5db-0569-4e05-bd79-a05f77eedba1",
+      "used_before": 3960,
+      "cost": 428,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_related_text_unit_from_entities",
+      "chunk_index": 0,
+      "chunk_id": "b2398d75-cbca-4b02-a881-235cdf4176e1",
+      "used_before": 3960,
+      "cost": 473,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_most_related_edges_from_entities",
+      "chunk_index": 0,
+      "chunk_id": "bb59cc36-c785-4584-8d40-9aa12dec62cb",
+      "used_before": 3960,
+      "cost": 787,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_most_related_edges_from_entities",
+      "chunk_index": 3,
+      "chunk_id": "efc1f6eb-4086-464f-beca-4404b96eb123",
+      "used_before": 3960,
+      "cost": 348,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_most_related_edges_from_entities",
+      "chunk_index": 2,
+      "chunk_id": "bc122e8a-0426-4b7c-8841-4c6e350c2beb",
+      "used_before": 3960,
+      "cost": 195,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_related_text_unit_from_relations",
+      "chunk_index": 10,
+      "chunk_id": "00b87f1b-a91f-4240-a90f-6d7f595302be",
+      "used_before": 3960,
+      "cost": 538,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_related_text_unit_from_relations",
+      "chunk_index": 2,
+      "chunk_id": "d468e397-a0d8-42fb-8096-05b14e70eb21",
+      "used_before": 3960,
+      "cost": 686,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_find_related_text_unit_from_relations",
+      "chunk_index": 0,
+      "chunk_id": "4651aafa-77cf-4f41-b4b6-07e63a61de5b",
+      "used_before": 3960,
+      "cost": 474,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#kg_query",
+      "chunk_index": 4,
+      "chunk_id": "39ca6671-ecf0-464d-ad3b-72ae4fded3de",
+      "used_before": 3960,
+      "cost": 1041,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#kg_query",
+      "chunk_index": 2,
+      "chunk_id": "fc5cbe72-0b03-4394-860d-2096a3bfc0bb",
+      "used_before": 3960,
+      "cost": 1041,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#kg_query",
+      "chunk_index": 3,
+      "chunk_id": "e33ddf82-90c4-471b-8514-154f22dc90a0",
+      "used_before": 3960,
+      "cost": 1041,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#naive_query",
+      "chunk_index": 10,
+      "chunk_id": "603532ef-889a-4c10-9d13-e3fa7025fe84",
+      "used_before": 3960,
+      "cost": 1044,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#naive_query",
+      "chunk_index": 6,
+      "chunk_id": "8449a5ef-a082-4011-88a7-8312f59ba8ee",
+      "used_before": 3960,
+      "cost": 1044,
+      "remaining_before": 136,
+      "kept": false
+    },
+    {
+      "canonical_id": "lightrag/operate.py#naive_query",
+      "chunk_index": 7,
+      "chunk_id": "6d91951c-0e32-4298-81bb-9d6db2e9275d",
+      "used_before": 3960,
+      "cost": 1044,
+      "remaining_before": 136,
+      "kept": false
+    }
+  ],
+  "within_artifact_rank_top_three_matches_actual_fetch": true,
+  "ranked_vectors_finite": true,
+  "limits": "Direct SQL and DocumentNode.text access unavailable; original UI trace/payloads not provided; local unexposed settings not independently attested, and prebudget candidate pools differ despite identical delivered context."
+}

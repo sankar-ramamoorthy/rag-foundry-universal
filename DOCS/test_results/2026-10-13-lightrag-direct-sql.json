@@ -1,0 +1,2041 @@
+{
+  "captured_at": "2026-10-14T02:56:50.771518+00:00",
+  "connection": {
+    "host": "<tailnet-host>",
+    "port": 5434,
+    "dbname": "ingestion_db",
+    "user": "ingestion_user"
+  },
+  "read_only": true,
+  "queries": [
+    {
+      "sql": "SELECT table_name, column_name, data_type, udt_name, is_nullable\nFROM information_schema.columns\nWHERE table_schema = 'ingestion_service'\n  AND table_name IN ('ingestion_requests', 'document_nodes',\n                     'document_relationships', 'vector_chunks')\nORDER BY table_name, ordinal_position",
+      "rows": [
+        {
+          "table_name": "document_nodes",
+          "column_name": "document_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "repo_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "canonical_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "relative_path",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "symbol_path",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "title",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "summary",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "summary_embedding",
+          "data_type": "USER-DEFINED",
+          "udt_name": "vector",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "source",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "ingestion_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "doc_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "text",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "content_hash",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "document_nodes",
+          "column_name": "provenance",
+          "data_type": "json",
+          "udt_name": "json",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "id",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "from_document_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "to_document_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "relation_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "relationship_metadata",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "created_at",
+          "data_type": "timestamp with time zone",
+          "udt_name": "timestamptz",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "document_relationships",
+          "column_name": "repo_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "ingestion_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "source_type",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "ingestion_metadata",
+          "data_type": "json",
+          "udt_name": "json",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "status",
+          "data_type": "character varying",
+          "udt_name": "varchar",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "created_at",
+          "data_type": "timestamp without time zone",
+          "udt_name": "timestamp",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "started_at",
+          "data_type": "timestamp without time zone",
+          "udt_name": "timestamp",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "finished_at",
+          "data_type": "timestamp without time zone",
+          "udt_name": "timestamp",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "repo_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "commit_sha",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "parent_generation_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "is_incremental",
+          "data_type": "boolean",
+          "udt_name": "bool",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "chunking_config_version",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "embedding_config_version",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "ingestion_requests",
+          "column_name": "structural_summary",
+          "data_type": "json",
+          "udt_name": "json",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "id",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "vector",
+          "data_type": "USER-DEFINED",
+          "udt_name": "vector",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "ingestion_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "chunk_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "chunk_index",
+          "data_type": "integer",
+          "udt_name": "int4",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "chunk_strategy",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "chunk_text",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "source_metadata",
+          "data_type": "jsonb",
+          "udt_name": "jsonb",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "provider",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "NO"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "document_id",
+          "data_type": "uuid",
+          "udt_name": "uuid",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "repo_id",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "doc_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "source_type",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        },
+        {
+          "table_name": "vector_chunks",
+          "column_name": "language",
+          "data_type": "text",
+          "udt_name": "text",
+          "is_nullable": "YES"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT ingestion_id, repo_id, status, commit_sha, created_at, started_at,\n       finished_at, parent_generation_id, is_incremental,\n       chunking_config_version, embedding_config_version\nFROM ingestion_service.ingestion_requests\nWHERE repo_id::text = '4f76a36f-caf8-5532-9ee2-977ec412ed6c'\nORDER BY created_at DESC",
+      "rows": [
+        {
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "status": "completed",
+          "commit_sha": "4d0afc1bc36e6a34d4a5895b68efe9413748627a",
+          "created_at": "2026-10-13 00:50:44.820358",
+          "started_at": "2026-10-13 00:50:45.501683",
+          "finished_at": "2026-10-13 02:05:33.531663",
+          "parent_generation_id": null,
+          "is_incremental": false,
+          "chunking_config_version": "heuristic-v1",
+          "embedding_config_version": "ollama:mxbai-embed-large:latest"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT document_id, canonical_id, relative_path, symbol_path, ingestion_id,\n       doc_type, content_hash, octet_length(text) AS text_bytes,\n       md5(text) AS text_md5, text\nFROM ingestion_service.document_nodes\nWHERE repo_id::text = '4f76a36f-caf8-5532-9ee2-977ec412ed6c'\n  AND canonical_id IN ('lightrag/operate.py#_build_query_context',\n                       'lightrag/operate.py#_apply_token_truncation',\n                       'lightrag/operate.py#_build_context_str')\nORDER BY canonical_id",
+      "rows": [
+        {
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "relative_path": "lightrag/operate.py",
+          "symbol_path": null,
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "doc_type": "python source",
+          "content_hash": null,
+          "text_bytes": 9050,
+          "text_md5": "06f788a2d379de5942a2f9bcb24b8fc1",
+          "text": "async def _apply_token_truncation(\n    search_result: dict[str, Any],\n    query_param: QueryParam,\n    global_config: dict[str, str],\n) -> dict[str, Any]:\n    \"\"\"\n    Apply token-based truncation to entities and relations for LLM efficiency.\n\n    Returns ``entities_context`` / ``relations_context`` (the records handed to\n    the prompt) plus ``filtered_entities`` / ``filtered_relations`` (the matching\n    original records handed to chunk selection).\n\n    Ordering rule for any selector added here: the ``*_context`` lists are this\n    stage's output and the only importance ranking downstream sees. The\n    ``filtered_*`` lists MUST follow that same order -- stage 3 attributes a\n    shared chunk to the earlier-positioned record and allocates chunk quota by\n    list position -- so a selector that reorders must not leave the\n    ``filtered_*`` lists in stage-1 retrieval order.\n\n    A selector may reorder and drop, but must not invent: a ``*_context``\n    record naming an entity or relation that was not in this stage's input\n    cannot be resolved back to an original, so it reaches the prompt but is\n    dropped from ``filtered_*`` with a warning.\n    \"\"\"\n    tokenizer = global_config.get(\"tokenizer\")\n    if not tokenizer:\n        logger.warning(\"No tokenizer found, skipping truncation\")\n        return {\n            \"entities_context\": [],\n            \"relations_context\": [],\n            \"filtered_entities\": search_result[\"final_entities\"],\n            \"filtered_relations\": search_result[\"final_relations\"],\n            \"entity_id_to_original\": {},\n            \"relation_id_to_original\": {},\n        }\n\n    # Get token limits from query_param with fallbacks\n    max_entity_tokens = getattr(\n        query_param,\n        \"max_entity_tokens\",\n        global_config.get(\"max_entity_tokens\", DEFAULT_MAX_ENTITY_TOKENS),\n    )\n    max_relation_tokens = getattr(\n        query_param,\n        \"max_relation_tokens\",\n        global_config.get(\"max_relation_tokens\", DEFAULT_MAX_RELATION_TOKENS),\n    )\n\n    final_entities = search_result[\"final_entities\"]\n    final_relations = search_result[\"final_relations\"]\n\n    # Create mappings from entity/relation identifiers to original data\n    entity_id_to_original = {}\n    relation_id_to_original = {}\n\n    # Generate entities context for truncation\n    entities_context = []\n    for i, entity in enumerate(final_entities):\n        entity_name = entity[\"entity_name\"]\n        created_at = entity.get(\"created_at\", \"UNKNOWN\")\n        if isinstance(created_at, (int, float)):\n            created_at = time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime(created_at))\n\n        # Store mapping from entity name to original data.\n        # First occurrence wins: the filtered rebuild below resolves records\n        # through this map, and duplicate names must keep the record that was\n        # retrieved first. Accepted divergence if a name ever repeats: the\n        # prompt shows the context row a reordering selector picked, while\n        # filtered_* carries the first-retrieved original. Unreachable today --\n        # stage 1 already dedups entities by name and relations by sorted pair.\n        entity_id_to_original.setdefault(entity_name, entity)\n\n        entities_context.append(\n            {\n                \"entity\": entity_name,\n                \"type\": entity.get(\"entity_type\", \"UNKNOWN\"),\n                \"description\": entity.get(\"description\", \"UNKNOWN\"),\n                \"created_at\": created_at,\n                \"file_path\": entity.get(\"file_path\", \"unknown_source\"),\n            }\n        )\n\n    # Generate relations context for truncation\n    relations_context = []\n    for i, relation in enumerate(final_relations):\n        created_at = relation.get(\"created_at\", \"UNKNOWN\")\n        if isinstance(created_at, (int, float)):\n            created_at = time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime(created_at))\n\n        # Handle different relation data formats\n        if \"src_tgt\" in relation:\n            entity1, entity2 = relation[\"src_tgt\"]\n        else:\n            entity1, entity2 = relation.get(\"src_id\"), relation.get(\"tgt_id\")\n\n        # Store mapping from relation pair to original data.\n        # First occurrence wins, with the same rule and the same accepted\n        # divergence as entities above.\n        relation_key = (entity1, entity2)\n        relation_id_to_original.setdefault(relation_key, relation)\n\n        relations_context.append(\n            {\n                \"entity1\": entity1,\n                \"entity2\": entity2,\n                \"description\": relation.get(\"description\", \"UNKNOWN\"),\n                \"created_at\": created_at,\n                \"file_path\": relation.get(\"file_path\", \"unknown_source\"),\n            }\n        )\n\n    logger.debug(\n        f\"Before truncation: {len(entities_context)} entities, {len(relations_context)} relations\"\n    )\n\n    # Apply token-based truncation\n    if entities_context:\n        # Remove file_path and created_at for token calculation\n        entities_context_for_truncation = []\n        for entity in entities_context:\n            entity_copy = entity.copy()\n            entity_copy.pop(\"file_path\", None)\n            entity_copy.pop(\"created_at\", None)\n            entities_context_for_truncation.append(entity_copy)\n\n        entities_context = await atruncate_list_by_token_size(\n            entities_context_for_truncation,\n            key=lambda x: json.dumps(x, ensure_ascii=False),\n            separator=\"\\n\",\n            max_token_size=max_entity_tokens,\n            tokenizer=tokenizer,\n        )\n\n    if relations_context:\n        # Remove file_path and created_at for token calculation\n        relations_context_for_truncation = []\n        for relation in relations_context:\n            relation_copy = relation.copy()\n            relation_copy.pop(\"file_path\", None)\n            relation_copy.pop(\"created_at\", None)\n            relations_context_for_truncation.append(relation_copy)\n\n        relations_context = await atruncate_list_by_token_size(\n            relations_context_for_truncation,\n            key=lambda x: json.dumps(x, ensure_ascii=False),\n            separator=\"\\n\",\n            max_token_size=max_relation_tokens,\n            tokenizer=tokenizer,\n        )\n\n    logger.info(\n        f\"After truncation: {len(entities_context)} entities, {len(relations_context)} relations\"\n    )\n\n    # Create filtered original data based on truncated context.\n    #\n    # Walk the *_context lists (this stage's own output order) and resolve each\n    # record through the pre-truncation maps. Stage 2's order is the single\n    # source of truth for downstream importance: stage 3 deduplicates chunk\n    # attribution by first occurrence and hands the list to\n    # pick_by_weighted_polling, whose quota decreases with list position. Do NOT\n    # rebuild these by filtering final_entities / final_relations -- that\n    # reimposes stage-1 retrieval order and silently discards any reordering a\n    # stage-2 selector (e.g. a reranker) performed.\n    #\n    # A context record that resolves to nothing was invented or renamed by a\n    # stage-2 selector: it reaches the prompt but cannot reach chunk selection,\n    # so it is dropped here and reported rather than lost silently.\n    filtered_entities = []\n    filtered_entity_id_to_original = {}\n    unresolved_entities = []\n    for entity_context in entities_context:\n        name = entity_context.get(\"entity\")\n        if name in filtered_entity_id_to_original:\n            continue\n        original = entity_id_to_original.get(name)\n        if original is None:\n            unresolved_entities.append(name)\n            continue\n        filtered_entities.append(original)\n        filtered_entity_id_to_original[name] = original\n\n    if unresolved_entities:\n        logger.warning(\n            f\"Dropping {len(unresolved_entities)} entity records absent from the \"\n            f\"pre-truncation map: {unresolved_entities[:5]}\"\n        )\n\n    filtered_relations = []\n    filtered_relation_id_to_original = {}\n    unresolved_relations = []\n    for relation_context in relations_context:\n        pair = (relation_context.get(\"entity1\"), relation_context.get(\"entity2\"))\n        if pair in filtered_relation_id_to_original:\n            continue\n        original = relation_id_to_original.get(pair)\n        if original is None:\n            unresolved_relations.append(pair)\n            continue\n        filtered_relations.append(original)\n        filtered_relation_id_to_original[pair] = original\n\n    if unresolved_relations:\n        logger.warning(\n            f\"Dropping {len(unresolved_relations)} relation records absent from the \"\n            f\"pre-truncation map: {unresolved_relations[:5]}\"\n        )\n\n    return {\n        \"entities_context\": entities_context,\n        \"relations_context\": relations_context,\n        \"filtered_entities\": filtered_entities,\n        \"filtered_relations\": filtered_relations,\n        \"entity_id_to_original\": filtered_entity_id_to_original,\n        \"relation_id_to_original\": filtered_relation_id_to_original,\n    }"
+        },
+        {
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "relative_path": "lightrag/operate.py",
+          "symbol_path": null,
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "doc_type": "python source",
+          "content_hash": null,
+          "text_bytes": 8142,
+          "text_md5": "bfc1ecfec871bd3e73df1d7931638de6",
+          "text": "async def _build_context_str(\n    entities_context: list[dict],\n    relations_context: list[dict],\n    merged_chunks: list[dict],\n    query: str,\n    query_param: QueryParam,\n    global_config: dict[str, str],\n    chunk_tracking: dict = None,\n    entity_id_to_original: dict = None,\n    relation_id_to_original: dict = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> tuple[str, dict[str, Any]]:\n    \"\"\"\n    Build the final LLM context string with token processing.\n    This includes dynamic token calculation and final chunk truncation.\n    \"\"\"\n    tokenizer = global_config.get(\"tokenizer\")\n    if not tokenizer:\n        logger.error(\"Missing tokenizer, cannot build LLM context\")\n        # Return empty raw data structure when no tokenizer\n        empty_raw_data = convert_to_user_format(\n            [],\n            [],\n            [],\n            [],\n            query_param.mode,\n        )\n        empty_raw_data[\"status\"] = \"failure\"\n        empty_raw_data[\"message\"] = \"Missing tokenizer, cannot build LLM context.\"\n        return \"\", empty_raw_data\n\n    # Get token limits\n    max_total_tokens = getattr(\n        query_param,\n        \"max_total_tokens\",\n        global_config.get(\"max_total_tokens\", DEFAULT_MAX_TOTAL_TOKENS),\n    )\n\n    # Budget against the template that will ACTUALLY be rendered. `kg_query`\n    # picks its template after this function returns, so without the forwarded\n    # `system_prompt` the estimate silently used the default one -- charging a\n    # caller's custom template at the wrong size, and charging the prefix even\n    # when that template has no {user_prompt} placeholder to render it into.\n    # `system_prompt_template` is kept as a lower-priority fallback: nothing in\n    # this repo writes it, but a downstream user may set it on their own config.\n    sys_prompt_template = (\n        system_prompt\n        or global_config.get(\"system_prompt_template\")\n        or PROMPTS[\"rag_response\"]\n    )\n\n    kg_context_template = PROMPTS[\"kg_query_context\"]\n    # `.text`, not `.slot`: this only sizes the token budget, and `.text`'s empty\n    # fallback matches what this line used before the prefix existed, so an\n    # unconfigured prefix changes no estimate. A configured one IS counted here,\n    # which is the point -- otherwise a long prefix would overfill the context.\n    effective_user_prompt = resolve_user_prompt(\n        query_param.user_prompt,\n        global_config.get(\"user_prompt_prefix\", \"\"),\n        query_param.disable_user_prompt_prefix,\n    )\n    response_type = (\n        query_param.response_type\n        if query_param.response_type\n        else \"Multiple Paragraphs\"\n    )\n\n    entities_str = \"\\n\".join(\n        json.dumps(entity, ensure_ascii=False) for entity in entities_context\n    )\n    relations_str = \"\\n\".join(\n        json.dumps(relation, ensure_ascii=False) for relation in relations_context\n    )\n\n    # Calculate preliminary kg context tokens\n    pre_kg_context = kg_context_template.format(\n        entities_str=entities_str,\n        relations_str=relations_str,\n        text_chunks_str=\"\",\n        reference_list_str=\"\",\n    )\n    kg_context_tokens = await acount_tokens(tokenizer, pre_kg_context)\n\n    # Calculate preliminary system prompt tokens\n    # Charged even on the only_need_context path, which returns before this\n    # prompt is ever rendered. That is deliberate, not waste: only_need_context\n    # and only_need_prompt are debug switches whose job is to PREVIEW the real\n    # request. Skipping the charge here would make them report more chunks than\n    # a real query retrieves, so an operator would size their context against a\n    # number the live path never delivers.\n    pre_sys_prompt = sys_prompt_template.format(\n        context_data=\"\",  # Empty for overhead calculation\n        response_type=response_type,\n        user_prompt=effective_user_prompt.text,\n    )\n    sys_prompt_tokens = await acount_tokens(tokenizer, pre_sys_prompt)\n\n    # Calculate available tokens for text chunks\n    query_tokens = await acount_tokens(tokenizer, query)\n    buffer_tokens = 200  # reserved for reference list and safety buffer\n    available_chunk_tokens = max_total_tokens - (\n        sys_prompt_tokens + kg_context_tokens + query_tokens + buffer_tokens\n    )\n\n    logger.debug(\n        f\"Token allocation - Total: {max_total_tokens}, SysPrompt: {sys_prompt_tokens}, Query: {query_tokens}, KG: {kg_context_tokens}, Buffer: {buffer_tokens}, Available for chunks: {available_chunk_tokens}\"\n    )\n\n    # Apply token truncation to chunks using the dynamic limit\n    truncated_chunks = await process_chunks_unified(\n        query=query,\n        unique_chunks=merged_chunks,\n        query_param=query_param,\n        global_config=global_config,\n        source_type=query_param.mode,\n        chunk_token_limit=available_chunk_tokens,  # Pass dynamic limit\n        progress_callback=progress_callback,\n    )\n\n    # Generate reference list from truncated chunks using the new common function\n    reference_list, truncated_chunks = generate_reference_list_from_chunks(\n        truncated_chunks\n    )\n\n    # Rebuild chunks_context with truncated chunks\n    # The actual tokens may be slightly less than available_chunk_tokens due to deduplication logic\n    text_units_str = render_chunks_context_text(truncated_chunks)\n    chunks_context = [\n        {\"reference_id\": chunk[\"reference_id\"], \"content\": chunk[\"content\"]}\n        for chunk in truncated_chunks\n    ]\n    reference_list_str = \"\\n\".join(\n        f\"[{ref['reference_id']}] {ref['file_path']}\"\n        for ref in reference_list\n        if ref[\"reference_id\"]\n    )\n\n    logger.info(\n        f\"Final context: {len(entities_context)} entities, {len(relations_context)} relations, {len(chunks_context)} chunks\"\n    )\n\n    # not necessary to use LLM to generate a response\n    if not entities_context and not relations_context and not chunks_context:\n        # Return empty raw data structure when no entities/relations\n        empty_raw_data = convert_to_user_format(\n            [],\n            [],\n            [],\n            [],\n            query_param.mode,\n        )\n        empty_raw_data[\"status\"] = \"failure\"\n        empty_raw_data[\"message\"] = \"Query returned empty dataset.\"\n        return \"\", empty_raw_data\n\n    # output chunks tracking infomations\n    # format: <source><frequency>/<order> (e.g., E5/2 R2/1 C1/1)\n    if truncated_chunks and chunk_tracking:\n        chunk_tracking_log = []\n        for chunk in truncated_chunks:\n            chunk_id = chunk.get(\"chunk_id\")\n            if chunk_id and chunk_id in chunk_tracking:\n                tracking_info = chunk_tracking[chunk_id]\n                source = tracking_info[\"source\"]\n                frequency = tracking_info[\"frequency\"]\n                order = tracking_info[\"order\"]\n                chunk_tracking_log.append(f\"{source}{frequency}/{order}\")\n            else:\n                chunk_tracking_log.append(\"?0/0\")\n\n        if chunk_tracking_log:\n            logger.info(f\"Final chunks S+F/O: {' '.join(chunk_tracking_log)}\")\n\n    result = kg_context_template.format(\n        entities_str=entities_str,\n        relations_str=relations_str,\n        text_chunks_str=text_units_str,\n        reference_list_str=reference_list_str,\n    )\n\n    # Always return both context and complete data structure (unified approach)\n    logger.debug(\n        f\"[_build_context_str] Converting to user format: {len(entities_context)} entities, {len(relations_context)} relations, {len(truncated_chunks)} chunks\"\n    )\n    final_data = convert_to_user_format(\n        entities_context,\n        relations_context,\n        truncated_chunks,\n        reference_list,\n        query_param.mode,\n        entity_id_to_original,\n        relation_id_to_original,\n    )\n    final_data_payload = final_data.get(\"data\", {})\n    logger.debug(\n        f\"[_build_context_str] Final data after conversion: {len(final_data_payload.get('entities', []))} entities, {len(final_data_payload.get('relationships', []))} relationships, {len(final_data_payload.get('chunks', []))} chunks\"\n    )\n    return result, final_data"
+        },
+        {
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "relative_path": "lightrag/operate.py",
+          "symbol_path": null,
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "doc_type": "python source",
+          "content_hash": null,
+          "text_bytes": 4644,
+          "text_md5": "a650548f50b90c91bc55c47770fa07d0",
+          "text": "async def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n    Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n\n    if not query:\n        logger.warning(\"Query is empty, skipping context building\")\n        return None\n\n    # Stage 1: Pure search\n    search_result = await _perform_kg_search(\n        query,\n        ll_keywords,\n        hl_keywords,\n        knowledge_graph_inst,\n        entities_vdb,\n        relationships_vdb,\n        text_chunks_db,\n        query_param,\n        chunks_vdb,\n        progress_callback=progress_callback,\n    )\n\n    if not search_result[\"final_entities\"] and not search_result[\"final_relations\"]:\n        if query_param.mode != \"mix\":\n            return None\n        else:\n            if not search_result[\"chunk_tracking\"]:\n                return None\n\n    # Stage 2: Apply token truncation for LLM efficiency\n    truncation_result = await _apply_token_truncation(\n        search_result,\n        query_param,\n        text_chunks_db.global_config,\n    )\n\n    # Stage 3: Merge chunks using filtered entities/relations\n    merged_chunks = await _merge_all_chunks(\n        filtered_entities=truncation_result[\"filtered_entities\"],\n        filtered_relations=truncation_result[\"filtered_relations\"],\n        vector_chunks=search_result[\"vector_chunks\"],\n        query=query,\n        knowledge_graph_inst=knowledge_graph_inst,\n        text_chunks_db=text_chunks_db,\n        query_param=query_param,\n        chunks_vdb=chunks_vdb,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        query_embedding=search_result[\"query_embedding\"],\n    )\n\n    if (\n        not merged_chunks\n        and not truncation_result[\"entities_context\"]\n        and not truncation_result[\"relations_context\"]\n    ):\n        return None\n\n    # Stage 4: Build final LLM context with dynamic token processing\n    # _build_context_str now always returns tuple[str, dict]\n    context, raw_data = await _build_context_str(\n        entities_context=truncation_result[\"entities_context\"],\n        relations_context=truncation_result[\"relations_context\"],\n        merged_chunks=merged_chunks,\n        query=query,\n        query_param=query_param,\n        global_config=text_chunks_db.global_config,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        entity_id_to_original=truncation_result[\"entity_id_to_original\"],\n        relation_id_to_original=truncation_result[\"relation_id_to_original\"],\n        progress_callback=progress_callback,\n        system_prompt=system_prompt,\n    )\n\n    # Convert keywords strings to lists and add complete metadata to raw_data\n    hl_keywords_list = hl_keywords.split(\", \") if hl_keywords else []\n    ll_keywords_list = ll_keywords.split(\", \") if ll_keywords else []\n\n    # Add complete metadata to raw_data (preserve existing metadata including query_mode)\n    if \"metadata\" not in raw_data:\n        raw_data[\"metadata\"] = {}\n\n    # Update keywords while preserving existing metadata\n    raw_data[\"metadata\"][\"keywords\"] = {\n        \"high_level\": hl_keywords_list,\n        \"low_level\": ll_keywords_list,\n    }\n    raw_data[\"metadata\"][\"processing_info\"] = {\n        \"total_entities_found\": len(search_result.get(\"final_entities\", [])),\n        \"total_relations_found\": len(search_result.get(\"final_relations\", [])),\n        \"entities_after_truncation\": len(\n            truncation_result.get(\"filtered_entities\", [])\n        ),\n        \"relations_after_truncation\": len(\n            truncation_result.get(\"filtered_relations\", [])\n        ),\n        \"merged_chunks_count\": len(merged_chunks),\n        \"final_chunks_count\": len(raw_data.get(\"data\", {}).get(\"chunks\", [])),\n    }\n\n    logger.debug(\n        f\"[_build_query_context] Context length: {len(context) if context else 0}\"\n    )\n    logger.debug(\n        f\"[_build_query_context] Raw data entities: {len(raw_data.get('data', {}).get('entities', []))}, relationships: {len(raw_data.get('data', {}).get('relationships', []))}, chunks: {len(raw_data.get('data', {}).get('chunks', []))}\"\n    )\n\n    return QueryContextResult(context=context, raw_data=raw_data)"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT dn.canonical_id, vc.document_id, vc.ingestion_id, vc.chunk_id,\n       vc.chunk_index, vc.chunk_strategy, vc.provider,\n       vector_dims(vc.vector) AS embedding_dimensions,\n       vc.source_metadata->>'canonical_id' AS metadata_canonical_id,\n       vc.source_metadata->>'repo_id' AS metadata_repo_id,\n       vc.source_metadata->>'source_type' AS source_type,\n       octet_length(vc.chunk_text) AS text_bytes, vc.chunk_text\nFROM ingestion_service.vector_chunks vc\nJOIN ingestion_service.document_nodes dn ON dn.document_id = vc.document_id\nWHERE dn.repo_id::text = '4f76a36f-caf8-5532-9ee2-977ec412ed6c'\n  AND vc.ingestion_id::text = '128c494e-0aae-4e1d-81d0-b7e52f2006b1'\n  AND dn.canonical_id IN ('lightrag/operate.py#_build_query_context',\n                         'lightrag/operate.py#_apply_token_truncation',\n                         'lightrag/operate.py#_build_context_str')\nORDER BY dn.canonical_id, vc.chunk_index, vc.chunk_id",
+      "rows": [
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "c8469b20-c0e2-49d2-9a96-c7f825eeb3f9",
+          "chunk_index": 0,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 449,
+          "chunk_text": "async def _apply_token_truncation(\n    search_result: dict[str, Any],\n    query_param: QueryParam,\n    global_config: dict[str, str],\n) -> dict[str, Any]:\n    \"\"\"\n    Apply token-based truncation to entities and relations for LLM efficiency.\n\nReturns ``entities_context`` / ``relations_context`` (the records handed to\n    the prompt) plus ``filtered_entities`` / ``filtered_relations`` (the matching\n    original records handed to chunk selection)."
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "3e0184d3-bf86-4c0b-b0c6-38e649fdf327",
+          "chunk_index": 1,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 424,
+          "chunk_text": "Ordering rule for any selector added here: the ``*_context`` lists are this\n    stage's output and the only importance ranking downstream sees. The\n    ``filtered_*`` lists MUST follow that same order -- stage 3 attributes a\n    shared chunk to the earlier-positioned record and allocates chunk quota by\n    list position -- so a selector that reorders must not leave the\n    ``filtered_*`` lists in stage-1 retrieval order."
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "4bc69472-8691-4420-9839-e94e901702be",
+          "chunk_index": 2,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 729,
+          "chunk_text": "A selector may reorder and drop, but must not invent: a ``*_context``\n    record naming an entity or relation that was not in this stage's input\n    cannot be resolved back to an original, so it reaches the prompt but is\n    dropped from ``filtered_*`` with a warning.\n    \"\"\"\n    tokenizer = global_config.get(\"tokenizer\")\n    if not tokenizer:\n        logger.warning(\"No tokenizer found, skipping truncation\")\n        return {\n            \"entities_context\": [],\n            \"relations_context\": [],\n            \"filtered_entities\": search_result[\"final_entities\"],\n            \"filtered_relations\": search_result[\"final_relations\"],\n            \"entity_id_to_original\": {},\n            \"relation_id_to_original\": {},\n        }"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "13125aa7-40af-4f21-9978-af1b6b3eb370",
+          "chunk_index": 3,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 491,
+          "chunk_text": "# Get token limits from query_param with fallbacks\n    max_entity_tokens = getattr(\n        query_param,\n        \"max_entity_tokens\",\n        global_config.get(\"max_entity_tokens\", DEFAULT_MAX_ENTITY_TOKENS),\n    )\n    max_relation_tokens = getattr(\n        query_param,\n        \"max_relation_tokens\",\n        global_config.get(\"max_relation_tokens\", DEFAULT_MAX_RELATION_TOKENS),\n    )\n\nfinal_entities = search_result[\"final_entities\"]\n    final_relations = search_result[\"final_relations\"]"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "20c4727d-e5a5-41ca-b5ea-9d8519d63f1f",
+          "chunk_index": 4,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 487,
+          "chunk_text": "# Create mappings from entity/relation identifiers to original data\n    entity_id_to_original = {}\n    relation_id_to_original = {}\n\n# Generate entities context for truncation\n    entities_context = []\n    for i, entity in enumerate(final_entities):\n        entity_name = entity[\"entity_name\"]\n        created_at = entity.get(\"created_at\", \"UNKNOWN\")\n        if isinstance(created_at, (int, float)):\n            created_at = time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime(created_at))"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "121518e4-d037-4c19-bf0b-90ee3aaa837e",
+          "chunk_index": 5,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 577,
+          "chunk_text": "# Store mapping from entity name to original data.\n        # First occurrence wins: the filtered rebuild below resolves records\n        # through this map, and duplicate names must keep the record that was\n        # retrieved first. Accepted divergence if a name ever repeats: the\n        # prompt shows the context row a reordering selector picked, while\n        # filtered_* carries the first-retrieved original. Unreachable today --\n        # stage 1 already dedups entities by name and relations by sorted pair.\n        entity_id_to_original.setdefault(entity_name, entity)"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "c172b131-62d7-42c6-b8c8-20174009dbb8",
+          "chunk_index": 6,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 346,
+          "chunk_text": "entities_context.append(\n            {\n                \"entity\": entity_name,\n                \"type\": entity.get(\"entity_type\", \"UNKNOWN\"),\n                \"description\": entity.get(\"description\", \"UNKNOWN\"),\n                \"created_at\": created_at,\n                \"file_path\": entity.get(\"file_path\", \"unknown_source\"),\n            }\n        )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "eaad5be0-7c9d-49db-968e-0c513d60a733",
+          "chunk_index": 7,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 317,
+          "chunk_text": "# Generate relations context for truncation\n    relations_context = []\n    for i, relation in enumerate(final_relations):\n        created_at = relation.get(\"created_at\", \"UNKNOWN\")\n        if isinstance(created_at, (int, float)):\n            created_at = time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime(created_at))"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "dc94907a-a213-4470-8b01-84f076d8b483",
+          "chunk_index": 8,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 494,
+          "chunk_text": "# Handle different relation data formats\n        if \"src_tgt\" in relation:\n            entity1, entity2 = relation[\"src_tgt\"]\n        else:\n            entity1, entity2 = relation.get(\"src_id\"), relation.get(\"tgt_id\")\n\n# Store mapping from relation pair to original data.\n        # First occurrence wins, with the same rule and the same accepted\n        # divergence as entities above.\n        relation_key = (entity1, entity2)\n        relation_id_to_original.setdefault(relation_key, relation)"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "8ce8ea58-3117-4f6a-8c3f-15aeb942105f",
+          "chunk_index": 9,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 442,
+          "chunk_text": "relations_context.append(\n            {\n                \"entity1\": entity1,\n                \"entity2\": entity2,\n                \"description\": relation.get(\"description\", \"UNKNOWN\"),\n                \"created_at\": created_at,\n                \"file_path\": relation.get(\"file_path\", \"unknown_source\"),\n            }\n        )\n\nlogger.debug(\n        f\"Before truncation: {len(entities_context)} entities, {len(relations_context)} relations\"\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "07ce20c0-91fb-44b3-9c6f-9446cdd9d907",
+          "chunk_index": 10,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 403,
+          "chunk_text": "# Apply token-based truncation\n    if entities_context:\n        # Remove file_path and created_at for token calculation\n        entities_context_for_truncation = []\n        for entity in entities_context:\n            entity_copy = entity.copy()\n            entity_copy.pop(\"file_path\", None)\n            entity_copy.pop(\"created_at\", None)\n            entities_context_for_truncation.append(entity_copy)"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "c9588260-b484-4eb1-9bcf-e18ec17ea08b",
+          "chunk_index": 11,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 277,
+          "chunk_text": "entities_context = await atruncate_list_by_token_size(\n            entities_context_for_truncation,\n            key=lambda x: json.dumps(x, ensure_ascii=False),\n            separator=\"\\n\",\n            max_token_size=max_entity_tokens,\n            tokenizer=tokenizer,\n        )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "6f666c26-0739-46e8-b64e-f476b0149188",
+          "chunk_index": 12,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 384,
+          "chunk_text": "if relations_context:\n        # Remove file_path and created_at for token calculation\n        relations_context_for_truncation = []\n        for relation in relations_context:\n            relation_copy = relation.copy()\n            relation_copy.pop(\"file_path\", None)\n            relation_copy.pop(\"created_at\", None)\n            relations_context_for_truncation.append(relation_copy)"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "8140a615-6c35-41dd-97f4-05ef2652bac1",
+          "chunk_index": 13,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 399,
+          "chunk_text": "relations_context = await atruncate_list_by_token_size(\n            relations_context_for_truncation,\n            key=lambda x: json.dumps(x, ensure_ascii=False),\n            separator=\"\\n\",\n            max_token_size=max_relation_tokens,\n            tokenizer=tokenizer,\n        )\n\nlogger.info(\n        f\"After truncation: {len(entities_context)} entities, {len(relations_context)} relations\"\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "6c203cf4-f2aa-4b5c-9711-f79548f8236f",
+          "chunk_index": 14,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 1375,
+          "chunk_text": "# Create filtered original data based on truncated context.\n    #\n    # Walk the *_context lists (this stage's own output order) and resolve each\n    # record through the pre-truncation maps. Stage 2's order is the single\n    # source of truth for downstream importance: stage 3 deduplicates chunk\n    # attribution by first occurrence and hands the list to\n    # pick_by_weighted_polling, whose quota decreases with list position. Do NOT\n    # rebuild these by filtering final_entities / final_relations -- that\n    # reimposes stage-1 retrieval order and silently discards any reordering a\n    # stage-2 selector (e.g. a reranker) performed.\n    #\n    # A context record that resolves to nothing was invented or renamed by a\n    # stage-2 selector: it reaches the prompt but cannot reach chunk selection,\n    # so it is dropped here and reported rather than lost silently.\n    filtered_entities = []\n    filtered_entity_id_to_original = {}\n    unresolved_entities = []\n    for entity_context in entities_context:\n        name = entity_context.get(\"entity\")\n        if name in filtered_entity_id_to_original:\n            continue\n        original = entity_id_to_original.get(name)\n        if original is None:\n            unresolved_entities.append(name)\n            continue\n        filtered_entities.append(original)\n        filtered_entity_id_to_original[name] = original"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "18ab8c3c-2b79-40ba-b8fc-7f3b29824118",
+          "chunk_index": 15,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 201,
+          "chunk_text": "if unresolved_entities:\n        logger.warning(\n            f\"Dropping {len(unresolved_entities)} entity records absent from the \"\n            f\"pre-truncation map: {unresolved_entities[:5]}\"\n        )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "8d617321-b384-409d-b511-cdd3a8c11dc3",
+          "chunk_index": 16,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 549,
+          "chunk_text": "filtered_relations = []\n    filtered_relation_id_to_original = {}\n    unresolved_relations = []\n    for relation_context in relations_context:\n        pair = (relation_context.get(\"entity1\"), relation_context.get(\"entity2\"))\n        if pair in filtered_relation_id_to_original:\n            continue\n        original = relation_id_to_original.get(pair)\n        if original is None:\n            unresolved_relations.append(pair)\n            continue\n        filtered_relations.append(original)\n        filtered_relation_id_to_original[pair] = original"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "d1f6831e-2a3d-431c-9d72-7325f5674457",
+          "chunk_index": 17,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 206,
+          "chunk_text": "if unresolved_relations:\n        logger.warning(\n            f\"Dropping {len(unresolved_relations)} relation records absent from the \"\n            f\"pre-truncation map: {unresolved_relations[:5]}\"\n        )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "8f4781b3-84d3-4daf-9f3b-9bbc43e2364e",
+          "chunk_index": 18,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 340,
+          "chunk_text": "return {\n        \"entities_context\": entities_context,\n        \"relations_context\": relations_context,\n        \"filtered_entities\": filtered_entities,\n        \"filtered_relations\": filtered_relations,\n        \"entity_id_to_original\": filtered_entity_id_to_original,\n        \"relation_id_to_original\": filtered_relation_id_to_original,\n    }"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "ea67ed9b-1f6a-4f8e-b556-016c51e4410d",
+          "chunk_index": 0,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 1112,
+          "chunk_text": "async def _build_context_str(\n    entities_context: list[dict],\n    relations_context: list[dict],\n    merged_chunks: list[dict],\n    query: str,\n    query_param: QueryParam,\n    global_config: dict[str, str],\n    chunk_tracking: dict = None,\n    entity_id_to_original: dict = None,\n    relation_id_to_original: dict = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> tuple[str, dict[str, Any]]:\n    \"\"\"\n    Build the final LLM context string with token processing.\n    This includes dynamic token calculation and final chunk truncation.\n    \"\"\"\n    tokenizer = global_config.get(\"tokenizer\")\n    if not tokenizer:\n        logger.error(\"Missing tokenizer, cannot build LLM context\")\n        # Return empty raw data structure when no tokenizer\n        empty_raw_data = convert_to_user_format(\n            [],\n            [],\n            [],\n            [],\n            query_param.mode,\n        )\n        empty_raw_data[\"status\"] = \"failure\"\n        empty_raw_data[\"message\"] = \"Missing tokenizer, cannot build LLM context.\"\n        return \"\", empty_raw_data"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "359e51ff-8fc4-4496-a4e8-49c046785511",
+          "chunk_index": 1,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 178,
+          "chunk_text": "# Get token limits\n    max_total_tokens = getattr(\n        query_param,\n        \"max_total_tokens\",\n        global_config.get(\"max_total_tokens\", DEFAULT_MAX_TOTAL_TOKENS),\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "d49361ee-d933-443a-9724-eeaf6a090bf5",
+          "chunk_index": 2,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 693,
+          "chunk_text": "# Budget against the template that will ACTUALLY be rendered. `kg_query`\n    # picks its template after this function returns, so without the forwarded\n    # `system_prompt` the estimate silently used the default one -- charging a\n    # caller's custom template at the wrong size, and charging the prefix even\n    # when that template has no {user_prompt} placeholder to render it into.\n    # `system_prompt_template` is kept as a lower-priority fallback: nothing in\n    # this repo writes it, but a downstream user may set it on their own config.\n    sys_prompt_template = (\n        system_prompt\n        or global_config.get(\"system_prompt_template\")\n        or PROMPTS[\"rag_response\"]\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "c06e794b-9755-400e-b78d-703a17fe9237",
+          "chunk_index": 3,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 691,
+          "chunk_text": "kg_context_template = PROMPTS[\"kg_query_context\"]\n    # `.text`, not `.slot`: this only sizes the token budget, and `.text`'s empty\n    # fallback matches what this line used before the prefix existed, so an\n    # unconfigured prefix changes no estimate. A configured one IS counted here,\n    # which is the point -- otherwise a long prefix would overfill the context.\n    effective_user_prompt = resolve_user_prompt(\n        query_param.user_prompt,\n        global_config.get(\"user_prompt_prefix\", \"\"),\n        query_param.disable_user_prompt_prefix,\n    )\n    response_type = (\n        query_param.response_type\n        if query_param.response_type\n        else \"Multiple Paragraphs\"\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "0275fcc6-ac10-41a5-903e-cc651ff176ec",
+          "chunk_index": 4,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 229,
+          "chunk_text": "entities_str = \"\\n\".join(\n        json.dumps(entity, ensure_ascii=False) for entity in entities_context\n    )\n    relations_str = \"\\n\".join(\n        json.dumps(relation, ensure_ascii=False) for relation in relations_context\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "b69f1f87-035a-44e8-8e5b-9d6c89e562fb",
+          "chunk_index": 5,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 298,
+          "chunk_text": "# Calculate preliminary kg context tokens\n    pre_kg_context = kg_context_template.format(\n        entities_str=entities_str,\n        relations_str=relations_str,\n        text_chunks_str=\"\",\n        reference_list_str=\"\",\n    )\n    kg_context_tokens = await acount_tokens(tokenizer, pre_kg_context)"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "7a420b0d-e9aa-42ca-9ab2-21d1ed5e651f",
+          "chunk_index": 6,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 752,
+          "chunk_text": "# Calculate preliminary system prompt tokens\n    # Charged even on the only_need_context path, which returns before this\n    # prompt is ever rendered. That is deliberate, not waste: only_need_context\n    # and only_need_prompt are debug switches whose job is to PREVIEW the real\n    # request. Skipping the charge here would make them report more chunks than\n    # a real query retrieves, so an operator would size their context against a\n    # number the live path never delivers.\n    pre_sys_prompt = sys_prompt_template.format(\n        context_data=\"\",  # Empty for overhead calculation\n        response_type=response_type,\n        user_prompt=effective_user_prompt.text,\n    )\n    sys_prompt_tokens = await acount_tokens(tokenizer, pre_sys_prompt)"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "d02df189-f0f1-4cbd-9370-0176f410739d",
+          "chunk_index": 7,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 307,
+          "chunk_text": "# Calculate available tokens for text chunks\n    query_tokens = await acount_tokens(tokenizer, query)\n    buffer_tokens = 200  # reserved for reference list and safety buffer\n    available_chunk_tokens = max_total_tokens - (\n        sys_prompt_tokens + kg_context_tokens + query_tokens + buffer_tokens\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "86809622-74c1-4377-a4a5-e7b494c26503",
+          "chunk_index": 8,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 228,
+          "chunk_text": "logger.debug(\n        f\"Token allocation - Total: {max_total_tokens}, SysPrompt: {sys_prompt_tokens}, Query: {query_tokens}, KG: {kg_context_tokens}, Buffer: {buffer_tokens}, Available for chunks: {available_chunk_tokens}\"\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "03bac898-b9be-4d27-b463-48c441c621c8",
+          "chunk_index": 9,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 400,
+          "chunk_text": "# Apply token truncation to chunks using the dynamic limit\n    truncated_chunks = await process_chunks_unified(\n        query=query,\n        unique_chunks=merged_chunks,\n        query_param=query_param,\n        global_config=global_config,\n        source_type=query_param.mode,\n        chunk_token_limit=available_chunk_tokens,  # Pass dynamic limit\n        progress_callback=progress_callback,\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "f943c632-cbef-42eb-bc90-9f1c97fee5a1",
+          "chunk_index": 10,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 184,
+          "chunk_text": "# Generate reference list from truncated chunks using the new common function\n    reference_list, truncated_chunks = generate_reference_list_from_chunks(\n        truncated_chunks\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "3b0342a1-3bae-4569-b5a8-5998df9af956",
+          "chunk_index": 11,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 517,
+          "chunk_text": "# Rebuild chunks_context with truncated chunks\n    # The actual tokens may be slightly less than available_chunk_tokens due to deduplication logic\n    text_units_str = render_chunks_context_text(truncated_chunks)\n    chunks_context = [\n        {\"reference_id\": chunk[\"reference_id\"], \"content\": chunk[\"content\"]}\n        for chunk in truncated_chunks\n    ]\n    reference_list_str = \"\\n\".join(\n        f\"[{ref['reference_id']}] {ref['file_path']}\"\n        for ref in reference_list\n        if ref[\"reference_id\"]\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "19034210-7ecf-43a7-9823-66a16683a3d2",
+          "chunk_index": 12,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 143,
+          "chunk_text": "logger.info(\n        f\"Final context: {len(entities_context)} entities, {len(relations_context)} relations, {len(chunks_context)} chunks\"\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "40f19ebb-d7ab-44f5-963a-7ee190ce88a6",
+          "chunk_index": 13,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 496,
+          "chunk_text": "# not necessary to use LLM to generate a response\n    if not entities_context and not relations_context and not chunks_context:\n        # Return empty raw data structure when no entities/relations\n        empty_raw_data = convert_to_user_format(\n            [],\n            [],\n            [],\n            [],\n            query_param.mode,\n        )\n        empty_raw_data[\"status\"] = \"failure\"\n        empty_raw_data[\"message\"] = \"Query returned empty dataset.\"\n        return \"\", empty_raw_data"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "829c7615-21a9-4390-9f65-065964db98fc",
+          "chunk_index": 14,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 667,
+          "chunk_text": "# output chunks tracking infomations\n    # format: <source><frequency>/<order> (e.g., E5/2 R2/1 C1/1)\n    if truncated_chunks and chunk_tracking:\n        chunk_tracking_log = []\n        for chunk in truncated_chunks:\n            chunk_id = chunk.get(\"chunk_id\")\n            if chunk_id and chunk_id in chunk_tracking:\n                tracking_info = chunk_tracking[chunk_id]\n                source = tracking_info[\"source\"]\n                frequency = tracking_info[\"frequency\"]\n                order = tracking_info[\"order\"]\n                chunk_tracking_log.append(f\"{source}{frequency}/{order}\")\n            else:\n                chunk_tracking_log.append(\"?0/0\")"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "152f67d6-2e9e-4469-830d-e9c4865a63b7",
+          "chunk_index": 15,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 304,
+          "chunk_text": "if chunk_tracking_log:\n            logger.info(f\"Final chunks S+F/O: {' '.join(chunk_tracking_log)}\")\n\nresult = kg_context_template.format(\n        entities_str=entities_str,\n        relations_str=relations_str,\n        text_chunks_str=text_units_str,\n        reference_list_str=reference_list_str,\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "d273d59b-ea72-4ac9-8e7b-09f528c758b2",
+          "chunk_index": 16,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_context_str",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 839,
+          "chunk_text": "# Always return both context and complete data structure (unified approach)\n    logger.debug(\n        f\"[_build_context_str] Converting to user format: {len(entities_context)} entities, {len(relations_context)} relations, {len(truncated_chunks)} chunks\"\n    )\n    final_data = convert_to_user_format(\n        entities_context,\n        relations_context,\n        truncated_chunks,\n        reference_list,\n        query_param.mode,\n        entity_id_to_original,\n        relation_id_to_original,\n    )\n    final_data_payload = final_data.get(\"data\", {})\n    logger.debug(\n        f\"[_build_context_str] Final data after conversion: {len(final_data_payload.get('entities', []))} entities, {len(final_data_payload.get('relationships', []))} relationships, {len(final_data_payload.get('chunks', []))} chunks\"\n    )\n    return result, final_data"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "c87e180f-6317-4b0c-a787-8f18ef9d0de9",
+          "chunk_index": 0,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 602,
+          "chunk_text": "async def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "60091687-30bf-412e-8233-868b2d3a1384",
+          "chunk_index": 1,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 183,
+          "chunk_text": "Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n\nif not query:\n        logger.warning(\"Query is empty, skipping context building\")\n        return None"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "d0af3d36-971c-45f4-a1ea-a703109dbd36",
+          "chunk_index": 2,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 320,
+          "chunk_text": "# Stage 1: Pure search\n    search_result = await _perform_kg_search(\n        query,\n        ll_keywords,\n        hl_keywords,\n        knowledge_graph_inst,\n        entities_vdb,\n        relationships_vdb,\n        text_chunks_db,\n        query_param,\n        chunks_vdb,\n        progress_callback=progress_callback,\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "128e3c87-2e00-40ae-80c9-033c6e566d79",
+          "chunk_index": 3,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 433,
+          "chunk_text": "if not search_result[\"final_entities\"] and not search_result[\"final_relations\"]:\n        if query_param.mode != \"mix\":\n            return None\n        else:\n            if not search_result[\"chunk_tracking\"]:\n                return None\n\n# Stage 2: Apply token truncation for LLM efficiency\n    truncation_result = await _apply_token_truncation(\n        search_result,\n        query_param,\n        text_chunks_db.global_config,\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "775b07bd-9a0e-4cdf-a956-29323f836dac",
+          "chunk_index": 4,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 585,
+          "chunk_text": "# Stage 3: Merge chunks using filtered entities/relations\n    merged_chunks = await _merge_all_chunks(\n        filtered_entities=truncation_result[\"filtered_entities\"],\n        filtered_relations=truncation_result[\"filtered_relations\"],\n        vector_chunks=search_result[\"vector_chunks\"],\n        query=query,\n        knowledge_graph_inst=knowledge_graph_inst,\n        text_chunks_db=text_chunks_db,\n        query_param=query_param,\n        chunks_vdb=chunks_vdb,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        query_embedding=search_result[\"query_embedding\"],\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "eb68465b-bc47-4c81-a2d6-7563043c64fc",
+          "chunk_index": 5,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 166,
+          "chunk_text": "if (\n        not merged_chunks\n        and not truncation_result[\"entities_context\"]\n        and not truncation_result[\"relations_context\"]\n    ):\n        return None"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "e1429a41-f23a-4956-a98d-09f9a129d049",
+          "chunk_index": 6,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 744,
+          "chunk_text": "# Stage 4: Build final LLM context with dynamic token processing\n    # _build_context_str now always returns tuple[str, dict]\n    context, raw_data = await _build_context_str(\n        entities_context=truncation_result[\"entities_context\"],\n        relations_context=truncation_result[\"relations_context\"],\n        merged_chunks=merged_chunks,\n        query=query,\n        query_param=query_param,\n        global_config=text_chunks_db.global_config,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        entity_id_to_original=truncation_result[\"entity_id_to_original\"],\n        relation_id_to_original=truncation_result[\"relation_id_to_original\"],\n        progress_callback=progress_callback,\n        system_prompt=system_prompt,\n    )"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "1a08782b-a8c9-4a20-90df-b6a441b45486",
+          "chunk_index": 7,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 369,
+          "chunk_text": "# Convert keywords strings to lists and add complete metadata to raw_data\n    hl_keywords_list = hl_keywords.split(\", \") if hl_keywords else []\n    ll_keywords_list = ll_keywords.split(\", \") if ll_keywords else []\n\n# Add complete metadata to raw_data (preserve existing metadata including query_mode)\n    if \"metadata\" not in raw_data:\n        raw_data[\"metadata\"] = {}"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "42300493-ca5b-4c02-a5e3-75712f326050",
+          "chunk_index": 8,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 746,
+          "chunk_text": "# Update keywords while preserving existing metadata\n    raw_data[\"metadata\"][\"keywords\"] = {\n        \"high_level\": hl_keywords_list,\n        \"low_level\": ll_keywords_list,\n    }\n    raw_data[\"metadata\"][\"processing_info\"] = {\n        \"total_entities_found\": len(search_result.get(\"final_entities\", [])),\n        \"total_relations_found\": len(search_result.get(\"final_relations\", [])),\n        \"entities_after_truncation\": len(\n            truncation_result.get(\"filtered_entities\", [])\n        ),\n        \"relations_after_truncation\": len(\n            truncation_result.get(\"filtered_relations\", [])\n        ),\n        \"merged_chunks_count\": len(merged_chunks),\n        \"final_chunks_count\": len(raw_data.get(\"data\", {}).get(\"chunks\", [])),\n    }"
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+          "chunk_id": "b86bbcc8-069b-45b8-a15b-722ab850c122",
+          "chunk_index": 9,
+          "chunk_strategy": "paragraph",
+          "provider": "ollama",
+          "embedding_dimensions": 1024,
+          "metadata_canonical_id": "lightrag/operate.py#_build_query_context",
+          "metadata_repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "source_type": "code",
+          "text_bytes": 426,
+          "chunk_text": "logger.debug(\n        f\"[_build_query_context] Context length: {len(context) if context else 0}\"\n    )\n    logger.debug(\n        f\"[_build_query_context] Raw data entities: {len(raw_data.get('data', {}).get('entities', []))}, relationships: {len(raw_data.get('data', {}).get('relationships', []))}, chunks: {len(raw_data.get('data', {}).get('chunks', []))}\"\n    )\n\nreturn QueryContextResult(context=context, raw_data=raw_data)"
+        }
+      ]
+    },
+    {
+      "sql": "SELECT dn.canonical_id, count(*) AS chunks,\n       min(vc.chunk_index) AS first_ordinal, max(vc.chunk_index) AS last_ordinal,\n       count(DISTINCT vc.chunk_index) AS distinct_ordinals,\n       count(DISTINCT vc.chunk_id) AS distinct_chunk_ids,\n       count(*) FILTER (WHERE vc.vector IS NULL) AS missing_vectors,\n       count(*) FILTER (WHERE vc.source_metadata->>'canonical_id'\n                         IS DISTINCT FROM dn.canonical_id) AS canonical_mismatches,\n       count(*) FILTER (WHERE vc.ingestion_id::text IS DISTINCT FROM '128c494e-0aae-4e1d-81d0-b7e52f2006b1')\n           AS generation_mismatches\nFROM ingestion_service.vector_chunks vc\nJOIN ingestion_service.document_nodes dn ON dn.document_id = vc.document_id\nWHERE dn.repo_id::text = '4f76a36f-caf8-5532-9ee2-977ec412ed6c'\n  AND dn.canonical_id IN ('lightrag/operate.py#_build_query_context',\n                         'lightrag/operate.py#_apply_token_truncation',\n                         'lightrag/operate.py#_build_context_str')\nGROUP BY dn.canonical_id",
+      "rows": [
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "chunks": 19,
+          "first_ordinal": 0,
+          "last_ordinal": 18,
+          "distinct_ordinals": 19,
+          "distinct_chunk_ids": 19,
+          "missing_vectors": 0,
+          "canonical_mismatches": 0,
+          "generation_mismatches": 0
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "chunks": 17,
+          "first_ordinal": 0,
+          "last_ordinal": 16,
+          "distinct_ordinals": 17,
+          "distinct_chunk_ids": 17,
+          "missing_vectors": 0,
+          "canonical_mismatches": 0,
+          "generation_mismatches": 0
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "chunks": 10,
+          "first_ordinal": 0,
+          "last_ordinal": 9,
+          "distinct_ordinals": 10,
+          "distinct_chunk_ids": 10,
+          "missing_vectors": 0,
+          "canonical_mismatches": 0,
+          "generation_mismatches": 0
+        }
+      ]
+    },
+    {
+      "sql": "SELECT source.canonical_id AS caller, target.canonical_id AS callee,\n       rel.relation_type, rel.relationship_metadata\nFROM ingestion_service.document_relationships rel\nJOIN ingestion_service.document_nodes source\n  ON source.document_id = rel.from_document_id\nJOIN ingestion_service.document_nodes target\n  ON target.document_id = rel.to_document_id\nWHERE source.repo_id::text = '4f76a36f-caf8-5532-9ee2-977ec412ed6c'\n  AND rel.relation_type = 'CALL'\n  AND source.canonical_id IN ('lightrag/lightrag.py#LightRAG.aquery',\n                             'lightrag/lightrag.py#LightRAG.aquery_llm',\n                             'lightrag/operate.py#kg_query',\n                             'lightrag/operate.py#_build_query_context')\nORDER BY caller, callee",
+      "rows": [
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery",
+          "callee": "EXTERNAL_SYMBOL:llm_response.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4871,
+              4872,
+              4874
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery",
+          "callee": "EXTERNAL_SYMBOL:result.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4869
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery",
+          "callee": "lightrag/base.py#QueryParam",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4846
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery",
+          "callee": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4866
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:functools.partial",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5176
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:isinstance",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5192
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.debug",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5141
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.error",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5258
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:str",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5262
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:use_llm_func",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5182
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "EXTERNAL_SYMBOL:ValueError",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5219
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/base.py#QueryParam",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5117
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/lightrag.py#LightRAG._build_global_config",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5143
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/lightrag.py#LightRAG._query_done",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5221
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/operate.py#kg_query",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5149
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/operate.py#naive_query",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5163
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/query_validation.py#validate_query_not_empty",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5137
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/lightrag.py#LightRAG.aquery_llm",
+          "callee": "lightrag/query_validation.py#validate_rag_query",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              5139
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 4,
+            "call_sites": [
+              6187,
+              6194,
+              6194,
+              6194
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:hl_keywords.split",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6165
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:len",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 10,
+            "call_sites": [
+              6178,
+              6179,
+              6180,
+              6183,
+              6186,
+              6187,
+              6191,
+              6194,
+              6194,
+              6194
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.debug",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 2,
+            "call_sites": [
+              6190,
+              6193
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.warning",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6096
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:ll_keywords.split",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6166
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:raw_data.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 4,
+            "call_sites": [
+              6187,
+              6194,
+              6194,
+              6194
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:search_result.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 2,
+            "call_sites": [
+              6178,
+              6179
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "EXTERNAL_SYMBOL:truncation_result.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 2,
+            "call_sites": [
+              6181,
+              6184
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "lightrag/base.py#QueryContextResult",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6197
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "lightrag/operate.py#_apply_token_truncation",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6121
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "lightrag/operate.py#_build_context_str",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6150
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "lightrag/operate.py#_merge_all_chunks",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6128
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#_build_query_context",
+          "callee": "lightrag/operate.py#_perform_kg_search",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              6100
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:answer_cache_kv.global_config.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4917
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:functools.partial",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4740
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:global_config.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4800,
+              4883,
+              4933
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:isinstance",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4952
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:join",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4766,
+              4767,
+              4820
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:len",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4760,
+              4954,
+              4954
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.debug",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4751,
+              4752,
+              4836
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.info",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 2,
+            "call_sites": [
+              4787,
+              4900
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.isEnabledFor",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4832
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:lightrag.utils.logger.warning",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4756,
+              4758,
+              4761
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:replace",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 5,
+            "call_sites": [
+              4956,
+              4956,
+              4956,
+              4956,
+              4956
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:response.replace",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4956
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:retrieval_config.get",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 2,
+            "call_sites": [
+              4855,
+              4858
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:strip",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4956
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:sys_prompt_temp.format",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4811
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "EXTERNAL_SYMBOL:use_model_func",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4907
+            ],
+            "confidence": 0.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/api/routers/query_routes.py#progress_callback",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 2,
+            "call_sites": [
+              4746,
+              4906
+            ],
+            "confidence": 0.5
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/base.py#QueryResult",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 6,
+            "call_sites": [
+              4737,
+              4764,
+              4792,
+              4821,
+              4965,
+              4968
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/operate.py#_answer_cache_kv",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4842
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/operate.py#_build_query_context",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4770
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/operate.py#get_keywords_from_query",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4747
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#acount_tokens",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 3,
+            "call_sites": [
+              4833,
+              4834,
+              4835
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#CacheData",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4941
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#compute_args_hash",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4861
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#get_llm_cache_identity",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4743
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#handle_cache",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4894
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#is_truncated_response",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4918
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#resolve_user_prompt",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4798
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#save_to_cache",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4939
+            ],
+            "confidence": 1.0
+          }
+        },
+        {
+          "caller": "lightrag/operate.py#kg_query",
+          "callee": "lightrag/utils.py#serialize_llm_cache_identity",
+          "relation_type": "CALL",
+          "relationship_metadata": {
+            "count": 1,
+            "call_sites": [
+              4891
+            ],
+            "confidence": 1.0
+          }
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+      "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+      "node_ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+      "sql_chunk_count": 19,
+      "api_chunk_count": 19,
+      "ordinals": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+      ],
+      "vector_dimensions": [
+        1024
+      ],
+      "sql_api_ids_and_text_equal": true,
+      "node_and_chunk_union_equal_ignoring_whitespace": true,
+      "node_matches_pinned_source_ignoring_whitespace": true,
+      "node_sha256": "15d4f6ece186ac4c9a73e28f05ad3d3800676aab945ff8e541805e48c44b9b88"
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_context_str",
+      "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+      "node_ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+      "sql_chunk_count": 17,
+      "api_chunk_count": 17,
+      "ordinals": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "vector_dimensions": [
+        1024
+      ],
+      "sql_api_ids_and_text_equal": true,
+      "node_and_chunk_union_equal_ignoring_whitespace": true,
+      "node_matches_pinned_source_ignoring_whitespace": true,
+      "node_sha256": "b61e0a3a66c0a4472c913821c5a577b4c5857315d88454ab455959174a5f0a73"
+    },
+    {
+      "canonical_id": "lightrag/operate.py#_build_query_context",
+      "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+      "node_ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+      "sql_chunk_count": 10,
+      "api_chunk_count": 10,
+      "ordinals": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "vector_dimensions": [
+        1024
+      ],
+      "sql_api_ids_and_text_equal": true,
+      "node_and_chunk_union_equal_ignoring_whitespace": true,
+      "node_matches_pinned_source_ignoring_whitespace": true,
+      "node_sha256": "8758a4524123993548c28da64f3bc30bd04ca493e3a3742473257ad009252f41"
+    }
+  ]
+}

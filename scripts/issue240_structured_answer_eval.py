@@ -7,6 +7,7 @@ accepted only if their Git blob hashes match GitHub's blobs at that commit.
 import hashlib
 import importlib.util
 import json
+import os
 import subprocess
 from pathlib import Path
 from urllib.request import urlopen
@@ -25,7 +26,7 @@ REPO_ID = "f7641840-ba13-5f9d-9ae6-87e1f924709d"
 GENERATION_ID = "f873147c-a1d1-4891-bb98-972672db8e9a"
 SOURCE_SHA = "7a805d5b3cee031c44fbe0d9b8048065ce8ef039"
 GITHUB_REPO = "sankar-ramamoorthy/rag-foundry-universal"
-INGESTION = "http://100.105.24.12:8001"
+INGESTION = os.environ["ISSUE240_INGESTION_URL"]
 OUTPUT = ROOT / "DOCS/test_results/2026-10-04-issue-240-structured-answer.json"
 COMPOSE_FILES = ("docker-compose.yml", "docker-compose.test.yml")
 

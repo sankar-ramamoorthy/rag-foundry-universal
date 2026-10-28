@@ -1,0 +1,75 @@
+{
+  "root": "DOCS/test_results/_raw",
+  "files": {
+    "2026-10-13-lightrag-forensic-inventory.json": {
+      "bytes": 1744558,
+      "sha256": "a178b20a167050135ab5512515099b04b8a81ebe602d59d6a24d2057e6521db1",
+      "produced_by": "LightRAG forensic capture 2026-10-13; exact command not recorded in repo (see cited report)",
+      "cited_by": "DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md",
+      "notes": ""
+    },
+    "2026-10-13-lightrag-live-traces.json": {
+      "bytes": 372410,
+      "sha256": "28b40207a4a56c4ab329d3aea200621465585ebd9afaef1c3752c4c91c5dbeb0",
+      "produced_by": "LightRAG forensic capture 2026-10-13; exact command not recorded in repo (see cited report)",
+      "cited_by": "DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md",
+      "notes": ""
+    },
+    "2026-10-13-lightrag-observed-replay.json": {
+      "bytes": 2597476,
+      "sha256": "78083ecf1bf0d99105f321ddbfd8fea6098ba721fc2653225c0c08584c277002",
+      "produced_by": "LightRAG forensic capture 2026-10-13; exact command not recorded in repo (see cited report)",
+      "cited_by": "DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/baseline-F1.json": {
+      "bytes": 1371416,
+      "sha256": "2799dc987a68438e533a33630896f0460cff5f0c5bad0367e5e85e9e4557e53a",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/baseline-F2.json": {
+      "bytes": 1312249,
+      "sha256": "eb42d5f19af593e288b8cc35345c31c62c9144db038e774d2c8418e8bab19d68",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/baseline-F3.json": {
+      "bytes": 1446491,
+      "sha256": "fbd03ba82d2e150f27f052c599a5025d887faea0545282c6080de983f26b08f7",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/baseline-L1.json": {
+      "bytes": 1361676,
+      "sha256": "c282af929c3897620796dabda3c9a653ffcca8e07ec1ccf4bbb641cc1eee35c9",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/baseline-L2.json": {
+      "bytes": 1370005,
+      "sha256": "b7d64a32cc767bc42f18a23cb261592863885d37db06f131f081b4c68e91f001",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/baseline-L3.json": {
+      "bytes": 1263101,
+      "sha256": "ef113c1e8c046b701cb02c2644194cf2153ebe28f1ab68d3b03635e30011bd3f",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    },
+    "code-evidence-e1/capture-events.jsonl": {
+      "bytes": 74583,
+      "sha256": "b048ef1dbff9d010e26a5a247e888a94a2c0898ddfe6b6b8ec5df4be9d5e83fa",
+      "produced_by": "scripts/code_evidence_experiment.py baseline",
+      "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
+      "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
+    }
+  }
+}

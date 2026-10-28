@@ -1,0 +1,101 @@
+{
+  "status": "failed-ingestion",
+  "versions": {
+    "ingestion": {
+      "service": "ingestion_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "local-source-mount",
+      "release_version": "d0-local-evaluation"
+    },
+    "vector": {
+      "service": "vector_store_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "local-source-mount",
+      "release_version": "d0-local-evaluation"
+    },
+    "llm": {
+      "service": "llm_service",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "local-source-mount",
+      "release_version": "d0-local-evaluation"
+    },
+    "orchestrator": {
+      "service": "rag_orchestrator",
+      "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+      "build_date": "local-source-mount",
+      "release_version": "d0-local-evaluation"
+    }
+  },
+  "endpoints": {
+    "ingestion": "http://127.0.0.1:8101",
+    "vector": "http://127.0.0.1:8102",
+    "llm": "http://127.0.0.1:8103",
+    "orchestrator": "http://127.0.0.1:8104"
+  },
+  "local_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+  "manifest": {
+    "status": "source-and-questions-frozen; not-executed",
+    "dataset_class": "synthetic development baseline; not held-out repository evaluation",
+    "cases": [
+      "D01",
+      "D02",
+      "D03",
+      "D04",
+      "D05",
+      "D06",
+      "D07",
+      "D08",
+      "D09",
+      "D10",
+      "D11",
+      "D12"
+    ],
+    "documents": 4,
+    "ingestion_ids": [],
+    "runtime_model_and_effective_settings": "Must pin before first answer",
+    "inputs": [
+      {
+        "path": "DOCS/evaluations/document-rag-d0/operations.md",
+        "bytes": 1125,
+        "sha256": "50d28648914c8268431fe81e0c6b376fc19aff4fdbaf5d1ed354cec514638350"
+      },
+      {
+        "path": "DOCS/evaluations/document-rag-d0/retention-obsolete.md",
+        "bytes": 652,
+        "sha256": "3fbdcb989e8c9b8777abcd492d1b5105fdfc323f9e950802c7ce08a194c187b1"
+      },
+      {
+        "path": "DOCS/evaluations/document-rag-d0/retention.md",
+        "bytes": 965,
+        "sha256": "cdf8939ebd70fe6399988a74263929468fc3baee94a601eae2496e43921ed5be"
+      },
+      {
+        "path": "DOCS/evaluations/document-rag-d0/service-levels.md",
+        "bytes": 977,
+        "sha256": "c9200e7fa58b92f4926532e1b3381d3a83d6014cd32eebb225a5715928820187"
+      },
+      {
+        "path": "DOCS/evaluations/document-rag-d0/questions.json",
+        "bytes": 4029,
+        "sha256": "6c7dba642db9dd2386f03aac9ab66e66e6b5e2d41acd57eeb60313c52cbf20d7"
+      }
+    ]
+  },
+  "uploads": [],
+  "answers_requested": 0,
+  "failed_ingestion": {
+    "filename": "operations.md",
+    "ingestion_id": "8022bcb0-af3f-4c89-8f34-e2fd80f14a39",
+    "admission": {
+      "ingestion_id": "8022bcb0-af3f-4c89-8f34-e2fd80f14a39",
+      "status": "accepted"
+    },
+    "terminal": {
+      "ingestion_id": "8022bcb0-af3f-4c89-8f34-e2fd80f14a39",
+      "status": "failed"
+    },
+    "source_sha256": "50d28648914c8268431fe81e0c6b376fc19aff4fdbaf5d1ed354cec514638350",
+    "error": "'ExtractionResult' object is not iterable"
+  },
+  "recording_note": "Failure details recovered from terminal-status API and local logs after the initial prepare runner aborted."
+}
