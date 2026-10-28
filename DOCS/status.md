@@ -816,6 +816,20 @@ and issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/is
   [`DOCS/notes/20260913-free-provider-live-verification.md`](/DOCS/notes/20260913-free-provider-live-verification.md)
   for current per-provider status.
 
+## Housekeeping (#268)
+
+Tailnet addresses were removed from tracked code, tests and scripts (endpoints
+now come from env vars/CLI args) and guarded by
+`scripts/check_private_addresses.py` in pre-commit and CI. Raw evaluation
+captures moved to the git-ignored `DOCS/test_results/_raw/` with a hashed
+[`raw-index.json`](/DOCS/test_results/raw-index.json). Not done by design:
+prose docs and already-committed result JSON still mention the old address
+(history is left as written); the prototype scripts stay unmerged for an
+experiment branch. Two `llm_service` tests
+(`test_models_endpoint_universal_without_remote_env`,
+`test_no_params_uses_local_ollama_default`) fail on a machine whose `.env` sets
+`REMOTE_OLLAMA_BASE_URL`; this predates #268 and is not addressed here.
+
 ## Production release
 
 - Current pinned deployment SHA and the audited-release history live

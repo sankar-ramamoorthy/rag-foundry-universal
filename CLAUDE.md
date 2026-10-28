@@ -57,6 +57,17 @@ uv run pre-commit run --all-files
 
 Pre-commit runs ruff, pyright, trailing-whitespace, and end-of-file-fixer (`.pre-commit-config.yaml`).
 
+## Environment-specific addresses and raw captures
+
+- **No Tailnet/private addresses in code or config.** Endpoints come from env
+  vars or CLI args with no personal default (the Tailscale IP rotates).
+  `scripts/check_private_addresses.py` enforces this for code/config outside
+  `DOCS/`/`specs/` (pre-commit and CI); docs may mention the tailnet historically.
+- **Bulky raw evaluation captures go in `DOCS/test_results/_raw/`** (git-ignored,
+  deletable for space). `DOCS/test_results/raw-index.json` records their size and
+  sha256 (`scripts/raw_index.py update|verify`); link the index from reports, not
+  the raw files. Tests that need raw captures must skip when they are absent.
+
 ## Tests
 
 Tests live per-service under `<service>/tests/` and run with `uv run pytest` from inside that service directory (each has its own `pytest.ini`). Markers: `unit` (no DB/Docker), `docker` (needs dockerized Postgres/pgvector), `integration` (needs Postgres+pgvector, sometimes Ollama too).
