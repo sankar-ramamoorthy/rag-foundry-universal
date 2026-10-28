@@ -2,13 +2,13 @@
 title: "E1 statement-level evidence delivery contract (Option B)"
 date: 2026-10-28
 type: experiment-contract
-status: proposed-not-frozen
+status: frozen-before-candidate-results
 tags: [evidence-delivery, statement-level, structural-context, held-out, adr-054]
 related:
   - "[Issue #276](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/276)"
   - "[Structural-context feasibility oracle](/DOCS/test_results/2026-10-28-e1-structural-context-feasibility.md)"
   - "[4096-byte feasibility oracle (#264)](/DOCS/test_results/2026-10-21-e1-4096-byte-evidence-feasibility.md)"
-  - "[ADR-055: node-text read endpoint (proposed)](/DOCS/adr/ADR-055-node-text-read-endpoint.md)"
+  - "[ADR-055: node-text read endpoint (accepted, not implemented)](/DOCS/adr/ADR-055-node-text-read-endpoint.md)"
   - "[ADR-054: evaluation dataset isolation](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)"
   - "[ADR-052: passage selection and provenance](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)"
   - "[E1 isolated prototype contract](/DOCS/evaluations/code-evidence-e1/prototype-contract.md)"
@@ -23,15 +23,21 @@ authorizes no implementation, no endpoint, no retrieval-policy merge and no
 deployment. #275 (target-first selection) is a separate question and is not
 addressed here.
 
-## 1. Status and how it becomes frozen
+## 1. Status
 
-Status is `proposed-not-frozen`. It becomes binding only when the repository owner
-accepts it. Freezing means: change `status` to `frozen-before-candidate-results`,
-record the SHA-256 of this file in `statement-level-contract.sha256` (the same
-convention as `manifest.sha256`), and commit both before any candidate
-implementation exists. After that, changes need a new dated contract, not an edit.
+**Status: frozen-before-candidate-results.** Accepted by the repository owner and
+frozen on 2026-10-28, before any candidate implementation, held-out case or
+candidate run exists. The SHA-256 of this file's content with LF line endings is
+recorded in `statement-level-contract.sha256` (the `manifest.sha256` convention),
+and a unit test fails if the file and the recorded checksum disagree.
 
-Section 11 lists decisions the owner must make before freezing.
+After freezing this file is not edited. A change needs a new dated contract that
+supersedes it. The only permitted addition is the GO-rate addendum named in
+section 11, which fixes a number this contract deliberately leaves to the owner.
+Acceptance does not authorize implementation of anything described here.
+
+Verify: `git show HEAD:DOCS/evaluations/code-evidence-e1/statement-level-contract.md | sha256sum`
+must print the recorded value (the repository pins this file to LF line endings).
 
 ## 2. Why this contract exists
 
@@ -183,7 +189,7 @@ Decisions use the roadmap's three outcomes:
 
 - **GO** (to propose a production change): requires a frozen candidate that passes
   the delivery gate on the held-out set (section 10) at a rate fixed in advance by
-  the owner (section 11), with no case worse than its own unchanged control. The
+  the owner in the dated addendum named in section 11, with no case worse than its own unchanged control. The
   development cases cannot produce GO.
 - **NO-GO:** the candidate violates S4, S5 or S6 in any case, or is worse than its
   unchanged control on a held-out case. "Worse" means it covers fewer of that case's
@@ -231,25 +237,27 @@ witnesses (F3-like), and a small function (F1-like).
   set must be frozen for the next version.
 - Results are reported per case and never pooled with development results.
 
-**Size (proposal, owner to confirm in section 11).** At least 12 cases across at
+**Size (accepted at freezing; see section 11).** At least 12 cases across at
 least 3 repositories (4 per repository). At that size only large differences are
 detectable; no rate estimate or generalization claim beyond "did or did not hold on
 these cases" is made.
 
-## 11. Decisions required from the owner before freezing
+## 11. Decisions resolved at acceptance (2026-10-28)
 
-| # | Decision | Recommendation |
+| # | Decision | Resolution |
 | --- | --- | --- |
-| 1 | Signature: full verbatim (R1) or a shorter non-verbatim form | Verbatim. A shorter form saves up to 27% of a case (L1/L2 signatures cost 1,052 of 3,926 bytes) but breaks the "every delivered line is source" guarantee that S4 relies on. Revisit only if v1 fails for budget reasons |
-| 2 | Marker format and where line positions live | As in section 4: function-relative positions in the label and markers; about 10% of block bytes |
-| 3 | Data definitions (v1.1) | Out of v1; decide after v1 has a result |
-| 4 | Held-out size and the rate required for GO | 12 cases over 3 repositories; GO rate to be set by the owner before the held-out manifest is frozen, not after |
-| 5 | Language scope | Python only for v1 (extractors exist for TS/JS, Rust and Java but the reference rules were validated on Python only, and only on module-level functions; methods and nested functions are unvalidated until a held-out case uses them) |
-| 6 | ADR-055 (node-text endpoint) | Accept before any implementation issue; implementation is a separate, later issue |
+| 1 | Signature: full verbatim (R1) or a shorter non-verbatim form | **Full verbatim (R1).** A shorter form would save up to 27% of a case (L1/L2 signatures cost 1,052 of 3,926 bytes) but breaks the "every delivered line is source" guarantee that S4 relies on. Revisit only through a new dated contract if v1 fails for budget reasons |
+| 2 | Marker format and where line positions live | **As in section 4**: function-relative positions in the label and markers; about 10% of block bytes |
+| 3 | Data definitions (v1.1) | **Out of v1.** Decided only after v1 has a recorded result |
+| 4 | Held-out size | **At least 12 cases over at least 3 repositories (4 per repository).** At that size only large differences are detectable |
+| 4b | Pass rate required for GO | **Not set in this contract.** The owner fixes it in a dated addendum, `statement-level-contract-addendum-go-rate.md`, committed before the held-out manifest is frozen and before any held-out or candidate result exists. Until that addendum exists no GO decision can be made; NO-GO and INVESTIGATE are unaffected. This addendum is the only permitted addition to this frozen contract |
+| 5 | Language scope | **Python only for v1.** The reference rules were validated on Python module-level functions only; methods and nested functions are unvalidated until a held-out case uses them |
+| 6 | ADR-055 (node-text endpoint) | **Accepted** (2026-10-28). Implementation remains a separate, later issue; the proposed numeric limits are starting values to be measured then |
 
 ## 12. Preconditions before any candidate run
 
-1. This contract accepted and frozen (section 1) and ADR-055 accepted.
+1. This contract accepted and frozen (section 1) and ADR-055 accepted (both met on
+   2026-10-28).
 2. A trustworthy matched control replay that also records the pre-budget candidate
    pool (#270; the graph-load timeout is unexplained and PR #272 is merged but not
    deployed or shown to cure it).

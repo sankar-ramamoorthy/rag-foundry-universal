@@ -2,11 +2,11 @@
 title: "ADR-055: Read-only node-text endpoint for statement-level evidence delivery"
 date: 2026-10-28
 type: adr
-status: proposed
+status: accepted
 tags: [ingestion-service, api, evidence, statement-level-delivery, issue-276]
 related:
   - "[Issue #276](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/276)"
-  - "[Statement-level delivery contract (proposed)](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md)"
+  - "[Statement-level delivery contract (frozen)](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md)"
   - "[ADR-041 code artifact persistence](/DOCS/adr/ADR-041-code-artifact-persistence-embedding-strategy.md)"
   - "[ADR-052 passage selection and provenance](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md)"
   - "[ADR-051 generation-aware graph cache](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)"
@@ -15,10 +15,12 @@ related:
 
 # ADR-055: Read-only node-text endpoint for statement-level evidence delivery
 
-**Status: Proposed.** Records a decision to be made, not one in effect. **Nothing is
-implemented.** Accepting it does not authorize the statement-level experiment; the
-[contract](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md) and a
-separate implementation issue do that.
+**Status: Accepted (2026-10-28).** The decision to add this endpoint is accepted.
+**Nothing is implemented.** Acceptance does not authorize the statement-level
+experiment or the implementation: the frozen
+[contract](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md) governs the
+experiment, and the endpoint needs its own implementation issue. The numeric limits
+below are starting values to be measured and set at implementation.
 
 Roadmap phase: Phase 6, workstream E.
 
@@ -41,7 +43,7 @@ surface found that **no endpoint returns `DocumentNode.text` by canonical id**:
 
 Source-faithful excerpts therefore cannot be built from any current API.
 
-## Decision (proposed)
+## Decision
 
 Add one new read-only endpoint to `ingestion_service`:
 
@@ -118,5 +120,6 @@ responsiveness test that another route stays fast while a large request runs
 
 Evidence from the experiment that statement-level delivery does not help (NO-GO), or
 that the target-selection problem (#275) must be solved first and makes this
-unnecessary. Until the contract is accepted and a trustworthy control exists (#270),
-this ADR stays proposed.
+unnecessary. In either case this ADR would be superseded by a new one. Until an
+implementation issue exists the endpoint stays unbuilt, and no candidate run can
+happen before a trustworthy matched control replay exists (#270).
