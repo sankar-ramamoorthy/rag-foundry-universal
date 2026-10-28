@@ -120,9 +120,13 @@ scoring, fallback behaviour, and the ADR-054 held-out plan) and
 generation-fenced node-text endpoint, since no current API returns a node's
 source) are **accepted, and the contract frozen, as of 2026-10-28** (checksum
 recorded; nothing is implemented). Still open: the held-out repositories and cases
-are not yet chosen or written, the GO pass rate is to be fixed by a dated addendum
-before the held-out manifest is frozen, and the experiment stays blocked on a
-trustworthy control replay (#270).
+are not yet chosen or written, and the experiment stays blocked on a trustworthy
+control replay (#270). The GO pass rate is fixed by the frozen
+[addendum](/DOCS/evaluations/code-evidence-e1/statement-level-contract-addendum-go-rate.md)
+(2026-10-28, checksum recorded): on 12 held-out cases over 3 repositories, GO needs
+at least 10 passing the delivery gate, at least 5 wins over the unchanged control, at
+least 3 of 4 per repository and no regressions; answer correctness does not decide it,
+and GO only permits designing a larger independent evaluation.
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains
