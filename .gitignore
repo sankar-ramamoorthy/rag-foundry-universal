@@ -150,6 +150,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Bulky raw evaluation captures (issue #268): kept locally, listed with
+# hashes in DOCS/test_results/raw-index.json. Safe to delete for space.
+DOCS/test_results/_raw/
+
 # Environments
 .env
 .envrc

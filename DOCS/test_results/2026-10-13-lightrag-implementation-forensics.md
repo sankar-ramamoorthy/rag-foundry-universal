@@ -5,9 +5,9 @@ type: diagnostic-report
 status: complete-with-original-trace-limits
 tags: [lightrag, retrieval, behavioral-completeness, read-only]
 related:
-  - "[Inventory and pinned source](/DOCS/test_results/2026-10-13-lightrag-forensic-inventory.json)"
-  - "[Live traces](/DOCS/test_results/2026-10-13-lightrag-live-traces.json)"
-  - "[Observed replay](/DOCS/test_results/2026-10-13-lightrag-observed-replay.json)"
+  - "[Inventory and pinned source (raw capture, hashed in index)](/DOCS/test_results/raw-index.json)"
+  - "[Live traces (raw capture, hashed in index)](/DOCS/test_results/raw-index.json)"
+  - "[Observed replay (raw capture, hashed in index)](/DOCS/test_results/raw-index.json)"
   - "[Integrity audit](/DOCS/test_results/2026-10-13-lightrag-forensic-audit.json)"
   - "[Operator read-only SQL](/DOCS/test_results/2026-10-13-lightrag-readonly.sql)"
   - "[Direct PostgreSQL results](/DOCS/test_results/2026-10-13-lightrag-direct-sql.json)"
@@ -89,7 +89,7 @@ with `ROLLBACK`. No database writes occurred.
 
 The ten-record finding comes from the captured response under
 `chunks["lightrag/operate.py#_build_query_context"].response.results` in the
-[inventory](2026-10-13-lightrag-forensic-inventory.json). The request was
+[inventory](raw-index.json) (raw capture `2026-10-13-lightrag-forensic-inventory.json`). The request was
 `POST /v1/vectors/search-by-doc` with `k=100`, document ID
 `42b2fb9d-5730-4b5b-93d4-d96f849c786a`, repository ID
 `4f76a36f-caf8-5532-9ee2-977ec412ed6c` and ingestion ID
