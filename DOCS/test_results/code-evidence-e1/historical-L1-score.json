@@ -1,0 +1,1644 @@
+{
+  "case_id": "L1",
+  "scope": "Historical October 13 matched-question observation; not a fresh E1 baseline",
+  "response": {
+    "answer": "I'll analyze the provided context to answer your question about `_build_query_context` implementation.\n\nFrom the context, I can see that `_build_query_context` is defined in `lightrag/operate.py` with the following signature:\n\n```python\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n    Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n```\n\nThe context shows this function follows a 4-stage architecture:\n\n1. **Search**: The function begins with a search operation using `_perform_kg_search`, which likely uses the `entities_vdb` and `relationships_vdb` to find relevant entities and relationships.\n\n2. **Truncate**: After the search, the function truncates results (this is indicated by `truncation_result` in the context).\n\n3. **Merge chunks**: The function merges text chunks from `text_chunks_db` with the truncated entities and relationships.\n\n4. **Build LLM context**: Finally, it builds the LLM context using `_build_context_str`, which handles dynamic token processing.\n\nRegarding how it selects entities, relationships, and text chunks:\n\n- **Entities**: Selected from `entities_vdb` (entities vector database)\n- **Relationships**: Selected from `relationships_vdb` (relationships vector database)\n- **Text chunks**: Selected from `text_chunks_db` (text chunks database)\n\nAs for how it applies `max_total_tokens`, the context shows that the function has a `query_param` parameter that likely contains the token budget information. The context mentions \"Stage 4: Build final LLM context with dynamic token processing\" and references `_build_context_str` which \"always returns tuple[str, dict]\". This suggests that the `max_total_tokens` constraint is applied during the final LLM context building stage through dynamic token processing.\n\nHowever, the context does not provide complete implementation details about exactly how the function selects entities, relationships, and text chunks, or the specific implementation of how `max_total_tokens` is applied. The context shows the function follows a 4-stage architecture but doesn't give the complete implementation of each stage.\n\nThe context also mentions that the function returns a `QueryContextResult` containing both context and raw_data, and that it has a check for empty queries.\n\nWhile I can identify the function signature and general architecture, the context doesn't provide enough detail to fully explain how it selects entities, relationships, and text chunks, or the specific implementation of how `max_total_tokens` is applied.",
+    "sources": [
+      "lightrag/operate.py",
+      "lightrag/operate.py#_build_query_context",
+      "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context"
+    ],
+    "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+    "retrieval_plan": {
+      "generation_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+      "trace_id": "a90553ce668d4fd0ae5bd45d8564e778",
+      "seed_canonical_ids": [
+        "AGENTS.md#repository_guidelines.key_implementation_patterns.query_configuration",
+        "examples/lightrag_ag2_multiagent_demo.py",
+        "lightrag/operate.py",
+        "lightrag/operate.py#_apply_token_truncation",
+        "lightrag/operate.py#_build_context_str",
+        "lightrag/operate.py#_build_query_context",
+        "tests/llm/test_query_cache_conversation_history.py",
+        "tests/llm/test_query_cache_conversation_history.py#_fake_build_query_context",
+        "tests/llm/test_query_cache_conversation_history.py#_legacy_answer_cache_key",
+        "tests/llm/test_query_cache_kg_chunk_selection.py",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#stub_query_context",
+        "tests/llm/test_query_cache_user_prompt_prefix.py",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_budget",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context"
+      ],
+      "expanded_canonical_ids": [
+        "EXTERNAL_SYMBOL:PREFIX_A.strip",
+        "EXTERNAL_SYMBOL:TypeError",
+        "EXTERNAL_SYMBOL:ValueError",
+        "EXTERNAL_SYMBOL:_MM_DISPLAY_NAME_PATTERN.search",
+        "EXTERNAL_SYMBOL:_bg_loop.call_soon_threadsafe",
+        "EXTERNAL_SYMBOL:_rag_instance.aquery",
+        "EXTERNAL_SYMBOL:_rag_instance.finalize_storages",
+        "EXTERNAL_SYMBOL:actual_embedding_func",
+        "EXTERNAL_SYMBOL:added_entities.append",
+        "EXTERNAL_SYMBOL:addon_params.get",
+        "EXTERNAL_SYMBOL:all",
+        "EXTERNAL_SYMBOL:all_added_entities.extend",
+        "EXTERNAL_SYMBOL:all_cache_ids.update",
+        "EXTERNAL_SYMBOL:all_edges.append",
+        "EXTERNAL_SYMBOL:all_edges.items",
+        "EXTERNAL_SYMBOL:all_edges_data.append",
+        "EXTERNAL_SYMBOL:all_entity_data.extend",
+        "EXTERNAL_SYMBOL:all_keywords.update",
+        "EXTERNAL_SYMBOL:all_nodes.items",
+        "EXTERNAL_SYMBOL:all_referenced_chunk_ids.update",
+        "EXTERNAL_SYMBOL:all_relationship_data.extend",
+        "EXTERNAL_SYMBOL:already_description.extend",
+        "EXTERNAL_SYMBOL:already_edge.get",
+        "EXTERNAL_SYMBOL:already_entity_types.append",
+        "EXTERNAL_SYMBOL:already_file_paths.extend",
+        "EXTERNAL_SYMBOL:already_keywords.extend",
+        "EXTERNAL_SYMBOL:already_node.get",
+        "EXTERNAL_SYMBOL:already_source_ids.extend",
+        "EXTERNAL_SYMBOL:already_weights.append",
+        "EXTERNAL_SYMBOL:analyst.register_for_llm",
+        "EXTERNAL_SYMBOL:answer_cache_kv.global_config.get",
+        "EXTERNAL_SYMBOL:any",
+        "EXTERNAL_SYMBOL:append",
+        "EXTERNAL_SYMBOL:args.extend",
+        "EXTERNAL_SYMBOL:asyncio.Semaphore",
+        "EXTERNAL_SYMBOL:asyncio.create_task",
+        "EXTERNAL_SYMBOL:asyncio.gather",
+        "EXTERNAL_SYMBOL:asyncio.new_event_loop",
+        "EXTERNAL_SYMBOL:asyncio.run_coroutine_threadsafe",
+        "EXTERNAL_SYMBOL:asyncio.set_event_loop",
+        "EXTERNAL_SYMBOL:asyncio.sleep",
+        "EXTERNAL_SYMBOL:asyncio.wait",
+        "EXTERNAL_SYMBOL:autogen.AssistantAgent",
+        "EXTERNAL_SYMBOL:autogen.GroupChat",
+        "EXTERNAL_SYMBOL:autogen.GroupChatManager",
+        "EXTERNAL_SYMBOL:autogen.LLMConfig",
+        "EXTERNAL_SYMBOL:autogen.UserProxyAgent",
+        "EXTERNAL_SYMBOL:batch_edges_dict.get",
+        "EXTERNAL_SYMBOL:bg_thread.join",
+        "EXTERNAL_SYMBOL:bg_thread.start",
+        "EXTERNAL_SYMBOL:bool",
+        "EXTERNAL_SYMBOL:c.get",
+        "EXTERNAL_SYMBOL:cache_entry.get",
+        "EXTERNAL_SYMBOL:cached_results.items",
+        "EXTERNAL_SYMBOL:cached_results.keys",
+        "EXTERNAL_SYMBOL:callable",
+        "EXTERNAL_SYMBOL:candidate_entities.update",
+        "EXTERNAL_SYMBOL:candidate_relations.add",
+        "EXTERNAL_SYMBOL:cfg.get",
+        "EXTERNAL_SYMBOL:chr",
+        "EXTERNAL_SYMBOL:chunk.get",
+        "EXTERNAL_SYMBOL:chunk_data.copy",
+        "EXTERNAL_SYMBOL:chunk_data.get",
+        "EXTERNAL_SYMBOL:chunk_data_by_id.get",
+        "EXTERNAL_SYMBOL:chunk_dp.get",
+        "EXTERNAL_SYMBOL:chunk_earliest_times.keys",
+        "EXTERNAL_SYMBOL:chunk_occurrence_count.get",
+        "EXTERNAL_SYMBOL:chunk_tracking_log.append",
+        "EXTERNAL_SYMBOL:chunks.append",
+        "EXTERNAL_SYMBOL:chunks.items",
+        "EXTERNAL_SYMBOL:chunks_vdb.query",
+        "EXTERNAL_SYMBOL:collections.Counter",
+        "EXTERNAL_SYMBOL:collections.defaultdict",
+        "EXTERNAL_SYMBOL:combined.append",
+        "EXTERNAL_SYMBOL:completion_delimiter.lower",
+        "EXTERNAL_SYMBOL:current_chunk.append",
+        "EXTERNAL_SYMBOL:current_entity.get",
+        "EXTERNAL_SYMBOL:current_relationship.get",
+        "EXTERNAL_SYMBOL:dataclasses.field",
+        "EXTERNAL_SYMBOL:decode",
+        "EXTERNAL_SYMBOL:deduplicated_chunks.append",
+        "EXTERNAL_SYMBOL:degrees_dict.get",
+        "EXTERNAL_SYMBOL:delimiter_core.lower",
+        "EXTERNAL_SYMBOL:desc_token_counts.append",
+        "EXTERNAL_SYMBOL:descriptions.append",
+        "EXTERNAL_SYMBOL:dict",
+        "EXTERNAL_SYMBOL:dict.fromkeys",
+        "EXTERNAL_SYMBOL:display_value.encode",
+        "EXTERNAL_SYMBOL:dotenv.load_dotenv",
+        "EXTERNAL_SYMBOL:dp.get",
+        "EXTERNAL_SYMBOL:edge.get",
+        "EXTERNAL_SYMBOL:edge_data.get",
+        "EXTERNAL_SYMBOL:edge_data_dict.get",
+        "EXTERNAL_SYMBOL:edge_datas.append",
+        "EXTERNAL_SYMBOL:edge_degrees_dict.get",
+        "EXTERNAL_SYMBOL:edge_description.strip",
+        "EXTERNAL_SYMBOL:edge_keywords.replace",
+        "EXTERNAL_SYMBOL:edge_list.append",
+        "EXTERNAL_SYMBOL:edge_tasks.append",
+        "EXTERNAL_SYMBOL:entities.items",
+        "EXTERNAL_SYMBOL:entities_context.append",
+        "EXTERNAL_SYMBOL:entities_context_for_truncation.append",
+        "EXTERNAL_SYMBOL:entities_to_rebuild.items",
+        "EXTERNAL_SYMBOL:entities_to_rebuild.values",
+        "EXTERNAL_SYMBOL:entities_vdb.query",
+        "EXTERNAL_SYMBOL:entities_vdb.upsert",
+        "EXTERNAL_SYMBOL:entities_with_chunks.append",
+        "EXTERNAL_SYMBOL:entity.copy",
+        "EXTERNAL_SYMBOL:entity.get",
+        "EXTERNAL_SYMBOL:entity_chunk_ids.add",
+        "EXTERNAL_SYMBOL:entity_chunks_storage.get_by_id",
+        "EXTERNAL_SYMBOL:entity_chunks_storage.upsert",
+        "EXTERNAL_SYMBOL:entity_context.get",
+        "EXTERNAL_SYMBOL:entity_copy.pop",
+        "EXTERNAL_SYMBOL:entity_data.get",
+        "EXTERNAL_SYMBOL:entity_description.strip",
+        "EXTERNAL_SYMBOL:entity_id_to_original.get",
+        "EXTERNAL_SYMBOL:entity_id_to_original.setdefault",
+        "EXTERNAL_SYMBOL:entity_name.strip",
+        "EXTERNAL_SYMBOL:entity_names.append",
+        "EXTERNAL_SYMBOL:entity_record.startswith",
+        "EXTERNAL_SYMBOL:entity_relation_record.startswith",
+        "EXTERNAL_SYMBOL:entity_tasks.append",
+        "EXTERNAL_SYMBOL:entity_type.replace",
+        "EXTERNAL_SYMBOL:entity_type.split",
+        "EXTERNAL_SYMBOL:entity_type.strip",
+        "EXTERNAL_SYMBOL:entity_types.append",
+        "EXTERNAL_SYMBOL:entity_vdb.upsert",
+        "EXTERNAL_SYMBOL:enumerate",
+        "EXTERNAL_SYMBOL:examples.format",
+        "EXTERNAL_SYMBOL:existing_desc.split",
+        "EXTERNAL_SYMBOL:existing_entity_type.split",
+        "EXTERNAL_SYMBOL:existing_entity_type.strip",
+        "EXTERNAL_SYMBOL:existing_file_path.split",
+        "EXTERNAL_SYMBOL:existing_node.get",
+        "EXTERNAL_SYMBOL:existing_source_id.split",
+        "EXTERNAL_SYMBOL:extend",
+        "EXTERNAL_SYMBOL:extract_tokenizer.encode",
+        "EXTERNAL_SYMBOL:file_paths.update",
+        "EXTERNAL_SYMBOL:file_paths_list.append",
+        "EXTERNAL_SYMBOL:filtered_edges.append",
+        "EXTERNAL_SYMBOL:filtered_entities.append",
+        "EXTERNAL_SYMBOL:filtered_nodes.append",
+        "EXTERNAL_SYMBOL:filtered_relations.append",
+        "EXTERNAL_SYMBOL:final_data.get",
+        "EXTERNAL_SYMBOL:final_data_payload.get",
+        "EXTERNAL_SYMBOL:final_entities.append",
+        "EXTERNAL_SYMBOL:final_relations.append",
+        "EXTERNAL_SYMBOL:fixed_records.append",
+        "EXTERNAL_SYMBOL:float",
+        "EXTERNAL_SYMBOL:format",
+        "EXTERNAL_SYMBOL:fp.startswith",
+        "EXTERNAL_SYMBOL:frozenset",
+        "EXTERNAL_SYMBOL:full_entities_storage.upsert",
+        "EXTERNAL_SYMBOL:full_relations_storage.upsert",
+        "EXTERNAL_SYMBOL:functools.partial",
+        "EXTERNAL_SYMBOL:future.result",
+        "EXTERNAL_SYMBOL:get",
+        "EXTERNAL_SYMBOL:getattr",
+        "EXTERNAL_SYMBOL:glean_edges.items",
+        "EXTERNAL_SYMBOL:glean_nodes.items",
+        "EXTERNAL_SYMBOL:global_config.get",
+        "EXTERNAL_SYMBOL:hasattr",
+        "EXTERNAL_SYMBOL:hashing_kv.global_config.get",
+        "EXTERNAL_SYMBOL:heading_block.get",
+        "EXTERNAL_SYMBOL:heading_path.split",
+        "EXTERNAL_SYMBOL:hl_keywords.split",
+        "EXTERNAL_SYMBOL:identifier.encode",
+        "EXTERNAL_SYMBOL:inspect.isawaitable",
+        "EXTERNAL_SYMBOL:int",
+        "EXTERNAL_SYMBOL:isinstance",
+        "EXTERNAL_SYMBOL:items",
+        "EXTERNAL_SYMBOL:join",
+        "EXTERNAL_SYMBOL:json.dumps",
+        "EXTERNAL_SYMBOL:json.loads",
+        "EXTERNAL_SYMBOL:json_repair.loads",
+        "EXTERNAL_SYMBOL:k.get",
+        "EXTERNAL_SYMBOL:k.strip",
+        "EXTERNAL_SYMBOL:keyword_str.split",
+        "EXTERNAL_SYMBOL:kg_context_template.format",
+        "EXTERNAL_SYMBOL:kg_extraction_validator",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.edge_degrees_batch",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.get_edge",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.get_edges_batch",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.get_node",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.get_node_edges",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.get_nodes_batch",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.get_nodes_edges_batch",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.has_edge",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.has_node",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.node_degrees_batch",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.upsert_edge",
+        "EXTERNAL_SYMBOL:knowledge_graph_inst.upsert_node",
+        "EXTERNAL_SYMBOL:kw_str.split",
+        "EXTERNAL_SYMBOL:kwargs.get",
+        "EXTERNAL_SYMBOL:len",
+        "EXTERNAL_SYMBOL:lightrag.LightRAG",
+        "EXTERNAL_SYMBOL:lightrag.QueryParam",
+        "EXTERNAL_SYMBOL:lightrag.constants.GRAPH_FIELD_SEP.join",
+        "EXTERNAL_SYMBOL:lightrag.utils.logger.debug",
+        "EXTERNAL_SYMBOL:lightrag.utils.logger.error",
+        "EXTERNAL_SYMBOL:lightrag.utils.logger.info",
+        "EXTERNAL_SYMBOL:lightrag.utils.logger.isEnabledFor",
+        "EXTERNAL_SYMBOL:lightrag.utils.logger.warning",
+        "EXTERNAL_SYMBOL:limited.append",
+        "EXTERNAL_SYMBOL:limits.append",
+        "EXTERNAL_SYMBOL:ll_keywords.split",
+        "EXTERNAL_SYMBOL:llm_response_cache.get_by_ids",
+        "EXTERNAL_SYMBOL:loop.run_forever",
+        "EXTERNAL_SYMBOL:lower",
+        "EXTERNAL_SYMBOL:match.group",
+        "EXTERNAL_SYMBOL:max",
+        "EXTERNAL_SYMBOL:maybe_edges.items",
+        "EXTERNAL_SYMBOL:maybe_edges.setdefault",
+        "EXTERNAL_SYMBOL:maybe_nodes.items",
+        "EXTERNAL_SYMBOL:maybe_nodes.keys",
+        "EXTERNAL_SYMBOL:maybe_nodes.setdefault",
+        "EXTERNAL_SYMBOL:merged_chunks.append",
+        "EXTERNAL_SYMBOL:mm_nodes_list.append",
+        "EXTERNAL_SYMBOL:monkeypatch.setattr",
+        "EXTERNAL_SYMBOL:msg.get",
+        "EXTERNAL_SYMBOL:naive_context_template.format",
+        "EXTERNAL_SYMBOL:new_summaries.append",
+        "EXTERNAL_SYMBOL:node_datas.append",
+        "EXTERNAL_SYMBOL:nodes_dict.get",
+        "EXTERNAL_SYMBOL:normalized.append",
+        "EXTERNAL_SYMBOL:on_anchors_durable",
+        "EXTERNAL_SYMBOL:ord",
+        "EXTERNAL_SYMBOL:original",
+        "EXTERNAL_SYMBOL:os.environ.get",
+        "EXTERNAL_SYMBOL:os.getenv",
+        "EXTERNAL_SYMBOL:os.makedirs",
+        "EXTERNAL_SYMBOL:os.path.exists",
+        "EXTERNAL_SYMBOL:param",
+        "EXTERNAL_SYMBOL:parsed.get",
+        "EXTERNAL_SYMBOL:part.strip",
+        "EXTERNAL_SYMBOL:pathlib.Path",
+        "EXTERNAL_SYMBOL:payload.get",
+        "EXTERNAL_SYMBOL:pending_task.cancel",
+        "EXTERNAL_SYMBOL:pipeline_status.get",
+        "EXTERNAL_SYMBOL:print",
+        "EXTERNAL_SYMBOL:process",
+        "EXTERNAL_SYMBOL:processed_edges.append",
+        "EXTERNAL_SYMBOL:prompt_template.format",
+        "EXTERNAL_SYMBOL:pytest.mark.parametrize",
+        "EXTERNAL_SYMBOL:pytest.param",
+        "EXTERNAL_SYMBOL:rag.ainsert",
+        "EXTERNAL_SYMBOL:rag.initialize_storages",
+        "EXTERNAL_SYMBOL:range",
+        "EXTERNAL_SYMBOL:raw_data.get",
+        "EXTERNAL_SYMBOL:raw_keywords.append",
+        "EXTERNAL_SYMBOL:re.compile",
+        "EXTERNAL_SYMBOL:re.split",
+        "EXTERNAL_SYMBOL:record.strip",
+        "EXTERNAL_SYMBOL:rel_data.get",
+        "EXTERNAL_SYMBOL:relation.copy",
+        "EXTERNAL_SYMBOL:relation.get",
+        "EXTERNAL_SYMBOL:relation_chunks_storage.get_by_id",
+        "EXTERNAL_SYMBOL:relation_chunks_storage.upsert",
+        "EXTERNAL_SYMBOL:relation_context.get",
+        "EXTERNAL_SYMBOL:relation_copy.pop",
+        "EXTERNAL_SYMBOL:relation_id_to_original.get",
+        "EXTERNAL_SYMBOL:relation_id_to_original.setdefault",
+        "EXTERNAL_SYMBOL:relations_context.append",
+        "EXTERNAL_SYMBOL:relations_context_for_truncation.append",
+        "EXTERNAL_SYMBOL:relations_with_chunks.append",
+        "EXTERNAL_SYMBOL:relationship_descriptions.append",
+        "EXTERNAL_SYMBOL:relationships.items",
+        "EXTERNAL_SYMBOL:relationships_to_rebuild.items",
+        "EXTERNAL_SYMBOL:relationships_to_rebuild.values",
+        "EXTERNAL_SYMBOL:relationships_vdb.delete",
+        "EXTERNAL_SYMBOL:relationships_vdb.query",
+        "EXTERNAL_SYMBOL:relationships_vdb.upsert",
+        "EXTERNAL_SYMBOL:removed_entity_chunk_ids.add",
+        "EXTERNAL_SYMBOL:replace",
+        "EXTERNAL_SYMBOL:report.missing_cache_chunk_ids.update",
+        "EXTERNAL_SYMBOL:report.referenced_chunk_ids.update",
+        "EXTERNAL_SYMBOL:report.unusable_cache_chunk_ids.add",
+        "EXTERNAL_SYMBOL:researcher.register_for_llm",
+        "EXTERNAL_SYMBOL:resolve",
+        "EXTERNAL_SYMBOL:response.replace",
+        "EXTERNAL_SYMBOL:result.get",
+        "EXTERNAL_SYMBOL:result.model_dump",
+        "EXTERNAL_SYMBOL:result.strip",
+        "EXTERNAL_SYMBOL:result_chunks.append",
+        "EXTERNAL_SYMBOL:retrieval_config.get",
+        "EXTERNAL_SYMBOL:rstrip",
+        "EXTERNAL_SYMBOL:runner",
+        "EXTERNAL_SYMBOL:search_result.get",
+        "EXTERNAL_SYMBOL:seen.add",
+        "EXTERNAL_SYMBOL:seen_chunk_ids.add",
+        "EXTERNAL_SYMBOL:seen_entities.add",
+        "EXTERNAL_SYMBOL:seen_paths.add",
+        "EXTERNAL_SYMBOL:seen_relations.add",
+        "EXTERNAL_SYMBOL:self._store.get",
+        "EXTERNAL_SYMBOL:self._store.update",
+        "EXTERNAL_SYMBOL:self.histories.append",
+        "EXTERNAL_SYMBOL:self.store.get",
+        "EXTERNAL_SYMBOL:self.store.update",
+        "EXTERNAL_SYMBOL:self.system_prompts.append",
+        "EXTERNAL_SYMBOL:separator.join",
+        "EXTERNAL_SYMBOL:set",
+        "EXTERNAL_SYMBOL:shutil.rmtree",
+        "EXTERNAL_SYMBOL:sidecar_block.get",
+        "EXTERNAL_SYMBOL:sort",
+        "EXTERNAL_SYMBOL:sorted",
+        "EXTERNAL_SYMBOL:split",
+        "EXTERNAL_SYMBOL:stage_tally.stage_breakdown",
+        "EXTERNAL_SYMBOL:startswith",
+        "EXTERNAL_SYMBOL:status_logger.log",
+        "EXTERNAL_SYMBOL:storage_inst.index_done_callback",
+        "EXTERNAL_SYMBOL:stored_chunks.get",
+        "EXTERNAL_SYMBOL:str",
+        "EXTERNAL_SYMBOL:strip",
+        "EXTERNAL_SYMBOL:stripped.startswith",
+        "EXTERNAL_SYMBOL:sum",
+        "EXTERNAL_SYMBOL:sys_prompt_temp.format",
+        "EXTERNAL_SYMBOL:sys_prompt_template.format",
+        "EXTERNAL_SYMBOL:t.strip",
+        "EXTERNAL_SYMBOL:task.exception",
+        "EXTERNAL_SYMBOL:task.result",
+        "EXTERNAL_SYMBOL:tasks.append",
+        "EXTERNAL_SYMBOL:text_chunks_db.get_by_ids",
+        "EXTERNAL_SYMBOL:text_chunks_db.global_config.get",
+        "EXTERNAL_SYMBOL:text_chunks_storage.get_by_id",
+        "EXTERNAL_SYMBOL:text_chunks_storage.get_by_ids",
+        "EXTERNAL_SYMBOL:text_purposes.append",
+        "EXTERNAL_SYMBOL:texts_to_embed.append",
+        "EXTERNAL_SYMBOL:threading.Thread",
+        "EXTERNAL_SYMBOL:time.localtime",
+        "EXTERNAL_SYMBOL:time.perf_counter",
+        "EXTERNAL_SYMBOL:time.strftime",
+        "EXTERNAL_SYMBOL:time.time",
+        "EXTERNAL_SYMBOL:tokenizer.decode",
+        "EXTERNAL_SYMBOL:tokenizer.encode",
+        "EXTERNAL_SYMBOL:tokenizer.truncate_by_token_limit",
+        "EXTERNAL_SYMBOL:truncation_result.get",
+        "EXTERNAL_SYMBOL:truncation_tally.absorb",
+        "EXTERNAL_SYMBOL:truncation_tally.record",
+        "EXTERNAL_SYMBOL:truncation_write_ahead",
+        "EXTERNAL_SYMBOL:tuple",
+        "EXTERNAL_SYMBOL:type",
+        "EXTERNAL_SYMBOL:type_counts.items",
+        "EXTERNAL_SYMBOL:unique_edges.values",
+        "EXTERNAL_SYMBOL:unique_nodes.values",
+        "EXTERNAL_SYMBOL:unresolved_entities.append",
+        "EXTERNAL_SYMBOL:unresolved_relations.append",
+        "EXTERNAL_SYMBOL:updated_relationship_data.get",
+        "EXTERNAL_SYMBOL:use_model_func",
+        "EXTERNAL_SYMBOL:user_proxy.register_for_execution",
+        "EXTERNAL_SYMBOL:user_proxy.run",
+        "EXTERNAL_SYMBOL:valid_chunks.append",
+        "EXTERNAL_SYMBOL:value.strip",
+        "EXTERNAL_SYMBOL:weights.append",
+        "EXTERNAL_SYMBOL:x.get",
+        "EXTERNAL_SYMBOL:zip",
+        "examples/lightrag_ag2_multiagent_demo.py#_run_async",
+        "examples/lightrag_ag2_multiagent_demo.py#_start_background_loop",
+        "examples/lightrag_ag2_multiagent_demo.py#create_agents",
+        "examples/lightrag_ag2_multiagent_demo.py#is_termination",
+        "examples/lightrag_ag2_multiagent_demo.py#lightrag_query",
+        "examples/lightrag_ag2_multiagent_demo.py#main",
+        "examples/lightrag_ag2_multiagent_demo.py#run_multiagent_query",
+        "examples/lightrag_ag2_multiagent_demo.py#setup_lightrag",
+        "lightrag/api/routers/query_routes.py#progress_callback",
+        "lightrag/base.py#QueryContextResult",
+        "lightrag/base.py#QueryParam",
+        "lightrag/base.py#QueryResult",
+        "lightrag/chunk_schema.py#format_heading_context",
+        "lightrag/chunk_schema.py#format_parent_headings",
+        "lightrag/chunk_schema.py#strip_internal_multimodal_markup_for_extraction",
+        "lightrag/exceptions.py#IndexFlushError",
+        "lightrag/exceptions.py#PipelineCancelledException",
+        "lightrag/kg/shared_storage.py#PipelineStatusLogger",
+        "lightrag/kg/shared_storage.py#append_pipeline_history",
+        "lightrag/kg/shared_storage.py#get_storage_keyed_lock",
+        "lightrag/operate.py#KGRebuildReport",
+        "lightrag/operate.py#KGRebuildReport.has_warnings",
+        "lightrag/operate.py#KGRebuildReport.surviving_chunk_ids",
+        "lightrag/operate.py#QueryProgress",
+        "lightrag/operate.py#_add_sanitized",
+        "lightrag/operate.py#_answer_cache_kv",
+        "lightrag/operate.py#_attach_content_headings",
+        "lightrag/operate.py#_backfill",
+        "lightrag/operate.py#_combine_descriptions_dedup",
+        "lightrag/operate.py#_find_most_related_edges_from_entities",
+        "lightrag/operate.py#_find_most_related_entities_from_relationships",
+        "lightrag/operate.py#_find_related_text_unit_from_entities",
+        "lightrag/operate.py#_find_related_text_unit_from_relations",
+        "lightrag/operate.py#_format_relation_edge_label",
+        "lightrag/operate.py#_get_cached_extraction_results",
+        "lightrag/operate.py#_get_edge_data",
+        "lightrag/operate.py#_get_node_data",
+        "lightrag/operate.py#_get_relationship_vdb_timeout_seconds",
+        "lightrag/operate.py#_get_vector_context",
+        "lightrag/operate.py#_handle_entity_relation_summary",
+        "lightrag/operate.py#_handle_single_entity_extraction",
+        "lightrag/operate.py#_handle_single_relationship_extraction",
+        "lightrag/operate.py#_locked_process_edges",
+        "lightrag/operate.py#_locked_process_entity_name",
+        "lightrag/operate.py#_locked_rebuild_entity",
+        "lightrag/operate.py#_locked_rebuild_relationship",
+        "lightrag/operate.py#_looks_like_json_extraction_result",
+        "lightrag/operate.py#_merge_all_chunks",
+        "lightrag/operate.py#_merge_edges_then_upsert",
+        "lightrag/operate.py#_merge_nodes_then_upsert",
+        "lightrag/operate.py#_normalize_and_validate_entity_type",
+        "lightrag/operate.py#_normalize_keyword_list",
+        "lightrag/operate.py#_normalize_text_extraction_record_attributes",
+        "lightrag/operate.py#_parse_keywords_payload",
+        "lightrag/operate.py#_parse_mm_display_name",
+        "lightrag/operate.py#_perform_kg_search",
+        "lightrag/operate.py#_process_extraction_result",
+        "lightrag/operate.py#_process_json_extraction_result",
+        "lightrag/operate.py#_process_single_content",
+        "lightrag/operate.py#_process_with_semaphore",
+        "lightrag/operate.py#_publish_cache_skip_summary",
+        "lightrag/operate.py#_publish_summary_truncation",
+        "lightrag/operate.py#_publish_truncation_summary",
+        "lightrag/operate.py#_rebuild_from_extraction_result",
+        "lightrag/operate.py#_rebuild_single_entity",
+        "lightrag/operate.py#_rebuild_single_relationship",
+        "lightrag/operate.py#_report_cache_skip",
+        "lightrag/operate.py#_report_truncation",
+        "lightrag/operate.py#_summarize_descriptions",
+        "lightrag/operate.py#_surviving_chunk_file_paths",
+        "lightrag/operate.py#_truncate_entity_identifier",
+        "lightrag/operate.py#_truncate_section_context",
+        "lightrag/operate.py#_truncate_vdb_content",
+        "lightrag/operate.py#_truncation_cause_suffix",
+        "lightrag/operate.py#_update_entity_storage",
+        "lightrag/operate.py#_vector_chunk_quota",
+        "lightrag/operate.py#collect_kg_merge_candidates",
+        "lightrag/operate.py#extract_entities",
+        "lightrag/operate.py#extract_keywords_only",
+        "lightrag/operate.py#get_keywords_from_query",
+        "lightrag/operate.py#kg_query",
+        "lightrag/operate.py#merge_nodes_and_edges",
+        "lightrag/operate.py#naive_query",
+        "lightrag/operate.py#rebuild_knowledge_from_chunks",
+        "lightrag/prompt.py#resolve_entity_extraction_prompt_profile",
+        "lightrag/utils.py#CacheData",
+        "lightrag/utils.py#LightragPathFilter.filter",
+        "lightrag/utils.py#TokenLimitTruncationTally",
+        "lightrag/utils.py#Tokenizer",
+        "lightrag/utils.py#_cooperative_yield",
+        "lightrag/utils.py#acount_tokens",
+        "lightrag/utils.py#apply_source_ids_limit",
+        "lightrag/utils.py#atruncate_list_by_token_size",
+        "lightrag/utils.py#compute_args_hash",
+        "lightrag/utils.py#compute_mdhash_id",
+        "lightrag/utils.py#convert_to_user_format",
+        "lightrag/utils.py#create_prefixed_exception",
+        "lightrag/utils.py#fix_tuple_delimiter_corruption",
+        "lightrag/utils.py#generate_reference_list_from_chunks",
+        "lightrag/utils.py#get_env_value",
+        "lightrag/utils.py#get_llm_cache_identity",
+        "lightrag/utils.py#handle_cache",
+        "lightrag/utils.py#has_chunk_tracking_row",
+        "lightrag/utils.py#is_truncated_response",
+        "lightrag/utils.py#make_relation_chunk_key",
+        "lightrag/utils.py#merge_source_ids",
+        "lightrag/utils.py#normalize_entity_name",
+        "lightrag/utils.py#pack_user_ass_to_openai_messages",
+        "lightrag/utils.py#performance_timing_log",
+        "lightrag/utils.py#pick_by_vector_similarity",
+        "lightrag/utils.py#pick_by_weighted_polling",
+        "lightrag/utils.py#process_chunks_unified",
+        "lightrag/utils.py#remove_think_tags",
+        "lightrag/utils.py#render_chunks_context_text",
+        "lightrag/utils.py#repair_vlm_json_escape_damage_nested",
+        "lightrag/utils.py#resolve_user_prompt",
+        "lightrag/utils.py#run_in_tokenizer_executor",
+        "lightrag/utils.py#safe_vdb_operation_with_exception",
+        "lightrag/utils.py#sanitize_and_normalize_extracted_text",
+        "lightrag/utils.py#sanitize_text_for_encoding",
+        "lightrag/utils.py#save_to_cache",
+        "lightrag/utils.py#serialize_llm_cache_identity",
+        "lightrag/utils.py#split_string_by_multi_markers",
+        "lightrag/utils.py#strip_markdown_code_fence",
+        "lightrag/utils.py#tolerant_load_json_dict",
+        "lightrag/utils.py#use_llm_func_with_cache",
+        "lightrag/utils.py#wait_tasks_with_drain",
+        "lightrag_webui/src/features/retrieval/streamedContentKey.test.tsx#list",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeChunksVDB",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeChunksVDB.query",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeKVStorage",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeKVStorage.__init__",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeKVStorage.get_by_id",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeKVStorage.upsert",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeTokenizer",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeTokenizerImpl",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeTokenizerImpl.decode",
+        "tests/llm/test_query_cache_conversation_history.py#_FakeTokenizerImpl.encode",
+        "tests/llm/test_query_cache_conversation_history.py#_RecordingModel",
+        "tests/llm/test_query_cache_conversation_history.py#_RecordingModel.__call__",
+        "tests/llm/test_query_cache_conversation_history.py#_RecordingModel.__init__",
+        "tests/llm/test_query_cache_conversation_history.py#_answer_cache_keys",
+        "tests/llm/test_query_cache_conversation_history.py#_kg_param",
+        "tests/llm/test_query_cache_conversation_history.py#_naive_param",
+        "tests/llm/test_query_cache_conversation_history.py#_param",
+        "tests/llm/test_query_cache_conversation_history.py#_query_global_config",
+        "tests/llm/test_query_cache_conversation_history.py#_run_kg_query",
+        "tests/llm/test_query_cache_conversation_history.py#keyword_model",
+        "tests/llm/test_query_cache_conversation_history.py#stub_query_context",
+        "tests/llm/test_query_cache_conversation_history.py#test_kg_history_turn_does_not_seed_cache_for_plain_turn",
+        "tests/llm/test_query_cache_conversation_history.py#test_kg_history_turn_ignores_existing_plain_cache_entry",
+        "tests/llm/test_query_cache_conversation_history.py#test_kg_keywords_cache_still_shared_across_histories",
+        "tests/llm/test_query_cache_conversation_history.py#test_kg_pre_version_cache_entry_is_not_served",
+        "tests/llm/test_query_cache_conversation_history.py#test_naive_distinct_histories_neither_share_nor_grow_the_cache",
+        "tests/llm/test_query_cache_conversation_history.py#test_naive_history_turn_does_not_seed_cache_for_plain_turn",
+        "tests/llm/test_query_cache_conversation_history.py#test_naive_history_turn_ignores_existing_plain_cache_entry",
+        "tests/llm/test_query_cache_conversation_history.py#test_naive_pre_version_cache_entry_is_not_served",
+        "tests/llm/test_query_cache_conversation_history.py#test_naive_single_turn_query_still_hits_cache",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Cache",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Cache.__init__",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Cache.get_by_id",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Cache.upsert",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Model",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Model.__call__",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Model.__init__",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_TextChunks",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_TextChunks.__init__",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Tokenizer",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Tokenizer.decode",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_Tokenizer.encode",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_config",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#_run",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#fake_context",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#fake_keywords",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#test_kg_chunk_selection_partitions_answer_cache",
+        "tests/llm/test_query_cache_kg_chunk_selection.py#test_same_kg_chunk_selection_still_hits_answer_cache",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeChunksVDB",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeChunksVDB.query",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeKVStorage",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeKVStorage.__init__",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeKVStorage.get_by_id",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeKVStorage.upsert",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeTokenizer",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeTokenizerImpl",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeTokenizerImpl.decode",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_FakeTokenizerImpl.encode",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_RecordingModel",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_RecordingModel.__call__",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_RecordingModel.__init__",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_answer_cache_keys",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_budget_for",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_kg_param",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_naive_param",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_preprefix_answer_cache_key",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_query_global_config",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_run_kg",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_run_naive",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#_spy",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#stub_query_context",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_budget_charges_the_prefix_only_when_the_template_renders_it",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_cache_metadata_records_the_raw_request_user_prompt",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_changing_system_prompt_does_not_serve_old_answer",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_changing_the_prefix_does_not_serve_the_old_answer",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_configured_prefix_does_not_serve_a_pre_prefix_entry",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_disabled_prefix_keeps_the_prefix_out_of_the_prompt",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_disabled_prefix_shares_the_entry_with_no_prefix_configured",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_kg_entry_written_before_the_prefix_feature_still_hits",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_naive_entry_written_before_the_prefix_feature_still_hits",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_only_need_context_budgets_exactly_like_a_real_query",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_only_need_prompt_returns_the_composed_prefix",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_prefix_alone_reaches_the_model_without_a_user_prompt",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_prefix_and_user_prompt_do_not_collide_across_the_boundary",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_prefix_is_prepended_into_the_system_prompt",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_prefix_shrinks_the_available_chunk_token_budget",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_same_prefix_still_hits_the_cache",
+        "tests/llm/test_query_cache_user_prompt_prefix.py#test_same_system_prompt_still_hits_cache"
+      ],
+      "seed_docs": 14,
+      "expanded_docs_considered": 572,
+      "expanded_docs_used": 20,
+      "expanded_docs": 20,
+      "total_docs": 34,
+      "seed_document_ids": [
+        "05dc0e36-e346-4572-9302-4fda6422d648",
+        "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+        "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+        "5010f910-abfa-4e65-a975-be5ea23b121f",
+        "5398d238-8765-4119-9182-369b565b24ee",
+        "5c768932-28d6-48e5-b404-07d7156f18da",
+        "5f15303f-d1c1-4ad0-b1dd-5561b8d21457",
+        "737853c2-43b9-47ed-8440-bc2cef5456f7",
+        "90ddd1b4-9e66-4567-b130-5b5b3bb67df0",
+        "9fdec0c5-6d33-4e6c-8333-0198c2dff940",
+        "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+        "cafdb76b-9b44-4265-9cc6-590e3b0ba1b9",
+        "cd801eac-3c04-4db0-9a10-9fe334aa267c",
+        "e5711381-790b-46a5-af61-19dd2d1b668a"
+      ],
+      "expanded_document_ids": [
+        "0618b70e-ec2c-48b0-96b0-9de5a7e859cb",
+        "06910188-7299-4bdd-b1bf-c75b0c672879",
+        "073a8f19-eeab-4ce7-93ba-d57d4a6e34ab",
+        "07a00b42-90a7-4295-a123-7fd2acf2f271",
+        "104feed9-d001-4394-8e32-ae40bf6ec92e",
+        "1ba0e121-1397-446b-9925-03d1943af1a9",
+        "37866cad-2d5e-4006-9bda-8684377859a3",
+        "37d86ee3-afab-44c2-a2ab-80ef11e0dfcf",
+        "3b3b4a4d-bf4e-4419-add1-5d6ea65f85e2",
+        "47893b37-a399-4f0a-b772-ddcdb028b76e",
+        "5e9a25e4-7502-4701-9011-81d071020d3e",
+        "75089e50-29cf-46c6-b1b0-10277cf24340",
+        "8f093699-ed00-47ff-996e-96ce427c9196",
+        "93111f08-135f-481f-8265-7fd7da32a2d3",
+        "a57b4cdf-18ca-4f5d-8994-de6bc6fa9592",
+        "a71b8ad0-d0af-4df9-b6ba-c64ff23d0ca4",
+        "bf656cc7-573b-4c3c-bfb7-985030acc092",
+        "c46890e4-91c0-44f1-9596-ac74318b27c4",
+        "fac53b01-4031-4761-8d93-0f028c475ab7",
+        "ff6d39b2-5aba-49e8-80e9-6c8ec71b6847"
+      ],
+      "explicit_mention_document_ids": [],
+      "expansion_metadata": {
+        "06910188-7299-4bdd-b1bf-c75b0c672879": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "c46890e4-91c0-44f1-9596-ac74318b27c4": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "a71b8ad0-d0af-4df9-b6ba-c64ff23d0ca4": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "75089e50-29cf-46c6-b1b0-10277cf24340": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "37866cad-2d5e-4006-9bda-8684377859a3": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "bf656cc7-573b-4c3c-bfb7-985030acc092": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "1ba0e121-1397-446b-9925-03d1943af1a9": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "3b3b4a4d-bf4e-4419-add1-5d6ea65f85e2": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "93111f08-135f-481f-8265-7fd7da32a2d3": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "073a8f19-eeab-4ce7-93ba-d57d4a6e34ab": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "47893b37-a399-4f0a-b772-ddcdb028b76e": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "0618b70e-ec2c-48b0-96b0-9de5a7e859cb": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "104feed9-d001-4394-8e32-ae40bf6ec92e": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "ff6d39b2-5aba-49e8-80e9-6c8ec71b6847": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "5e9a25e4-7502-4701-9011-81d071020d3e": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "a57b4cdf-18ca-4f5d-8994-de6bc6fa9592": {
+          "source_document_id": "05dc0e36-e346-4572-9302-4fda6422d648",
+          "relation_type": "DEFINES"
+        },
+        "8f093699-ed00-47ff-996e-96ce427c9196": {
+          "source_document_id": "05dc0e36-e346-4572-9302-4fda6422d648",
+          "relation_type": "DEFINES"
+        },
+        "fac53b01-4031-4761-8d93-0f028c475ab7": {
+          "source_document_id": "05dc0e36-e346-4572-9302-4fda6422d648",
+          "relation_type": "DEFINES"
+        },
+        "37d86ee3-afab-44c2-a2ab-80ef11e0dfcf": {
+          "source_document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "relation_type": "DEFINES"
+        },
+        "07a00b42-90a7-4295-a123-7fd2acf2f271": {
+          "source_document_id": "5398d238-8765-4119-9182-369b565b24ee",
+          "relation_type": "DEFINES"
+        }
+      },
+      "chunks_requested_by_document": {
+        "be95e4e3-f949-46f7-bfb4-6b77d37bf93f": 3,
+        "42b2fb9d-5730-4b5b-93d4-d96f849c786a": 3,
+        "5c768932-28d6-48e5-b404-07d7156f18da": 3,
+        "05dc0e36-e346-4572-9302-4fda6422d648": 3,
+        "36ab72ed-5453-44d4-b2c5-81887685ff3e": 3,
+        "cd801eac-3c04-4db0-9a10-9fe334aa267c": 3,
+        "90ddd1b4-9e66-4567-b130-5b5b3bb67df0": 3,
+        "cafdb76b-9b44-4265-9cc6-590e3b0ba1b9": 3,
+        "5398d238-8765-4119-9182-369b565b24ee": 3,
+        "5f15303f-d1c1-4ad0-b1dd-5561b8d21457": 3,
+        "9fdec0c5-6d33-4e6c-8333-0198c2dff940": 3,
+        "e5711381-790b-46a5-af61-19dd2d1b668a": 3,
+        "5010f910-abfa-4e65-a975-be5ea23b121f": 3,
+        "737853c2-43b9-47ed-8440-bc2cef5456f7": 3,
+        "06910188-7299-4bdd-b1bf-c75b0c672879": 3,
+        "c46890e4-91c0-44f1-9596-ac74318b27c4": 3,
+        "a71b8ad0-d0af-4df9-b6ba-c64ff23d0ca4": 3,
+        "75089e50-29cf-46c6-b1b0-10277cf24340": 3,
+        "37866cad-2d5e-4006-9bda-8684377859a3": 3,
+        "bf656cc7-573b-4c3c-bfb7-985030acc092": 3,
+        "1ba0e121-1397-446b-9925-03d1943af1a9": 3,
+        "3b3b4a4d-bf4e-4419-add1-5d6ea65f85e2": 3,
+        "93111f08-135f-481f-8265-7fd7da32a2d3": 3,
+        "073a8f19-eeab-4ce7-93ba-d57d4a6e34ab": 3,
+        "47893b37-a399-4f0a-b772-ddcdb028b76e": 3,
+        "0618b70e-ec2c-48b0-96b0-9de5a7e859cb": 3,
+        "104feed9-d001-4394-8e32-ae40bf6ec92e": 3,
+        "ff6d39b2-5aba-49e8-80e9-6c8ec71b6847": 3,
+        "5e9a25e4-7502-4701-9011-81d071020d3e": 3,
+        "a57b4cdf-18ca-4f5d-8994-de6bc6fa9592": 3,
+        "8f093699-ed00-47ff-996e-96ce427c9196": 3,
+        "fac53b01-4031-4761-8d93-0f028c475ab7": 3,
+        "37d86ee3-afab-44c2-a2ab-80ef11e0dfcf": 3,
+        "07a00b42-90a7-4295-a123-7fd2acf2f271": 3
+      },
+      "chunks_returned_by_document": {
+        "be95e4e3-f949-46f7-bfb4-6b77d37bf93f": [],
+        "42b2fb9d-5730-4b5b-93d4-d96f849c786a": [],
+        "5c768932-28d6-48e5-b404-07d7156f18da": [],
+        "05dc0e36-e346-4572-9302-4fda6422d648": [
+          21,
+          25
+        ],
+        "36ab72ed-5453-44d4-b2c5-81887685ff3e": [
+          16,
+          13
+        ],
+        "cd801eac-3c04-4db0-9a10-9fe334aa267c": [],
+        "90ddd1b4-9e66-4567-b130-5b5b3bb67df0": [],
+        "cafdb76b-9b44-4265-9cc6-590e3b0ba1b9": [
+          2,
+          5
+        ],
+        "5398d238-8765-4119-9182-369b565b24ee": [
+          0,
+          3
+        ],
+        "5f15303f-d1c1-4ad0-b1dd-5561b8d21457": [],
+        "9fdec0c5-6d33-4e6c-8333-0198c2dff940": [
+          3,
+          0
+        ],
+        "e5711381-790b-46a5-af61-19dd2d1b668a": [
+          1,
+          7
+        ],
+        "5010f910-abfa-4e65-a975-be5ea23b121f": [],
+        "737853c2-43b9-47ed-8440-bc2cef5456f7": [
+          0,
+          9
+        ],
+        "06910188-7299-4bdd-b1bf-c75b0c672879": [
+          0
+        ],
+        "c46890e4-91c0-44f1-9596-ac74318b27c4": [
+          2,
+          3,
+          0
+        ],
+        "a71b8ad0-d0af-4df9-b6ba-c64ff23d0ca4": [
+          0,
+          3,
+          2
+        ],
+        "75089e50-29cf-46c6-b1b0-10277cf24340": [
+          10,
+          2,
+          0
+        ],
+        "37866cad-2d5e-4006-9bda-8684377859a3": [
+          4,
+          2,
+          3
+        ],
+        "bf656cc7-573b-4c3c-bfb7-985030acc092": [
+          10,
+          6,
+          7
+        ],
+        "1ba0e121-1397-446b-9925-03d1943af1a9": [
+          2,
+          1,
+          0
+        ],
+        "3b3b4a4d-bf4e-4419-add1-5d6ea65f85e2": [
+          3,
+          0,
+          5
+        ],
+        "93111f08-135f-481f-8265-7fd7da32a2d3": [
+          5,
+          2,
+          0
+        ],
+        "073a8f19-eeab-4ce7-93ba-d57d4a6e34ab": [
+          0
+        ],
+        "47893b37-a399-4f0a-b772-ddcdb028b76e": [
+          1,
+          0
+        ],
+        "0618b70e-ec2c-48b0-96b0-9de5a7e859cb": [
+          4,
+          0,
+          5
+        ],
+        "104feed9-d001-4394-8e32-ae40bf6ec92e": [
+          1,
+          0,
+          2
+        ],
+        "ff6d39b2-5aba-49e8-80e9-6c8ec71b6847": [
+          8,
+          1,
+          16
+        ],
+        "5e9a25e4-7502-4701-9011-81d071020d3e": [
+          6,
+          8,
+          0
+        ],
+        "a57b4cdf-18ca-4f5d-8994-de6bc6fa9592": [
+          4,
+          3,
+          0
+        ],
+        "8f093699-ed00-47ff-996e-96ce427c9196": [
+          0
+        ],
+        "fac53b01-4031-4761-8d93-0f028c475ab7": [
+          0,
+          3,
+          1
+        ],
+        "37d86ee3-afab-44c2-a2ab-80ef11e0dfcf": [
+          7,
+          0,
+          6
+        ],
+        "07a00b42-90a7-4295-a123-7fd2acf2f271": [
+          0
+        ]
+      },
+      "repository_overview_controls": {
+        "claim_type": null,
+        "active": false,
+        "claim_selection_enabled": false,
+        "structured_answers_enabled": false,
+        "canonical_selection_enabled": false
+      },
+      "evidence_trace": [
+        {
+          "canonical_id": "lightrag/lightrag.py#LightRAG.aquery",
+          "document_id": null,
+          "found_by_vector": false,
+          "found_by_graph": false,
+          "expanded_rank": null,
+          "survives_cap": false,
+          "chunk_fetched": false,
+          "survives_chunk_limits": false,
+          "reaches_final_context": false,
+          "drop_reason": "not_found_by_vector_or_graph",
+          "survives_rerank": false
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_apply_token_truncation",
+          "document_id": "737853c2-43b9-47ed-8440-bc2cef5456f7",
+          "found_by_vector": true,
+          "found_by_graph": false,
+          "expanded_rank": null,
+          "survives_cap": false,
+          "chunk_fetched": true,
+          "survives_chunk_limits": true,
+          "reaches_final_context": false,
+          "drop_reason": "dropped_by_token_budget",
+          "survives_rerank": true
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_context_str",
+          "document_id": "36ab72ed-5453-44d4-b2c5-81887685ff3e",
+          "found_by_vector": true,
+          "found_by_graph": false,
+          "expanded_rank": null,
+          "survives_cap": false,
+          "chunk_fetched": true,
+          "survives_chunk_limits": true,
+          "reaches_final_context": false,
+          "drop_reason": "dropped_by_token_budget",
+          "survives_rerank": true
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "found_by_vector": true,
+          "found_by_graph": false,
+          "expanded_rank": null,
+          "survives_cap": false,
+          "chunk_fetched": true,
+          "survives_chunk_limits": true,
+          "reaches_final_context": true,
+          "drop_reason": null,
+          "survives_rerank": true
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_merge_all_chunks",
+          "document_id": "1ba0e121-1397-446b-9925-03d1943af1a9",
+          "found_by_vector": false,
+          "found_by_graph": true,
+          "expanded_rank": 6,
+          "survives_cap": true,
+          "chunk_fetched": true,
+          "survives_chunk_limits": false,
+          "reaches_final_context": false,
+          "drop_reason": "dropped_by_chunk_count_limits",
+          "survives_rerank": false
+        },
+        {
+          "canonical_id": "lightrag/operate.py#kg_query",
+          "document_id": "37866cad-2d5e-4006-9bda-8684377859a3",
+          "found_by_vector": false,
+          "found_by_graph": true,
+          "expanded_rank": 4,
+          "survives_cap": true,
+          "chunk_fetched": true,
+          "survives_chunk_limits": true,
+          "reaches_final_context": false,
+          "drop_reason": "dropped_by_token_budget",
+          "survives_rerank": true
+        }
+      ],
+      "token_count_method": "utf8_bytes_upper_estimate",
+      "context_budget": 4096,
+      "tokens_before_budget": 37691,
+      "tokens_after_budget": 3960,
+      "final_context_manifest": [
+        {
+          "canonical_id": "lightrag/operate.py",
+          "document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "chunk_id": "967dee35-5899-439b-b56f-8eba72c4c30d",
+          "chunk_index": 289,
+          "source_label": "lightrag/operate.py",
+          "char_count": 1000,
+          "text_sha256": "29e7ff6c450f0d1a8cb08340f9a254cd8d735ff9b7e24db08efaf9b14159637d",
+          "token_count": 1030,
+          "token_count_method": "utf8_bytes_upper_estimate",
+          "fetch_position": 0,
+          "selection_reason": "seed",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          }
+        },
+        {
+          "canonical_id": "lightrag/operate.py",
+          "document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "chunk_id": "30d66c0a-ae3e-4bfe-ae20-6b6665b87149",
+          "chunk_index": 232,
+          "source_label": "lightrag/operate.py",
+          "char_count": 1000,
+          "text_sha256": "0fa8119ebed293d6b8f4e5457fc188d9eebea825a355cbd7f511de01636d2f6d",
+          "token_count": 1030,
+          "token_count_method": "utf8_bytes_upper_estimate",
+          "fetch_position": 0,
+          "selection_reason": "seed",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          }
+        },
+        {
+          "canonical_id": "lightrag/operate.py",
+          "document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+          "chunk_id": "4fd9d6ca-25c8-4604-8cfd-a4cbe1d08e13",
+          "chunk_index": 291,
+          "source_label": "lightrag/operate.py",
+          "char_count": 1000,
+          "text_sha256": "9595a3319b39d23a74ceab4e7b43aa08430b25b481b27115dabb77cf7e608344",
+          "token_count": 1030,
+          "token_count_method": "utf8_bytes_upper_estimate",
+          "fetch_position": 0,
+          "selection_reason": "seed",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          }
+        },
+        {
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+          "chunk_id": "c87e180f-6317-4b0c-a787-8f18ef9d0de9",
+          "chunk_index": 0,
+          "source_label": "lightrag/operate.py#_build_query_context",
+          "char_count": 602,
+          "text_sha256": "ac14c300279c3e05b54d727509c62c98d7c2277c5acfcaedd8e6ad07a419cb89",
+          "token_count": 653,
+          "token_count_method": "utf8_bytes_upper_estimate",
+          "fetch_position": 0,
+          "selection_reason": "seed",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          }
+        },
+        {
+          "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context",
+          "document_id": "cd801eac-3c04-4db0-9a10-9fe334aa267c",
+          "chunk_id": "5c51e194-b021-45e1-8ab2-0c0e28374f10",
+          "chunk_index": 0,
+          "source_label": "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context",
+          "char_count": 124,
+          "text_sha256": "34d179456b95c3b0c44236641619257d1ad05c0fed30f38c2da396351fe94550",
+          "token_count": 209,
+          "token_count_method": "utf8_bytes_upper_estimate",
+          "fetch_position": 0,
+          "selection_reason": "seed",
+          "provenance": {
+            "role": {
+              "basis": "path_convention:tests_dir_or_suffix",
+              "value": "test"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          }
+        }
+      ]
+    },
+    "model_used": "ollama/Qwen3:4b",
+    "model_alias": null,
+    "fallback_from": null,
+    "trace_id": "a90553ce668d4fd0ae5bd45d8564e778",
+    "reranked": false
+  },
+  "final_chunks": [
+    {
+      "text": "architecture\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n    Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n\n    if not query:\n        logger.warning(\"Query is empty, skipping context building\")\n        return None\n\n    # Stage 1: Pure search\n    search_result = await _perform_kg_search(\n        query,\n        ll_keywords,\n        hl_keywords,\n        knowledge_graph_inst,\n        entities_vdb,\n        ",
+      "document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+      "chunk_id": "967dee35-5899-439b-b56f-8eba72c4c30d",
+      "score": 0.8400785196039169,
+      "metadata": {
+        "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+        "chunk_index": 289,
+        "chunk_strategy": "simple",
+        "source_metadata": {
+          "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "doc_type": "python source",
+          "language": "python",
+          "provider": "ollama",
+          "chunk_text": "architecture\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n    Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n\n    if not query:\n        logger.warning(\"Query is empty, skipping context building\")\n        return None\n\n    # Stage 1: Pure search\n    search_result = await _perform_kg_search(\n        query,\n        ll_keywords,\n        hl_keywords,\n        knowledge_graph_inst,\n        entities_vdb,\n        ",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          },
+          "source_type": "code",
+          "canonical_id": "lightrag/operate.py",
+          "chunker_name": "text_chunker",
+          "relative_path": "lightrag/operate.py",
+          "chunk_strategy": "simple",
+          "chunker_params": {
+            "overlap": 100,
+            "chunk_size": 1000
+          },
+          "source_metadata": {
+            "canonical_id": "lightrag/operate.py"
+          }
+        },
+        "provider": "ollama"
+      },
+      "chunk_index": 289,
+      "fetch_position": 0,
+      "canonical_id": "lightrag/operate.py",
+      "provenance": {
+        "role": {
+          "basis": "doc_type:source_suffix",
+          "value": "implementation"
+        },
+        "subject": {
+          "basis": null,
+          "value": "selected_repository"
+        },
+        "validity": {
+          "declared_status": "unknown"
+        },
+        "derivation": {
+          "status": "source"
+        },
+        "classification": {
+          "scope": "artifact",
+          "schema_version": "provenance-v1",
+          "classifier_version": "role-subject-v2"
+        }
+      }
+    },
+    {
+      "text": "ds else \"\"\n\n    # Build query context (unified interface)\n    context_result = await _build_query_context(\n        query,\n        ll_keywords_str,\n        hl_keywords_str,\n        knowledge_graph_inst,\n        entities_vdb,\n        relationships_vdb,\n        text_chunks_db,\n        query_param,\n        chunks_vdb,\n        progress_callback=progress_callback,\n        # The token budget must be computed against the template this function\n        # will actually render below, not the default one.\n        system_prompt=system_prompt,\n    )\n\n    if context_result is None:\n        logger.info(\"[kg_query] No query context could be built; returning no-result.\")\n        return None\n\n    # Return different content based on query parameters\n    if query_param.only_need_context and not query_param.only_need_prompt:\n        return QueryResult(\n            content=context_result.context,\n            raw_data=context_result.raw_data,\n            llm_generated=False,\n        )\n\n    effective_user_prom",
+      "document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+      "chunk_id": "30d66c0a-ae3e-4bfe-ae20-6b6665b87149",
+      "score": 0.8175826533810003,
+      "metadata": {
+        "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+        "chunk_index": 232,
+        "chunk_strategy": "simple",
+        "source_metadata": {
+          "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "doc_type": "python source",
+          "language": "python",
+          "provider": "ollama",
+          "chunk_text": "ds else \"\"\n\n    # Build query context (unified interface)\n    context_result = await _build_query_context(\n        query,\n        ll_keywords_str,\n        hl_keywords_str,\n        knowledge_graph_inst,\n        entities_vdb,\n        relationships_vdb,\n        text_chunks_db,\n        query_param,\n        chunks_vdb,\n        progress_callback=progress_callback,\n        # The token budget must be computed against the template this function\n        # will actually render below, not the default one.\n        system_prompt=system_prompt,\n    )\n\n    if context_result is None:\n        logger.info(\"[kg_query] No query context could be built; returning no-result.\")\n        return None\n\n    # Return different content based on query parameters\n    if query_param.only_need_context and not query_param.only_need_prompt:\n        return QueryResult(\n            content=context_result.context,\n            raw_data=context_result.raw_data,\n            llm_generated=False,\n        )\n\n    effective_user_prom",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          },
+          "source_type": "code",
+          "canonical_id": "lightrag/operate.py",
+          "chunker_name": "text_chunker",
+          "relative_path": "lightrag/operate.py",
+          "chunk_strategy": "simple",
+          "chunker_params": {
+            "overlap": 100,
+            "chunk_size": 1000
+          },
+          "source_metadata": {
+            "canonical_id": "lightrag/operate.py"
+          }
+        },
+        "provider": "ollama"
+      },
+      "chunk_index": 232,
+      "fetch_position": 0,
+      "canonical_id": "lightrag/operate.py",
+      "provenance": {
+        "role": {
+          "basis": "doc_type:source_suffix",
+          "value": "implementation"
+        },
+        "subject": {
+          "basis": null,
+          "value": "selected_repository"
+        },
+        "validity": {
+          "declared_status": "unknown"
+        },
+        "derivation": {
+          "status": "source"
+        },
+        "classification": {
+          "scope": "artifact",
+          "schema_version": "provenance-v1",
+          "classifier_version": "role-subject-v2"
+        }
+      }
+    },
+    {
+      "text": "ltered_relations\"],\n        vector_chunks=search_result[\"vector_chunks\"],\n        query=query,\n        knowledge_graph_inst=knowledge_graph_inst,\n        text_chunks_db=text_chunks_db,\n        query_param=query_param,\n        chunks_vdb=chunks_vdb,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        query_embedding=search_result[\"query_embedding\"],\n    )\n\n    if (\n        not merged_chunks\n        and not truncation_result[\"entities_context\"]\n        and not truncation_result[\"relations_context\"]\n    ):\n        return None\n\n    # Stage 4: Build final LLM context with dynamic token processing\n    # _build_context_str now always returns tuple[str, dict]\n    context, raw_data = await _build_context_str(\n        entities_context=truncation_result[\"entities_context\"],\n        relations_context=truncation_result[\"relations_context\"],\n        merged_chunks=merged_chunks,\n        query=query,\n        query_param=query_param,\n        global_config=text_chunks_db.global_config,\n     ",
+      "document_id": "be95e4e3-f949-46f7-bfb4-6b77d37bf93f",
+      "chunk_id": "4fd9d6ca-25c8-4604-8cfd-a4cbe1d08e13",
+      "score": 0.7992171051451264,
+      "metadata": {
+        "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+        "chunk_index": 291,
+        "chunk_strategy": "simple",
+        "source_metadata": {
+          "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "doc_type": "python source",
+          "language": "python",
+          "provider": "ollama",
+          "chunk_text": "ltered_relations\"],\n        vector_chunks=search_result[\"vector_chunks\"],\n        query=query,\n        knowledge_graph_inst=knowledge_graph_inst,\n        text_chunks_db=text_chunks_db,\n        query_param=query_param,\n        chunks_vdb=chunks_vdb,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        query_embedding=search_result[\"query_embedding\"],\n    )\n\n    if (\n        not merged_chunks\n        and not truncation_result[\"entities_context\"]\n        and not truncation_result[\"relations_context\"]\n    ):\n        return None\n\n    # Stage 4: Build final LLM context with dynamic token processing\n    # _build_context_str now always returns tuple[str, dict]\n    context, raw_data = await _build_context_str(\n        entities_context=truncation_result[\"entities_context\"],\n        relations_context=truncation_result[\"relations_context\"],\n        merged_chunks=merged_chunks,\n        query=query,\n        query_param=query_param,\n        global_config=text_chunks_db.global_config,\n     ",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          },
+          "source_type": "code",
+          "canonical_id": "lightrag/operate.py",
+          "chunker_name": "text_chunker",
+          "relative_path": "lightrag/operate.py",
+          "chunk_strategy": "simple",
+          "chunker_params": {
+            "overlap": 100,
+            "chunk_size": 1000
+          },
+          "source_metadata": {
+            "canonical_id": "lightrag/operate.py"
+          }
+        },
+        "provider": "ollama"
+      },
+      "chunk_index": 291,
+      "fetch_position": 0,
+      "canonical_id": "lightrag/operate.py",
+      "provenance": {
+        "role": {
+          "basis": "doc_type:source_suffix",
+          "value": "implementation"
+        },
+        "subject": {
+          "basis": null,
+          "value": "selected_repository"
+        },
+        "validity": {
+          "declared_status": "unknown"
+        },
+        "derivation": {
+          "status": "source"
+        },
+        "classification": {
+          "scope": "artifact",
+          "schema_version": "provenance-v1",
+          "classifier_version": "role-subject-v2"
+        }
+      }
+    },
+    {
+      "text": "async def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context",
+      "document_id": "42b2fb9d-5730-4b5b-93d4-d96f849c786a",
+      "chunk_id": "c87e180f-6317-4b0c-a787-8f18ef9d0de9",
+      "score": 0.8396292115141841,
+      "metadata": {
+        "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+        "chunk_index": 0,
+        "chunk_strategy": "paragraph",
+        "source_metadata": {
+          "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "doc_type": "python source",
+          "language": "python",
+          "provider": "ollama",
+          "chunk_text": "async def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context",
+          "provenance": {
+            "role": {
+              "basis": "doc_type:source_suffix",
+              "value": "implementation"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          },
+          "source_type": "code",
+          "canonical_id": "lightrag/operate.py#_build_query_context",
+          "chunker_name": "text_chunker",
+          "relative_path": "lightrag/operate.py",
+          "chunk_strategy": "paragraph",
+          "chunker_params": {
+            "overlap": 50,
+            "chunk_size": 500
+          },
+          "source_metadata": {
+            "canonical_id": "lightrag/operate.py#_build_query_context"
+          }
+        },
+        "provider": "ollama"
+      },
+      "chunk_index": 0,
+      "fetch_position": 0,
+      "canonical_id": "lightrag/operate.py#_build_query_context",
+      "provenance": {
+        "role": {
+          "basis": "doc_type:source_suffix",
+          "value": "implementation"
+        },
+        "subject": {
+          "basis": null,
+          "value": "selected_repository"
+        },
+        "validity": {
+          "declared_status": "unknown"
+        },
+        "derivation": {
+          "status": "source"
+        },
+        "classification": {
+          "scope": "artifact",
+          "schema_version": "provenance-v1",
+          "classifier_version": "role-subject-v2"
+        }
+      }
+    },
+    {
+      "text": "async def _fake_build_query_context(*_args, **_kwargs):\n        return QueryContextResult(context=\"KG CONTEXT\", raw_data={})",
+      "document_id": "cd801eac-3c04-4db0-9a10-9fe334aa267c",
+      "chunk_id": "5c51e194-b021-45e1-8ab2-0c0e28374f10",
+      "score": 0.7911154529773109,
+      "metadata": {
+        "ingestion_id": "128c494e-0aae-4e1d-81d0-b7e52f2006b1",
+        "chunk_index": 0,
+        "chunk_strategy": "sentence",
+        "source_metadata": {
+          "repo_id": "4f76a36f-caf8-5532-9ee2-977ec412ed6c",
+          "doc_type": "python source",
+          "language": "python",
+          "provider": "ollama",
+          "chunk_text": "async def _fake_build_query_context(*_args, **_kwargs):\n        return QueryContextResult(context=\"KG CONTEXT\", raw_data={})",
+          "provenance": {
+            "role": {
+              "basis": "path_convention:tests_dir_or_suffix",
+              "value": "test"
+            },
+            "subject": {
+              "basis": null,
+              "value": "selected_repository"
+            },
+            "validity": {
+              "declared_status": "unknown"
+            },
+            "derivation": {
+              "status": "source"
+            },
+            "classification": {
+              "scope": "artifact",
+              "schema_version": "provenance-v1",
+              "classifier_version": "role-subject-v2"
+            }
+          },
+          "source_type": "code",
+          "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context",
+          "chunker_name": "text_chunker",
+          "relative_path": "tests/llm/test_query_cache_user_prompt_prefix.py",
+          "chunk_strategy": "sentence",
+          "chunker_params": {
+            "overlap": 20,
+            "chunk_size": 200
+          },
+          "source_metadata": {
+            "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context"
+          }
+        },
+        "provider": "ollama"
+      },
+      "chunk_index": 0,
+      "fetch_position": 0,
+      "canonical_id": "tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context",
+      "provenance": {
+        "role": {
+          "basis": "path_convention:tests_dir_or_suffix",
+          "value": "test"
+        },
+        "subject": {
+          "basis": null,
+          "value": "selected_repository"
+        },
+        "validity": {
+          "declared_status": "unknown"
+        },
+        "derivation": {
+          "status": "source"
+        },
+        "classification": {
+          "scope": "artifact",
+          "schema_version": "provenance-v1",
+          "classifier_version": "role-subject-v2"
+        }
+      }
+    }
+  ],
+  "assembled_context": "[Source: lightrag/operate.py]\narchitecture\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n    Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n\n    if not query:\n        logger.warning(\"Query is empty, skipping context building\")\n        return None\n\n    # Stage 1: Pure search\n    search_result = await _perform_kg_search(\n        query,\n        ll_keywords,\n        hl_keywords,\n        knowledge_graph_inst,\n        entities_vdb,\n        \n\n[Source: lightrag/operate.py]\nds else \"\"\n\n    # Build query context (unified interface)\n    context_result = await _build_query_context(\n        query,\n        ll_keywords_str,\n        hl_keywords_str,\n        knowledge_graph_inst,\n        entities_vdb,\n        relationships_vdb,\n        text_chunks_db,\n        query_param,\n        chunks_vdb,\n        progress_callback=progress_callback,\n        # The token budget must be computed against the template this function\n        # will actually render below, not the default one.\n        system_prompt=system_prompt,\n    )\n\n    if context_result is None:\n        logger.info(\"[kg_query] No query context could be built; returning no-result.\")\n        return None\n\n    # Return different content based on query parameters\n    if query_param.only_need_context and not query_param.only_need_prompt:\n        return QueryResult(\n            content=context_result.context,\n            raw_data=context_result.raw_data,\n            llm_generated=False,\n        )\n\n    effective_user_prom\n\n[Source: lightrag/operate.py]\nltered_relations\"],\n        vector_chunks=search_result[\"vector_chunks\"],\n        query=query,\n        knowledge_graph_inst=knowledge_graph_inst,\n        text_chunks_db=text_chunks_db,\n        query_param=query_param,\n        chunks_vdb=chunks_vdb,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        query_embedding=search_result[\"query_embedding\"],\n    )\n\n    if (\n        not merged_chunks\n        and not truncation_result[\"entities_context\"]\n        and not truncation_result[\"relations_context\"]\n    ):\n        return None\n\n    # Stage 4: Build final LLM context with dynamic token processing\n    # _build_context_str now always returns tuple[str, dict]\n    context, raw_data = await _build_context_str(\n        entities_context=truncation_result[\"entities_context\"],\n        relations_context=truncation_result[\"relations_context\"],\n        merged_chunks=merged_chunks,\n        query=query,\n        query_param=query_param,\n        global_config=text_chunks_db.global_config,\n     \n\n[Source: lightrag/operate.py#_build_query_context]\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n[Source: tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context]\nasync def _fake_build_query_context(*_args, **_kwargs):\n        return QueryContextResult(context=\"KG CONTEXT\", raw_data={})",
+  "generation_request": {
+    "context": "[Source: lightrag/operate.py]\narchitecture\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n    Returns unified QueryContextResult containing both context and raw_data.\n    \"\"\"\n\n    if not query:\n        logger.warning(\"Query is empty, skipping context building\")\n        return None\n\n    # Stage 1: Pure search\n    search_result = await _perform_kg_search(\n        query,\n        ll_keywords,\n        hl_keywords,\n        knowledge_graph_inst,\n        entities_vdb,\n        \n\n[Source: lightrag/operate.py]\nds else \"\"\n\n    # Build query context (unified interface)\n    context_result = await _build_query_context(\n        query,\n        ll_keywords_str,\n        hl_keywords_str,\n        knowledge_graph_inst,\n        entities_vdb,\n        relationships_vdb,\n        text_chunks_db,\n        query_param,\n        chunks_vdb,\n        progress_callback=progress_callback,\n        # The token budget must be computed against the template this function\n        # will actually render below, not the default one.\n        system_prompt=system_prompt,\n    )\n\n    if context_result is None:\n        logger.info(\"[kg_query] No query context could be built; returning no-result.\")\n        return None\n\n    # Return different content based on query parameters\n    if query_param.only_need_context and not query_param.only_need_prompt:\n        return QueryResult(\n            content=context_result.context,\n            raw_data=context_result.raw_data,\n            llm_generated=False,\n        )\n\n    effective_user_prom\n\n[Source: lightrag/operate.py]\nltered_relations\"],\n        vector_chunks=search_result[\"vector_chunks\"],\n        query=query,\n        knowledge_graph_inst=knowledge_graph_inst,\n        text_chunks_db=text_chunks_db,\n        query_param=query_param,\n        chunks_vdb=chunks_vdb,\n        chunk_tracking=search_result[\"chunk_tracking\"],\n        query_embedding=search_result[\"query_embedding\"],\n    )\n\n    if (\n        not merged_chunks\n        and not truncation_result[\"entities_context\"]\n        and not truncation_result[\"relations_context\"]\n    ):\n        return None\n\n    # Stage 4: Build final LLM context with dynamic token processing\n    # _build_context_str now always returns tuple[str, dict]\n    context, raw_data = await _build_context_str(\n        entities_context=truncation_result[\"entities_context\"],\n        relations_context=truncation_result[\"relations_context\"],\n        merged_chunks=merged_chunks,\n        query=query,\n        query_param=query_param,\n        global_config=text_chunks_db.global_config,\n     \n\n[Source: lightrag/operate.py#_build_query_context]\nasync def _build_query_context(\n    query: str,\n    ll_keywords: str,\n    hl_keywords: str,\n    knowledge_graph_inst: BaseGraphStorage,\n    entities_vdb: BaseVectorStorage,\n    relationships_vdb: BaseVectorStorage,\n    text_chunks_db: BaseKVStorage,\n    query_param: QueryParam,\n    chunks_vdb: BaseVectorStorage = None,\n    progress_callback: ProgressCallback | None = None,\n    system_prompt: str | None = None,\n) -> QueryContextResult | None:\n    \"\"\"\n    Main query context building function using the new 4-stage architecture:\n    1. Search -> 2. Truncate -> 3. Merge chunks -> 4. Build LLM context\n\n[Source: tests/llm/test_query_cache_user_prompt_prefix.py#_fake_build_query_context]\nasync def _fake_build_query_context(*_args, **_kwargs):\n        return QueryContextResult(context=\"KG CONTEXT\", raw_data={})",
+    "query": "Find the implementation of `_build_query_context` in `lightrag/operate.py`. Explain how it selects entities, relationships, and text chunks, and how it applies `max_total_tokens`."
+  },
+  "score": {
+    "target_discovered": true,
+    "target_survived": true,
+    "operation_coverage": {
+      "satisfied": 0,
+      "required": 4,
+      "details": [
+        {
+          "name": "Stage 2 dispatch",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        },
+        {
+          "name": "Entity limit operation",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        },
+        {
+          "name": "Relationship limit operation",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        },
+        {
+          "name": "Combined remainder and consumer",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false,
+            false
+          ]
+        }
+      ],
+      "scope": "expression-and-source coverage; branch coherence requires review"
+    },
+    "dependency_coverage": {
+      "satisfied": 0,
+      "required": 4,
+      "details": [
+        {
+          "name": "Stage 3 uses truncated graph results",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        },
+        {
+          "name": "Entity branch and input",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        },
+        {
+          "name": "Relationship branch and input",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        },
+        {
+          "name": "Graph cost is calculated before remainder",
+          "satisfied": false,
+          "expressions_present": [
+            false,
+            false
+          ]
+        }
+      ],
+      "scope": "expression-and-source coverage; branch coherence requires review"
+    },
+    "efficiency": {
+      "unique_relevant_bytes_lower_bound": 1702,
+      "fraction_of_fixed_cap_lower_bound": 0.41552734375,
+      "repeated_relevant_bytes_lower_bound": 587,
+      "method": "Unique unambiguous nontrivial source lines in frozen relevant symbols; excludes whitespace and ambiguous lines"
+    },
+    "delivered_bytes": 3960,
+    "context_sha256": "945c8203bf125c656e13e3467338be3649c4e907fca6b66817bac15cb59e5ccd",
+    "answer_faithfulness": "pending source-based review; no keyword proxy"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "checked_at": "2026-10-15T01:54:10.182577+00:00",
+  "scope": "HTTP availability only",
+  "services": {
+    "8001": {
+      "available": true,
+      "version": {
+        "service": "ingestion_service",
+        "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+        "build_date": "2026-10-13T12:37:04Z",
+        "release_version": "prod-2026-10-13-0835am"
+      }
+    },
+    "8002": {
+      "available": true,
+      "version": {
+        "service": "vector_store_service",
+        "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+        "build_date": "2026-10-13T12:37:04Z",
+        "release_version": "prod-2026-10-13-0835am"
+      }
+    },
+    "8003": {
+      "available": true,
+      "version": {
+        "service": "llm_service",
+        "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+        "build_date": "2026-10-13T12:37:04Z",
+        "release_version": "prod-2026-10-13-0835am"
+      }
+    },
+    "8004": {
+      "available": true,
+      "version": {
+        "service": "rag_orchestrator",
+        "git_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+        "build_date": "2026-10-13T12:37:04Z",
+        "release_version": "prod-2026-10-13-0835am"
+      }
+    }
+  }
+}

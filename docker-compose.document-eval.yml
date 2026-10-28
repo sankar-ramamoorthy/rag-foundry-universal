@@ -1,0 +1,81 @@
+# Isolated D0 evaluation infrastructure; no production volumes or .env file.
+name: rag-foundry-document-eval
+
+x-runtime: &runtime
+  APP_GIT_SHA: "109f12d83ab83a306318423be618c195f8c4e6ea"
+  APP_BUILD_DATE: "local-source-mount"
+  APP_RELEASE_VERSION: "d0-local-evaluation"
+  EMBEDDING_PROVIDER: ollama
+  OLLAMA_BASE_URL: ${D0_OLLAMA_BASE_URL:?set D0_OLLAMA_BASE_URL to the Ollama endpoint}
+  OLLAMA_EMBED_MODEL: mxbai-embed-large:latest
+  OLLAMA_MODEL: Qwen3:4b
+  INGESTION_SERVICE_URL: http://ingestion_service:8000
+  VECTOR_STORE_URL: http://vector_store_service:8002
+  VECTOR_STORE_SERVICE_URL: http://vector_store_service:8002
+  LLM_SERVICE_URL: http://llm_service:8000
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    environment:
+      POSTGRES_USER: ingestion_user
+      POSTGRES_PASSWORD: ingestion_pass
+      POSTGRES_DB: document_eval_test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ingestion_user -d document_eval_test"]
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  vector_store_service:
+    image: rag-foundry-universal-vector_store_service:latest
+    environment:
+      <<: *runtime
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/document_eval_test
+    ports: ["127.0.0.1:8102:8002"]
+    volumes:
+      - ./vector_store_service/src:/app/vector_store_service/src:ro
+      - ./shared:/app/shared:ro
+      - ./migrations:/app/migrations:ro
+      - ./alembic.ini:/app/alembic.ini:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ingestion_service:
+    image: rag-foundry-universal-ingestion_service:latest
+    environment:
+      <<: *runtime
+      DATABASE_URL: postgresql://ingestion_user:ingestion_pass@postgres:5432/document_eval_test
+      PYTHONPATH: /app:/app/ingestion_service
+    ports: ["127.0.0.1:8101:8000"]
+    volumes:
+      - ./ingestion_service/src:/app/ingestion_service/src:ro
+      - ./shared:/app/shared:ro
+      - ./migrations:/app/migrations:ro
+      - ./alembic.ini:/app/alembic.ini:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  llm_service:
+    image: rag-foundry-universal-llm_service:latest
+    environment:
+      <<: *runtime
+      PYTHONPATH: /app:/app/llm_service
+    ports: ["127.0.0.1:8103:8000"]
+    volumes:
+      - ./llm_service/src:/app/llm_service/src:ro
+      - ./llm_service/models.yaml:/app/llm_service/models.yaml:ro
+      - ./shared:/app/shared:ro
+
+  rag_orchestrator:
+    image: rag-foundry-universal-rag_orchestrator:latest
+    environment:
+      <<: *runtime
+      PYTHONPATH: /app:/app/rag_orchestrator
+      RERANK_ENABLED: "false"
+    ports: ["127.0.0.1:8104:8000"]
+    volumes:
+      - ./rag_orchestrator/src:/app/rag_orchestrator/src:ro
+      - ./shared:/app/shared:ro

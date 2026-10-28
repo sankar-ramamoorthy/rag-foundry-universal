@@ -1,0 +1,18 @@
+{
+  "status": "incomplete-no-quality-score",
+  "case_id": "L1",
+  "arm": "control",
+  "scope": "Retrospective record from capture-events.jsonl and failed prototype command, not a completed replay",
+  "last_started_event": {
+    "at": "2026-10-15T01:54:13.545327+00:00",
+    "case": "L1",
+    "event": "sync_http_started",
+    "method": "get",
+    "url": "http://<tailnet-host>:8001/v1/graph/repos/4f76a36f-caf8-5532-9ee2-977ec412ed6c"
+  },
+  "error_type": "requests.exceptions.ConnectionError",
+  "error_message": "HTTPConnectionPool(host='<tailnet-host>', port=8001): Read timed out.",
+  "diagnostic_read_timeout_seconds": 120,
+  "model_invoked": false,
+  "selector_arms_evaluated": 0
+}
