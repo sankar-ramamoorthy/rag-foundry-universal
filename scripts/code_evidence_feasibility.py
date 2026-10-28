@@ -24,7 +24,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "DOCS/evaluations/code-evidence-e1/manifest.json"
-BASELINES = ROOT / "DOCS/test_results/code-evidence-e1"
+# Raw captures are git-ignored; see DOCS/test_results/raw-index.json.
+BASELINES = ROOT / "DOCS/test_results/_raw/code-evidence-e1"
 sys.path.insert(0, str(ROOT))
 
 from shared.chunkers.selector import ChunkerFactory  # noqa: E402
