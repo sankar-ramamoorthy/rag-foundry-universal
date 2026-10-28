@@ -1,0 +1,58 @@
+{
+  "environment": {
+    "git_sha": "07b586e10fb1",
+    "git_dirty": false,
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.12.0",
+    "cpus": 8,
+    "machine_total_mb": 8369
+  },
+  "fixture": null,
+  "results": [
+    {
+      "concurrent_exports": 1,
+      "export_seconds": {
+        "min": 5.05,
+        "median": 5.05,
+        "max": 5.05
+      },
+      "wall_seconds": 5.52,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "59a364e1cb0d6f02"
+      ],
+      "version_probe_max_seconds": 0.44,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 156,
+      "peak_rss_mb": 325
+    },
+    {
+      "concurrent_exports": 2,
+      "export_seconds": {
+        "min": 8.71,
+        "median": 8.98,
+        "max": 9.25
+      },
+      "wall_seconds": 9.65,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "59a364e1cb0d6f02"
+      ],
+      "version_probe_max_seconds": 1.41,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 156,
+      "peak_rss_mb": 498
+    },
+    {
+      "concurrent_exports": 4,
+      "skipped": "projected 1001 MB exceeds 643 MB available"
+    }
+  ],
+  "distinct_hashes": [
+    "59a364e1cb0d6f02"
+  ]
+}

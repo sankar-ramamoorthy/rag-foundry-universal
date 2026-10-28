@@ -1,0 +1,73 @@
+{
+  "environment": {
+    "git_sha": "07b586e10fb1",
+    "git_dirty": false,
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.12.0",
+    "cpus": 8,
+    "machine_total_mb": 8369
+  },
+  "fixture": null,
+  "results": [
+    {
+      "concurrent_exports": 1,
+      "export_seconds": {
+        "min": 1.78,
+        "median": 1.78,
+        "max": 1.78
+      },
+      "wall_seconds": 1.9,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "4a8a3c934a508e2d"
+      ],
+      "version_probe_max_seconds": 0.31,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 156,
+      "peak_rss_mb": 214
+    },
+    {
+      "concurrent_exports": 2,
+      "export_seconds": {
+        "min": 3.13,
+        "median": 3.22,
+        "max": 3.32
+      },
+      "wall_seconds": 3.47,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "4a8a3c934a508e2d"
+      ],
+      "version_probe_max_seconds": 0.64,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 156,
+      "peak_rss_mb": 275
+    },
+    {
+      "concurrent_exports": 4,
+      "export_seconds": {
+        "min": 4.24,
+        "median": 4.38,
+        "max": 4.54
+      },
+      "wall_seconds": 4.63,
+      "statuses": [
+        200
+      ],
+      "response_hashes": [
+        "4a8a3c934a508e2d"
+      ],
+      "version_probe_max_seconds": 1.02,
+      "version_probe_failures": 0,
+      "idle_rss_mb": 156,
+      "peak_rss_mb": 393
+    }
+  ],
+  "distinct_hashes": [
+    "4a8a3c934a508e2d"
+  ]
+}

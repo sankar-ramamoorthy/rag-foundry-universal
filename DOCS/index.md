@@ -156,6 +156,8 @@ binding: [[proposals/sdd-spec-kit-adoption]],
 
 ## Evidence / Test Results
 
+The [graph export benchmark](/DOCS/test_results/2026-10-28-graph-export-benchmark.md) (issue #273) records how `GET /v1/graph/repos/{repo_id}` behaves under 1/2/4 simultaneous exports before and after PR #272 (latency, `/version` responsiveness, memory, response equivalence). Local and synthetic; it does not explain the E1 control-replay timeout (#270).
+
 [WP-R4 evidence delivery](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)
 tracks local mechanics verification and outstanding quality gates;
 [ADR-052](/DOCS/adr/ADR-052-evidence-delivery-context-selection.md) records the accepted contract.
