@@ -1,0 +1,2462 @@
+{
+  "cap_bytes": 4096,
+  "oracle_notice": "Oracle-selected evidence: bounds feasibility only.",
+  "cases": {
+    "L1": {
+      "first": {
+        "tiers": {
+          "T0b": {
+            "bytes": 2633,
+            "slack": 1463,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 203
+          },
+          "T1": {
+            "bytes": 3926,
+            "slack": 170,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T2": {
+            "bytes": 5820,
+            "slack": -1724,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T3": {
+            "bytes": 6488,
+            "slack": -2392,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          }
+        },
+        "documents": {
+          "lightrag/operate.py#_build_query_context": {
+            "source_lines": 123,
+            "witness_lines": 17,
+            "ambiguous_expressions": [
+              "2x:search_result, query_param, text_chunks_db.global_"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 17,
+                "omission_markers": 2,
+                "marker_bytes": 61,
+                "block_bytes": 731,
+                "bytes_by_category": {
+                  "witness": 671
+                }
+              },
+              "T1": {
+                "lines_included": 30,
+                "omission_markers": 3,
+                "marker_bytes": 91,
+                "block_bytes": 1207,
+                "bytes_by_category": {
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 12,
+            "definition_lines_added_T3": 12,
+            "dependencies_T2": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 17,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks",
+                "_perform_kg_search"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          },
+          "lightrag/operate.py#_apply_token_truncation": {
+            "source_lines": 216,
+            "witness_lines": 18,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 18,
+                "omission_markers": 3,
+                "marker_bytes": 116,
+                "block_bytes": 873,
+                "bytes_by_category": {
+                  "witness": 758
+                }
+              },
+              "T1": {
+                "lines_included": 25,
+                "omission_markers": 6,
+                "marker_bytes": 218,
+                "block_bytes": 1213,
+                "bytes_by_category": {
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "loop": 2,
+              "signature": 5
+            },
+            "definition_lines_added_T2": 17,
+            "definition_lines_added_T3": 17,
+            "dependencies_T2": {
+              "resolved": 9,
+              "already_included": 5,
+              "params": 0,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 9,
+              "already_included": 7,
+              "params": 5,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "entity",
+                "relation"
+              ]
+            }
+          },
+          "lightrag/operate.py#_build_context_str": {
+            "source_lines": 199,
+            "witness_lines": 19,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 19,
+                "omission_markers": 3,
+                "marker_bytes": 95,
+                "block_bytes": 826,
+                "bytes_by_category": {
+                  "witness": 732
+                }
+              },
+              "T1": {
+                "lines_included": 32,
+                "omission_markers": 4,
+                "marker_bytes": 125,
+                "block_bytes": 1307,
+                "bytes_by_category": {
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T2": {
+                "lines_included": 48,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2152,
+                "bytes_by_category": {
+                  "definitions": 696,
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T3": {
+                "lines_included": 68,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2820,
+                "bytes_by_category": {
+                  "definitions": 1364,
+                  "signature": 451,
+                  "witness": 732
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 16,
+            "definition_lines_added_T3": 36,
+            "dependencies_T2": {
+              "resolved": 8,
+              "already_included": 3,
+              "params": 6,
+              "expression_local": 0,
+              "external": [
+                "Any",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "process_chunks_unified"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 12,
+              "already_included": 5,
+              "params": 19,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_TOTAL_TOKENS",
+                "PROMPTS",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "json",
+                "process_chunks_unified",
+                "resolve_user_prompt"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      },
+      "all": {
+        "tiers": {
+          "T0b": {
+            "bytes": 2633,
+            "slack": 1463,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 203
+          },
+          "T1": {
+            "bytes": 3926,
+            "slack": 170,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T2": {
+            "bytes": 5820,
+            "slack": -1724,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T3": {
+            "bytes": 6488,
+            "slack": -2392,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          }
+        },
+        "documents": {
+          "lightrag/operate.py#_build_query_context": {
+            "source_lines": 123,
+            "witness_lines": 17,
+            "ambiguous_expressions": [
+              "2x:search_result, query_param, text_chunks_db.global_"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 17,
+                "omission_markers": 2,
+                "marker_bytes": 61,
+                "block_bytes": 731,
+                "bytes_by_category": {
+                  "witness": 671
+                }
+              },
+              "T1": {
+                "lines_included": 30,
+                "omission_markers": 3,
+                "marker_bytes": 91,
+                "block_bytes": 1207,
+                "bytes_by_category": {
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 12,
+            "definition_lines_added_T3": 12,
+            "dependencies_T2": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 17,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks",
+                "_perform_kg_search"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          },
+          "lightrag/operate.py#_apply_token_truncation": {
+            "source_lines": 216,
+            "witness_lines": 18,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 18,
+                "omission_markers": 3,
+                "marker_bytes": 116,
+                "block_bytes": 873,
+                "bytes_by_category": {
+                  "witness": 758
+                }
+              },
+              "T1": {
+                "lines_included": 25,
+                "omission_markers": 6,
+                "marker_bytes": 218,
+                "block_bytes": 1213,
+                "bytes_by_category": {
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "loop": 2,
+              "signature": 5
+            },
+            "definition_lines_added_T2": 17,
+            "definition_lines_added_T3": 17,
+            "dependencies_T2": {
+              "resolved": 9,
+              "already_included": 5,
+              "params": 0,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 9,
+              "already_included": 7,
+              "params": 5,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "entity",
+                "relation"
+              ]
+            }
+          },
+          "lightrag/operate.py#_build_context_str": {
+            "source_lines": 199,
+            "witness_lines": 19,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 19,
+                "omission_markers": 3,
+                "marker_bytes": 95,
+                "block_bytes": 826,
+                "bytes_by_category": {
+                  "witness": 732
+                }
+              },
+              "T1": {
+                "lines_included": 32,
+                "omission_markers": 4,
+                "marker_bytes": 125,
+                "block_bytes": 1307,
+                "bytes_by_category": {
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T2": {
+                "lines_included": 48,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2152,
+                "bytes_by_category": {
+                  "definitions": 696,
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T3": {
+                "lines_included": 68,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2820,
+                "bytes_by_category": {
+                  "definitions": 1364,
+                  "signature": 451,
+                  "witness": 732
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 16,
+            "definition_lines_added_T3": 36,
+            "dependencies_T2": {
+              "resolved": 8,
+              "already_included": 3,
+              "params": 6,
+              "expression_local": 0,
+              "external": [
+                "Any",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "process_chunks_unified"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 12,
+              "already_included": 5,
+              "params": 19,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_TOTAL_TOKENS",
+                "PROMPTS",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "json",
+                "process_chunks_unified",
+                "resolve_user_prompt"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      }
+    },
+    "L2": {
+      "first": {
+        "tiers": {
+          "T0b": {
+            "bytes": 2633,
+            "slack": 1463,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 203
+          },
+          "T1": {
+            "bytes": 3926,
+            "slack": 170,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T2": {
+            "bytes": 5820,
+            "slack": -1724,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T3": {
+            "bytes": 6488,
+            "slack": -2392,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          }
+        },
+        "documents": {
+          "lightrag/operate.py#_build_query_context": {
+            "source_lines": 123,
+            "witness_lines": 17,
+            "ambiguous_expressions": [
+              "2x:search_result, query_param, text_chunks_db.global_"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 17,
+                "omission_markers": 2,
+                "marker_bytes": 61,
+                "block_bytes": 731,
+                "bytes_by_category": {
+                  "witness": 671
+                }
+              },
+              "T1": {
+                "lines_included": 30,
+                "omission_markers": 3,
+                "marker_bytes": 91,
+                "block_bytes": 1207,
+                "bytes_by_category": {
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 12,
+            "definition_lines_added_T3": 12,
+            "dependencies_T2": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 17,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks",
+                "_perform_kg_search"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          },
+          "lightrag/operate.py#_apply_token_truncation": {
+            "source_lines": 216,
+            "witness_lines": 18,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 18,
+                "omission_markers": 3,
+                "marker_bytes": 116,
+                "block_bytes": 873,
+                "bytes_by_category": {
+                  "witness": 758
+                }
+              },
+              "T1": {
+                "lines_included": 25,
+                "omission_markers": 6,
+                "marker_bytes": 218,
+                "block_bytes": 1213,
+                "bytes_by_category": {
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "loop": 2,
+              "signature": 5
+            },
+            "definition_lines_added_T2": 17,
+            "definition_lines_added_T3": 17,
+            "dependencies_T2": {
+              "resolved": 9,
+              "already_included": 5,
+              "params": 0,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 9,
+              "already_included": 7,
+              "params": 5,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "entity",
+                "relation"
+              ]
+            }
+          },
+          "lightrag/operate.py#_build_context_str": {
+            "source_lines": 199,
+            "witness_lines": 19,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 19,
+                "omission_markers": 3,
+                "marker_bytes": 95,
+                "block_bytes": 826,
+                "bytes_by_category": {
+                  "witness": 732
+                }
+              },
+              "T1": {
+                "lines_included": 32,
+                "omission_markers": 4,
+                "marker_bytes": 125,
+                "block_bytes": 1307,
+                "bytes_by_category": {
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T2": {
+                "lines_included": 48,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2152,
+                "bytes_by_category": {
+                  "definitions": 696,
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T3": {
+                "lines_included": 68,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2820,
+                "bytes_by_category": {
+                  "definitions": 1364,
+                  "signature": 451,
+                  "witness": 732
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 16,
+            "definition_lines_added_T3": 36,
+            "dependencies_T2": {
+              "resolved": 8,
+              "already_included": 3,
+              "params": 6,
+              "expression_local": 0,
+              "external": [
+                "Any",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "process_chunks_unified"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 12,
+              "already_included": 5,
+              "params": 19,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_TOTAL_TOKENS",
+                "PROMPTS",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "json",
+                "process_chunks_unified",
+                "resolve_user_prompt"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      },
+      "all": {
+        "tiers": {
+          "T0b": {
+            "bytes": 2633,
+            "slack": 1463,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 203
+          },
+          "T1": {
+            "bytes": 3926,
+            "slack": 170,
+            "fits": true,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T2": {
+            "bytes": 5820,
+            "slack": -1724,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          },
+          "T3": {
+            "bytes": 6488,
+            "slack": -2392,
+            "fits": false,
+            "blocks": 3,
+            "labels_and_separators_bytes": 199
+          }
+        },
+        "documents": {
+          "lightrag/operate.py#_build_query_context": {
+            "source_lines": 123,
+            "witness_lines": 17,
+            "ambiguous_expressions": [
+              "2x:search_result, query_param, text_chunks_db.global_"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 17,
+                "omission_markers": 2,
+                "marker_bytes": 61,
+                "block_bytes": 731,
+                "bytes_by_category": {
+                  "witness": 671
+                }
+              },
+              "T1": {
+                "lines_included": 30,
+                "omission_markers": 3,
+                "marker_bytes": 91,
+                "block_bytes": 1207,
+                "bytes_by_category": {
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 4,
+                "marker_bytes": 121,
+                "block_bytes": 1535,
+                "bytes_by_category": {
+                  "definitions": 298,
+                  "signature": 446,
+                  "witness": 671
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 12,
+            "definition_lines_added_T3": 12,
+            "dependencies_T2": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 1,
+              "already_included": 5,
+              "params": 17,
+              "expression_local": 0,
+              "external": [
+                "BaseGraphStorage",
+                "BaseKVStorage",
+                "BaseVectorStorage",
+                "ProgressCallback",
+                "QueryContextResult",
+                "QueryParam",
+                "_apply_token_truncation",
+                "_merge_all_chunks",
+                "_perform_kg_search"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          },
+          "lightrag/operate.py#_apply_token_truncation": {
+            "source_lines": 216,
+            "witness_lines": 18,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 18,
+                "omission_markers": 3,
+                "marker_bytes": 116,
+                "block_bytes": 873,
+                "bytes_by_category": {
+                  "witness": 758
+                }
+              },
+              "T1": {
+                "lines_included": 25,
+                "omission_markers": 6,
+                "marker_bytes": 218,
+                "block_bytes": 1213,
+                "bytes_by_category": {
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T2": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              },
+              "T3": {
+                "lines_included": 42,
+                "omission_markers": 10,
+                "marker_bytes": 328,
+                "block_bytes": 1934,
+                "bytes_by_category": {
+                  "definitions": 611,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 758
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "loop": 2,
+              "signature": 5
+            },
+            "definition_lines_added_T2": 17,
+            "definition_lines_added_T3": 17,
+            "dependencies_T2": {
+              "resolved": 9,
+              "already_included": 5,
+              "params": 0,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 9,
+              "already_included": 7,
+              "params": 5,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "entity",
+                "relation"
+              ]
+            }
+          },
+          "lightrag/operate.py#_build_context_str": {
+            "source_lines": 199,
+            "witness_lines": 19,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 19,
+                "omission_markers": 3,
+                "marker_bytes": 95,
+                "block_bytes": 826,
+                "bytes_by_category": {
+                  "witness": 732
+                }
+              },
+              "T1": {
+                "lines_included": 32,
+                "omission_markers": 4,
+                "marker_bytes": 125,
+                "block_bytes": 1307,
+                "bytes_by_category": {
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T2": {
+                "lines_included": 48,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2152,
+                "bytes_by_category": {
+                  "definitions": 696,
+                  "signature": 451,
+                  "witness": 732
+                }
+              },
+              "T3": {
+                "lines_included": 68,
+                "omission_markers": 9,
+                "marker_bytes": 274,
+                "block_bytes": 2820,
+                "bytes_by_category": {
+                  "definitions": 1364,
+                  "signature": 451,
+                  "witness": 732
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 13
+            },
+            "definition_lines_added_T2": 16,
+            "definition_lines_added_T3": 36,
+            "dependencies_T2": {
+              "resolved": 8,
+              "already_included": 3,
+              "params": 6,
+              "expression_local": 0,
+              "external": [
+                "Any",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "process_chunks_unified"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 12,
+              "already_included": 5,
+              "params": 19,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_TOTAL_TOKENS",
+                "PROMPTS",
+                "ProgressCallback",
+                "QueryParam",
+                "acount_tokens",
+                "json",
+                "process_chunks_unified",
+                "resolve_user_prompt"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      }
+    },
+    "L3": {
+      "first": {
+        "tiers": {
+          "T0b": {
+            "bytes": 1503,
+            "slack": 2593,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          },
+          "T1": {
+            "bytes": 1831,
+            "slack": 2265,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 68
+          },
+          "T2": {
+            "bytes": 2116,
+            "slack": 1980,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 68
+          },
+          "T3": {
+            "bytes": 2116,
+            "slack": 1980,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 68
+          }
+        },
+        "documents": {
+          "lightrag/operate.py#_apply_token_truncation": {
+            "source_lines": 216,
+            "witness_lines": 32,
+            "ambiguous_expressions": [
+              "2x:\"max_entity_tokens\"",
+              "2x:\"max_relation_tokens\""
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 32,
+                "omission_markers": 4,
+                "marker_bytes": 147,
+                "block_bytes": 1434,
+                "bytes_by_category": {
+                  "witness": 1288
+                }
+              },
+              "T1": {
+                "lines_included": 39,
+                "omission_markers": 7,
+                "marker_bytes": 238,
+                "block_bytes": 1763,
+                "bytes_by_category": {
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 1288
+                }
+              },
+              "T2": {
+                "lines_included": 46,
+                "omission_markers": 8,
+                "marker_bytes": 248,
+                "block_bytes": 2048,
+                "bytes_by_category": {
+                  "definitions": 275,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 1288
+                }
+              },
+              "T3": {
+                "lines_included": 46,
+                "omission_markers": 8,
+                "marker_bytes": 248,
+                "block_bytes": 2048,
+                "bytes_by_category": {
+                  "definitions": 275,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 1288
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "loop": 2,
+              "signature": 5
+            },
+            "definition_lines_added_T2": 7,
+            "definition_lines_added_T3": 7,
+            "dependencies_T2": {
+              "resolved": 7,
+              "already_included": 11,
+              "params": 4,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 7,
+              "already_included": 13,
+              "params": 5,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "entity",
+                "relation"
+              ]
+            }
+          }
+        },
+        "failures": []
+      },
+      "all": {
+        "tiers": {
+          "T0b": {
+            "bytes": 1503,
+            "slack": 2593,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          },
+          "T1": {
+            "bytes": 1831,
+            "slack": 2265,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 68
+          },
+          "T2": {
+            "bytes": 2116,
+            "slack": 1980,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 68
+          },
+          "T3": {
+            "bytes": 2116,
+            "slack": 1980,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 68
+          }
+        },
+        "documents": {
+          "lightrag/operate.py#_apply_token_truncation": {
+            "source_lines": 216,
+            "witness_lines": 32,
+            "ambiguous_expressions": [
+              "2x:\"max_entity_tokens\"",
+              "2x:\"max_relation_tokens\""
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 32,
+                "omission_markers": 4,
+                "marker_bytes": 147,
+                "block_bytes": 1434,
+                "bytes_by_category": {
+                  "witness": 1288
+                }
+              },
+              "T1": {
+                "lines_included": 39,
+                "omission_markers": 7,
+                "marker_bytes": 238,
+                "block_bytes": 1763,
+                "bytes_by_category": {
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 1288
+                }
+              },
+              "T2": {
+                "lines_included": 46,
+                "omission_markers": 8,
+                "marker_bytes": 248,
+                "block_bytes": 2048,
+                "bytes_by_category": {
+                  "definitions": 275,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 1288
+                }
+              },
+              "T3": {
+                "lines_included": 46,
+                "omission_markers": 8,
+                "marker_bytes": 248,
+                "block_bytes": 2048,
+                "bytes_by_category": {
+                  "definitions": 275,
+                  "signature": 155,
+                  "structure": 83,
+                  "witness": 1288
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "loop": 2,
+              "signature": 5
+            },
+            "definition_lines_added_T2": 7,
+            "definition_lines_added_T3": 7,
+            "dependencies_T2": {
+              "resolved": 7,
+              "already_included": 11,
+              "params": 4,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 7,
+              "already_included": 13,
+              "params": 5,
+              "expression_local": 2,
+              "external": [
+                "Any",
+                "DEFAULT_MAX_ENTITY_TOKENS",
+                "DEFAULT_MAX_RELATION_TOKENS",
+                "QueryParam",
+                "atruncate_list_by_token_size",
+                "json"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "entity",
+                "relation"
+              ]
+            }
+          }
+        },
+        "failures": []
+      }
+    },
+    "F1": {
+      "first": {
+        "tiers": {
+          "T0b": {
+            "bytes": 626,
+            "slack": 3470,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          },
+          "T1": {
+            "bytes": 837,
+            "slack": 3259,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          },
+          "T2": {
+            "bytes": 854,
+            "slack": 3242,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          },
+          "T3": {
+            "bytes": 854,
+            "slack": 3242,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          }
+        },
+        "documents": {
+          "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context": {
+            "source_lines": 20,
+            "witness_lines": 10,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 10,
+                "omission_markers": 2,
+                "marker_bytes": 56,
+                "block_bytes": 405,
+                "bytes_by_category": {
+                  "witness": 350
+                }
+              },
+              "T1": {
+                "lines_included": 13,
+                "omission_markers": 3,
+                "marker_bytes": 84,
+                "block_bytes": 543,
+                "bytes_by_category": {
+                  "signature": 110,
+                  "witness": 350
+                }
+              },
+              "T2": {
+                "lines_included": 14,
+                "omission_markers": 2,
+                "marker_bytes": 58,
+                "block_bytes": 560,
+                "bytes_by_category": {
+                  "definitions": 43,
+                  "signature": 110,
+                  "witness": 350
+                }
+              },
+              "T3": {
+                "lines_included": 14,
+                "omission_markers": 2,
+                "marker_bytes": 58,
+                "block_bytes": 560,
+                "bytes_by_category": {
+                  "definitions": 43,
+                  "signature": 110,
+                  "witness": 350
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 3
+            },
+            "definition_lines_added_T2": 1,
+            "definition_lines_added_T3": 1,
+            "dependencies_T2": {
+              "resolved": 1,
+              "already_included": 10,
+              "params": 2,
+              "expression_local": 0,
+              "external": [
+                "AssembledContext",
+                "Dict",
+                "List",
+                "_render_chunk",
+                "conservative_token_count"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "used"
+              ]
+            },
+            "dependencies_T3": {
+              "resolved": 1,
+              "already_included": 10,
+              "params": 2,
+              "expression_local": 0,
+              "external": [
+                "AssembledContext",
+                "Dict",
+                "List",
+                "_render_chunk",
+                "conservative_token_count"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "used"
+              ]
+            }
+          },
+          "rag_orchestrator/src/retrieval/agent_adapter.py#conservative_token_count": {
+            "source_lines": 3,
+            "witness_lines": 1,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 1,
+                "omission_markers": 0,
+                "marker_bytes": 0,
+                "block_bytes": 36,
+                "bytes_by_category": {
+                  "witness": 37
+                }
+              },
+              "T1": {
+                "lines_included": 2,
+                "omission_markers": 1,
+                "marker_bytes": 25,
+                "block_bytes": 109,
+                "bytes_by_category": {
+                  "signature": 48,
+                  "witness": 37
+                }
+              },
+              "T2": {
+                "lines_included": 2,
+                "omission_markers": 1,
+                "marker_bytes": 25,
+                "block_bytes": 109,
+                "bytes_by_category": {
+                  "signature": 48,
+                  "witness": 37
+                }
+              },
+              "T3": {
+                "lines_included": 2,
+                "omission_markers": 1,
+                "marker_bytes": 25,
+                "block_bytes": 109,
+                "bytes_by_category": {
+                  "signature": 48,
+                  "witness": 37
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 1
+            },
+            "definition_lines_added_T2": 0,
+            "definition_lines_added_T3": 0,
+            "dependencies_T2": {
+              "resolved": 0,
+              "already_included": 0,
+              "params": 1,
+              "expression_local": 0,
+              "external": [],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 0,
+              "already_included": 0,
+              "params": 1,
+              "expression_local": 0,
+              "external": [],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      },
+      "all": {
+        "tiers": {
+          "T0b": {
+            "bytes": 626,
+            "slack": 3470,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          },
+          "T1": {
+            "bytes": 837,
+            "slack": 3259,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          },
+          "T2": {
+            "bytes": 854,
+            "slack": 3242,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          },
+          "T3": {
+            "bytes": 854,
+            "slack": 3242,
+            "fits": true,
+            "blocks": 2,
+            "labels_and_separators_bytes": 185
+          }
+        },
+        "documents": {
+          "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context": {
+            "source_lines": 20,
+            "witness_lines": 10,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 10,
+                "omission_markers": 2,
+                "marker_bytes": 56,
+                "block_bytes": 405,
+                "bytes_by_category": {
+                  "witness": 350
+                }
+              },
+              "T1": {
+                "lines_included": 13,
+                "omission_markers": 3,
+                "marker_bytes": 84,
+                "block_bytes": 543,
+                "bytes_by_category": {
+                  "signature": 110,
+                  "witness": 350
+                }
+              },
+              "T2": {
+                "lines_included": 14,
+                "omission_markers": 2,
+                "marker_bytes": 58,
+                "block_bytes": 560,
+                "bytes_by_category": {
+                  "definitions": 43,
+                  "signature": 110,
+                  "witness": 350
+                }
+              },
+              "T3": {
+                "lines_included": 14,
+                "omission_markers": 2,
+                "marker_bytes": 58,
+                "block_bytes": 560,
+                "bytes_by_category": {
+                  "definitions": 43,
+                  "signature": 110,
+                  "witness": 350
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 3
+            },
+            "definition_lines_added_T2": 1,
+            "definition_lines_added_T3": 1,
+            "dependencies_T2": {
+              "resolved": 1,
+              "already_included": 10,
+              "params": 2,
+              "expression_local": 0,
+              "external": [
+                "AssembledContext",
+                "Dict",
+                "List",
+                "_render_chunk",
+                "conservative_token_count"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "used"
+              ]
+            },
+            "dependencies_T3": {
+              "resolved": 1,
+              "already_included": 10,
+              "params": 2,
+              "expression_local": 0,
+              "external": [
+                "AssembledContext",
+                "Dict",
+                "List",
+                "_render_chunk",
+                "conservative_token_count"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "used"
+              ]
+            }
+          },
+          "rag_orchestrator/src/retrieval/agent_adapter.py#conservative_token_count": {
+            "source_lines": 3,
+            "witness_lines": 1,
+            "ambiguous_expressions": [],
+            "tiers": {
+              "T0b": {
+                "lines_included": 1,
+                "omission_markers": 0,
+                "marker_bytes": 0,
+                "block_bytes": 36,
+                "bytes_by_category": {
+                  "witness": 37
+                }
+              },
+              "T1": {
+                "lines_included": 2,
+                "omission_markers": 1,
+                "marker_bytes": 25,
+                "block_bytes": 109,
+                "bytes_by_category": {
+                  "signature": 48,
+                  "witness": 37
+                }
+              },
+              "T2": {
+                "lines_included": 2,
+                "omission_markers": 1,
+                "marker_bytes": 25,
+                "block_bytes": 109,
+                "bytes_by_category": {
+                  "signature": 48,
+                  "witness": 37
+                }
+              },
+              "T3": {
+                "lines_included": 2,
+                "omission_markers": 1,
+                "marker_bytes": 25,
+                "block_bytes": 109,
+                "bytes_by_category": {
+                  "signature": 48,
+                  "witness": 37
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 1
+            },
+            "definition_lines_added_T2": 0,
+            "definition_lines_added_T3": 0,
+            "dependencies_T2": {
+              "resolved": 0,
+              "already_included": 0,
+              "params": 1,
+              "expression_local": 0,
+              "external": [],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 0,
+              "already_included": 0,
+              "params": 1,
+              "expression_local": 0,
+              "external": [],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      }
+    },
+    "F2": {
+      "first": {
+        "tiers": {
+          "T0b": {
+            "bytes": 851,
+            "slack": 3245,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 106
+          },
+          "T1": {
+            "bytes": 1018,
+            "slack": 3078,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 105
+          },
+          "T2": {
+            "bytes": 1018,
+            "slack": 3078,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 105
+          },
+          "T3": {
+            "bytes": 1018,
+            "slack": 3078,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 105
+          }
+        },
+        "documents": {
+          "rag_orchestrator/src/retrieval/codebase_utils.py#get_cached_graph_with_generation": {
+            "source_lines": 65,
+            "witness_lines": 12,
+            "ambiguous_expressions": [
+              "2x:with _repo_graphs_lock:",
+              "2x:_repo_graphs.move_to_end(repo_id)"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 12,
+                "omission_markers": 5,
+                "marker_bytes": 166,
+                "block_bytes": 745,
+                "bytes_by_category": {
+                  "witness": 580
+                }
+              },
+              "T1": {
+                "lines_included": 16,
+                "omission_markers": 6,
+                "marker_bytes": 191,
+                "block_bytes": 913,
+                "bytes_by_category": {
+                  "signature": 115,
+                  "structure": 28,
+                  "witness": 580
+                }
+              },
+              "T2": {
+                "lines_included": 16,
+                "omission_markers": 6,
+                "marker_bytes": 191,
+                "block_bytes": 913,
+                "bytes_by_category": {
+                  "signature": 115,
+                  "structure": 28,
+                  "witness": 580
+                }
+              },
+              "T3": {
+                "lines_included": 16,
+                "omission_markers": 6,
+                "marker_bytes": 191,
+                "block_bytes": 913,
+                "bytes_by_category": {
+                  "signature": 115,
+                  "structure": 28,
+                  "witness": 580
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 3,
+              "with": 1
+            },
+            "definition_lines_added_T2": 0,
+            "definition_lines_added_T3": 0,
+            "dependencies_T2": {
+              "resolved": 0,
+              "already_included": 7,
+              "params": 6,
+              "expression_local": 0,
+              "external": [
+                "CodebaseGraph",
+                "Tuple",
+                "_CACHE_MAX_REPOS",
+                "_repo_graphs",
+                "_repo_graphs_lock",
+                "get_repo_generation",
+                "load_graph_for_repo"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 0,
+              "already_included": 7,
+              "params": 6,
+              "expression_local": 0,
+              "external": [
+                "CodebaseGraph",
+                "Tuple",
+                "_CACHE_MAX_REPOS",
+                "_repo_graphs",
+                "_repo_graphs_lock",
+                "get_repo_generation",
+                "load_graph_for_repo"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      },
+      "all": {
+        "tiers": {
+          "T0b": {
+            "bytes": 887,
+            "slack": 3209,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 106
+          },
+          "T1": {
+            "bytes": 1030,
+            "slack": 3066,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 105
+          },
+          "T2": {
+            "bytes": 1030,
+            "slack": 3066,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 105
+          },
+          "T3": {
+            "bytes": 1030,
+            "slack": 3066,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 105
+          }
+        },
+        "documents": {
+          "rag_orchestrator/src/retrieval/codebase_utils.py#get_cached_graph_with_generation": {
+            "source_lines": 65,
+            "witness_lines": 14,
+            "ambiguous_expressions": [
+              "2x:with _repo_graphs_lock:",
+              "2x:_repo_graphs.move_to_end(repo_id)"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 14,
+                "omission_markers": 4,
+                "marker_bytes": 132,
+                "block_bytes": 781,
+                "bytes_by_category": {
+                  "witness": 650
+                }
+              },
+              "T1": {
+                "lines_included": 17,
+                "omission_markers": 5,
+                "marker_bytes": 161,
+                "block_bytes": 925,
+                "bytes_by_category": {
+                  "signature": 115,
+                  "witness": 650
+                }
+              },
+              "T2": {
+                "lines_included": 17,
+                "omission_markers": 5,
+                "marker_bytes": 161,
+                "block_bytes": 925,
+                "bytes_by_category": {
+                  "signature": 115,
+                  "witness": 650
+                }
+              },
+              "T3": {
+                "lines_included": 17,
+                "omission_markers": 5,
+                "marker_bytes": 161,
+                "block_bytes": 925,
+                "bytes_by_category": {
+                  "signature": 115,
+                  "witness": 650
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 3
+            },
+            "definition_lines_added_T2": 0,
+            "definition_lines_added_T3": 0,
+            "dependencies_T2": {
+              "resolved": 0,
+              "already_included": 7,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "CodebaseGraph",
+                "Tuple",
+                "_CACHE_MAX_REPOS",
+                "_repo_graphs",
+                "_repo_graphs_lock",
+                "get_repo_generation",
+                "load_graph_for_repo"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            },
+            "dependencies_T3": {
+              "resolved": 0,
+              "already_included": 7,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "CodebaseGraph",
+                "Tuple",
+                "_CACHE_MAX_REPOS",
+                "_repo_graphs",
+                "_repo_graphs_lock",
+                "get_repo_generation",
+                "load_graph_for_repo"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": []
+            }
+          }
+        },
+        "failures": []
+      }
+    },
+    "F3": {
+      "first": {
+        "tiers": {
+          "T0b": {
+            "bytes": 1848,
+            "slack": 2248,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 71
+          },
+          "T1": {
+            "bytes": 2679,
+            "slack": 1417,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          },
+          "T2": {
+            "bytes": 4674,
+            "slack": -578,
+            "fits": false,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          },
+          "T3": {
+            "bytes": 6862,
+            "slack": -2766,
+            "fits": false,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          }
+        },
+        "documents": {
+          "rag_orchestrator/src/core/service.py#run_rag": {
+            "source_lines": 361,
+            "witness_lines": 35,
+            "ambiguous_expressions": [
+              "2x:chunks_in_final_context,",
+              "2x:if claim_type == \"repository_overview\":"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 35,
+                "omission_markers": 10,
+                "marker_bytes": 332,
+                "block_bytes": 1777,
+                "bytes_by_category": {
+                  "witness": 1446
+                }
+              },
+              "T1": {
+                "lines_included": 54,
+                "omission_markers": 11,
+                "marker_bytes": 359,
+                "block_bytes": 2610,
+                "bytes_by_category": {
+                  "signature": 705,
+                  "structure": 101,
+                  "witness": 1446
+                }
+              },
+              "T2": {
+                "lines_included": 109,
+                "omission_markers": 15,
+                "marker_bytes": 475,
+                "block_bytes": 4605,
+                "bytes_by_category": {
+                  "definitions": 1879,
+                  "signature": 705,
+                  "structure": 101,
+                  "witness": 1446
+                }
+              },
+              "T3": {
+                "lines_included": 163,
+                "omission_markers": 15,
+                "marker_bytes": 474,
+                "block_bytes": 6793,
+                "bytes_by_category": {
+                  "definitions": 4068,
+                  "signature": 705,
+                  "structure": 101,
+                  "witness": 1446
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "branch": 1,
+              "signature": 17,
+              "with": 1
+            },
+            "definition_lines_added_T2": 55,
+            "definition_lines_added_T3": 109,
+            "dependencies_T2": {
+              "resolved": 10,
+              "already_included": 12,
+              "params": 7,
+              "expression_local": 0,
+              "external": [
+                "Callable",
+                "ClaimType",
+                "Optional",
+                "RAGResult",
+                "RetrievedChunk",
+                "Set",
+                "assemble_context",
+                "build_final_context_manifest",
+                "conservative_token_count",
+                "httpx",
+                "prepare_chunks_for_agent"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "agent_chunks",
+                "llm_context",
+                "policy_document_ids"
+              ]
+            },
+            "dependencies_T3": {
+              "resolved": 24,
+              "already_included": 48,
+              "params": 25,
+              "expression_local": 2,
+              "external": [
+                "Callable",
+                "ClaimType",
+                "Dict",
+                "ExpansionMetadata",
+                "Optional",
+                "RAGResult",
+                "RetrievalConstraints",
+                "RetrievalPlan",
+                "RetrievedChunk",
+                "Set",
+                "_apply_overview_selection",
+                "_fetch_repository_name",
+                "_fetch_repository_overview",
+                "_new_trace_id",
+                "_overview_policy_text",
+                "_prioritize_explicit_mentions",
+                "_structured_overview_focus",
+                "assemble_context",
+                "assess_repository_overview",
+                "asyncio",
+                "build_final_context_manifest",
+                "conservative_token_count",
+                "embed_query",
+                "execute_retrieval_plan",
+                "get_embedder",
+                "get_settings",
+                "httpx",
+                "hybrid_retrieve",
+                "prepare_chunks_for_agent",
+                "prioritize_exact_sources",
+                "resolve_repo_id_http"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "agent_chunks",
+                "llm_context",
+                "obligation",
+                "policy_document_ids"
+              ]
+            }
+          }
+        },
+        "failures": []
+      },
+      "all": {
+        "tiers": {
+          "T0b": {
+            "bytes": 2200,
+            "slack": 1896,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 71
+          },
+          "T1": {
+            "bytes": 2987,
+            "slack": 1109,
+            "fits": true,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          },
+          "T2": {
+            "bytes": 5253,
+            "slack": -1157,
+            "fits": false,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          },
+          "T3": {
+            "bytes": 7230,
+            "slack": -3134,
+            "fits": false,
+            "blocks": 1,
+            "labels_and_separators_bytes": 69
+          }
+        },
+        "documents": {
+          "rag_orchestrator/src/core/service.py#run_rag": {
+            "source_lines": 361,
+            "witness_lines": 43,
+            "ambiguous_expressions": [
+              "2x:chunks_in_final_context,",
+              "2x:if claim_type == \"repository_overview\":"
+            ],
+            "tiers": {
+              "T0b": {
+                "lines_included": 43,
+                "omission_markers": 11,
+                "marker_bytes": 360,
+                "block_bytes": 2129,
+                "bytes_by_category": {
+                  "witness": 1770
+                }
+              },
+              "T1": {
+                "lines_included": 61,
+                "omission_markers": 12,
+                "marker_bytes": 387,
+                "block_bytes": 2918,
+                "bytes_by_category": {
+                  "signature": 705,
+                  "structure": 57,
+                  "witness": 1770
+                }
+              },
+              "T2": {
+                "lines_included": 122,
+                "omission_markers": 17,
+                "marker_bytes": 534,
+                "block_bytes": 5184,
+                "bytes_by_category": {
+                  "definitions": 2119,
+                  "signature": 705,
+                  "structure": 57,
+                  "witness": 1770
+                }
+              },
+              "T3": {
+                "lines_included": 171,
+                "omission_markers": 17,
+                "marker_bytes": 533,
+                "block_bytes": 7161,
+                "bytes_by_category": {
+                  "definitions": 4097,
+                  "signature": 705,
+                  "structure": 57,
+                  "witness": 1770
+                }
+              }
+            },
+            "structure_lines_by_kind": {
+              "signature": 17,
+              "with": 1
+            },
+            "definition_lines_added_T2": 61,
+            "definition_lines_added_T3": 110,
+            "dependencies_T2": {
+              "resolved": 12,
+              "already_included": 14,
+              "params": 9,
+              "expression_local": 0,
+              "external": [
+                "Callable",
+                "ClaimType",
+                "Optional",
+                "RAGResult",
+                "RetrievedChunk",
+                "Set",
+                "assemble_context",
+                "build_final_context_manifest",
+                "conservative_token_count",
+                "httpx",
+                "prepare_chunks_for_agent",
+                "qualify_historical_note_answer"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "agent_chunks",
+                "llm_context",
+                "obligation",
+                "policy_document_ids"
+              ]
+            },
+            "dependencies_T3": {
+              "resolved": 25,
+              "already_included": 52,
+              "params": 27,
+              "expression_local": 2,
+              "external": [
+                "Callable",
+                "ClaimType",
+                "Dict",
+                "ExpansionMetadata",
+                "Optional",
+                "RAGResult",
+                "RetrievalConstraints",
+                "RetrievalPlan",
+                "RetrievedChunk",
+                "Set",
+                "_apply_overview_selection",
+                "_fetch_repository_name",
+                "_fetch_repository_overview",
+                "_new_trace_id",
+                "_overview_policy_text",
+                "_prioritize_explicit_mentions",
+                "_structured_overview_focus",
+                "assemble_context",
+                "assess_repository_overview",
+                "asyncio",
+                "build_final_context_manifest",
+                "conservative_token_count",
+                "embed_query",
+                "execute_retrieval_plan",
+                "get_embedder",
+                "get_settings",
+                "httpx",
+                "hybrid_retrieve",
+                "prepare_chunks_for_agent",
+                "prioritize_exact_sources",
+                "qualify_historical_note_answer",
+                "resolve_repo_id_http"
+              ],
+              "no_preceding_definition": [],
+              "multiple_candidate_definitions": [
+                "agent_chunks",
+                "llm_context",
+                "obligation",
+                "policy_document_ids"
+              ]
+            }
+          }
+        },
+        "failures": []
+      }
+    }
+  }
+}
