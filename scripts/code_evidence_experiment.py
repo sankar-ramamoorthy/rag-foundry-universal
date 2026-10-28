@@ -14,6 +14,7 @@ import hashlib
 import importlib
 import json
 import logging
+import os
 import runpy
 import subprocess
 import sys
@@ -746,8 +747,10 @@ async def fetch_versions(client: Any, host: str) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("freeze", "baseline"))
-    parser.add_argument("--host", default="http://100.105.24.12")
+    parser.add_argument("--host", default=os.environ.get("E1_HOST"))
     args = parser.parse_args()
+    if args.command == "baseline" and not args.host:
+        parser.error("baseline needs --host or E1_HOST (e.g. http://<host>)")
     if args.command == "freeze":
         freeze()
     else:

@@ -103,7 +103,7 @@ ENDPOINT_CONFIG = {
     "models": {
         "default": {
             "model": "ollama/${TEST_REMOTE_MODEL:Qwen3:4b}",
-            "api_base": "${TEST_REMOTE_BASE:http://100.105.24.12:11434}",
+            "api_base": "${TEST_REMOTE_BASE:http://remote-ollama.example.invalid:11434}",
             "timeout": 300,
         },
         "local": {"model": "ollama/phi4-mini:latest"},
@@ -111,7 +111,7 @@ ENDPOINT_CONFIG = {
     "endpoints": {
         "tailscaleollamalinux": {
             "provider": "ollama",
-            "api_base": "${TEST_REMOTE_BASE:http://100.105.24.12:11434}",
+            "api_base": "${TEST_REMOTE_BASE:http://remote-ollama.example.invalid:11434}",
             "timeout": 300,
         },
         "windowsollamalocal": {
@@ -132,7 +132,7 @@ def test_env_interpolation_uses_defaults_with_colons():
     resolved = registry.resolve(None, None)
     # defaults after the first colon survive intact (model tags, URLs)
     assert resolved.model == "ollama/Qwen3:4b"
-    assert resolved.api_base == "http://100.105.24.12:11434"
+    assert resolved.api_base == "http://remote-ollama.example.invalid:11434"
 
 
 def test_env_interpolation_prefers_environment(monkeypatch):
@@ -150,7 +150,7 @@ def test_endpoint_prefixed_model_routes_to_endpoint():
     registry = ModelRegistry(ENDPOINT_CONFIG)
     resolved = registry.resolve(None, "tailscaleollamalinux/qwen2.5-coder:latest")
     assert resolved.model == "ollama/qwen2.5-coder:latest"
-    assert resolved.api_base == "http://100.105.24.12:11434"
+    assert resolved.api_base == "http://remote-ollama.example.invalid:11434"
     assert resolved.alias == "tailscaleollamalinux"
     assert resolved.timeout == 300.0
 
@@ -189,7 +189,7 @@ def test_describe_endpoints_shape():
     endpoints = {e["name"]: e for e in registry.describe_endpoints()}
     assert endpoints["tailscaleollamalinux"]["provider"] == "ollama"
     assert endpoints["tailscaleollamalinux"]["api_base"] == (
-        "http://100.105.24.12:11434"
+        "http://remote-ollama.example.invalid:11434"
     )
     assert "windowsollamalocal" in endpoints
 

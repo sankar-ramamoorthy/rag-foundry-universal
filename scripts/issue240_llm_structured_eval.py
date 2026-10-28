@@ -6,6 +6,7 @@ omitted fields, and mixed edge types before any prose rendering.
 """
 
 import json
+import os
 import time
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -13,8 +14,8 @@ from urllib.request import Request, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "DOCS/test_results/2026-10-04-issue-240-structured-answer.json"
 OUTPUT = ROOT / "DOCS/test_results/2026-10-04-issue-240-llm-structured.json"
-INGESTION = "http://100.105.24.12:8001"
-LLM = "http://100.105.24.12:8003/generate"
+INGESTION = os.environ["ISSUE240_INGESTION_URL"]
+LLM = os.environ["ISSUE240_LLM_URL"] + "/generate"
 
 
 def fetch(url: str, payload: dict | None = None) -> dict:

@@ -182,7 +182,7 @@ def run_case(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--orchestrator", required=True)
-    parser.add_argument("--ingestion", default="http://100.105.24.12:8001")
+    parser.add_argument("--ingestion", required=True)
     parser.add_argument("--repo-id", default=REPO_ID)
     parser.add_argument("--generation-id", default=GENERATION_ID)
     parser.add_argument("--source-sha", default=SOURCE_SHA)

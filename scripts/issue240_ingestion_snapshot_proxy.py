@@ -27,7 +27,7 @@ SOURCE = Path(os.environ["ISSUE240_SOURCE_PATH"]).resolve()
 REPO_ID = os.environ["ISSUE240_REPO_ID"]
 GENERATION_ID = os.environ["ISSUE240_GENERATION_ID"]
 SOURCE_SHA = os.environ["ISSUE240_SOURCE_SHA"]
-REMOTE = os.environ.get("ISSUE240_REMOTE_INGESTION", "http://100.105.24.12:8001")
+REMOTE = os.environ["ISSUE240_REMOTE_INGESTION"]
 
 
 def _git(*args: str) -> str:

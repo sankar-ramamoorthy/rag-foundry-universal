@@ -28,12 +28,12 @@ a catalog listing, before an eval run trusts them.
 Requires a real, reachable stack (skipped otherwise):
 - RAG_EVAL_LLM_SERVICE_URL, RAG_EVAL_VECTOR_STORE_URL,
   RAG_EVAL_INGESTION_SERVICE_URL -- base URLs for a live deployment
-  (e.g. the Tailscale host: http://100.105.24.12:8003 / :8002 / :8001)
+  (e.g. a remote host: http://<host>:8003 / :8002 / :8001)
 - RAG_EVAL_REPO_ID -- a repo_id already ingested on that stack
 - RAG_EVAL_OLLAMA_BASE_URL (optional) -- override for the embedder when
   running from outside the stack's own Docker network, where the
   service's default OLLAMA_BASE_URL (host.docker.internal) won't resolve
-  (e.g. http://100.105.24.12:11434 for the Tailscale host)
+  (e.g. http://<host>:11434 for a remote host)
 - at least two configured free-provider models that actually complete a
   real generation right now, discovered dynamically from GET /v1/models
   -- the test skips if fewer than two are available instead of failing.

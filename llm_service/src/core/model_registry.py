@@ -23,7 +23,7 @@ is available there" — without pre-registering every model:
     endpoints:
       tailscaleollamalinux:
         provider: ollama
-        api_base: http://100.105.24.12:11434
+        api_base: http://remote-ollama.example.invalid:11434
         timeout: 300
 
 makes `model=tailscaleollamalinux/Qwen3:8b` resolve to

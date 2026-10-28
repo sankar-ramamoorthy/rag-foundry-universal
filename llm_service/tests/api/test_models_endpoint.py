@@ -32,7 +32,7 @@ def fake_endpoints(monkeypatch):
 
     def handler(request: httpx.Request) -> httpx.Response:
         url = str(request.url)
-        if "100.105.24.12" in url:
+        if "remote-ollama.example.invalid" in url:
             return httpx.Response(200, json={"models": [
                 {"name": "Qwen3:4b"}, {"name": "deepseek-r1:7b"},
             ]})
@@ -81,7 +81,7 @@ def remote_env(monkeypatch):
     gitignored .env does it); registry reloaded around the test."""
     from src.core.model_registry import reset_registry
 
-    monkeypatch.setenv("REMOTE_OLLAMA_BASE_URL", "http://100.105.24.12:11434")
+    monkeypatch.setenv("REMOTE_OLLAMA_BASE_URL", "http://remote-ollama.example.invalid:11434")
     reset_registry()
     yield
     reset_registry()
