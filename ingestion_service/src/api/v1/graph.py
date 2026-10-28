@@ -146,11 +146,16 @@ async def post_nodes_by_canonical_ids(repo_id: str, payload: CanonicalLookupRequ
 # -------------------------------
 
 @router.get("/repos/{repo_id}", response_model=FullGraphResponse)
-async def get_full_graph(
+def get_full_graph(
     repo_id: str,
 ):
     """
     Export the entire graph (nodes and relationships) for the given repository.
+
+    Deliberately a plain `def` (issue #271): the export is a synchronous,
+    multi-second DB read, so FastAPI must run it in its thread pool. As an
+    `async def` it ran on the event loop and stalled every other request to
+    this single-process service (including /version) for the whole export.
 
     Returns:
         nodes: list of GraphNode

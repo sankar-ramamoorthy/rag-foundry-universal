@@ -832,6 +832,21 @@ because local configuration changes the default model (`Qwen3:4b` instead of the
 expected `phi4-mini:latest`) and adds a `remote` alias; they fail identically
 without #268's changes. The overriding config source is not yet identified.
 
+## Graph export event-loop fix (#271)
+
+`GET /v1/graph/repos/{repo_id}` was an `async def` handler running a
+synchronous multi-second DB export on the event loop, stalling every other
+request to the single-process `ingestion_service` (including `/version`) for
+the whole export. It is now a plain `def` (thread pool). Measured locally on a
+synthetic 41,635-node / 80 MB-text fixture: a concurrent `/version` probe waited
+9.1 s before and 0.8 s after, with a byte-identical canonical response. Export
+duration is unchanged (~9.5 s). Two concurrent exports now overlap (peak RSS
+606 MB -> 983 MB) where the loop previously serialized them, so memory per
+concurrent export is a new exposure; no concurrency limit was added. This does
+**not** explain the 120 s+ E1 control-replay timeout, which remains unresolved
+([#270](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/270)).
+Not deployed; deployment is operator-owned.
+
 ## Production release
 
 - Current pinned deployment SHA and the audited-release history live
