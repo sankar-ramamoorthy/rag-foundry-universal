@@ -126,7 +126,11 @@ control replay (#270). The GO pass rate is fixed by the frozen
 (2026-10-28, checksum recorded): on 12 held-out cases over 3 repositories, GO needs
 at least 10 passing the delivery gate, at least 5 wins over the unchanged control, at
 least 3 of 4 per repository and no regressions; answer correctness does not decide it,
-and GO only permits designing a larger independent evaluation.
+and GO only permits designing a larger independent evaluation. The held-out
+[stratification and selection declaration](/DOCS/evaluations/code-evidence-held-out/stratification.md)
+(#281) is frozen before any repository is chosen (quotas, a deterministic first-qualifying
+selection rule, validity-only exclusions, the owner as independent second reviewer);
+repositories and cases are not yet chosen.
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains
