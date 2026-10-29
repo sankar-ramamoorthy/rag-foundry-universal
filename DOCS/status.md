@@ -130,7 +130,10 @@ and GO only permits designing a larger independent evaluation. The held-out
 [stratification and selection declaration](/DOCS/evaluations/code-evidence-held-out/stratification.md)
 (#281) is frozen before any repository is chosen (quotas, a deterministic first-qualifying
 selection rule, validity-only exclusions, the owner as independent second reviewer);
-repositories and cases are not yet chosen.
+the held-out repositories are now selected by that rule (pypa/hatch, pallets/werkzeug,
+pdfminer/pdfminer.six; see the
+[selection record](/DOCS/evaluations/code-evidence-held-out/selection-record.md)), and the
+cases are not yet written.
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains

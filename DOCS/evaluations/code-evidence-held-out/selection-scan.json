@@ -1,0 +1,134 @@
+{
+  "run_date": "2026-10-28",
+  "domains": {
+    "D1": {
+      "topic": "cli",
+      "queries": [
+        "language:python topic:cli stars:300..8000 archived:false license:mit",
+        "language:python topic:cli stars:300..8000 archived:false license:apache-2.0",
+        "language:python topic:cli stars:300..8000 archived:false license:bsd-3-clause",
+        "language:python topic:cli stars:300..8000 archived:false license:bsd-2-clause"
+      ],
+      "candidates_considered": 1,
+      "pool_size": 30,
+      "log": [
+        {
+          "repo": "pypa/hatch",
+          "stars": 7246,
+          "license": "MIT",
+          "pushed_at": "2026-10-28",
+          "topics": [
+            "build",
+            "cli",
+            "packaging",
+            "plugin",
+            "python",
+            "versioning",
+            "virtualenv"
+          ],
+          "commit": "740565ac2929597cb9def8d46338cbef6493fc8d",
+          "source_files": 211,
+          "shape": {
+            "long_body": 8,
+            "long_signature": 45,
+            "short_branchy": 550,
+            "caller_callee_files": 37,
+            "unparsed": 0,
+            "functions": 1192
+          },
+          "decision": "SELECTED"
+        }
+      ],
+      "selected": "pypa/hatch"
+    },
+    "D2": {
+      "topic": "http",
+      "queries": [
+        "language:python topic:http stars:300..8000 archived:false license:mit",
+        "language:python topic:http stars:300..8000 archived:false license:apache-2.0",
+        "language:python topic:http stars:300..8000 archived:false license:bsd-3-clause",
+        "language:python topic:http stars:300..8000 archived:false license:bsd-2-clause"
+      ],
+      "candidates_considered": 1,
+      "pool_size": 30,
+      "log": [
+        {
+          "repo": "pallets/werkzeug",
+          "stars": 6880,
+          "license": "BSD-3-Clause",
+          "pushed_at": "2026-10-26",
+          "topics": [
+            "http",
+            "pallets",
+            "python",
+            "werkzeug",
+            "wsgi"
+          ],
+          "commit": "b73dce5a2ce14f7c7fd645699d1d878de48d2948",
+          "source_files": 54,
+          "shape": {
+            "long_body": 7,
+            "long_signature": 43,
+            "short_branchy": 451,
+            "caller_callee_files": 26,
+            "unparsed": 0,
+            "functions": 1157
+          },
+          "decision": "SELECTED"
+        }
+      ],
+      "selected": "pallets/werkzeug"
+    },
+    "D3": {
+      "topic": "parser",
+      "queries": [
+        "language:python topic:parser stars:300..8000 archived:false license:mit",
+        "language:python topic:parser stars:300..8000 archived:false license:apache-2.0",
+        "language:python topic:parser stars:300..8000 archived:false license:bsd-3-clause",
+        "language:python topic:parser stars:300..8000 archived:false license:bsd-2-clause"
+      ],
+      "candidates_considered": 2,
+      "pool_size": 30,
+      "log": [
+        {
+          "repo": "The-Vibe-Company/megaparse",
+          "stars": 7417,
+          "license": "Apache-2.0",
+          "pushed_at": "2026-10-15",
+          "topics": [
+            "docx",
+            "llm",
+            "parser",
+            "pdf",
+            "powerpoint"
+          ],
+          "decision": "rejected",
+          "reason": "retrieval/LLM/RAG/agent framework by description or topics"
+        },
+        {
+          "repo": "pdfminer/pdfminer.six",
+          "stars": 7046,
+          "license": "MIT",
+          "pushed_at": "2026-03-13",
+          "topics": [
+            "parser",
+            "pdf",
+            "python"
+          ],
+          "commit": "a18de2a9c479b4c847538500017b449ddaec177e",
+          "source_files": 43,
+          "shape": {
+            "long_body": 5,
+            "long_signature": 34,
+            "short_branchy": 313,
+            "caller_callee_files": 12,
+            "unparsed": 0,
+            "functions": 683
+          },
+          "decision": "SELECTED"
+        }
+      ],
+      "selected": "pdfminer/pdfminer.six"
+    }
+  }
+}
