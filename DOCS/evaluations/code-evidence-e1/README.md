@@ -55,6 +55,15 @@ The source-line efficiency field is a source-membership proxy, not a semantic
 relevance classification or a lower bound on useful implementation evidence.
 The results distinguish it from exact expression bytes and citation overhead.
 
+## Pin status (2026-10-28)
+
+The foundry pin above (generation `60d5ed0a-a294-4276-890f-741d7cad5c41`, commit `109f12d8`) no
+longer exists in the deployed stack: a re-ingest replaced it, and the current generation also
+contains answer-bearing documents. F1-F3 are to be re-run only on a clean corpus rebuilt from
+commit `109f12d8` (#292), after answer-bearing paths are excludable (#291). The frozen
+`manifest.json` is not edited; a new pin file will record the new corpus. LightRAG's pin is
+intact. See the [decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md).
+
 Reproduce baseline capture using the existing repository virtual environment:
 
 ```powershell
