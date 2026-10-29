@@ -1,26 +1,89 @@
 {
-  "id": "P1", "repo": "pdfminer/pdfminer.six", "slot": "A", "style": "explicit",
-  "query": "Explain how `extract_text_to_fp` in `pdfminer/high_level.py` converts a PDF into output: which options it honours, how it chooses the output device for each output type, how it prepares the output stream and the resource manager, and how it processes the pages and finishes.",
+  "id": "P1",
+  "repo": "pdfminer/pdfminer.six",
+  "slot": "A",
+  "style": "explicit",
+  "query": "Explain how `extract_text_to_fp` in `pdfminer/high_level.py` converts a PDF into output: how it chooses the output device for each output type and what happens for an unsupported type, how it prepares the output stream and the resource manager (including caching), how the scale, layout and rotation options take effect, and how it processes the pages and finishes.",
   "operations": [
-    {"name": "Debug mode raises the root logger to DEBUG", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["logging.getLogger().setLevel(logging.DEBUG)"]},
-    {"name": "An image writer is created only when an output directory is given", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["imagewriter = ImageWriter(output_dir)"]},
-    {"name": "The output device is a text, XML, HTML or hOCR converter depending on the output type", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["device = TextConverter(", "device = XMLConverter(", "device = HTMLConverter(", "device = HOCRConverter("]},
-    {"name": "An unsupported output type raises a value error", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["raise PDFValueError(msg)"]},
-    {"name": "Every selected page is interpreted and the device is closed at the end", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["interpreter.process_page(page)", "device.close()"]}
+    {
+      "name": "The output device is a text, XML, HTML or hOCR converter depending on the output type",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "device = TextConverter(",
+        "device = XMLConverter(",
+        "device = HTMLConverter(",
+        "device = HOCRConverter("
+      ],
+      "needed_for": "how it chooses the output device for each output type"
+    },
+    {
+      "name": "An unsupported output type raises a value error",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "raise PDFValueError(msg)"
+      ],
+      "needed_for": "what happens for an unsupported type"
+    },
+    {
+      "name": "Standard output is replaced by its binary buffer when a non-text output type is written to it",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "if output_type != \"text\" and outfp == sys.stdout:",
+        "outfp = sys.stdout.buffer"
+      ],
+      "needed_for": "how it prepares the output stream"
+    },
+    {
+      "name": "The requested rotation is added to each page's own rotation modulo 360",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "page.rotate = (page.rotate + rotation) % 360"
+      ],
+      "needed_for": "how the rotation option takes effect"
+    },
+    {
+      "name": "Every selected page is interpreted and the device is closed at the end",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "interpreter.process_page(page)",
+        "device.close()"
+      ],
+      "needed_for": "how it processes the pages and finishes"
+    }
   ],
   "dependencies": [
-    {"name": "Standard output is replaced by its binary buffer when a non-text output type is written to it", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["if output_type != \"text\" and outfp == sys.stdout:", "outfp = sys.stdout.buffer"]},
-    {"name": "Caching is controlled by one flag that feeds both the resource manager and the page loader", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["rsrcmgr = PDFResourceManager(caching=not disable_caching)", "caching=not disable_caching,"]},
-    {"name": "Scale and layout mode only influence the HTML converter", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["scale=scale,", "layoutmode=layoutmode,"]},
-    {"name": "The requested rotation is added to each page's own rotation modulo 360 before the page is processed", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": ["page.rotate = (page.rotate + rotation) % 360"]}
+    {
+      "name": "Caching is controlled by one flag that feeds both the resource manager and the page loader",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "rsrcmgr = PDFResourceManager(caching=not disable_caching)",
+        "caching=not disable_caching,"
+      ],
+      "needed_for": "how it prepares the resource manager (including caching)"
+    },
+    {
+      "name": "Scale and layout mode only influence the HTML converter",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "scale=scale,",
+        "layoutmode=layoutmode,"
+      ],
+      "needed_for": "how the scale and layout options take effect"
+    },
+    {
+      "name": "For tag output the stream is cast to a binary stream before it is given to the tag extractor",
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "expressions": [
+        "device = TagExtractor(rsrcmgr, cast(BinaryIO, outfp), codec=codec)"
+      ],
+      "needed_for": "how it prepares the output stream (binary stream for tag output)"
+    }
+  ],
+  "revisions": [
+    {
+      "round": 1,
+      "reviewer_note": "remove incidental debug/image-writer requirements or make them explicitly relevant",
+      "change": "Removed the debug-logging and image-writer operations. The question no longer asks 'which options it honours'; it asks about device choice, stream and resource-manager preparation, scale/layout/rotation and page processing. Rotation and the stdout buffer moved from dependencies to operations; a tag-extractor binary-stream dependency was added so there are 5 operations and 3 dependencies."
+    }
   ]
 }

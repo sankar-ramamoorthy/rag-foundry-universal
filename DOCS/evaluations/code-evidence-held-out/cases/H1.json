@@ -1,26 +1,97 @@
 {
-  "id": "H1", "repo": "pypa/hatch", "slot": "A", "style": "explicit",
-  "query": "Explain how the `hatch env show` command, implemented by `show` in `src/hatch/cli/env/show.py`, works: which environments it lists, how the JSON and internal-environment options change what it does, how it treats matrix environments versus standalone ones, and how it renders its result.",
+  "id": "H1",
+  "repo": "pypa/hatch",
+  "slot": "A",
+  "style": "explicit",
+  "query": "Explain how the `hatch env show` command, implemented by `show` in `src/hatch/cli/env/show.py`, works: which environments it lists (standalone, matrix and internal ones, and how requested names filter them), how the JSON and internal-environment options change what it does, how the features and dependencies of matrix environments are normalized for display (including what happens to a dependency string that is not a valid requirement), and how it renders its result.",
   "operations": [
-    {"name": "JSON mode covers regular and internal environments", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["for environments in (app.project.config.envs, app.project.config.internal_envs):"]},
-    {"name": "JSON mode prints one compact JSON document", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["app.display(json.dumps(contextual_config, separators=(\",\", \":\")))"]},
-    {"name": "Table mode chooses the internal or regular environment sets", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["target_standalone_envs = app.project.config.internal_envs", "target_standalone_envs = app.project.config.envs"]},
-    {"name": "Unknown requested names abort the command", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["app.abort(f\"Environment `{env_name}` is not defined by project config\")"]},
-    {"name": "Output is a Standalone table and a Matrices table with optional titles", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["\"\" if hide_titles else \"Standalone\",", "\"\" if hide_titles else \"Matrices\","]}
+    {
+      "name": "JSON mode covers regular and internal environments",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "for environments in (app.project.config.envs, app.project.config.internal_envs):"
+      ],
+      "needed_for": "which environments it lists; how the JSON option changes what it does"
+    },
+    {
+      "name": "JSON mode prints one compact JSON document",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "app.display(json.dumps(contextual_config, separators=(\",\", \":\")))"
+      ],
+      "needed_for": "how the JSON option changes what it does"
+    },
+    {
+      "name": "Table mode chooses the internal or regular environment sets",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "target_standalone_envs = app.project.config.internal_envs",
+        "target_standalone_envs = app.project.config.envs"
+      ],
+      "needed_for": "how the internal-environment option changes what it does"
+    },
+    {
+      "name": "Unknown requested names abort the command",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "app.abort(f\"Environment `{env_name}` is not defined by project config\")"
+      ],
+      "needed_for": "how requested names filter the listing"
+    },
+    {
+      "name": "Output is a Standalone table and a Matrices table with optional titles",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "\"\" if hide_titles else \"Standalone\",",
+        "\"\" if hide_titles else \"Matrices\","
+      ],
+      "needed_for": "how it renders its result"
+    }
   ],
   "dependencies": [
-    {"name": "Matrix member environments are left out of the standalone list unless names were given", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["matrix_envs.update(matrix_data[\"envs\"])", "if env_names or env_name not in matrix_envs"]},
-    {"name": "A requested-name filter applies to matrices and to standalone environments", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["if env_names and matrix_name not in env_names:", "if env_names and env_name not in env_names:"]},
-    {"name": "Feature names are normalized only when ambiguous features are not allowed", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["if app.project.metadata.hatch.metadata.allow_ambiguous_features:", "sorted({normalize_project_name(f) for f in config[\"features\"]})"]},
-    {"name": "Invalid dependency strings are kept as written and valid ones are normalized", "canonical_id": "src/hatch/cli/env/show.py#show",
-     "expressions": ["except InvalidDependencyError:", "normalized_dependencies.add(dependency)", "normalized_dependencies.add(get_normalized_dependency(req))"]}
+    {
+      "name": "Matrix member environments are left out of the standalone list unless names were given",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "matrix_envs.update(matrix_data[\"envs\"])",
+        "if env_names or env_name not in matrix_envs"
+      ],
+      "needed_for": "how matrix and standalone environments are listed"
+    },
+    {
+      "name": "A requested-name filter applies to matrices and to standalone environments",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "if env_names and matrix_name not in env_names:",
+        "if env_names and env_name not in env_names:"
+      ],
+      "needed_for": "how requested names filter them"
+    },
+    {
+      "name": "Feature names are normalized only when ambiguous features are not allowed",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "if app.project.metadata.hatch.metadata.allow_ambiguous_features:",
+        "sorted({normalize_project_name(f) for f in config[\"features\"]})"
+      ],
+      "needed_for": "how the features of matrix environments are normalized for display"
+    },
+    {
+      "name": "Invalid dependency strings are kept as written and valid ones are normalized",
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "expressions": [
+        "except InvalidDependencyError:",
+        "normalized_dependencies.add(dependency)",
+        "normalized_dependencies.add(get_normalized_dependency(req))"
+      ],
+      "needed_for": "how the dependencies of matrix environments are normalized, including invalid ones"
+    }
+  ],
+  "revisions": [
+    {
+      "round": 1,
+      "reviewer_note": "feature normalization and invalid-dependency handling must be explicitly relevant",
+      "change": "Question now asks explicitly about feature-name and dependency normalization, including invalid dependency strings. Required evidence unchanged; a needed_for mapping was added. The question was then tightened to say the normalization applies to matrix environments, which is what the code does."
+    }
   ]
 }

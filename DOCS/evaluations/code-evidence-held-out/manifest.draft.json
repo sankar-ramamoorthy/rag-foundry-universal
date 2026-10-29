@@ -54,13 +54,27 @@
   "Q5_methods": 0,
   "Q6_natural_language": 4
  },
+ "known_limitations": [
+  "Concentration: three of pypa/hatch's four cases (H1, H2, H4) are `hatch env` click commands with decorator-heavy signatures; the fourth (H3) is a release script. Hatch results characterise those commands, not the repository broadly.",
+  "Overlap: P2 and P4 both live in tools/dumppdf.py and both involve dumpxml, so they are not independent observations.",
+  "Narrow coverage: three of pdfminer.six's four cases are command-line utilities under tools/, not library modules.",
+  "Training-data exposure: pallets/werkzeug is very likely well represented in model training data despite its star count.",
+  "Source text is the pinned function source, not the stored DocumentNode.text; that comparison happens at ingestion time."
+ ],
  "cases": [
   {
    "id": "H1",
    "repo": "pypa/hatch",
    "slot": "A",
    "style": "explicit",
-   "query": "Explain how the `hatch env show` command, implemented by `show` in `src/hatch/cli/env/show.py`, works: which environments it lists, how the JSON and internal-environment options change what it does, how it treats matrix environments versus standalone ones, and how it renders its result.",
+   "query": "Explain how the `hatch env show` command, implemented by `show` in `src/hatch/cli/env/show.py`, works: which environments it lists (standalone, matrix and internal ones, and how requested names filter them), how the JSON and internal-environment options change what it does, how the features and dependencies of matrix environments are normalized for display (including what happens to a dependency string that is not a valid requirement), and how it renders its result.",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "feature normalization and invalid-dependency handling must be explicitly relevant",
+     "change": "Question now asks explicitly about feature-name and dependency normalization, including invalid dependency strings. Required evidence unchanged; a needed_for mapping was added. The question was then tightened to say the normalization applies to matrix environments, which is what the code does."
+    }
+   ],
    "functions": [
     "src/hatch/cli/env/show.py#show"
    ],
@@ -72,6 +86,7 @@
      "expressions": [
       "for environments in (app.project.config.envs, app.project.config.internal_envs):"
      ],
+     "needed_for": "which environments it lists; how the JSON option changes what it does",
      "located": [
       36
      ]
@@ -82,6 +97,7 @@
      "expressions": [
       "app.display(json.dumps(contextual_config, separators=(\",\", \":\")))"
      ],
+     "needed_for": "how the JSON option changes what it does",
      "located": [
       70
      ]
@@ -93,6 +109,7 @@
       "target_standalone_envs = app.project.config.internal_envs",
       "target_standalone_envs = app.project.config.envs"
      ],
+     "needed_for": "how the internal-environment option changes what it does",
      "located": [
       77,
       80
@@ -104,6 +121,7 @@
      "expressions": [
       "app.abort(f\"Environment `{env_name}` is not defined by project config\")"
      ],
+     "needed_for": "how requested names filter the listing",
      "located": [
       85
      ]
@@ -115,6 +133,7 @@
       "\"\" if hide_titles else \"Standalone\",",
       "\"\" if hide_titles else \"Matrices\","
      ],
+     "needed_for": "how it renders its result",
      "located": [
       201,
       208
@@ -129,6 +148,7 @@
       "matrix_envs.update(matrix_data[\"envs\"])",
       "if env_names or env_name not in matrix_envs"
      ],
+     "needed_for": "how matrix and standalone environments are listed",
      "located": [
       101,
       161
@@ -141,6 +161,7 @@
       "if env_names and matrix_name not in env_names:",
       "if env_names and env_name not in env_names:"
      ],
+     "needed_for": "how requested names filter them",
      "located": [
       103,
       164
@@ -153,6 +174,7 @@
       "if app.project.metadata.hatch.metadata.allow_ambiguous_features:",
       "sorted({normalize_project_name(f) for f in config[\"features\"]})"
      ],
+     "needed_for": "how the features of matrix environments are normalized for display",
      "located": [
       112,
       116
@@ -166,6 +188,7 @@
       "normalized_dependencies.add(dependency)",
       "normalized_dependencies.add(get_normalized_dependency(req))"
      ],
+     "needed_for": "how the dependencies of matrix environments are normalized, including invalid ones",
      "located": [
       129,
       130,
@@ -192,6 +215,7 @@
    "slot": "B",
    "style": "explicit",
    "query": "Explain how `hatch env lock`, implemented by `lock` in `src/hatch/cli/env/lock.py`, decides which environments to lock, and how the shared `run_lock_workflow` it hands off to treats incompatible environments, chooses where each lockfile is written, and behaves in check mode.",
+   "revisions": [],
    "functions": [
     "src/hatch/cli/env/lock.py#lock",
     "src/hatch/cli/env/lock.py#run_lock_workflow"
@@ -323,58 +347,70 @@
    "repo": "pypa/hatch",
    "slot": "C",
    "style": "explicit",
-   "query": "In `release/unix/make_scripts_portable.py`, explain how `main` rewrites the installed scripts so they keep working when the Python distribution is moved: which files it touches, how it recognises a script header, what it does with a matching interpreter path, and when it leaves a file alone.",
+   "query": "In `release/unix/make_scripts_portable.py`, explain what `main` does with each entry of the interpreter's scripts directory so the scripts keep working when the Python distribution is moved: which entries it considers at all; which files it rewrites with a new header and exactly how (including what happens to blank lines at the top of a file); which files it rewrites but keeps the original first line for (a first line that points at another interpreter); and which entries it leaves untouched on disk (non-files, binaries, and anything that produces no content).",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "clarify file selection and modification versus preservation",
+     "change": "Question now asks separately which entries are considered, which files are modified (and how) and which are preserved or not written back. Operation names and a needed_for mapping state the same three roles. Expressions unchanged. On re-reading the code the question was made exact: a file whose first line points at another interpreter is rewritten (header copied through, leading blank lines dropped), not left untouched; only non-files, binaries and no-content files are left untouched on disk."
+    }
+   ],
    "functions": [
     "release/unix/make_scripts_portable.py#main"
    ],
    "primary_function": "release/unix/make_scripts_portable.py#main",
    "operations": [
     {
-     "name": "Directory entries that are not regular files are skipped",
+     "name": "Selection: only regular files are considered; other directory entries are skipped (left untouched)",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "if not script.is_file():"
      ],
+     "needed_for": "which entries it considers at all; non-files are left untouched",
      "located": [
       17
      ]
     },
     {
-     "name": "Leading blank lines are ignored",
+     "name": "Modification: leading blank lines are ignored, so they are not written back to a rewritten file",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "if not line.strip():"
      ],
+     "needed_for": "what happens to blank lines at the top of a file",
      "located": [
       24
      ]
     },
     {
-     "name": "A file whose first non-blank line is not a comment is treated as a binary and stops processing",
+     "name": "Left untouched: a file whose first non-blank line is not a comment is treated as a binary and yields no content",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "if not line.startswith(b\"#\"):"
      ],
+     "needed_for": "which entries it leaves untouched on disk (binaries)",
      "located": [
       28
      ]
     },
     {
-     "name": "A header that points at this interpreter is replaced by the portable shebang",
+     "name": "Modification: a header naming this interpreter is replaced by the portable shebang",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "data.write(portable_shebang if executable == interpreter else line)"
      ],
+     "needed_for": "which files it modifies and how",
      "located": [
       33
      ]
     },
     {
-     "name": "A file that produced no content is left untouched",
+     "name": "Left untouched: a file that produced no content is not written back",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "if not contents:"
      ],
+     "needed_for": "which entries it leaves untouched on disk (no content)",
      "located": [
       41
      ]
@@ -382,34 +418,37 @@
    ],
    "dependencies": [
     {
-     "name": "Only headers under the interpreter's own directory are considered; any other header line is copied unchanged",
+     "name": "Only first lines naming a path under the interpreter's own directory are examined; any other first line is copied through unchanged and the file is still rewritten",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "if line.startswith(b\"#!%s\" % interpreter.parent):",
       "data.write(line)"
      ],
+     "needed_for": "which files it rewrites but keeps the original first line for",
      "located": [
       31,
       35
      ]
     },
     {
-     "name": "The executable named in the header is resolved and compared with this interpreter before replacing",
+     "name": "The executable named in the header is resolved and compared with this interpreter before the header is replaced",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "executable = Path(line[2:].rstrip().decode()).resolve()"
      ],
+     "needed_for": "when a file is modified",
      "located": [
       32
      ]
     },
     {
-     "name": "The rest of the file after the header is appended unchanged and the result is collected before the emptiness check",
+     "name": "The rest of the file after the header is appended unchanged, and the result is collected before the emptiness check",
      "canonical_id": "release/unix/make_scripts_portable.py#main",
      "expressions": [
       "data.write(f.read())",
       "contents = data.getvalue()"
      ],
+     "needed_for": "what happens to the rest of a modified file",
      "located": [
       37,
       40
@@ -434,6 +473,12 @@
    "slot": "D",
    "style": "natural",
    "query": "When I execute a command in project environments with hatch and combine environment names, matrix include/exclude variables and a JSON filter, how does hatch decide which environments the command is actually executed in, and in which situations does it refuse to continue?",
+   "revisions": [
+    {
+     "round": 0,
+     "note": "Question rewritten before review to remove the CLI command name (the symbol's name) from a natural-language question. No expression changed."
+    }
+   ],
    "functions": [
     "src/hatch/cli/env/run.py#run"
    ],
@@ -554,32 +599,19 @@
    "repo": "pdfminer/pdfminer.six",
    "slot": "A",
    "style": "explicit",
-   "query": "Explain how `extract_text_to_fp` in `pdfminer/high_level.py` converts a PDF into output: which options it honours, how it chooses the output device for each output type, how it prepares the output stream and the resource manager, and how it processes the pages and finishes.",
+   "query": "Explain how `extract_text_to_fp` in `pdfminer/high_level.py` converts a PDF into output: how it chooses the output device for each output type and what happens for an unsupported type, how it prepares the output stream and the resource manager (including caching), how the scale, layout and rotation options take effect, and how it processes the pages and finishes.",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "remove incidental debug/image-writer requirements or make them explicitly relevant",
+     "change": "Removed the debug-logging and image-writer operations. The question no longer asks 'which options it honours'; it asks about device choice, stream and resource-manager preparation, scale/layout/rotation and page processing. Rotation and the stdout buffer moved from dependencies to operations; a tag-extractor binary-stream dependency was added so there are 5 operations and 3 dependencies."
+    }
+   ],
    "functions": [
     "pdfminer/high_level.py#extract_text_to_fp"
    ],
    "primary_function": "pdfminer/high_level.py#extract_text_to_fp",
    "operations": [
-    {
-     "name": "Debug mode raises the root logger to DEBUG",
-     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": [
-      "logging.getLogger().setLevel(logging.DEBUG)"
-     ],
-     "located": [
-      73
-     ]
-    },
-    {
-     "name": "An image writer is created only when an output directory is given",
-     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": [
-      "imagewriter = ImageWriter(output_dir)"
-     ],
-     "located": [
-      77
-     ]
-    },
     {
      "name": "The output device is a text, XML, HTML or hOCR converter depending on the output type",
      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
@@ -589,6 +621,7 @@
       "device = HTMLConverter(",
       "device = HOCRConverter("
      ],
+     "needed_for": "how it chooses the output device for each output type",
      "located": [
       86,
       95,
@@ -602,8 +635,33 @@
      "expressions": [
       "raise PDFValueError(msg)"
      ],
+     "needed_for": "what happens for an unsupported type",
      "located": [
       130
+     ]
+    },
+    {
+     "name": "Standard output is replaced by its binary buffer when a non-text output type is written to it",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "if output_type != \"text\" and outfp == sys.stdout:",
+      "outfp = sys.stdout.buffer"
+     ],
+     "needed_for": "how it prepares the output stream",
+     "located": [
+      82,
+      83
+     ]
+    },
+    {
+     "name": "The requested rotation is added to each page's own rotation modulo 360",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "page.rotate = (page.rotate + rotation) % 360"
+     ],
+     "needed_for": "how the rotation option takes effect",
+     "located": [
+      141
      ]
     },
     {
@@ -613,6 +671,7 @@
       "interpreter.process_page(page)",
       "device.close()"
      ],
+     "needed_for": "how it processes the pages and finishes",
      "located": [
       142,
       144
@@ -621,24 +680,13 @@
    ],
    "dependencies": [
     {
-     "name": "Standard output is replaced by its binary buffer when a non-text output type is written to it",
-     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
-     "expressions": [
-      "if output_type != \"text\" and outfp == sys.stdout:",
-      "outfp = sys.stdout.buffer"
-     ],
-     "located": [
-      82,
-      83
-     ]
-    },
-    {
      "name": "Caching is controlled by one flag that feeds both the resource manager and the page loader",
      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
      "expressions": [
       "rsrcmgr = PDFResourceManager(caching=not disable_caching)",
       "caching=not disable_caching,"
      ],
+     "needed_for": "how it prepares the resource manager (including caching)",
      "located": [
       79,
       139
@@ -651,26 +699,28 @@
       "scale=scale,",
       "layoutmode=layoutmode,"
      ],
+     "needed_for": "how the scale and layout options take effect",
      "located": [
       109,
       110
      ]
     },
     {
-     "name": "The requested rotation is added to each page's own rotation modulo 360 before the page is processed",
+     "name": "For tag output the stream is cast to a binary stream before it is given to the tag extractor",
      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
      "expressions": [
-      "page.rotate = (page.rotate + rotation) % 360"
+      "device = TagExtractor(rsrcmgr, cast(BinaryIO, outfp), codec=codec)"
      ],
+     "needed_for": "how it prepares the output stream (binary stream for tag output)",
      "located": [
-      141
+      126
      ]
     }
    ],
    "strata": {
     "primary_lines": 120,
     "primary_signature_lines": 18,
-    "max_witness_spread": 71,
+    "max_witness_spread": 65,
     "functions_needed": 1,
     "contexts": [
      "else_elif",
@@ -685,6 +735,7 @@
    "slot": "B",
    "style": "explicit",
    "query": "Explain how `dumppdf` in `tools/dumppdf.py` decides what to dump from a PDF file: how object ids, page numbers, the dump-all option and the codec interact, what `dumpallobjs` and `dumptrailers` contribute, and how fallback cross-reference tables and missing objects are handled.",
+   "revisions": [],
    "functions": [
     "tools/dumppdf.py#dumpallobjs",
     "tools/dumppdf.py#dumppdf",
@@ -818,6 +869,7 @@
    "slot": "C",
    "style": "explicit",
    "query": "In `tools/pdf2txt.py`, explain how `extract_text` drives the conversion: what it requires from the caller, how the output type is decided from the output file name, and how its behaviour differs between writing to standard output and writing to a file.",
+   "revisions": [],
    "functions": [
     "tools/pdf2txt.py#extract_text"
    ],
@@ -936,6 +988,7 @@
    "slot": "D",
    "style": "natural",
    "query": "How does pdfminer's command-line dump tool print a document's outline (its bookmarks): how does it map each entry to a page number, how does it deal with destinations given as names, references or actions, and what happens when the document has no outline?",
+   "revisions": [],
    "functions": [
     "tools/dumppdf.py#dumpoutline"
    ],
@@ -1059,6 +1112,7 @@
    "slot": "A",
    "style": "natural",
    "query": "In Werkzeug, when a file or a path is served back to the client as a WSGI response, how are the download name and content type worked out, which headers are produced for downloading, caching and conditional or range requests, and which invalid inputs cause errors?",
+   "revisions": [],
    "functions": [
     "src/werkzeug/utils.py#send_file"
    ],
@@ -1192,7 +1246,14 @@
    "repo": "pallets/werkzeug",
    "slot": "B",
    "style": "explicit",
-   "query": "Explain how `run_simple` in `src/werkzeug/serving.py` starts the development server: how it validates its arguments, how it wraps the application for static files and for the debugger, how it picks the kind of server to build through `make_server`, and how it behaves differently when the reloader is enabled or when it is itself running inside the reloader.",
+   "query": "Explain how `run_simple` in `src/werkzeug/serving.py` starts the development server: how it validates its arguments, how it wraps the application for static files and for the debugger (including which hosts the debugger trusts), how it picks the kind of server to build through `make_server`, and how it behaves differently when the reloader is enabled or when it is itself running inside the reloader (including how the listening socket is handed over).",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "resolve the startup-banner dependency",
+     "change": "Removed the startup-banner dependency. Its governing condition (`if not is_running_from_reloader():`) occurs twice in the function, so it cannot be evidenced by a single-occurrence expression, and the question did not ask about the banner. Added two dependencies the question does ask about: which hosts the debugger trusts (the wildcard condition) and making the socket inheritable. The question now says so explicitly."
+    }
+   ],
    "functions": [
     "src/werkzeug/serving.py#is_running_from_reloader",
     "src/werkzeug/serving.py#make_server",
@@ -1206,6 +1267,7 @@
      "expressions": [
       "raise TypeError(\"port must be an integer\")"
      ],
+     "needed_for": "how it validates its arguments",
      "located": [
       1072
      ]
@@ -1216,17 +1278,19 @@
      "expressions": [
       "application = SharedDataMiddleware(application, static_files)"
      ],
+     "needed_for": "how it wraps the application for static files",
      "located": [
       1077
      ]
     },
     {
-     "name": "The debugger wraps the application and trusts the chosen hostname",
+     "name": "The debugger wraps the application and the chosen hostname is added to its trusted hosts",
      "canonical_id": "src/werkzeug/serving.py#run_simple",
      "expressions": [
       "application = DebuggedApplication(application, evalex=use_evalex)",
       "application.trusted_hosts.append(hostname)"
      ],
+     "needed_for": "how it wraps the application for the debugger",
      "located": [
       1082,
       1087
@@ -1238,6 +1302,7 @@
      "expressions": [
       "raise ValueError(\"Cannot have a multi-thread and multi-process server.\")"
      ],
+     "needed_for": "how it picks the kind of server (invalid combination)",
      "located": [
       926
      ]
@@ -1250,6 +1315,7 @@
       "return ForkingWSGIServer(",
       "return BaseWSGIServer("
      ],
+     "needed_for": "how it picks the kind of server",
      "located": [
       929,
       934,
@@ -1259,14 +1325,28 @@
    ],
    "dependencies": [
     {
-     "name": "A process running inside the reloader reuses the listening socket handed down through an environment variable, and the parent publishes it",
+     "name": "The hostname is added to the debugger's trusted hosts unless it is a wildcard address",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "if hostname not in {\"0.0.0.0\", \"[::]\"}:"
+     ],
+     "needed_for": "which hosts the debugger trusts",
+     "located": [
+      1086
+     ]
+    },
+    {
+     "name": "A process running inside the reloader reuses the listening socket handed down through an environment variable; the parent makes the socket inheritable and publishes it",
      "canonical_id": "src/werkzeug/serving.py#run_simple",
      "expressions": [
       "fd = int(os.environ[\"WERKZEUG_SERVER_FD\"])",
+      "srv.socket.set_inheritable(True)",
       "os.environ[\"WERKZEUG_SERVER_FD\"] = str(srv.fileno())"
      ],
+     "needed_for": "how the listening socket is handed over",
      "located": [
       1092,
+      1105,
       1106
      ]
     },
@@ -1276,20 +1356,9 @@
      "expressions": [
       "return os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\""
      ],
+     "needed_for": "when it is itself running inside the reloader",
      "located": [
       956
-     ]
-    },
-    {
-     "name": "The startup banner is logged only in the original process, not in a reloaded child",
-     "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": [
-      "srv.log_startup()",
-      "_log(\"info\", _ansi_style(\"Press CTRL+C to quit\", \"yellow\"))"
-     ],
-     "located": [
-      1109,
-      1110
      ]
     },
     {
@@ -1300,6 +1369,7 @@
       "srv.server_close()",
       "srv.serve_forever()"
      ],
+     "needed_for": "how it behaves when the reloader is enabled",
      "located": [
       1116,
       1124,
@@ -1325,6 +1395,13 @@
    "slot": "C",
    "style": "explicit",
    "query": "In `src/werkzeug/_reloader.py`, explain how `run_with_reloader` runs an application under the reloader: how the reloader implementation is chosen, how the process behaves differently when it is the reloaded child versus the original parent, how the application and the reloader loop run together, and how it exits on a termination signal and on Ctrl+C.",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "resolve the terminal-echo dependency",
+     "change": "Removed the `ensure_echo_on()` dependency. The function only calls a helper whose behaviour (restoring terminal echo) is not visible in `run_with_reloader`, and the question does not ask about it. Three dependencies and five operations remain; every expression is otherwise unchanged and the witness window is still 18 lines."
+    }
+   ],
    "functions": [
     "src/werkzeug/_reloader.py#run_with_reloader"
    ],
@@ -1336,6 +1413,7 @@
      "expressions": [
       "signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))"
      ],
+     "needed_for": "how it exits on a termination signal",
      "located": [
       400
      ]
@@ -1346,6 +1424,7 @@
      "expressions": [
       "reloader = reloader_loops[reloader_type]("
      ],
+     "needed_for": "how the reloader implementation is chosen",
      "located": [
       401
      ]
@@ -1357,6 +1436,7 @@
       "t = threading.Thread(target=main_func, args=())",
       "t.daemon = True"
      ],
+     "needed_for": "how the application runs in the reloaded child",
      "located": [
       408,
       409
@@ -1368,6 +1448,7 @@
      "expressions": [
       "reloader.run()"
      ],
+     "needed_for": "how the application and the reloader loop run together",
      "located": [
       415
      ]
@@ -1378,6 +1459,7 @@
      "expressions": [
       "sys.exit(reloader.restart_with_reloader())"
      ],
+     "needed_for": "how it behaves as the original parent",
      "located": [
       417
      ]
@@ -1390,18 +1472,9 @@
      "expressions": [
       "if os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\":"
      ],
+     "needed_for": "how the process behaves as the reloaded child versus the original parent",
      "located": [
       406
-     ]
-    },
-    {
-     "name": "Terminal echo is restored in the child before the application starts",
-     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
-     "expressions": [
-      "ensure_echo_on()"
-     ],
-     "located": [
-      407
      ]
     },
     {
@@ -1411,6 +1484,7 @@
       "with reloader:",
       "t.start()"
      ],
+     "needed_for": "how the application and the reloader loop run together",
      "located": [
       413,
       414
@@ -1422,6 +1496,7 @@
      "expressions": [
       "except KeyboardInterrupt:"
      ],
+     "needed_for": "how it exits on Ctrl+C",
      "located": [
       418
      ]
@@ -1446,27 +1521,25 @@
    "slot": "D",
    "style": "natural",
    "query": "How does Werkzeug's test machinery execute a WSGI application and return its response: what happens when the application raises through start_response or uses the old write callable, how is the response iterator handled and closed, and what changes when the caller asks for the output to be buffered?",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "resolve the environment-copy requirement",
+     "change": "Removed the `environ = _get_environ(environ).copy()` operation: the question does not ask whether the caller's environment is protected. Four operations and four dependencies remain; the question is unchanged."
+    }
+   ],
    "functions": [
     "src/werkzeug/test.py#run_wsgi_app"
    ],
    "primary_function": "src/werkzeug/test.py#run_wsgi_app",
    "operations": [
     {
-     "name": "The environment is copied so application mutations do not leak into later requests",
-     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
-     "expressions": [
-      "environ = _get_environ(environ).copy()"
-     ],
-     "located": [
-      1252
-     ]
-    },
-    {
      "name": "An exc_info passed to start_response is re-raised with its traceback",
      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
      "expressions": [
       "raise exc_info[1].with_traceback(exc_info[2])"
      ],
+     "needed_for": "what happens when the application raises through start_response",
      "located": [
       1268
      ]
@@ -1477,6 +1550,7 @@
      "expressions": [
       "return buffer.append"
      ],
+     "needed_for": "what happens when the application uses the old write callable",
      "located": [
       1273
      ]
@@ -1488,6 +1562,7 @@
       "app_iter = list(app_iter)",
       "close_func()"
      ],
+     "needed_for": "what changes when the output is buffered",
      "located": [
       1283,
       1286
@@ -1500,6 +1575,7 @@
       "if response is not None:",
       "app_iter = chain(buffer, app_iter)"
      ],
+     "needed_for": "how the response iterator is handled",
      "located": [
       1294,
       1298
@@ -1513,6 +1589,7 @@
      "expressions": [
       "close_func = getattr(app_rv, \"close\", None)"
      ],
+     "needed_for": "how the iterator is closed",
      "located": [
       1276
      ]
@@ -1524,6 +1601,7 @@
       "if close_func is not None and app_iter is not app_rv:",
       "app_iter = ClosingIterator(app_iter, close_func)"
      ],
+     "needed_for": "how the iterator is closed",
      "located": [
       1300,
       1301
@@ -1535,6 +1613,7 @@
      "expressions": [
       "exc_info = None"
      ],
+     "needed_for": "what happens when the application raises through start_response",
      "located": [
       1270
      ]
@@ -1546,6 +1625,7 @@
       "status, headers = response",
       "return app_iter, status, Headers(headers)"
      ],
+     "needed_for": "how the response is returned",
      "located": [
       1303,
       1304
@@ -1555,7 +1635,7 @@
    "strata": {
     "primary_lines": 74,
     "primary_signature_lines": 3,
-    "max_witness_spread": 52,
+    "max_witness_spread": 36,
     "functions_needed": 1,
     "contexts": [
      "else_elif",

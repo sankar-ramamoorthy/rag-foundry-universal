@@ -1,24 +1,84 @@
 {
-  "id": "H3", "repo": "pypa/hatch", "slot": "C", "style": "explicit",
-  "query": "In `release/unix/make_scripts_portable.py`, explain how `main` rewrites the installed scripts so they keep working when the Python distribution is moved: which files it touches, how it recognises a script header, what it does with a matching interpreter path, and when it leaves a file alone.",
+  "id": "H3",
+  "repo": "pypa/hatch",
+  "slot": "C",
+  "style": "explicit",
+  "query": "In `release/unix/make_scripts_portable.py`, explain what `main` does with each entry of the interpreter's scripts directory so the scripts keep working when the Python distribution is moved: which entries it considers at all; which files it rewrites with a new header and exactly how (including what happens to blank lines at the top of a file); which files it rewrites but keeps the original first line for (a first line that points at another interpreter); and which entries it leaves untouched on disk (non-files, binaries, and anything that produces no content).",
   "operations": [
-    {"name": "Directory entries that are not regular files are skipped", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["if not script.is_file():"]},
-    {"name": "Leading blank lines are ignored", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["if not line.strip():"]},
-    {"name": "A file whose first non-blank line is not a comment is treated as a binary and stops processing", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["if not line.startswith(b\"#\"):"]},
-    {"name": "A header that points at this interpreter is replaced by the portable shebang", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["data.write(portable_shebang if executable == interpreter else line)"]},
-    {"name": "A file that produced no content is left untouched", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["if not contents:"]}
+    {
+      "name": "Selection: only regular files are considered; other directory entries are skipped (left untouched)",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "if not script.is_file():"
+      ],
+      "needed_for": "which entries it considers at all; non-files are left untouched"
+    },
+    {
+      "name": "Modification: leading blank lines are ignored, so they are not written back to a rewritten file",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "if not line.strip():"
+      ],
+      "needed_for": "what happens to blank lines at the top of a file"
+    },
+    {
+      "name": "Left untouched: a file whose first non-blank line is not a comment is treated as a binary and yields no content",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "if not line.startswith(b\"#\"):"
+      ],
+      "needed_for": "which entries it leaves untouched on disk (binaries)"
+    },
+    {
+      "name": "Modification: a header naming this interpreter is replaced by the portable shebang",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "data.write(portable_shebang if executable == interpreter else line)"
+      ],
+      "needed_for": "which files it modifies and how"
+    },
+    {
+      "name": "Left untouched: a file that produced no content is not written back",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "if not contents:"
+      ],
+      "needed_for": "which entries it leaves untouched on disk (no content)"
+    }
   ],
   "dependencies": [
-    {"name": "Only headers under the interpreter's own directory are considered; any other header line is copied unchanged", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["if line.startswith(b\"#!%s\" % interpreter.parent):", "data.write(line)"]},
-    {"name": "The executable named in the header is resolved and compared with this interpreter before replacing", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["executable = Path(line[2:].rstrip().decode()).resolve()"]},
-    {"name": "The rest of the file after the header is appended unchanged and the result is collected before the emptiness check", "canonical_id": "release/unix/make_scripts_portable.py#main",
-     "expressions": ["data.write(f.read())", "contents = data.getvalue()"]}
+    {
+      "name": "Only first lines naming a path under the interpreter's own directory are examined; any other first line is copied through unchanged and the file is still rewritten",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "if line.startswith(b\"#!%s\" % interpreter.parent):",
+        "data.write(line)"
+      ],
+      "needed_for": "which files it rewrites but keeps the original first line for"
+    },
+    {
+      "name": "The executable named in the header is resolved and compared with this interpreter before the header is replaced",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "executable = Path(line[2:].rstrip().decode()).resolve()"
+      ],
+      "needed_for": "when a file is modified"
+    },
+    {
+      "name": "The rest of the file after the header is appended unchanged, and the result is collected before the emptiness check",
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "expressions": [
+        "data.write(f.read())",
+        "contents = data.getvalue()"
+      ],
+      "needed_for": "what happens to the rest of a modified file"
+    }
+  ],
+  "revisions": [
+    {
+      "round": 1,
+      "reviewer_note": "clarify file selection and modification versus preservation",
+      "change": "Question now asks separately which entries are considered, which files are modified (and how) and which are preserved or not written back. Operation names and a needed_for mapping state the same three roles. Expressions unchanged. On re-reading the code the question was made exact: a file whose first line points at another interpreter is rewritten (header copied through, leading blank lines dropped), not left untouched; only non-files, binaries and no-content files are left untouched on disk."
+    }
   ]
 }

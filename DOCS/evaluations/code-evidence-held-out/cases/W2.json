@@ -1,26 +1,97 @@
 {
-  "id": "W2", "repo": "pallets/werkzeug", "slot": "B", "style": "explicit",
-  "query": "Explain how `run_simple` in `src/werkzeug/serving.py` starts the development server: how it validates its arguments, how it wraps the application for static files and for the debugger, how it picks the kind of server to build through `make_server`, and how it behaves differently when the reloader is enabled or when it is itself running inside the reloader.",
+  "id": "W2",
+  "repo": "pallets/werkzeug",
+  "slot": "B",
+  "style": "explicit",
+  "query": "Explain how `run_simple` in `src/werkzeug/serving.py` starts the development server: how it validates its arguments, how it wraps the application for static files and for the debugger (including which hosts the debugger trusts), how it picks the kind of server to build through `make_server`, and how it behaves differently when the reloader is enabled or when it is itself running inside the reloader (including how the listening socket is handed over).",
   "operations": [
-    {"name": "The port must be an integer", "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": ["raise TypeError(\"port must be an integer\")"]},
-    {"name": "Static file mappings wrap the application in shared-data middleware", "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": ["application = SharedDataMiddleware(application, static_files)"]},
-    {"name": "The debugger wraps the application and trusts the chosen hostname", "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": ["application = DebuggedApplication(application, evalex=use_evalex)", "application.trusted_hosts.append(hostname)"]},
-    {"name": "A threaded and a multi-process server cannot be combined", "canonical_id": "src/werkzeug/serving.py#make_server",
-     "expressions": ["raise ValueError(\"Cannot have a multi-thread and multi-process server.\")"]},
-    {"name": "The server class is threaded, forking or plain depending on the arguments", "canonical_id": "src/werkzeug/serving.py#make_server",
-     "expressions": ["return ThreadedWSGIServer(", "return ForkingWSGIServer(", "return BaseWSGIServer("]}
+    {
+      "name": "The port must be an integer",
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "expressions": [
+        "raise TypeError(\"port must be an integer\")"
+      ],
+      "needed_for": "how it validates its arguments"
+    },
+    {
+      "name": "Static file mappings wrap the application in shared-data middleware",
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "expressions": [
+        "application = SharedDataMiddleware(application, static_files)"
+      ],
+      "needed_for": "how it wraps the application for static files"
+    },
+    {
+      "name": "The debugger wraps the application and the chosen hostname is added to its trusted hosts",
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "expressions": [
+        "application = DebuggedApplication(application, evalex=use_evalex)",
+        "application.trusted_hosts.append(hostname)"
+      ],
+      "needed_for": "how it wraps the application for the debugger"
+    },
+    {
+      "name": "A threaded and a multi-process server cannot be combined",
+      "canonical_id": "src/werkzeug/serving.py#make_server",
+      "expressions": [
+        "raise ValueError(\"Cannot have a multi-thread and multi-process server.\")"
+      ],
+      "needed_for": "how it picks the kind of server (invalid combination)"
+    },
+    {
+      "name": "The server class is threaded, forking or plain depending on the arguments",
+      "canonical_id": "src/werkzeug/serving.py#make_server",
+      "expressions": [
+        "return ThreadedWSGIServer(",
+        "return ForkingWSGIServer(",
+        "return BaseWSGIServer("
+      ],
+      "needed_for": "how it picks the kind of server"
+    }
   ],
   "dependencies": [
-    {"name": "A process running inside the reloader reuses the listening socket handed down through an environment variable, and the parent publishes it", "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": ["fd = int(os.environ[\"WERKZEUG_SERVER_FD\"])", "os.environ[\"WERKZEUG_SERVER_FD\"] = str(srv.fileno())"]},
-    {"name": "Whether the process is a reloader child is decided from an environment variable", "canonical_id": "src/werkzeug/serving.py#is_running_from_reloader",
-     "expressions": ["return os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\""]},
-    {"name": "The startup banner is logged only in the original process, not in a reloaded child", "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": ["srv.log_startup()", "_log(\"info\", _ansi_style(\"Press CTRL+C to quit\", \"yellow\"))"]},
-    {"name": "With the reloader on the server runs under it and is always closed; otherwise it simply serves forever", "canonical_id": "src/werkzeug/serving.py#run_simple",
-     "expressions": ["run_with_reloader(", "srv.server_close()", "srv.serve_forever()"]}
+    {
+      "name": "The hostname is added to the debugger's trusted hosts unless it is a wildcard address",
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "expressions": [
+        "if hostname not in {\"0.0.0.0\", \"[::]\"}:"
+      ],
+      "needed_for": "which hosts the debugger trusts"
+    },
+    {
+      "name": "A process running inside the reloader reuses the listening socket handed down through an environment variable; the parent makes the socket inheritable and publishes it",
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "expressions": [
+        "fd = int(os.environ[\"WERKZEUG_SERVER_FD\"])",
+        "srv.socket.set_inheritable(True)",
+        "os.environ[\"WERKZEUG_SERVER_FD\"] = str(srv.fileno())"
+      ],
+      "needed_for": "how the listening socket is handed over"
+    },
+    {
+      "name": "Whether the process is a reloader child is decided from an environment variable",
+      "canonical_id": "src/werkzeug/serving.py#is_running_from_reloader",
+      "expressions": [
+        "return os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\""
+      ],
+      "needed_for": "when it is itself running inside the reloader"
+    },
+    {
+      "name": "With the reloader on the server runs under it and is always closed; otherwise it simply serves forever",
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "expressions": [
+        "run_with_reloader(",
+        "srv.server_close()",
+        "srv.serve_forever()"
+      ],
+      "needed_for": "how it behaves when the reloader is enabled"
+    }
+  ],
+  "revisions": [
+    {
+      "round": 1,
+      "reviewer_note": "resolve the startup-banner dependency",
+      "change": "Removed the startup-banner dependency. Its governing condition (`if not is_running_from_reloader():`) occurs twice in the function, so it cannot be evidenced by a single-occurrence expression, and the question did not ask about the banner. Added two dependencies the question does ask about: which hosts the debugger trusts (the wildcard condition) and making the socket inheritable. The question now says so explicitly."
+    }
   ]
 }

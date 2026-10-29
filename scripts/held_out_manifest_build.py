@@ -29,6 +29,21 @@ FUNCS = (ast.FunctionDef, ast.AsyncFunctionDef)
 LONG_BODY, SHORT_BODY, LONG_SIG, WIDE, NARROW = 120, 40, 8, 60, 25
 EXCLUDED = {"HKUDS/LightRAG", "sankar-ramamoorthy/rag-foundry-universal",
             "sankar-ramamoorthy/py-coding-agent"}
+# Evaluation limitations recorded at the independent review; the selected functions
+# are deliberately NOT replaced because of them (declaration section 8).
+KNOWN_LIMITATIONS = [
+    "Concentration: three of pypa/hatch's four cases (H1, H2, H4) are `hatch env` "
+    "click commands with decorator-heavy signatures; the fourth (H3) is a release "
+    "script. Hatch results characterise those commands, not the repository broadly.",
+    "Overlap: P2 and P4 both live in tools/dumppdf.py and both involve dumpxml, so "
+    "they are not independent observations.",
+    "Narrow coverage: three of pdfminer.six's four cases are command-line utilities "
+    "under tools/, not library modules.",
+    "Training-data exposure: pallets/werkzeug is very likely well represented in "
+    "model training data despite its star count.",
+    "Source text is the pinned function source, not the stored DocumentNode.text; "
+    "that comparison happens at ingestion time.",
+]
 
 
 def pins() -> dict[str, dict]:
@@ -113,6 +128,7 @@ def build_case(spec: dict, clones: Path, sources: dict) -> dict:
     return {
         "id": spec["id"], "repo": spec["repo"], "slot": spec["slot"],
         "style": spec["style"], "query": spec["query"],
+        "revisions": spec.get("revisions", []),
         "functions": sorted(per_function), "primary_function": primary,
         "operations": spec["operations"], "dependencies": spec["dependencies"],
         "strata": {"primary_lines": p["metrics"]["lines"],
@@ -228,7 +244,8 @@ def main() -> int:
         OUT.write_text(json.dumps({
             "status": "draft-awaiting-second-review",
             "dataset_role": "held-out; not frozen until reviewed (stratification s9)",
-            "pins": pinned, "quota_report": q, "cases": cases, "sources": public},
+            "pins": pinned, "quota_report": q, "known_limitations": KNOWN_LIMITATIONS,
+            "cases": cases, "sources": public},
             indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
         print("wrote", OUT.relative_to(HERE))
     return 1 if issues else 0

@@ -84,3 +84,20 @@ def test_natural_language_questions_name_neither_symbol_nor_file(manifest):
             assert path.rsplit("/", 1)[-1] not in c["query"], (c["id"], path)
             if len(name) >= 5:
                 assert name not in c["query"], (c["id"], name)
+
+
+def test_known_limitations_record_the_reviewed_concentration_and_overlap(manifest):
+    text = " ".join(manifest["known_limitations"])
+    for needle in ("H1, H2, H4", "P2 and P4", "tools/dumppdf.py"):
+        assert needle in text, needle
+    # recorded as limitations, not acted on: the selected cases are all still present
+    assert {"H1", "H2", "H4", "P2", "P4"} <= {c["id"] for c in manifest["cases"]}
+
+
+def test_revised_cases_map_each_item_to_the_clause_that_needs_it(manifest):
+    revised = [c for c in manifest["cases"]
+               if any(r.get("round") == 1 for r in c.get("revisions", []))]
+    assert {c["id"] for c in revised} == {"H1", "H3", "P1", "W2", "W3", "W4"}
+    for c in revised:
+        for entry in (*c["operations"], *c["dependencies"]):
+            assert entry.get("needed_for"), (c["id"], entry["name"])

@@ -72,5 +72,11 @@
         "elif not matrix_selected and (included_variables or excluded_variables):"
       ]
     }
+  ],
+  "revisions": [
+    {
+      "round": 0,
+      "note": "Question rewritten before review to remove the CLI command name (the symbol's name) from a natural-language question. No expression changed."
+    }
   ]
 }
