@@ -1,0 +1,26 @@
+{
+  "id": "W4", "repo": "pallets/werkzeug", "slot": "D", "style": "natural",
+  "query": "How does Werkzeug's test machinery execute a WSGI application and return its response: what happens when the application raises through start_response or uses the old write callable, how is the response iterator handled and closed, and what changes when the caller asks for the output to be buffered?",
+  "operations": [
+    {"name": "The environment is copied so application mutations do not leak into later requests", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["environ = _get_environ(environ).copy()"]},
+    {"name": "An exc_info passed to start_response is re-raised with its traceback", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["raise exc_info[1].with_traceback(exc_info[2])"]},
+    {"name": "The write callable returned by start_response appends to a buffer", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["return buffer.append"]},
+    {"name": "Buffered mode turns the iterator into a list and closes the application early", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["app_iter = list(app_iter)", "close_func()"]},
+    {"name": "Unbuffered mode iterates only until a response has started and chains what was already read", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["if response is not None:", "app_iter = chain(buffer, app_iter)"]}
+  ],
+  "dependencies": [
+    {"name": "The application's close callable is discovered up front", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["close_func = getattr(app_rv, \"close\", None)"]},
+    {"name": "A close callable is restored on the chained iterator only when the iterator was replaced", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["if close_func is not None and app_iter is not app_rv:", "app_iter = ClosingIterator(app_iter, close_func)"]},
+    {"name": "The exc_info reference is always cleared after re-raising", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["exc_info = None"]},
+    {"name": "The status and headers come from the recorded response and are returned with the iterator", "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": ["status, headers = response", "return app_iter, status, Headers(headers)"]}
+  ]
+}

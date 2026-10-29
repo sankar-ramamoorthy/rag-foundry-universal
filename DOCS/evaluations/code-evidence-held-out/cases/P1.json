@@ -1,0 +1,26 @@
+{
+  "id": "P1", "repo": "pdfminer/pdfminer.six", "slot": "A", "style": "explicit",
+  "query": "Explain how `extract_text_to_fp` in `pdfminer/high_level.py` converts a PDF into output: which options it honours, how it chooses the output device for each output type, how it prepares the output stream and the resource manager, and how it processes the pages and finishes.",
+  "operations": [
+    {"name": "Debug mode raises the root logger to DEBUG", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["logging.getLogger().setLevel(logging.DEBUG)"]},
+    {"name": "An image writer is created only when an output directory is given", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["imagewriter = ImageWriter(output_dir)"]},
+    {"name": "The output device is a text, XML, HTML or hOCR converter depending on the output type", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["device = TextConverter(", "device = XMLConverter(", "device = HTMLConverter(", "device = HOCRConverter("]},
+    {"name": "An unsupported output type raises a value error", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["raise PDFValueError(msg)"]},
+    {"name": "Every selected page is interpreted and the device is closed at the end", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["interpreter.process_page(page)", "device.close()"]}
+  ],
+  "dependencies": [
+    {"name": "Standard output is replaced by its binary buffer when a non-text output type is written to it", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["if output_type != \"text\" and outfp == sys.stdout:", "outfp = sys.stdout.buffer"]},
+    {"name": "Caching is controlled by one flag that feeds both the resource manager and the page loader", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["rsrcmgr = PDFResourceManager(caching=not disable_caching)", "caching=not disable_caching,"]},
+    {"name": "Scale and layout mode only influence the HTML converter", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["scale=scale,", "layoutmode=layoutmode,"]},
+    {"name": "The requested rotation is added to each page's own rotation modulo 360 before the page is processed", "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": ["page.rotate = (page.rotate + rotation) % 360"]}
+  ]
+}

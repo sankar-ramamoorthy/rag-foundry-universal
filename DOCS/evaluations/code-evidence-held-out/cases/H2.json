@@ -1,0 +1,26 @@
+{
+  "id": "H2", "repo": "pypa/hatch", "slot": "B", "style": "explicit",
+  "query": "Explain how `hatch env lock`, implemented by `lock` in `src/hatch/cli/env/lock.py`, decides which environments to lock, and how the shared `run_lock_workflow` it hands off to treats incompatible environments, chooses where each lockfile is written, and behaves in check mode.",
+  "operations": [
+    {"name": "The two export options are mutually exclusive", "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": ["app.abort(\"Cannot use both `--export` and `--export-all`\")"]},
+    {"name": "A named environment is expanded (a matrix name expands to its members)", "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": ["env_names = app.project.expand_environments(env_name)"]},
+    {"name": "With no arguments and nothing marked locked the command aborts", "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": ["app.abort(\"No environments are configured with `locked = true`\")"]},
+    {"name": "An incompatible environment is skipped or aborts the run", "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": ["incompatible[env] = str(e)", "app.abort(f\"Environment `{env}` is incompatible: {e}\")"]},
+    {"name": "The lockfile path is the export path, a per-environment file under the export-all directory, or the default", "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": ["filename = \"pylock.toml\" if environment.name == \"default\" else f\"pylock.{safe_name}.toml\"", "output_path = Path(export_all_path) / filename", "output_path = resolve_lockfile_path(environment)"]}
+  ],
+  "dependencies": [
+    {"name": "Whether incompatible environments are tolerated depends on how the environment was selected and is passed down", "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": ["skip_incompatible = env_name in app.project.config.matrices", "skip_incompatible_envs=skip_incompatible,"]},
+    {"name": "An explicitly named environment that is not marked locked is refused unless an export option is given", "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": ["if explicit_env is not None and not environment.locked and not export_path and not export_all_path:"]},
+    {"name": "Environments that resolve to the same lockfile path are grouped and merged into one lock", "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": ["lockfile_groups.setdefault(output_path, []).append(env)", "environment, merged_deps, merged_extras, merged_groups, display_name = merge_environment_lock_inputs("]},
+    {"name": "In check mode a missing lockfile aborts; otherwise environments with nothing to lock are skipped with a warning", "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": ["app.abort(f\"Lockfile does not exist: {output_path}\")", "elif not environment_has_lock_inputs(environment):", "app.display_warning(f\"Environment `{env}` has no dependencies to lock\")"]}
+  ]
+}

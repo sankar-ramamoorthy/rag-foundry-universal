@@ -1,0 +1,24 @@
+{
+  "id": "H3", "repo": "pypa/hatch", "slot": "C", "style": "explicit",
+  "query": "In `release/unix/make_scripts_portable.py`, explain how `main` rewrites the installed scripts so they keep working when the Python distribution is moved: which files it touches, how it recognises a script header, what it does with a matching interpreter path, and when it leaves a file alone.",
+  "operations": [
+    {"name": "Directory entries that are not regular files are skipped", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["if not script.is_file():"]},
+    {"name": "Leading blank lines are ignored", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["if not line.strip():"]},
+    {"name": "A file whose first non-blank line is not a comment is treated as a binary and stops processing", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["if not line.startswith(b\"#\"):"]},
+    {"name": "A header that points at this interpreter is replaced by the portable shebang", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["data.write(portable_shebang if executable == interpreter else line)"]},
+    {"name": "A file that produced no content is left untouched", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["if not contents:"]}
+  ],
+  "dependencies": [
+    {"name": "Only headers under the interpreter's own directory are considered; any other header line is copied unchanged", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["if line.startswith(b\"#!%s\" % interpreter.parent):", "data.write(line)"]},
+    {"name": "The executable named in the header is resolved and compared with this interpreter before replacing", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["executable = Path(line[2:].rstrip().decode()).resolve()"]},
+    {"name": "The rest of the file after the header is appended unchanged and the result is collected before the emptiness check", "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": ["data.write(f.read())", "contents = data.getvalue()"]}
+  ]
+}

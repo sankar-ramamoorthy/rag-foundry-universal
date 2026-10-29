@@ -1,0 +1,26 @@
+{
+  "id": "W3", "repo": "pallets/werkzeug", "slot": "C", "style": "explicit",
+  "query": "In `src/werkzeug/_reloader.py`, explain how `run_with_reloader` runs an application under the reloader: how the reloader implementation is chosen, how the process behaves differently when it is the reloaded child versus the original parent, how the application and the reloader loop run together, and how it exits on a termination signal and on Ctrl+C.",
+  "operations": [
+    {"name": "A termination signal makes the process exit cleanly", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))"]},
+    {"name": "The reloader implementation is looked up by the requested type", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["reloader = reloader_loops[reloader_type]("]},
+    {"name": "In the child the application runs in a daemon thread", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["t = threading.Thread(target=main_func, args=())", "t.daemon = True"]},
+    {"name": "The reloader update loop runs alongside the application thread", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["reloader.run()"]},
+    {"name": "The original parent process restarts itself under the reloader and exits with its status", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["sys.exit(reloader.restart_with_reloader())"]}
+  ],
+  "dependencies": [
+    {"name": "Child versus parent is decided from an environment variable", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["if os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\":"]},
+    {"name": "Terminal echo is restored in the child before the application starts", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["ensure_echo_on()"]},
+    {"name": "The application thread is started only after the reloader context has been entered", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["with reloader:", "t.start()"]},
+    {"name": "Ctrl+C ends the run quietly", "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": ["except KeyboardInterrupt:"]}
+  ]
+}

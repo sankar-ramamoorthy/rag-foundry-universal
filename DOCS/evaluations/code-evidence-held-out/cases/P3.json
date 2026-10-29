@@ -1,0 +1,26 @@
+{
+  "id": "P3", "repo": "pdfminer/pdfminer.six", "slot": "C", "style": "explicit",
+  "query": "In `tools/pdf2txt.py`, explain how `extract_text` drives the conversion: what it requires from the caller, how the output type is decided from the output file name, and how its behaviour differs between writing to standard output and writing to a file.",
+  "operations": [
+    {"name": "Calling it without input files is an error", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["raise PDFValueError(\"Must provide files to work upon!\")"]},
+    {"name": "The output type is overridden by the output file's extension", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["for override, alttype in OUTPUT_TYPES:", "output_type = alttype"]},
+    {"name": "Writing to standard output uses the stdout stream", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["outfp: AnyIO = sys.stdout"]},
+    {"name": "Standard output forces the UTF-8 codec", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["codec = \"utf-8\""]},
+    {"name": "Writing to a file opens the output in binary mode", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["with open(outfile, \"wb\") as outfp:"]}
+  ],
+  "dependencies": [
+    {"name": "The extension override only applies when the default text type is in use and the output is a file", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["if output_type == \"text\" and outfile != \"-\":"]},
+    {"name": "The override is chosen by matching the file name suffix", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["if outfile.endswith(override):"]},
+    {"name": "A dash as the output file name selects the standard output path", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["if outfile == \"-\":"]},
+    {"name": "The codec is forced only when standard output reports an encoding", "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": ["if sys.stdout.encoding is not None:"]}
+  ]
+}

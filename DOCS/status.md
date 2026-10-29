@@ -132,8 +132,9 @@ and GO only permits designing a larger independent evaluation. The held-out
 selection rule, validity-only exclusions, the owner as independent second reviewer);
 the held-out repositories are now selected by that rule (pypa/hatch, pallets/werkzeug,
 pdfminer/pdfminer.six; see the
-[selection record](/DOCS/evaluations/code-evidence-held-out/selection-record.md)), and the
-cases are not yet written.
+[selection record](/DOCS/evaluations/code-evidence-held-out/selection-record.md)), and 12 draft
+cases are authored but **not frozen**: they await the independent review by the owner
+([review package](/DOCS/evaluations/code-evidence-held-out/review-package.md)).
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains
