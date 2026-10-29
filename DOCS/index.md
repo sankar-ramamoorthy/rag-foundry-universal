@@ -50,7 +50,10 @@ No production selection policy is adopted.
 The [statement-level delivery contract](/DOCS/evaluations/code-evidence-e1/statement-level-contract.md)
 (#276, **accepted and frozen** 2026-10-28; checksum recorded) specifies the experiment that the
 [structural-context oracle](/DOCS/test_results/2026-10-28-e1-structural-context-feasibility.md)
-makes worth testing, including the held-out case plan required by ADR-054.
+makes worth testing, including the held-out case plan required by ADR-054. The
+[frozen held-out set](/DOCS/evaluations/code-evidence-held-out/README.md) (#281; 12 cases over
+pypa/hatch, pallets/werkzeug and pdfminer/pdfminer.six, independently reviewed) is ready;
+nothing has been ingested or run on it.
 
 `DOCS/adr/` — check each ADR's own `status` field before relying on it;
 don't assume numeric order implies currency.

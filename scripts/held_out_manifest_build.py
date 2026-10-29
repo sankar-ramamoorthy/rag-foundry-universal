@@ -238,6 +238,9 @@ def main() -> int:
     issues = problems(cases, q)
     print(json.dumps(q, indent=1))
     print("PROBLEMS:" if issues else "all declared checks pass", *issues, sep="\n  ")
+    if args.write and (HELD_OUT / "manifest.sha256").exists():
+        raise SystemExit("the held-out manifest is frozen; supersede it with a new "
+                         "dated declaration instead of rebuilding")
     if args.write and not issues:
         public = {cid: {k: v for k, v in s.items() if not k.startswith("_")}
                   for cid, s in sorted(sources.items())}

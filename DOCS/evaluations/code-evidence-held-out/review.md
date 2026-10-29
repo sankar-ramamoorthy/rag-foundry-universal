@@ -2,13 +2,13 @@
 title: "E1 held-out set: independent second-review record"
 date: 2026-10-28
 type: experiment-record
-status: revisions-awaiting-reviewer-approval
+status: approved-manifest-frozen
 tags: [held-out, review, adr-054, evidence-delivery]
 related:
   - "[Issue #281](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/281)"
   - "[Stratification declaration, section 9](/DOCS/evaluations/code-evidence-held-out/stratification.md)"
   - "[Review package](/DOCS/evaluations/code-evidence-held-out/review-package.md)"
-  - "[Draft manifest](/DOCS/evaluations/code-evidence-held-out/manifest.draft.json)"
+  - "[Frozen manifest](/DOCS/evaluations/code-evidence-held-out/manifest.json)"
 ---
 
 # E1 held-out set: independent second-review record
@@ -70,8 +70,18 @@ checking each against the pinned function body.
 - Training-data exposure: pallets/werkzeug is very likely well represented in model training data despite its star count.
 - Source text is the pinned function source, not the stored DocumentNode.text; that comparison happens at ingestion time.
 
+## Reviewer approval (2026-10-28)
+
+> approve the revisions and freeze the manifest
+
+(The reviewer's words, as stated.) Before freezing, the structural oracle was run only to check
+that every expression is located and unambiguous and every function parses: 34 function-readings,
+0 problems. No byte cost was computed. No retrieval, control or candidate output, and no
+ingestion, was involved at any point.
+
 ## Status
 
-**Revisions submitted; not yet approved by the reviewer.** PR #289 stays a draft. The manifest
-is not frozen. No repository has been ingested or queried. When the reviewer approves (or
-requests further changes), the outcome is appended here as stated.
+**Approved and frozen on 2026-10-28.** `manifest.json` is pinned by `manifest.sha256`
+(`ef5727be08d1a569957760e9014b884d83c4e71a70e25e7ddf2e92c16f97cfc5`). The draft manifest was removed; the authored case specs in `cases/` remain as the
+source of the manifest and are checked against it by a test. Any further change needs a new
+dated declaration.

@@ -2,22 +2,22 @@
 title: "E1 held-out set: review package for the independent second reviewer"
 date: 2026-10-28
 type: experiment-record
-status: draft-revisions-awaiting-reviewer-approval
+status: approved-manifest-frozen
 tags: [held-out, review, adr-054, evidence-delivery]
 related:
   - "[Issue #281](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/281)"
   - "[Stratification declaration](/DOCS/evaluations/code-evidence-held-out/stratification.md)"
   - "[Selection record](/DOCS/evaluations/code-evidence-held-out/selection-record.md)"
   - "[Review record](/DOCS/evaluations/code-evidence-held-out/review.md)"
-  - "[Draft manifest](/DOCS/evaluations/code-evidence-held-out/manifest.draft.json)"
+  - "[Frozen manifest](/DOCS/evaluations/code-evidence-held-out/manifest.json)"
 ---
 
 # E1 held-out set: review package
 
-Roadmap phase: Phase 6, workstream E. Tracked by #281. **Nothing here is frozen.** Round 1:
+Roadmap phase: Phase 6, workstream E. Tracked by #281. **Frozen on 2026-10-28.** Round 1:
 the reviewer accepted six cases and asked for six rewrites (see the
-[review record](/DOCS/evaluations/code-evidence-held-out/review.md)); the rewrites below await
-the reviewer's approval.
+[review record](/DOCS/evaluations/code-evidence-held-out/review.md)); the reviewer then approved the
+rewrites and the freeze (see the review record).
 
 ## How the cases were produced
 
@@ -64,7 +64,7 @@ Per repository, cases counted in Q1 / Q2 / Q3 (each <= 2, at least one in total)
 
 Each operation and dependency carries *needed for*, the clause of the question that makes it necessary, where the item was part of a rewrite. File line numbers are in the pinned source file.
 
-### H1  (pypa/hatch, slot A, explicit question) - REVISED - awaiting reviewer approval
+### H1  (pypa/hatch, slot A, explicit question) - REVISED - approved by the reviewer
 
 **Functions:** `src/hatch/cli/env/show.py#show`
 
@@ -112,7 +112,7 @@ Each operation and dependency carries *needed for*, the clause of the question t
 3. Environments that resolve to the same lockfile path are grouped and merged into one lock - in `run_lock_workflow`: `lockfile_groups.setdefault(output_path, []).append(env)` (file line 134); `environment, merged_deps, merged_extras, merged_groups, display_name = merge_environment_lock_inputs(` (file line 137).
 4. In check mode a missing lockfile aborts; otherwise environments with nothing to lock are skipped with a warning - in `run_lock_workflow`: `app.abort(f"Lockfile does not exist: {output_path}")` (file line 129); `elif not environment_has_lock_inputs(environment):` (file line 130); `app.display_warning(f"Environment `{env}` has no dependencies to lock")` (file line 131).
 
-### H3  (pypa/hatch, slot C, explicit question) - REVISED - awaiting reviewer approval
+### H3  (pypa/hatch, slot C, explicit question) - REVISED - approved by the reviewer
 
 **Functions:** `release/unix/make_scripts_portable.py#main`
 
@@ -161,7 +161,7 @@ Each operation and dependency carries *needed for*, the clause of the question t
 3. A JSON filter must be a mapping and then replaces the selection - in `run`: `app.abort("The --filter/-f option must be a JSON mapping")` (file line 128); `environments[:] = filter_environments(project.config.envs, filter_data)` (file line 130).
 4. Include/exclude variables are rejected when no matrix was selected - in `run`: `elif not matrix_selected and (included_variables or excluded_variables):` (file line 134).
 
-### P1  (pdfminer/pdfminer.six, slot A, explicit question) - REVISED - awaiting reviewer approval
+### P1  (pdfminer/pdfminer.six, slot A, explicit question) - REVISED - approved by the reviewer
 
 **Functions:** `pdfminer/high_level.py#extract_text_to_fp`
 
@@ -277,7 +277,7 @@ Each operation and dependency carries *needed for*, the clause of the question t
 3. Responses default to no-cache; a positive max age makes them public and sets an expiry - in `send_file`: `cache_control.no_cache = True` (file line 510); `cache_control.public = True` (file line 520); `rv.expires = int(time() + max_age)` (file line 523).
 4. An ETag given as a string is used as is; otherwise it is built from modification time and size - in `send_file`: `if isinstance(etag, str):` (file line 527); `rv.etag = "-".join(parts)` (file line 541).
 
-### W2  (pallets/werkzeug, slot B, explicit question) - REVISED - awaiting reviewer approval
+### W2  (pallets/werkzeug, slot B, explicit question) - REVISED - approved by the reviewer
 
 **Functions:** `src/werkzeug/serving.py#is_running_from_reloader`; `src/werkzeug/serving.py#make_server`; `src/werkzeug/serving.py#run_simple`
 
@@ -302,7 +302,7 @@ Each operation and dependency carries *needed for*, the clause of the question t
 3. Whether the process is a reloader child is decided from an environment variable - in `is_running_from_reloader`: `return os.environ.get("WERKZEUG_RUN_MAIN") == "true"` (file line 956). *Needed for:* when it is itself running inside the reloader.
 4. With the reloader on the server runs under it and is always closed; otherwise it simply serves forever - in `run_simple`: `run_with_reloader(` (file line 1116); `srv.server_close()` (file line 1124); `srv.serve_forever()` (file line 1126). *Needed for:* how it behaves when the reloader is enabled.
 
-### W3  (pallets/werkzeug, slot C, explicit question) - REVISED - awaiting reviewer approval
+### W3  (pallets/werkzeug, slot C, explicit question) - REVISED - approved by the reviewer
 
 **Functions:** `src/werkzeug/_reloader.py#run_with_reloader`
 
@@ -326,7 +326,7 @@ Each operation and dependency carries *needed for*, the clause of the question t
 2. The application thread is started only after the reloader context has been entered - in `run_with_reloader`: `with reloader:` (file line 413); `t.start()` (file line 414). *Needed for:* how the application and the reloader loop run together.
 3. Ctrl+C ends the run quietly - in `run_with_reloader`: `except KeyboardInterrupt:` (file line 418). *Needed for:* how it exits on Ctrl+C.
 
-### W4  (pallets/werkzeug, slot D, natural question) - REVISED - awaiting reviewer approval
+### W4  (pallets/werkzeug, slot D, natural question) - REVISED - approved by the reviewer
 
 **Functions:** `src/werkzeug/test.py#run_wsgi_app`
 
@@ -357,6 +357,4 @@ verbatim, unambiguous and necessary; (c) the operations and dependencies are gen
 for the answer, not incidental; (d) the question does not leak an expression or the answer;
 (e) the stratum labels are correct; (f) license and attribution are recorded (`licenses/`).
 
-For the six revised cases please approve, or say what to change. Approval is appended to the
-review record as stated; the manifest is frozen only after that.
-
+The reviewer approved the six revisions and the freeze on 2026-10-28; see the review record.

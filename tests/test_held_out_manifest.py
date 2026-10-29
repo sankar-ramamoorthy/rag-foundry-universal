@@ -1,19 +1,21 @@
-"""Self-consistency of the draft E1 held-out manifest (#281); no network, no clones.
+"""The frozen E1 held-out manifest (#281); no network, no clones.
 
-The manifest is a draft until the independent review (declaration section 9). These
-checks hold regardless: every expression is a verbatim line fragment of its stored
-source text and occurs on exactly one line of that function, the stored hashes match,
-and the declared shape and exclusions hold.
+Frozen after the independent review (declaration section 9). It is pinned by its
+recorded SHA-256, and these checks hold: every expression is a verbatim line fragment
+of its stored source text and occurs on exactly one line of that function, the stored
+hashes match, and the declared shape and exclusions hold.
 """
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST = ROOT / "DOCS/evaluations/code-evidence-held-out/manifest.draft.json"
+HELD_OUT = ROOT / "DOCS/evaluations/code-evidence-held-out"
+MANIFEST = HELD_OUT / "manifest.json"
 EXCLUDED = {"HKUDS/LightRAG", "sankar-ramamoorthy/rag-foundry-universal",
             "sankar-ramamoorthy/py-coding-agent"}
 
@@ -101,3 +103,51 @@ def test_revised_cases_map_each_item_to_the_clause_that_needs_it(manifest):
     for c in revised:
         for entry in (*c["operations"], *c["dependencies"]):
             assert entry.get("needed_for"), (c["id"], entry["name"])
+
+
+def _lf(path: Path) -> str:
+    return path.read_bytes().decode("utf-8").replace("\r\n", "\n")
+
+
+def test_manifest_matches_its_recorded_checksum():
+    recorded = (HELD_OUT / "manifest.sha256").read_text(encoding="utf-8").strip()
+    assert re.fullmatch(r"[0-9a-f]{64}", recorded)
+    assert hashlib.sha256(_lf(MANIFEST).encode("utf-8")).hexdigest() == recorded, (
+        "the frozen held-out manifest changed; supersede it with a new dated "
+        "declaration instead of editing it"
+    )
+
+
+def test_manifest_is_frozen_and_bound_to_the_declarations_it_was_built_under(manifest):
+    assert manifest["status"] == "frozen-before-any-run"
+    d = manifest["declaration"]
+    e1 = ROOT / "DOCS/evaluations/code-evidence-e1"
+    strat = (HELD_OUT / "stratification.sha256").read_text().strip()
+    assert d["stratification_sha256"] == strat
+    assert d["go_rate_addendum_sha256"] == (
+        e1 / "statement-level-contract-addendum-go-rate.sha256").read_text().strip()
+    assert d["statement_level_contract_sha256"] == (
+        e1 / "statement-level-contract.sha256").read_text().strip()
+
+
+def test_manifest_matches_the_authored_case_specs(manifest):
+    specs = {}
+    for f in (HELD_OUT / "cases").glob("*.json"):
+        spec = json.loads(f.read_text(encoding="utf-8"))
+        specs[spec["id"]] = spec
+    assert set(specs) == {c["id"] for c in manifest["cases"]}
+    def core(items):
+        return [(e["name"], e["canonical_id"], e["expressions"]) for e in items]
+    for c in manifest["cases"]:
+        spec = specs[c["id"]]
+        assert c["query"] == spec["query"], c["id"]
+        assert core(c["operations"]) == core(spec["operations"]), c["id"]
+        assert core(c["dependencies"]) == core(spec["dependencies"]), c["id"]
+
+
+def test_each_repository_has_its_license_text_and_attribution(manifest):
+    readme = _lf(HELD_OUT / "README.md")
+    for repo in manifest["pins"]:
+        name = f"{repo.replace('/', '-')}.LICENSE.txt"
+        assert (HELD_OUT / "licenses" / name).is_file()
+        assert repo in readme and manifest["pins"][repo]["commit"] in readme

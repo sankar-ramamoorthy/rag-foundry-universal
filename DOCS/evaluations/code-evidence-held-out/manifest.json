@@ -1,6 +1,15 @@
 {
- "status": "draft-awaiting-second-review",
- "dataset_role": "held-out; not frozen until reviewed (stratification s9)",
+ "status": "frozen-before-any-run",
+ "frozen_on": "2026-10-28",
+ "dataset_role": "held-out generalization set (ADR-054); a case later used to change a candidate becomes development data",
+ "declaration": {
+  "stratification_sha256": "9a2ff53915916f11a1b63047808a569ce4390fcf187ce86c94446070a6c5bb8a",
+  "go_rate_addendum_sha256": "7fda2a65c456eb026de49f4be7231acf40c6b87b0997d0a00230438cc89f6e96",
+  "statement_level_contract_sha256": "f0f67f33d629a1253d467be40da15dfc539371703d95353f59a2e2c5bdc20a33",
+  "selection_record": "DOCS/evaluations/code-evidence-held-out/selection-record.md",
+  "review_record": "DOCS/evaluations/code-evidence-held-out/review.md"
+ },
+ "source_text_note": "Function text is the pinned source from the commit below, not the stored DocumentNode.text. It is compared with the stored text when a repository is ingested, and a mismatch is reported then, never silently corrected.",
  "pins": {
   "pypa/hatch": {
    "commit": "740565ac2929597cb9def8d46338cbef6493fc8d",
