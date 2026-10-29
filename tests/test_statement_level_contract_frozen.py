@@ -71,3 +71,28 @@ def test_go_rate_addendum_states_the_chosen_rule_and_keeps_answers_out_of_it():
                    "exactly 12 cases over 3 repositories",
                    "Answer correctness (S8) does not decide GO"):
         assert needle in text, needle
+
+
+HELD_OUT = ROOT / "DOCS/evaluations/code-evidence-held-out"
+STRATIFICATION = HELD_OUT / "stratification.md"
+STRATIFICATION_CHECKSUM = HELD_OUT / "stratification.sha256"
+
+
+def test_held_out_stratification_matches_its_recorded_checksum():
+    recorded = STRATIFICATION_CHECKSUM.read_text(encoding="utf-8").strip()
+    assert re.fullmatch(r"[0-9a-f]{64}", recorded)
+    actual = hashlib.sha256(_text(STRATIFICATION).encode("utf-8")).hexdigest()
+    assert actual == recorded, (
+        "the held-out stratification declaration changed after it was frozen; "
+        "supersede it with a new dated declaration committed before the "
+        "repository-selection record"
+    )
+
+
+def test_held_out_stratification_keeps_the_declared_shape_and_exclusions():
+    text = _text(STRATIFICATION)
+    for needle in ("exactly 12 cases over exactly 3 repositories",
+                   "rag-foundry-universal and py-coding-agent",
+                   "Take the first repository, in star order, that passes the scan",
+                   "must **never** be added", "byte cost"):
+        assert needle in text, needle

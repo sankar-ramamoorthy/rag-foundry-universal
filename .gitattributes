@@ -7,3 +7,6 @@ DOCS/evaluations/code-evidence-e1/statement-level-contract.sha256 text eol=lf
 # Frozen E1 GO-rate addendum (#280): its recorded SHA-256 covers LF content.
 DOCS/evaluations/code-evidence-e1/statement-level-contract-addendum-go-rate.md text eol=lf
 DOCS/evaluations/code-evidence-e1/statement-level-contract-addendum-go-rate.sha256 text eol=lf
+# Frozen E1 held-out stratification declaration (#281): SHA-256 covers LF content.
+DOCS/evaluations/code-evidence-held-out/stratification.md text eol=lf
+DOCS/evaluations/code-evidence-held-out/stratification.sha256 text eol=lf
