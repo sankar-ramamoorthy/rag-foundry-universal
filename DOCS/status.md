@@ -136,6 +136,12 @@ pdfminer/pdfminer.six; see the
 cases are written, independently reviewed by the owner and **frozen on 2026-10-28**
 ([README](/DOCS/evaluations/code-evidence-held-out/README.md); checksum recorded). No
 held-out repository has been ingested yet; nothing has been run on them.
+Separately, the E1 development cases F1-F3 lost their pinned generation to a re-ingest on
+2026-10-28 and the corpus now holds answer-bearing documents; the owner decided to exclude
+such documents from ingestion (#291) and to run F1-F3 on a clean corpus rebuilt from commit
+`109f12d8` (#292) — see the
+[decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md). No F1-F3 run
+happens before then.
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains
