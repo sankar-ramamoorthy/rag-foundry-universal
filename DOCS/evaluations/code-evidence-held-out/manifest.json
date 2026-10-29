@@ -1,0 +1,1847 @@
+{
+ "status": "frozen-before-any-run",
+ "frozen_on": "2026-10-28",
+ "dataset_role": "held-out generalization set (ADR-054); a case later used to change a candidate becomes development data",
+ "declaration": {
+  "stratification_sha256": "9a2ff53915916f11a1b63047808a569ce4390fcf187ce86c94446070a6c5bb8a",
+  "go_rate_addendum_sha256": "7fda2a65c456eb026de49f4be7231acf40c6b87b0997d0a00230438cc89f6e96",
+  "statement_level_contract_sha256": "f0f67f33d629a1253d467be40da15dfc539371703d95353f59a2e2c5bdc20a33",
+  "selection_record": "DOCS/evaluations/code-evidence-held-out/selection-record.md",
+  "review_record": "DOCS/evaluations/code-evidence-held-out/review.md"
+ },
+ "source_text_note": "Function text is the pinned source from the commit below, not the stored DocumentNode.text. It is compared with the stored text when a repository is ingested, and a mismatch is reported then, never silently corrected.",
+ "pins": {
+  "pypa/hatch": {
+   "commit": "740565ac2929597cb9def8d46338cbef6493fc8d",
+   "license": "MIT",
+   "stars_at_selection": 7246
+  },
+  "pallets/werkzeug": {
+   "commit": "b73dce5a2ce14f7c7fd645699d1d878de48d2948",
+   "license": "BSD-3-Clause",
+   "stars_at_selection": 6880
+  },
+  "pdfminer/pdfminer.six": {
+   "commit": "a18de2a9c479b4c847538500017b449ddaec177e",
+   "license": "MIT",
+   "stars_at_selection": 7046
+  }
+ },
+ "quota_report": {
+  "cases": 12,
+  "repos": [
+   "pallets/werkzeug",
+   "pdfminer/pdfminer.six",
+   "pypa/hatch"
+  ],
+  "per_repo": {
+   "pypa/hatch": {
+    "q1": 1,
+    "q2": 1,
+    "q3": 1,
+    "cases": 4
+   },
+   "pdfminer/pdfminer.six": {
+    "q1": 1,
+    "q2": 1,
+    "q3": 2,
+    "cases": 4
+   },
+   "pallets/werkzeug": {
+    "q1": 1,
+    "q2": 1,
+    "q3": 1,
+    "cases": 4
+   }
+  },
+  "Q1_multi_function_long_signature": 3,
+  "Q2_long_function_wide_spread": 3,
+  "Q3_short_function_narrow": 4,
+  "Q4_else_elif": 12,
+  "Q4_try": 9,
+  "Q4_loop_with": 10,
+  "Q5_methods": 0,
+  "Q6_natural_language": 4
+ },
+ "known_limitations": [
+  "Concentration: three of pypa/hatch's four cases (H1, H2, H4) are `hatch env` click commands with decorator-heavy signatures; the fourth (H3) is a release script. Hatch results characterise those commands, not the repository broadly.",
+  "Overlap: P2 and P4 both live in tools/dumppdf.py and both involve dumpxml, so they are not independent observations.",
+  "Narrow coverage: three of pdfminer.six's four cases are command-line utilities under tools/, not library modules.",
+  "Training-data exposure: pallets/werkzeug is very likely well represented in model training data despite its star count.",
+  "Source text is the pinned function source, not the stored DocumentNode.text; that comparison happens at ingestion time."
+ ],
+ "cases": [
+  {
+   "id": "H1",
+   "repo": "pypa/hatch",
+   "slot": "A",
+   "style": "explicit",
+   "query": "Explain how the `hatch env show` command, implemented by `show` in `src/hatch/cli/env/show.py`, works: which environments it lists (standalone, matrix and internal ones, and how requested names filter them), how the JSON and internal-environment options change what it does, how the features and dependencies of matrix environments are normalized for display (including what happens to a dependency string that is not a valid requirement), and how it renders its result.",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "feature normalization and invalid-dependency handling must be explicitly relevant",
+     "change": "Question now asks explicitly about feature-name and dependency normalization, including invalid dependency strings. Required evidence unchanged; a needed_for mapping was added. The question was then tightened to say the normalization applies to matrix environments, which is what the code does."
+    }
+   ],
+   "functions": [
+    "src/hatch/cli/env/show.py#show"
+   ],
+   "primary_function": "src/hatch/cli/env/show.py#show",
+   "operations": [
+    {
+     "name": "JSON mode covers regular and internal environments",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "for environments in (app.project.config.envs, app.project.config.internal_envs):"
+     ],
+     "needed_for": "which environments it lists; how the JSON option changes what it does",
+     "located": [
+      36
+     ]
+    },
+    {
+     "name": "JSON mode prints one compact JSON document",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "app.display(json.dumps(contextual_config, separators=(\",\", \":\")))"
+     ],
+     "needed_for": "how the JSON option changes what it does",
+     "located": [
+      70
+     ]
+    },
+    {
+     "name": "Table mode chooses the internal or regular environment sets",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "target_standalone_envs = app.project.config.internal_envs",
+      "target_standalone_envs = app.project.config.envs"
+     ],
+     "needed_for": "how the internal-environment option changes what it does",
+     "located": [
+      77,
+      80
+     ]
+    },
+    {
+     "name": "Unknown requested names abort the command",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "app.abort(f\"Environment `{env_name}` is not defined by project config\")"
+     ],
+     "needed_for": "how requested names filter the listing",
+     "located": [
+      85
+     ]
+    },
+    {
+     "name": "Output is a Standalone table and a Matrices table with optional titles",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "\"\" if hide_titles else \"Standalone\",",
+      "\"\" if hide_titles else \"Matrices\","
+     ],
+     "needed_for": "how it renders its result",
+     "located": [
+      201,
+      208
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "Matrix member environments are left out of the standalone list unless names were given",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "matrix_envs.update(matrix_data[\"envs\"])",
+      "if env_names or env_name not in matrix_envs"
+     ],
+     "needed_for": "how matrix and standalone environments are listed",
+     "located": [
+      101,
+      161
+     ]
+    },
+    {
+     "name": "A requested-name filter applies to matrices and to standalone environments",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "if env_names and matrix_name not in env_names:",
+      "if env_names and env_name not in env_names:"
+     ],
+     "needed_for": "how requested names filter them",
+     "located": [
+      103,
+      164
+     ]
+    },
+    {
+     "name": "Feature names are normalized only when ambiguous features are not allowed",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "if app.project.metadata.hatch.metadata.allow_ambiguous_features:",
+      "sorted({normalize_project_name(f) for f in config[\"features\"]})"
+     ],
+     "needed_for": "how the features of matrix environments are normalized for display",
+     "located": [
+      112,
+      116
+     ]
+    },
+    {
+     "name": "Invalid dependency strings are kept as written and valid ones are normalized",
+     "canonical_id": "src/hatch/cli/env/show.py#show",
+     "expressions": [
+      "except InvalidDependencyError:",
+      "normalized_dependencies.add(dependency)",
+      "normalized_dependencies.add(get_normalized_dependency(req))"
+     ],
+     "needed_for": "how the dependencies of matrix environments are normalized, including invalid ones",
+     "located": [
+      129,
+      130,
+      132
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 196,
+    "primary_signature_lines": 16,
+    "max_witness_spread": 172,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "H2",
+   "repo": "pypa/hatch",
+   "slot": "B",
+   "style": "explicit",
+   "query": "Explain how `hatch env lock`, implemented by `lock` in `src/hatch/cli/env/lock.py`, decides which environments to lock, and how the shared `run_lock_workflow` it hands off to treats incompatible environments, chooses where each lockfile is written, and behaves in check mode.",
+   "revisions": [],
+   "functions": [
+    "src/hatch/cli/env/lock.py#lock",
+    "src/hatch/cli/env/lock.py#run_lock_workflow"
+   ],
+   "primary_function": "src/hatch/cli/env/lock.py#run_lock_workflow",
+   "operations": [
+    {
+     "name": "The two export options are mutually exclusive",
+     "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": [
+      "app.abort(\"Cannot use both `--export` and `--export-all`\")"
+     ],
+     "located": [
+      217
+     ]
+    },
+    {
+     "name": "A named environment is expanded (a matrix name expands to its members)",
+     "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": [
+      "env_names = app.project.expand_environments(env_name)"
+     ],
+     "located": [
+      224
+     ]
+    },
+    {
+     "name": "With no arguments and nothing marked locked the command aborts",
+     "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": [
+      "app.abort(\"No environments are configured with `locked = true`\")"
+     ],
+     "located": [
+      241
+     ]
+    },
+    {
+     "name": "An incompatible environment is skipped or aborts the run",
+     "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": [
+      "incompatible[env] = str(e)",
+      "app.abort(f\"Environment `{env}` is incompatible: {e}\")"
+     ],
+     "located": [
+      106,
+      109
+     ]
+    },
+    {
+     "name": "The lockfile path is the export path, a per-environment file under the export-all directory, or the default",
+     "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": [
+      "filename = \"pylock.toml\" if environment.name == \"default\" else f\"pylock.{safe_name}.toml\"",
+      "output_path = Path(export_all_path) / filename",
+      "output_path = resolve_lockfile_path(environment)"
+     ],
+     "located": [
+      122,
+      123,
+      125
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "Whether incompatible environments are tolerated depends on how the environment was selected and is passed down",
+     "canonical_id": "src/hatch/cli/env/lock.py#lock",
+     "expressions": [
+      "skip_incompatible = env_name in app.project.config.matrices",
+      "skip_incompatible_envs=skip_incompatible,"
+     ],
+     "located": [
+      228,
+      254
+     ]
+    },
+    {
+     "name": "An explicitly named environment that is not marked locked is refused unless an export option is given",
+     "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": [
+      "if explicit_env is not None and not environment.locked and not export_path and not export_all_path:"
+     ],
+     "located": [
+      111
+     ]
+    },
+    {
+     "name": "Environments that resolve to the same lockfile path are grouped and merged into one lock",
+     "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": [
+      "lockfile_groups.setdefault(output_path, []).append(env)",
+      "environment, merged_deps, merged_extras, merged_groups, display_name = merge_environment_lock_inputs("
+     ],
+     "located": [
+      134,
+      137
+     ]
+    },
+    {
+     "name": "In check mode a missing lockfile aborts; otherwise environments with nothing to lock are skipped with a warning",
+     "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+     "expressions": [
+      "app.abort(f\"Lockfile does not exist: {output_path}\")",
+      "elif not environment_has_lock_inputs(environment):",
+      "app.display_warning(f\"Environment `{env}` has no dependencies to lock\")"
+     ],
+     "located": [
+      129,
+      130,
+      131
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 112,
+    "primary_signature_lines": 12,
+    "max_witness_spread": 37,
+    "functions_needed": 2,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "H3",
+   "repo": "pypa/hatch",
+   "slot": "C",
+   "style": "explicit",
+   "query": "In `release/unix/make_scripts_portable.py`, explain what `main` does with each entry of the interpreter's scripts directory so the scripts keep working when the Python distribution is moved: which entries it considers at all; which files it rewrites with a new header and exactly how (including what happens to blank lines at the top of a file); which files it rewrites but keeps the original first line for (a first line that points at another interpreter); and which entries it leaves untouched on disk (non-files, binaries, and anything that produces no content).",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "clarify file selection and modification versus preservation",
+     "change": "Question now asks separately which entries are considered, which files are modified (and how) and which are preserved or not written back. Operation names and a needed_for mapping state the same three roles. Expressions unchanged. On re-reading the code the question was made exact: a file whose first line points at another interpreter is rewritten (header copied through, leading blank lines dropped), not left untouched; only non-files, binaries and no-content files are left untouched on disk."
+    }
+   ],
+   "functions": [
+    "release/unix/make_scripts_portable.py#main"
+   ],
+   "primary_function": "release/unix/make_scripts_portable.py#main",
+   "operations": [
+    {
+     "name": "Selection: only regular files are considered; other directory entries are skipped (left untouched)",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "if not script.is_file():"
+     ],
+     "needed_for": "which entries it considers at all; non-files are left untouched",
+     "located": [
+      17
+     ]
+    },
+    {
+     "name": "Modification: leading blank lines are ignored, so they are not written back to a rewritten file",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "if not line.strip():"
+     ],
+     "needed_for": "what happens to blank lines at the top of a file",
+     "located": [
+      24
+     ]
+    },
+    {
+     "name": "Left untouched: a file whose first non-blank line is not a comment is treated as a binary and yields no content",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "if not line.startswith(b\"#\"):"
+     ],
+     "needed_for": "which entries it leaves untouched on disk (binaries)",
+     "located": [
+      28
+     ]
+    },
+    {
+     "name": "Modification: a header naming this interpreter is replaced by the portable shebang",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "data.write(portable_shebang if executable == interpreter else line)"
+     ],
+     "needed_for": "which files it modifies and how",
+     "located": [
+      33
+     ]
+    },
+    {
+     "name": "Left untouched: a file that produced no content is not written back",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "if not contents:"
+     ],
+     "needed_for": "which entries it leaves untouched on disk (no content)",
+     "located": [
+      41
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "Only first lines naming a path under the interpreter's own directory are examined; any other first line is copied through unchanged and the file is still rewritten",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "if line.startswith(b\"#!%s\" % interpreter.parent):",
+      "data.write(line)"
+     ],
+     "needed_for": "which files it rewrites but keeps the original first line for",
+     "located": [
+      31,
+      35
+     ]
+    },
+    {
+     "name": "The executable named in the header is resolved and compared with this interpreter before the header is replaced",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "executable = Path(line[2:].rstrip().decode()).resolve()"
+     ],
+     "needed_for": "when a file is modified",
+     "located": [
+      32
+     ]
+    },
+    {
+     "name": "The rest of the file after the header is appended unchanged, and the result is collected before the emptiness check",
+     "canonical_id": "release/unix/make_scripts_portable.py#main",
+     "expressions": [
+      "data.write(f.read())",
+      "contents = data.getvalue()"
+     ],
+     "needed_for": "what happens to the rest of a modified file",
+     "located": [
+      37,
+      40
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 37,
+    "primary_signature_lines": 1,
+    "max_witness_spread": 24,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with"
+    ],
+    "any_long_signature": false
+   }
+  },
+  {
+   "id": "H4",
+   "repo": "pypa/hatch",
+   "slot": "D",
+   "style": "natural",
+   "query": "When I execute a command in project environments with hatch and combine environment names, matrix include/exclude variables and a JSON filter, how does hatch decide which environments the command is actually executed in, and in which situations does it refuse to continue?",
+   "revisions": [
+    {
+     "round": 0,
+     "note": "Question rewritten before review to remove the CLI command name (the symbol's name) from a natural-language question. No expression changed."
+    }
+   ],
+   "functions": [
+    "src/hatch/cli/env/run.py#run"
+   ],
+   "primary_function": "src/hatch/cli/env/run.py#run",
+   "operations": [
+    {
+     "name": "A duplicated included matrix variable aborts",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "app.abort(f\"Duplicate included variable: {e}\")"
+     ],
+     "located": [
+      85
+     ]
+    },
+    {
+     "name": "With no environment named the current default environment is used",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "env_names = (app.env,)"
+     ],
+     "located": [
+      97
+     ]
+    },
+    {
+     "name": "Named environments are de-duplicated while keeping their order",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "ordered_env_names = list(dict.fromkeys(env_names))"
+     ],
+     "located": [
+      108
+     ]
+    },
+    {
+     "name": "A matrix name expands to its environments, narrowed by the include and exclude variables",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "environments.extend(select_environments(env_data, included_variables, excluded_variables))"
+     ],
+     "located": [
+      119
+     ]
+    },
+    {
+     "name": "If nothing was selected the command aborts",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "app.abort(\"No environments were selected\")"
+     ],
+     "located": [
+      133
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "The special system environment is defined on the fly when it is requested",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "elif \"system\" in env_names:",
+      "\"type\": \"system\","
+     ],
+     "located": [
+      98,
+      101
+     ]
+    },
+    {
+     "name": "A matrix with no variables defined aborts",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "app.abort(f\"No variables defined for matrix: {env_name}\")"
+     ],
+     "located": [
+      117
+     ]
+    },
+    {
+     "name": "A JSON filter must be a mapping and then replaces the selection",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "app.abort(\"The --filter/-f option must be a JSON mapping\")",
+      "environments[:] = filter_environments(project.config.envs, filter_data)"
+     ],
+     "located": [
+      128,
+      130
+     ]
+    },
+    {
+     "name": "Include/exclude variables are rejected when no matrix was selected",
+     "canonical_id": "src/hatch/cli/env/run.py#run",
+     "expressions": [
+      "elif not matrix_selected and (included_variables or excluded_variables):"
+     ],
+     "located": [
+      134
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 111,
+    "primary_signature_lines": 22,
+    "max_witness_spread": 49,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "P1",
+   "repo": "pdfminer/pdfminer.six",
+   "slot": "A",
+   "style": "explicit",
+   "query": "Explain how `extract_text_to_fp` in `pdfminer/high_level.py` converts a PDF into output: how it chooses the output device for each output type and what happens for an unsupported type, how it prepares the output stream and the resource manager (including caching), how the scale, layout and rotation options take effect, and how it processes the pages and finishes.",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "remove incidental debug/image-writer requirements or make them explicitly relevant",
+     "change": "Removed the debug-logging and image-writer operations. The question no longer asks 'which options it honours'; it asks about device choice, stream and resource-manager preparation, scale/layout/rotation and page processing. Rotation and the stdout buffer moved from dependencies to operations; a tag-extractor binary-stream dependency was added so there are 5 operations and 3 dependencies."
+    }
+   ],
+   "functions": [
+    "pdfminer/high_level.py#extract_text_to_fp"
+   ],
+   "primary_function": "pdfminer/high_level.py#extract_text_to_fp",
+   "operations": [
+    {
+     "name": "The output device is a text, XML, HTML or hOCR converter depending on the output type",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "device = TextConverter(",
+      "device = XMLConverter(",
+      "device = HTMLConverter(",
+      "device = HOCRConverter("
+     ],
+     "needed_for": "how it chooses the output device for each output type",
+     "located": [
+      86,
+      95,
+      105,
+      116
+     ]
+    },
+    {
+     "name": "An unsupported output type raises a value error",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "raise PDFValueError(msg)"
+     ],
+     "needed_for": "what happens for an unsupported type",
+     "located": [
+      130
+     ]
+    },
+    {
+     "name": "Standard output is replaced by its binary buffer when a non-text output type is written to it",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "if output_type != \"text\" and outfp == sys.stdout:",
+      "outfp = sys.stdout.buffer"
+     ],
+     "needed_for": "how it prepares the output stream",
+     "located": [
+      82,
+      83
+     ]
+    },
+    {
+     "name": "The requested rotation is added to each page's own rotation modulo 360",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "page.rotate = (page.rotate + rotation) % 360"
+     ],
+     "needed_for": "how the rotation option takes effect",
+     "located": [
+      141
+     ]
+    },
+    {
+     "name": "Every selected page is interpreted and the device is closed at the end",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "interpreter.process_page(page)",
+      "device.close()"
+     ],
+     "needed_for": "how it processes the pages and finishes",
+     "located": [
+      142,
+      144
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "Caching is controlled by one flag that feeds both the resource manager and the page loader",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "rsrcmgr = PDFResourceManager(caching=not disable_caching)",
+      "caching=not disable_caching,"
+     ],
+     "needed_for": "how it prepares the resource manager (including caching)",
+     "located": [
+      79,
+      139
+     ]
+    },
+    {
+     "name": "Scale and layout mode only influence the HTML converter",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "scale=scale,",
+      "layoutmode=layoutmode,"
+     ],
+     "needed_for": "how the scale and layout options take effect",
+     "located": [
+      109,
+      110
+     ]
+    },
+    {
+     "name": "For tag output the stream is cast to a binary stream before it is given to the tag extractor",
+     "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+     "expressions": [
+      "device = TagExtractor(rsrcmgr, cast(BinaryIO, outfp), codec=codec)"
+     ],
+     "needed_for": "how it prepares the output stream (binary stream for tag output)",
+     "located": [
+      126
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 120,
+    "primary_signature_lines": 18,
+    "max_witness_spread": 65,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "P2",
+   "repo": "pdfminer/pdfminer.six",
+   "slot": "B",
+   "style": "explicit",
+   "query": "Explain how `dumppdf` in `tools/dumppdf.py` decides what to dump from a PDF file: how object ids, page numbers, the dump-all option and the codec interact, what `dumpallobjs` and `dumptrailers` contribute, and how fallback cross-reference tables and missing objects are handled.",
+   "revisions": [],
+   "functions": [
+    "tools/dumppdf.py#dumpallobjs",
+    "tools/dumppdf.py#dumppdf",
+    "tools/dumppdf.py#dumptrailers"
+   ],
+   "primary_function": "tools/dumppdf.py#dumppdf",
+   "operations": [
+    {
+     "name": "Requested object ids are fetched from the document and dumped as XML",
+     "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": [
+      "obj = doc.getobj(objid)"
+     ],
+     "located": [
+      266
+     ]
+    },
+    {
+     "name": "For selected pages a codec dumps the page content streams, otherwise the page attributes",
+     "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": [
+      "obj = stream_value(obj)",
+      "dumpxml(outfp, page.attrs)"
+     ],
+     "located": [
+      273,
+      276
+     ]
+    },
+    {
+     "name": "The dump-all option dumps every object in the document",
+     "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": [
+      "dumpallobjs(outfp, doc, codec, show_fallback_xref)"
+     ],
+     "located": [
+      278
+     ]
+    },
+    {
+     "name": "With nothing requested only the trailers are dumped",
+     "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": [
+      "if (not objids) and (not pagenos) and (not dumpall):",
+      "dumptrailers(outfp, doc, show_fallback_xref)"
+     ],
+     "located": [
+      279,
+      280
+     ]
+    },
+    {
+     "name": "The full dump skips objects it has already seen and reports objects that cannot be found",
+     "canonical_id": "tools/dumppdf.py#dumpallobjs",
+     "expressions": [
+      "if objid in visited:",
+      "except PDFObjectNotFound as e:"
+     ],
+     "located": [
+      132,
+      142
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "A trailing newline is written unless the codec is raw or binary",
+     "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": [
+      "if codec not in (\"raw\", \"binary\"):"
+     ],
+     "located": [
+      281
+     ]
+    },
+    {
+     "name": "Trailers of fallback cross-reference tables are shown only on request",
+     "canonical_id": "tools/dumppdf.py#dumptrailers",
+     "expressions": [
+      "if not isinstance(xref, PDFXRefFallback) or show_fallback_xref:"
+     ],
+     "located": [
+      108
+     ]
+    },
+    {
+     "name": "A warning is logged when the file has no real cross-reference table and fallback tables are hidden",
+     "canonical_id": "tools/dumppdf.py#dumptrailers",
+     "expressions": [
+      "no_xrefs = all(isinstance(xref, PDFXRefFallback) for xref in doc.xrefs)",
+      "if no_xrefs and not show_fallback_xref:",
+      "logger.warning(msg)"
+     ],
+     "located": [
+      112,
+      113,
+      119
+     ]
+    },
+    {
+     "name": "The full dump is wrapped in a pdf element and ends with the trailers",
+     "canonical_id": "tools/dumppdf.py#dumpallobjs",
+     "expressions": [
+      "out.write(\"<pdf>\")",
+      "dumptrailers(out, doc, show_fallback_xref)",
+      "out.write(\"</pdf>\")"
+     ],
+     "located": [
+      129,
+      144,
+      145
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 33,
+    "primary_signature_lines": 11,
+    "max_witness_spread": 16,
+    "functions_needed": 3,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "P3",
+   "repo": "pdfminer/pdfminer.six",
+   "slot": "C",
+   "style": "explicit",
+   "query": "In `tools/pdf2txt.py`, explain how `extract_text` drives the conversion: what it requires from the caller, how the output type is decided from the output file name, and how its behaviour differs between writing to standard output and writing to a file.",
+   "revisions": [],
+   "functions": [
+    "tools/pdf2txt.py#extract_text"
+   ],
+   "primary_function": "tools/pdf2txt.py#extract_text",
+   "operations": [
+    {
+     "name": "Calling it without input files is an error",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "raise PDFValueError(\"Must provide files to work upon!\")"
+     ],
+     "located": [
+      50
+     ]
+    },
+    {
+     "name": "The output type is overridden by the output file's extension",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "for override, alttype in OUTPUT_TYPES:",
+      "output_type = alttype"
+     ],
+     "located": [
+      53,
+      55
+     ]
+    },
+    {
+     "name": "Writing to standard output uses the stdout stream",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "outfp: AnyIO = sys.stdout"
+     ],
+     "located": [
+      58
+     ]
+    },
+    {
+     "name": "Standard output forces the UTF-8 codec",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "codec = \"utf-8\""
+     ],
+     "located": [
+      60
+     ]
+    },
+    {
+     "name": "Writing to a file opens the output in binary mode",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "with open(outfile, \"wb\") as outfp:"
+     ],
+     "located": [
+      66
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "The extension override only applies when the default text type is in use and the output is a file",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "if output_type == \"text\" and outfile != \"-\":"
+     ],
+     "located": [
+      52
+     ]
+    },
+    {
+     "name": "The override is chosen by matching the file name suffix",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "if outfile.endswith(override):"
+     ],
+     "located": [
+      54
+     ]
+    },
+    {
+     "name": "A dash as the output file name selects the standard output path",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "if outfile == \"-\":"
+     ],
+     "located": [
+      57
+     ]
+    },
+    {
+     "name": "The codec is forced only when standard output reports an encoding",
+     "canonical_id": "tools/pdf2txt.py#extract_text",
+     "expressions": [
+      "if sys.stdout.encoding is not None:"
+     ],
+     "located": [
+      59
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 39,
+    "primary_signature_lines": 18,
+    "max_witness_spread": 16,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "P4",
+   "repo": "pdfminer/pdfminer.six",
+   "slot": "D",
+   "style": "natural",
+   "query": "How does pdfminer's command-line dump tool print a document's outline (its bookmarks): how does it map each entry to a page number, how does it deal with destinations given as names, references or actions, and what happens when the document has no outline?",
+   "revisions": [],
+   "functions": [
+    "tools/dumppdf.py#dumpoutline"
+   ],
+   "primary_function": "tools/dumppdf.py#dumpoutline",
+   "operations": [
+    {
+     "name": "A table from page object ids to page numbers is built first",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "for (pageno, page) in enumerate(PDFPage.create_pages(doc), 1)"
+     ],
+     "located": [
+      163
+     ]
+    },
+    {
+     "name": "Named destinations are looked up in the document, whether given as a string or a literal",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "dest = resolve1(doc.get_dest(dest))",
+      "dest = resolve1(doc.get_dest(dest.name))"
+     ],
+     "located": [
+      168,
+      170
+     ]
+    },
+    {
+     "name": "A dictionary destination is unwrapped to its D entry",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "dest = dest[\"D\"]"
+     ],
+     "located": [
+      172
+     ]
+    },
+    {
+     "name": "A GoTo action supplies the destination when there is no direct one",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "if subtype and repr(subtype) == \"/'GoTo'\" and action.get(\"D\"):"
+     ],
+     "located": [
+      189
+     ]
+    },
+    {
+     "name": "A document without an outline is handled silently",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "except PDFNoOutlines:"
+     ],
+     "located": [
+      202
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "Actions are only consulted when an entry has no direct destination",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "elif a:"
+     ],
+     "located": [
+      185
+     ]
+    },
+    {
+     "name": "Indirect object references are resolved to the object they point to",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "if isinstance(dest, PDFObjRef):",
+      "dest = dest.resolve()"
+     ],
+     "located": [
+      173,
+      174
+     ]
+    },
+    {
+     "name": "The destination and the page number are written only when they were found",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "if dest is not None:",
+      "if pageno is not None:"
+     ],
+     "located": [
+      194,
+      198
+     ]
+    },
+    {
+     "name": "Titles are escaped before they are written into the XML attribute",
+     "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": [
+      "s = escape(title)"
+     ],
+     "located": [
+      192
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 57,
+    "primary_signature_lines": 10,
+    "max_witness_spread": 39,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "W1",
+   "repo": "pallets/werkzeug",
+   "slot": "A",
+   "style": "natural",
+   "query": "In Werkzeug, when a file or a path is served back to the client as a WSGI response, how are the download name and content type worked out, which headers are produced for downloading, caching and conditional or range requests, and which invalid inputs cause errors?",
+   "revisions": [],
+   "functions": [
+    "src/werkzeug/utils.py#send_file"
+   ],
+   "primary_function": "src/werkzeug/utils.py#send_file",
+   "operations": [
+    {
+     "name": "A text-mode file object is rejected",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "raise ValueError(\"File must be in binary mode, or 'BytesIO'.\")"
+     ],
+     "located": [
+      430
+     ]
+    },
+    {
+     "name": "A non-ASCII download name produces both a plain and an RFC 5987 encoded filename",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "names = {\"filename\": simple, \"filename*\": f\"UTF-8''{quoted}\"}"
+     ],
+     "located": [
+      478
+     ]
+    },
+    {
+     "name": "An attachment without any name is rejected",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "\"No name provided for attachment. Either pass 'download_name', or\""
+     ],
+     "located": [
+      484
+     ]
+    },
+    {
+     "name": "X-Sendfile mode hands the path to the server and empties the body",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "rv.headers[\"X-Sendfile\"] = path"
+     ],
+     "located": [
+      500
+     ]
+    },
+    {
+     "name": "Conditional and range handling is applied, and the response is closed if it fails",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "rv.apply_conditions(request)",
+      "rv.apply_range(request)",
+      "rv.close()"
+     ],
+     "located": [
+      545,
+      546,
+      548
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "A content encoding header is only sent when the file is not an attachment",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "mimetype, encoding = mimetypes.guess_type(download_name)",
+      "if encoding is not None and not as_attachment:"
+     ],
+     "located": [
+      460,
+      467
+     ]
+    },
+    {
+     "name": "For a path the size and modification time come from stat; for a file object they come from seeking, falling back to its file descriptor",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "stat = os.stat(path)",
+      "size = file.seek(0, os.SEEK_END)",
+      "fileno = file.fileno()",
+      "except OSError:"
+     ],
+     "located": [
+      419,
+      436,
+      441,
+      442
+     ]
+    },
+    {
+     "name": "Responses default to no-cache; a positive max age makes them public and sets an expiry",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "cache_control.no_cache = True",
+      "cache_control.public = True",
+      "rv.expires = int(time() + max_age)"
+     ],
+     "located": [
+      510,
+      520,
+      523
+     ]
+    },
+    {
+     "name": "An ETag given as a string is used as is; otherwise it is built from modification time and size",
+     "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": [
+      "if isinstance(etag, str):",
+      "rv.etag = \"-\".join(parts)"
+     ],
+     "located": [
+      527,
+      541
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 246,
+    "primary_signature_lines": 16,
+    "max_witness_spread": 129,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "W2",
+   "repo": "pallets/werkzeug",
+   "slot": "B",
+   "style": "explicit",
+   "query": "Explain how `run_simple` in `src/werkzeug/serving.py` starts the development server: how it validates its arguments, how it wraps the application for static files and for the debugger (including which hosts the debugger trusts), how it picks the kind of server to build through `make_server`, and how it behaves differently when the reloader is enabled or when it is itself running inside the reloader (including how the listening socket is handed over).",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "resolve the startup-banner dependency",
+     "change": "Removed the startup-banner dependency. Its governing condition (`if not is_running_from_reloader():`) occurs twice in the function, so it cannot be evidenced by a single-occurrence expression, and the question did not ask about the banner. Added two dependencies the question does ask about: which hosts the debugger trusts (the wildcard condition) and making the socket inheritable. The question now says so explicitly."
+    }
+   ],
+   "functions": [
+    "src/werkzeug/serving.py#is_running_from_reloader",
+    "src/werkzeug/serving.py#make_server",
+    "src/werkzeug/serving.py#run_simple"
+   ],
+   "primary_function": "src/werkzeug/serving.py#run_simple",
+   "operations": [
+    {
+     "name": "The port must be an integer",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "raise TypeError(\"port must be an integer\")"
+     ],
+     "needed_for": "how it validates its arguments",
+     "located": [
+      1072
+     ]
+    },
+    {
+     "name": "Static file mappings wrap the application in shared-data middleware",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "application = SharedDataMiddleware(application, static_files)"
+     ],
+     "needed_for": "how it wraps the application for static files",
+     "located": [
+      1077
+     ]
+    },
+    {
+     "name": "The debugger wraps the application and the chosen hostname is added to its trusted hosts",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "application = DebuggedApplication(application, evalex=use_evalex)",
+      "application.trusted_hosts.append(hostname)"
+     ],
+     "needed_for": "how it wraps the application for the debugger",
+     "located": [
+      1082,
+      1087
+     ]
+    },
+    {
+     "name": "A threaded and a multi-process server cannot be combined",
+     "canonical_id": "src/werkzeug/serving.py#make_server",
+     "expressions": [
+      "raise ValueError(\"Cannot have a multi-thread and multi-process server.\")"
+     ],
+     "needed_for": "how it picks the kind of server (invalid combination)",
+     "located": [
+      926
+     ]
+    },
+    {
+     "name": "The server class is threaded, forking or plain depending on the arguments",
+     "canonical_id": "src/werkzeug/serving.py#make_server",
+     "expressions": [
+      "return ThreadedWSGIServer(",
+      "return ForkingWSGIServer(",
+      "return BaseWSGIServer("
+     ],
+     "needed_for": "how it picks the kind of server",
+     "located": [
+      929,
+      934,
+      945
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "The hostname is added to the debugger's trusted hosts unless it is a wildcard address",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "if hostname not in {\"0.0.0.0\", \"[::]\"}:"
+     ],
+     "needed_for": "which hosts the debugger trusts",
+     "located": [
+      1086
+     ]
+    },
+    {
+     "name": "A process running inside the reloader reuses the listening socket handed down through an environment variable; the parent makes the socket inheritable and publishes it",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "fd = int(os.environ[\"WERKZEUG_SERVER_FD\"])",
+      "srv.socket.set_inheritable(True)",
+      "os.environ[\"WERKZEUG_SERVER_FD\"] = str(srv.fileno())"
+     ],
+     "needed_for": "how the listening socket is handed over",
+     "located": [
+      1092,
+      1105,
+      1106
+     ]
+    },
+    {
+     "name": "Whether the process is a reloader child is decided from an environment variable",
+     "canonical_id": "src/werkzeug/serving.py#is_running_from_reloader",
+     "expressions": [
+      "return os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\""
+     ],
+     "needed_for": "when it is itself running inside the reloader",
+     "located": [
+      956
+     ]
+    },
+    {
+     "name": "With the reloader on the server runs under it and is always closed; otherwise it simply serves forever",
+     "canonical_id": "src/werkzeug/serving.py#run_simple",
+     "expressions": [
+      "run_with_reloader(",
+      "srv.server_close()",
+      "srv.serve_forever()"
+     ],
+     "needed_for": "how it behaves when the reloader is enabled",
+     "located": [
+      1116,
+      1124,
+      1126
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 168,
+    "primary_signature_lines": 18,
+    "max_witness_spread": 54,
+    "functions_needed": 3,
+    "contexts": [
+     "else_elif",
+     "try"
+    ],
+    "any_long_signature": true
+   }
+  },
+  {
+   "id": "W3",
+   "repo": "pallets/werkzeug",
+   "slot": "C",
+   "style": "explicit",
+   "query": "In `src/werkzeug/_reloader.py`, explain how `run_with_reloader` runs an application under the reloader: how the reloader implementation is chosen, how the process behaves differently when it is the reloaded child versus the original parent, how the application and the reloader loop run together, and how it exits on a termination signal and on Ctrl+C.",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "resolve the terminal-echo dependency",
+     "change": "Removed the `ensure_echo_on()` dependency. The function only calls a helper whose behaviour (restoring terminal echo) is not visible in `run_with_reloader`, and the question does not ask about it. Three dependencies and five operations remain; every expression is otherwise unchanged and the witness window is still 18 lines."
+    }
+   ],
+   "functions": [
+    "src/werkzeug/_reloader.py#run_with_reloader"
+   ],
+   "primary_function": "src/werkzeug/_reloader.py#run_with_reloader",
+   "operations": [
+    {
+     "name": "A termination signal makes the process exit cleanly",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))"
+     ],
+     "needed_for": "how it exits on a termination signal",
+     "located": [
+      400
+     ]
+    },
+    {
+     "name": "The reloader implementation is looked up by the requested type",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "reloader = reloader_loops[reloader_type]("
+     ],
+     "needed_for": "how the reloader implementation is chosen",
+     "located": [
+      401
+     ]
+    },
+    {
+     "name": "In the child the application runs in a daemon thread",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "t = threading.Thread(target=main_func, args=())",
+      "t.daemon = True"
+     ],
+     "needed_for": "how the application runs in the reloaded child",
+     "located": [
+      408,
+      409
+     ]
+    },
+    {
+     "name": "The reloader update loop runs alongside the application thread",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "reloader.run()"
+     ],
+     "needed_for": "how the application and the reloader loop run together",
+     "located": [
+      415
+     ]
+    },
+    {
+     "name": "The original parent process restarts itself under the reloader and exits with its status",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "sys.exit(reloader.restart_with_reloader())"
+     ],
+     "needed_for": "how it behaves as the original parent",
+     "located": [
+      417
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "Child versus parent is decided from an environment variable",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "if os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\":"
+     ],
+     "needed_for": "how the process behaves as the reloaded child versus the original parent",
+     "located": [
+      406
+     ]
+    },
+    {
+     "name": "The application thread is started only after the reloader context has been entered",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "with reloader:",
+      "t.start()"
+     ],
+     "needed_for": "how the application and the reloader loop run together",
+     "located": [
+      413,
+      414
+     ]
+    },
+    {
+     "name": "Ctrl+C ends the run quietly",
+     "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+     "expressions": [
+      "except KeyboardInterrupt:"
+     ],
+     "needed_for": "how it exits on Ctrl+C",
+     "located": [
+      418
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 30,
+    "primary_signature_lines": 7,
+    "max_witness_spread": 18,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": false
+   }
+  },
+  {
+   "id": "W4",
+   "repo": "pallets/werkzeug",
+   "slot": "D",
+   "style": "natural",
+   "query": "How does Werkzeug's test machinery execute a WSGI application and return its response: what happens when the application raises through start_response or uses the old write callable, how is the response iterator handled and closed, and what changes when the caller asks for the output to be buffered?",
+   "revisions": [
+    {
+     "round": 1,
+     "reviewer_note": "resolve the environment-copy requirement",
+     "change": "Removed the `environ = _get_environ(environ).copy()` operation: the question does not ask whether the caller's environment is protected. Four operations and four dependencies remain; the question is unchanged."
+    }
+   ],
+   "functions": [
+    "src/werkzeug/test.py#run_wsgi_app"
+   ],
+   "primary_function": "src/werkzeug/test.py#run_wsgi_app",
+   "operations": [
+    {
+     "name": "An exc_info passed to start_response is re-raised with its traceback",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "raise exc_info[1].with_traceback(exc_info[2])"
+     ],
+     "needed_for": "what happens when the application raises through start_response",
+     "located": [
+      1268
+     ]
+    },
+    {
+     "name": "The write callable returned by start_response appends to a buffer",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "return buffer.append"
+     ],
+     "needed_for": "what happens when the application uses the old write callable",
+     "located": [
+      1273
+     ]
+    },
+    {
+     "name": "Buffered mode turns the iterator into a list and closes the application early",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "app_iter = list(app_iter)",
+      "close_func()"
+     ],
+     "needed_for": "what changes when the output is buffered",
+     "located": [
+      1283,
+      1286
+     ]
+    },
+    {
+     "name": "Unbuffered mode iterates only until a response has started and chains what was already read",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "if response is not None:",
+      "app_iter = chain(buffer, app_iter)"
+     ],
+     "needed_for": "how the response iterator is handled",
+     "located": [
+      1294,
+      1298
+     ]
+    }
+   ],
+   "dependencies": [
+    {
+     "name": "The application's close callable is discovered up front",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "close_func = getattr(app_rv, \"close\", None)"
+     ],
+     "needed_for": "how the iterator is closed",
+     "located": [
+      1276
+     ]
+    },
+    {
+     "name": "A close callable is restored on the chained iterator only when the iterator was replaced",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "if close_func is not None and app_iter is not app_rv:",
+      "app_iter = ClosingIterator(app_iter, close_func)"
+     ],
+     "needed_for": "how the iterator is closed",
+     "located": [
+      1300,
+      1301
+     ]
+    },
+    {
+     "name": "The exc_info reference is always cleared after re-raising",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "exc_info = None"
+     ],
+     "needed_for": "what happens when the application raises through start_response",
+     "located": [
+      1270
+     ]
+    },
+    {
+     "name": "The status and headers come from the recorded response and are returned with the iterator",
+     "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+     "expressions": [
+      "status, headers = response",
+      "return app_iter, status, Headers(headers)"
+     ],
+     "needed_for": "how the response is returned",
+     "located": [
+      1303,
+      1304
+     ]
+    }
+   ],
+   "strata": {
+    "primary_lines": 74,
+    "primary_signature_lines": 3,
+    "max_witness_spread": 36,
+    "functions_needed": 1,
+    "contexts": [
+     "else_elif",
+     "loop_with",
+     "try"
+    ],
+    "any_long_signature": false
+   }
+  }
+ ],
+ "sources": {
+  "pdfminer/high_level.py#extract_text_to_fp": {
+   "relative_path": "pdfminer/high_level.py",
+   "start_line": 25,
+   "end_line": 144,
+   "text": "def extract_text_to_fp(\n    inf: BinaryIO,\n    outfp: AnyIO,\n    output_type: str = \"text\",\n    codec: str = \"utf-8\",\n    laparams: LAParams | None = None,\n    maxpages: int = 0,\n    page_numbers: Container[int] | None = None,\n    password: str = \"\",\n    scale: float = 1.0,\n    rotation: int = 0,\n    layoutmode: str = \"normal\",\n    output_dir: str | None = None,\n    strip_control: bool = False,\n    debug: bool = False,\n    disable_caching: bool = False,\n    **kwargs: Any,\n) -> None:\n    \"\"\"Parses text from inf-file and writes to outfp file-like object.\n\n    Takes loads of optional arguments but the defaults are somewhat sane.\n    Beware laparams: Including an empty LAParams is not the same as passing\n    None!\n\n    :param inf: a file-like object to read PDF structure from, such as a\n        file handler (using the builtin `open()` function) or a `BytesIO`.\n    :param outfp: a file-like object to write the text to.\n    :param output_type: May be 'text', 'xml', 'html', 'hocr', 'tag'.\n        Only 'text' works properly.\n    :param codec: Text decoding codec\n    :param laparams: An LAParams object from pdfminer.layout. Default is None\n        but may not layout correctly.\n    :param maxpages: How many pages to stop parsing after\n    :param page_numbers: zero-indexed page numbers to operate on.\n    :param password: For encrypted PDFs, the password to decrypt.\n    :param scale: Scale factor\n    :param rotation: Rotation factor\n    :param layoutmode: Default is 'normal', see\n        pdfminer.converter.HTMLConverter\n    :param output_dir: If given, creates an ImageWriter for extracted images.\n    :param strip_control: Does what it says on the tin\n    :param debug: Output more logging data\n    :param disable_caching: Does what it says on the tin\n    :param other:\n    :return: nothing, acting as it does on two streams. Use StringIO to get\n        strings.\n    \"\"\"\n    if debug:\n        logging.getLogger().setLevel(logging.DEBUG)\n\n    imagewriter = None\n    if output_dir:\n        imagewriter = ImageWriter(output_dir)\n\n    rsrcmgr = PDFResourceManager(caching=not disable_caching)\n    device: PDFDevice | None = None\n\n    if output_type != \"text\" and outfp == sys.stdout:\n        outfp = sys.stdout.buffer\n\n    if output_type == \"text\":\n        device = TextConverter(\n            rsrcmgr,\n            outfp,\n            codec=codec,\n            laparams=laparams,\n            imagewriter=imagewriter,\n        )\n\n    elif output_type == \"xml\":\n        device = XMLConverter(\n            rsrcmgr,\n            outfp,\n            codec=codec,\n            laparams=laparams,\n            imagewriter=imagewriter,\n            stripcontrol=strip_control,\n        )\n\n    elif output_type == \"html\":\n        device = HTMLConverter(\n            rsrcmgr,\n            outfp,\n            codec=codec,\n            scale=scale,\n            layoutmode=layoutmode,\n            laparams=laparams,\n            imagewriter=imagewriter,\n        )\n\n    elif output_type == \"hocr\":\n        device = HOCRConverter(\n            rsrcmgr,\n            outfp,\n            codec=codec,\n            laparams=laparams,\n            stripcontrol=strip_control,\n        )\n\n    elif output_type == \"tag\":\n        # Binary I/O is required, but we have no good way to test it here.\n        device = TagExtractor(rsrcmgr, cast(BinaryIO, outfp), codec=codec)\n\n    else:\n        msg = f\"Output type can be text, html, xml or tag but is {output_type}\"\n        raise PDFValueError(msg)\n\n    assert device is not None\n    interpreter = PDFPageInterpreter(rsrcmgr, device)\n    for page in PDFPage.get_pages(\n        inf,\n        page_numbers,\n        maxpages=maxpages,\n        password=password,\n        caching=not disable_caching,\n    ):\n        page.rotate = (page.rotate + rotation) % 360\n        interpreter.process_page(page)\n\n    device.close()",
+   "sha256": "d4c11f000869610effc13a26bd30e48c4f05d3e3ade866be3f75ae79a26b0d44",
+   "metrics": {
+    "lines": 120,
+    "signature": 18
+   }
+  },
+  "release/unix/make_scripts_portable.py#main": {
+   "relative_path": "release/unix/make_scripts_portable.py",
+   "start_line": 9,
+   "end_line": 45,
+   "text": "def main():\n    interpreter = Path(sys.executable).resolve()\n\n    # https://github.com/indygreg/python-build-standalone/blob/20240415/cpython-unix/build-cpython.sh#L812-L813\n    portable_shebang = b'#!/bin/sh\\n\"exec\" \"$(dirname $0)/%s\" \"$0\" \"$@\"\\n' % interpreter.name.encode()\n\n    scripts_dir = Path(sysconfig.get_path(\"scripts\"))\n    for script in scripts_dir.iterdir():\n        if not script.is_file():\n            continue\n\n        with script.open(\"rb\") as f:\n            data = BytesIO()\n            for line in f:\n                # Ignore leading blank lines\n                if not line.strip():\n                    continue\n\n                # Ignore binaries\n                if not line.startswith(b\"#\"):\n                    break\n\n                if line.startswith(b\"#!%s\" % interpreter.parent):\n                    executable = Path(line[2:].rstrip().decode()).resolve()\n                    data.write(portable_shebang if executable == interpreter else line)\n                else:\n                    data.write(line)\n\n                data.write(f.read())\n                break\n\n        contents = data.getvalue()\n        if not contents:\n            continue\n\n        with script.open(\"wb\") as f:\n            f.write(contents)",
+   "sha256": "d129a32454f6b12d48245a5fc019986a9f4c51e1191310285d465e2aaa820225",
+   "metrics": {
+    "lines": 37,
+    "signature": 1
+   }
+  },
+  "src/hatch/cli/env/lock.py#lock": {
+   "relative_path": "src/hatch/cli/env/lock.py",
+   "start_line": 185,
+   "end_line": 255,
+   "text": "@click.command(short_help=\"Generate lockfiles for environments\")\n@click.argument(\"env_name\", required=False, default=None)\n@click.option(\"--upgrade\", \"-U\", is_flag=True, help=\"Upgrade all packages\")\n@click.option(\"--upgrade-package\", \"-P\", multiple=True, help=\"Upgrade specific package(s)\")\n@click.option(\"--export\", \"export_path\", type=click.Path(), default=None, help=\"Export lockfile to a custom path\")\n@click.option(\n    \"--export-all\",\n    \"export_all_path\",\n    type=click.Path(),\n    default=None,\n    help=\"Export lockfiles for all environments to a directory\",\n)\n@click.option(\"--check\", is_flag=True, help=\"Check if lockfile is up-to-date\")\n@click.pass_obj\ndef lock(\n    app: Application,\n    *,\n    env_name: str | None,\n    upgrade: bool,\n    upgrade_package: tuple[str, ...],\n    export_path: str | None,\n    export_all_path: str | None,\n    check: bool,\n):\n    \"\"\"Generate lockfiles for environments.\n\n    When called without arguments, locks all environments that have `locked = true`\n    in their configuration. When called with ENV_NAME, locks that specific environment.\n    \"\"\"\n    app.ensure_environment_plugin_dependencies()\n\n    if export_path and export_all_path:\n        app.abort(\"Cannot use both `--export` and `--export-all`\")\n\n    if export_all_path:\n        env_names = [*app.project.config.envs, *app.project.config.internal_envs]\n        explicit_env = None\n        skip_incompatible = True\n    elif env_name is not None:\n        env_names = app.project.expand_environments(env_name)\n        if not env_names:\n            app.abort(f\"Environment `{env_name}` is not defined by project config\")\n        explicit_env = env_name\n        skip_incompatible = env_name in app.project.config.matrices\n    else:\n        env_names = []\n        for name in app.project.config.envs:\n            environment = app.project.get_environment(name)\n            if environment.locked:\n                env_names.append(name)\n        for name in app.project.config.internal_envs:\n            environment = app.project.get_environment(name)\n            if environment.locked:\n                env_names.append(name)\n\n        if not env_names:\n            app.abort(\"No environments are configured with `locked = true`\")\n        explicit_env = None\n        skip_incompatible = True\n\n    run_lock_workflow(\n        app,\n        env_names,\n        upgrade=upgrade,\n        upgrade_package=upgrade_package,\n        export_path=export_path,\n        export_all_path=export_all_path,\n        check=check,\n        explicit_env=explicit_env,\n        skip_incompatible_envs=skip_incompatible,\n    )",
+   "sha256": "fb9681ce63113dd8c766cca719cd0bb51a7a93c1b0ea67c583326c24fc6843ac",
+   "metrics": {
+    "lines": 57,
+    "signature": 24
+   }
+  },
+  "src/hatch/cli/env/lock.py#run_lock_workflow": {
+   "relative_path": "src/hatch/cli/env/lock.py",
+   "start_line": 71,
+   "end_line": 182,
+   "text": "def run_lock_workflow(\n    app: Application,\n    env_names: list[str],\n    *,\n    upgrade: bool,\n    upgrade_package: tuple[str, ...],\n    export_path: str | None,\n    export_all_path: str | None,\n    check: bool,\n    explicit_env: str | None,\n    skip_incompatible_envs: bool,\n) -> None:\n    \"\"\"Shared implementation for ``hatch env lock`` and ``hatch dep lock``.\"\"\"\n    from hatch.config.constants import AppEnvVars\n    from hatch.env.lock import (\n        LockerNotFoundError,\n        LockerUnsupportedError,\n        environment_has_lock_inputs,\n        generate_lockfile,\n        lockfile_in_sync,\n        merge_environment_lock_inputs,\n        resolve_lockfile_path,\n    )\n    from hatch.utils.fs import Path\n\n    incompatible: dict[str, str] = {}\n    lockfile_groups: dict[Path, list[str]] = {}\n\n    for env in env_names:\n        environment = app.project.get_environment(env)\n\n        try:\n            environment.check_compatibility()\n        except Exception as e:  # noqa: BLE001\n            if skip_incompatible_envs:\n                incompatible[env] = str(e)\n                continue\n\n            app.abort(f\"Environment `{env}` is incompatible: {e}\")\n\n        if explicit_env is not None and not environment.locked and not export_path and not export_all_path:\n            app.abort(\n                f\"Environment `{explicit_env}` is not configured with `locked = true`. \"\n                f\"Use `--export <path>` to generate a lockfile, \"\n                f\"or set `locked = true` on the environment (or `lock-envs = true` globally).\"\n            )\n\n        if export_path:\n            output_path = Path(export_path)\n        elif export_all_path:\n            safe_name = environment.name.replace(\".\", \"-\")\n            filename = \"pylock.toml\" if environment.name == \"default\" else f\"pylock.{safe_name}.toml\"\n            output_path = Path(export_all_path) / filename\n        else:\n            output_path = resolve_lockfile_path(environment)\n\n        if check:\n            if not output_path.is_file():\n                app.abort(f\"Lockfile does not exist: {output_path}\")\n        elif not environment_has_lock_inputs(environment):\n            app.display_warning(f\"Environment `{env}` has no dependencies to lock\")\n            continue\n\n        lockfile_groups.setdefault(output_path, []).append(env)\n\n    for output_path, envs in lockfile_groups.items():\n        environment, merged_deps, merged_extras, merged_groups, display_name = merge_environment_lock_inputs(\n            app.project, envs, app.abort\n        )\n\n        try:\n            if check:\n                with app.status(f\"Checking lockfile for: {display_name}\"):\n                    app.project.prepare_environment(environment, keep_env=bool(os.environ.get(AppEnvVars.KEEP_ENV)))\n                    if not lockfile_in_sync(\n                        environment,\n                        output_path,\n                        upgrade=upgrade,\n                        upgrade_packages=upgrade_package,\n                        deps_override=merged_deps,\n                        lock_extras=merged_extras,\n                        lock_groups=merged_groups,\n                    ):\n                        app.abort(f\"Lockfile is not up to date: {output_path}\")\n                app.display(f\"Lockfile is up to date: {output_path}\")\n                continue\n\n            with app.status(f\"Locking environment: {display_name}\"):\n                app.project.prepare_environment(environment, keep_env=bool(os.environ.get(AppEnvVars.KEEP_ENV)))\n                generate_lockfile(\n                    environment,\n                    output_path,\n                    upgrade=upgrade,\n                    upgrade_packages=upgrade_package,\n                    deps_override=merged_deps,\n                    lock_extras=merged_extras,\n                    lock_groups=merged_groups,\n                )\n\n            app.display(f\"Wrote lockfile: {output_path}\")\n        except LockerNotFoundError as e:\n            app.abort(str(e))\n        except LockerUnsupportedError as e:\n            app.abort(str(e))\n\n    if incompatible:\n        num_incompatible = len(incompatible)\n        app.display_warning(\n            f\"Skipped {num_incompatible} incompatible environment{'s' if num_incompatible > 1 else ''}:\"\n        )\n        for env, reason in incompatible.items():\n            app.display_warning(f\"{env} -> {reason}\")",
+   "sha256": "d8db19c8df5cd6baa84851af746948380a392c1e412e98bc339cfde9612e6b04",
+   "metrics": {
+    "lines": 112,
+    "signature": 12
+   }
+  },
+  "src/hatch/cli/env/run.py#run": {
+   "relative_path": "src/hatch/cli/env/run.py",
+   "start_line": 26,
+   "end_line": 147,
+   "text": "@click.command(short_help=\"Run commands within project environments\")\n@click.argument(\"args\", required=True, nargs=-1)\n@click.option(\"--env\", \"-e\", \"env_names\", multiple=True, help=\"The environments to target\")\n@click.option(\"--include\", \"-i\", \"included_variable_specs\", multiple=True, help=\"The matrix variables to include\")\n@click.option(\"--exclude\", \"-x\", \"excluded_variable_specs\", multiple=True, help=\"The matrix variables to exclude\")\n@click.option(\"--filter\", \"-f\", \"filter_json\", default=None, help=\"The JSON data used to select environments\")\n@click.option(\n    \"--force-continue\", is_flag=True, help=\"Run every command and if there were any errors exit with the first code\"\n)\n@click.option(\"--ignore-compat\", is_flag=True, help=\"Ignore incompatibility when selecting specific environments\")\n@click.pass_obj\ndef run(\n    app: Application,\n    *,\n    args: tuple[str, ...],\n    env_names: tuple[str, ...],\n    included_variable_specs: tuple[str, ...],\n    excluded_variable_specs: tuple[str, ...],\n    filter_json: str | None,\n    force_continue: bool,\n    ignore_compat: bool,\n):\n    \"\"\"\n    Run commands within project environments.\n\n    The `-e`/`--env` option overrides the equivalent [root option](#hatch) and the `HATCH_ENV` environment variable.\n\n    The `-i`/`--include` and `-x`/`--exclude` options may be used to include or exclude certain\n    variables, optionally followed by specific comma-separated values, and may be selected multiple\n    times. For example, if you have the following configuration:\n\n    \\b\n    ```toml config-example\n    [[tool.hatch.envs.test.matrix]]\n    python = [\"3.9\", \"3.10\"]\n    version = [\"42\", \"3.14\", \"9000\"]\n    ```\n\n    then running:\n\n    \\b\n    ```\n    hatch env run -i py=3.10 -x version=9000 test:pytest\n    ```\n\n    would execute `pytest` in the environments `test.py3.10-42` and `test.py3.10-3.14`.\n    Note that `py` may be used as an alias for `python`.\n\n    \\b\n    !!! note\n        The inclusion option is treated as an intersection while the exclusion option is treated as a\n        union i.e. an environment must match all of the included variables to be selected while matching\n        any of the excluded variables will prevent selection.\n    \"\"\"\n    from hatch.utils.runner import parse_matrix_variables, select_environments\n\n    try:\n        included_variables = parse_matrix_variables(included_variable_specs)\n    except ValueError as e:\n        app.abort(f\"Duplicate included variable: {e}\")\n\n    try:\n        excluded_variables = parse_matrix_variables(excluded_variable_specs)\n    except ValueError as e:\n        app.abort(f\"Duplicate excluded variable: {e}\")\n\n    app.ensure_environment_plugin_dependencies()\n\n    project = app.project\n\n    if not env_names:\n        env_names = (app.env,)\n    elif \"system\" in env_names:\n        project.config.config[\"envs\"] = {\n            \"system\": {\n                \"type\": \"system\",\n                \"skip-install\": True,\n                \"scripts\": project.config.scripts,\n            }\n        }\n\n    # Deduplicate\n    ordered_env_names = list(dict.fromkeys(env_names))\n\n    environments = []\n    matrix_selected = False\n    for env_name in ordered_env_names:\n        if env_name in project.config.matrices:\n            matrix_selected = True\n            env_data = project.config.matrices[env_name][\"envs\"]\n            if not env_data:\n                app.abort(f\"No variables defined for matrix: {env_name}\")\n\n            environments.extend(select_environments(env_data, included_variables, excluded_variables))\n        else:\n            environments.append(env_name)\n\n    if filter_json:\n        import json\n\n        filter_data = json.loads(filter_json)\n        if not isinstance(filter_data, dict):\n            app.abort(\"The --filter/-f option must be a JSON mapping\")\n\n        environments[:] = filter_environments(project.config.envs, filter_data)\n\n    if not environments:\n        app.abort(\"No environments were selected\")\n    elif not matrix_selected and (included_variables or excluded_variables):\n        app.abort(f\"Variable selection is unsupported for non-matrix environments: {', '.join(ordered_env_names)}\")\n\n    for context in app.runner_context(\n        environments,\n        ignore_compat=ignore_compat or matrix_selected,\n        display_header=matrix_selected,\n        keep_env=bool(os.environ.get(AppEnvVars.KEEP_ENV)),\n    ):\n        if context.env.name == \"system\":\n            context.env.exists = lambda: True  # type: ignore[method-assign]\n\n        context.force_continue = force_continue\n        context.add_shell_command(list(args))",
+   "sha256": "0bcfbc075bef2e43aefef306107de8f8fcaf2d73f91e68c8db5cc86a546e4a84",
+   "metrics": {
+    "lines": 111,
+    "signature": 22
+   }
+  },
+  "src/hatch/cli/env/show.py#show": {
+   "relative_path": "src/hatch/cli/env/show.py",
+   "start_line": 11,
+   "end_line": 213,
+   "text": "@click.command(short_help=\"Show the available environments\")\n@click.argument(\"envs\", required=False, nargs=-1)\n@click.option(\"--ascii\", \"force_ascii\", is_flag=True, help=\"Whether or not to only use ASCII characters\")\n@click.option(\"--json\", \"as_json\", is_flag=True, help=\"Whether or not to output in JSON format\")\n@click.option(\"--internal\", \"-i\", is_flag=True, help=\"Show internal environments\")\n@click.option(\"--hide-titles\", is_flag=True, hidden=True)\n@click.pass_obj\ndef show(\n    app: Application,\n    *,\n    envs: tuple[str, ...],\n    force_ascii: bool,\n    as_json: bool,\n    internal: bool,\n    hide_titles: bool,\n):\n    \"\"\"Show the available environments.\"\"\"\n    app.ensure_environment_plugin_dependencies()\n\n    from hatch.config.constants import AppEnvVars\n\n    if as_json:\n        import json\n\n        contextual_config = {}\n        for environments in (app.project.config.envs, app.project.config.internal_envs):\n            for env_name, config in environments.items():\n                environment = app.project.get_environment(env_name)\n                new_config = contextual_config[env_name] = dict(config)\n\n                env_vars = dict(environment.env_vars)\n                env_vars.pop(AppEnvVars.ENV_ACTIVE)\n                if env_vars:\n                    new_config[\"env-vars\"] = env_vars\n\n                num_dependencies = len(config.get(\"dependencies\", []))\n                dependencies = environment.environment_dependencies[:num_dependencies]\n                if dependencies:\n                    new_config[\"dependencies\"] = dependencies\n\n                extra_dependencies = environment.environment_dependencies[num_dependencies:]\n                if extra_dependencies:\n                    new_config[\"extra-dependencies\"] = extra_dependencies\n\n                if environment.pre_install_commands:\n                    new_config[\"pre-install-commands\"] = list(\n                        environment.resolve_commands(environment.pre_install_commands)\n                    )\n\n                if environment.post_install_commands:\n                    new_config[\"post-install-commands\"] = list(\n                        environment.resolve_commands(environment.post_install_commands)\n                    )\n\n                if environment.scripts:\n                    new_config[\"scripts\"] = {\n                        script: list(environment.resolve_commands([script])) for script in environment.scripts\n                    }\n\n        app.display(json.dumps(contextual_config, separators=(\",\", \":\")))\n        return\n\n    from hatch.dep.core import Dependency, InvalidDependencyError\n    from hatchling.metadata.utils import get_normalized_dependency, normalize_project_name\n\n    if internal:\n        target_standalone_envs = app.project.config.internal_envs\n        target_matrices = app.project.config.internal_matrices\n    else:\n        target_standalone_envs = app.project.config.envs\n        target_matrices = app.project.config.matrices\n\n    for env_name in envs:\n        if env_name not in target_standalone_envs and env_name not in target_matrices:\n            app.abort(f\"Environment `{env_name}` is not defined by project config\")\n\n    env_names = set(envs)\n\n    matrix_columns: dict[str, dict[int, str]] = {\n        \"Name\": {},\n        \"Type\": {},\n        \"Envs\": {},\n        \"Features\": {},\n        \"Dependencies\": {},\n        \"Environment variables\": {},\n        \"Scripts\": {},\n        \"Description\": {},\n    }\n    matrix_envs = set()\n    for i, (matrix_name, matrix_data) in enumerate(target_matrices.items()):\n        matrix_envs.update(matrix_data[\"envs\"])\n\n        if env_names and matrix_name not in env_names:\n            continue\n\n        config = matrix_data[\"config\"]\n        matrix_columns[\"Name\"][i] = matrix_name\n        matrix_columns[\"Type\"][i] = config[\"type\"]\n        matrix_columns[\"Envs\"][i] = \"\\n\".join(matrix_data[\"envs\"])\n\n        if config.get(\"features\"):\n            if app.project.metadata.hatch.metadata.allow_ambiguous_features:\n                matrix_columns[\"Features\"][i] = \"\\n\".join(sorted(set(config[\"features\"])))\n            else:\n                matrix_columns[\"Features\"][i] = \"\\n\".join(\n                    sorted({normalize_project_name(f) for f in config[\"features\"]})\n                )\n\n        dependencies = []\n        if config.get(\"dependencies\"):\n            dependencies.extend(config[\"dependencies\"])\n        if config.get(\"extra-dependencies\"):\n            dependencies.extend(config[\"extra-dependencies\"])\n        if dependencies:\n            normalized_dependencies = set()\n            for dependency in dependencies:\n                try:\n                    req = Dependency(dependency)\n                except InvalidDependencyError:\n                    normalized_dependencies.add(dependency)\n                else:\n                    normalized_dependencies.add(get_normalized_dependency(req))\n\n            matrix_columns[\"Dependencies\"][i] = \"\\n\".join(sorted(normalized_dependencies))\n\n        if config.get(\"env-vars\"):\n            matrix_columns[\"Environment variables\"][i] = \"\\n\".join(\n                \"=\".join(item) for item in sorted(config[\"env-vars\"].items())\n            )\n\n        if config.get(\"scripts\"):\n            matrix_columns[\"Scripts\"][i] = \"\\n\".join(\n                sorted(script for script in config[\"scripts\"] if app.verbose or not script.startswith(\"_\"))\n            )\n\n        if config.get(\"description\"):\n            matrix_columns[\"Description\"][i] = config[\"description\"].strip()\n\n    standalone_columns: dict[str, dict[int, str]] = {\n        \"Name\": {},\n        \"Type\": {},\n        \"Features\": {},\n        \"Dependencies\": {},\n        \"Environment variables\": {},\n        \"Scripts\": {},\n        \"Description\": {},\n    }\n    standalone_envs = (\n        (env_name, config)\n        for env_name, config in target_standalone_envs.items()\n        if env_names or env_name not in matrix_envs\n    )\n    for i, (env_name, config) in enumerate(standalone_envs):\n        if env_names and env_name not in env_names:\n            continue\n\n        environment = app.project.get_environment(env_name)\n\n        standalone_columns[\"Name\"][i] = env_name\n        standalone_columns[\"Type\"][i] = config[\"type\"]\n\n        if environment.features:\n            standalone_columns[\"Features\"][i] = \"\\n\".join(environment.features)\n\n        if environment.environment_dependencies_complex:\n            standalone_columns[\"Dependencies\"][i] = \"\\n\".join(\n                sorted({get_normalized_dependency(d) for d in environment.environment_dependencies_complex})\n            )\n\n        env_vars = dict(environment.env_vars)\n        env_vars.pop(AppEnvVars.ENV_ACTIVE)\n        if env_vars:\n            standalone_columns[\"Environment variables\"][i] = \"\\n\".join(\n                \"=\".join(item) for item in sorted(env_vars.items())\n            )\n\n        if environment.scripts:\n            standalone_columns[\"Scripts\"][i] = \"\\n\".join(\n                sorted(script for script in environment.scripts if app.verbose or not script.startswith(\"_\"))\n            )\n\n        if environment.description:\n            standalone_columns[\"Description\"][i] = environment.description.strip()\n\n    column_options = {}\n    for title in matrix_columns:\n        if title != \"Description\":\n            column_options[title] = {\"no_wrap\": True}\n\n    app.display_table(\n        \"\" if hide_titles else \"Standalone\",\n        standalone_columns,\n        show_lines=True,\n        column_options=column_options,\n        force_ascii=force_ascii,\n    )\n    app.display_table(\n        \"\" if hide_titles else \"Matrices\",\n        matrix_columns,\n        show_lines=True,\n        column_options=column_options,\n        force_ascii=force_ascii,\n    )",
+   "sha256": "99ddfe4e14eca25599075222a4e375b63e9a2d47350a855c3821b709f96f5e76",
+   "metrics": {
+    "lines": 196,
+    "signature": 16
+   }
+  },
+  "src/werkzeug/_reloader.py#run_with_reloader": {
+   "relative_path": "src/werkzeug/_reloader.py",
+   "start_line": 390,
+   "end_line": 419,
+   "text": "def run_with_reloader(\n    main_func: t.Callable[[], None],\n    extra_files: t.Iterable[str] | None = None,\n    exclude_patterns: t.Iterable[str] | None = None,\n    interval: int | float = 1,\n    reloader_type: str = \"auto\",\n) -> None:\n    \"\"\"Run the given function in an independent Python interpreter.\"\"\"\n    import signal\n\n    signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))\n    reloader = reloader_loops[reloader_type](\n        extra_files=extra_files, exclude_patterns=exclude_patterns, interval=interval\n    )\n\n    try:\n        if os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\":\n            ensure_echo_on()\n            t = threading.Thread(target=main_func, args=())\n            t.daemon = True\n\n            # Enter the reloader to set up initial state, then start\n            # the app thread and reloader update loop.\n            with reloader:\n                t.start()\n                reloader.run()\n        else:\n            sys.exit(reloader.restart_with_reloader())\n    except KeyboardInterrupt:\n        pass",
+   "sha256": "6a3a5176a0547d4a7a4af61fde421a2ee99f3bb78f5b0dcdf7910b3e785cdf89",
+   "metrics": {
+    "lines": 30,
+    "signature": 7
+   }
+  },
+  "src/werkzeug/serving.py#is_running_from_reloader": {
+   "relative_path": "src/werkzeug/serving.py",
+   "start_line": 950,
+   "end_line": 956,
+   "text": "def is_running_from_reloader() -> bool:\n    \"\"\"Check if the server is running as a subprocess within the\n    Werkzeug reloader.\n\n    .. versionadded:: 0.10\n    \"\"\"\n    return os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\"",
+   "sha256": "ccb0dae1edc3a05007a9176557cdfe90609676e23be1872716b460e7bb719a45",
+   "metrics": {
+    "lines": 7,
+    "signature": 1
+   }
+  },
+  "src/werkzeug/serving.py#make_server": {
+   "relative_path": "src/werkzeug/serving.py",
+   "start_line": 905,
+   "end_line": 947,
+   "text": "def make_server(\n    host: str,\n    port: int,\n    app: wt.WSGIApplication,\n    threaded: bool = False,\n    processes: int = 1,\n    request_handler: type[WSGIRequestHandler] | None = None,\n    passthrough_errors: bool = False,\n    ssl_context: _TSSLContextArg = None,\n    fd: int | None = None,\n) -> BaseWSGIServer:\n    \"\"\"Create an appropriate WSGI server instance based on the value of\n    ``threaded`` and ``processes``.\n\n    This is called from :func:`run_simple`, but can be used separately\n    to have access to the server object, such as to run it in a separate\n    thread.\n\n    See :func:`run_simple` for parameter docs.\n    \"\"\"\n    if threaded and processes > 1:\n        raise ValueError(\"Cannot have a multi-thread and multi-process server.\")\n\n    if threaded:\n        return ThreadedWSGIServer(\n            host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd\n        )\n\n    if processes > 1:\n        return ForkingWSGIServer(\n            host,\n            port,\n            app,\n            processes,\n            request_handler,\n            passthrough_errors,\n            ssl_context,\n            fd=fd,\n        )\n\n    return BaseWSGIServer(\n        host, port, app, request_handler, passthrough_errors, ssl_context, fd=fd\n    )",
+   "sha256": "ef562c9a07128440477b156aa477477de68dc64838613592a5cfeea895245d2f",
+   "metrics": {
+    "lines": 43,
+    "signature": 11
+   }
+  },
+  "src/werkzeug/serving.py#run_simple": {
+   "relative_path": "src/werkzeug/serving.py",
+   "start_line": 959,
+   "end_line": 1126,
+   "text": "def run_simple(\n    hostname: str,\n    port: int,\n    application: wt.WSGIApplication,\n    use_reloader: bool = False,\n    use_debugger: bool = False,\n    use_evalex: bool = True,\n    extra_files: t.Iterable[str] | None = None,\n    exclude_patterns: t.Iterable[str] | None = None,\n    reloader_interval: int = 1,\n    reloader_type: str = \"auto\",\n    threaded: bool = False,\n    processes: int = 1,\n    request_handler: type[WSGIRequestHandler] | None = None,\n    static_files: dict[str, str | tuple[str, str]] | None = None,\n    passthrough_errors: bool = False,\n    ssl_context: _TSSLContextArg = None,\n) -> None:\n    \"\"\"Start a development server for a WSGI application. Various\n    optional features can be enabled.\n\n    .. warning::\n\n        Do not use the development server when deploying to production.\n        It is intended for use only during local development. It is not\n        designed to be particularly efficient, stable, or secure.\n\n    :param hostname: The host to bind to, for example ``'localhost'``.\n        Can be a domain, IPv4 or IPv6 address, or file path starting\n        with ``unix://`` for a Unix socket.\n    :param port: The port to bind to, for example ``8080``. Using ``0``\n        tells the OS to pick a random free port.\n    :param application: The WSGI application to run.\n    :param use_reloader: Use a reloader process to restart the server\n        process when files are changed.\n    :param use_debugger: Use Werkzeug's debugger, which will show\n        formatted tracebacks on unhandled exceptions.\n    :param use_evalex: Make the debugger interactive. A Python terminal\n        can be opened for any frame in the traceback. Some protection is\n        provided by requiring a PIN, but this should never be enabled\n        on a publicly visible server.\n    :param extra_files: The reloader will watch these files for changes\n        in addition to Python modules. For example, watch a\n        configuration file.\n    :param exclude_patterns: The reloader will ignore changes to any\n        files matching these :mod:`fnmatch` patterns. For example,\n        ignore cache files.\n    :param reloader_interval: How often the reloader tries to check for\n        changes.\n    :param reloader_type: The reloader to use. The ``'stat'`` reloader\n        is built in, but may require significant CPU to watch files. The\n        ``'watchdog'`` reloader is much more efficient but requires\n        installing the ``watchdog`` package first.\n    :param threaded: Handle concurrent requests using threads. Cannot be\n        used with ``processes``.\n    :param processes: Handle concurrent requests using up to this number\n        of processes. Cannot be used with ``threaded``.\n    :param request_handler: Use a different\n        :class:`~BaseHTTPServer.BaseHTTPRequestHandler` subclass to\n        handle requests.\n    :param static_files: A dict mapping URL prefixes to directories to\n        serve static files from using\n        :class:`~werkzeug.middleware.SharedDataMiddleware`.\n    :param passthrough_errors: Don't catch unhandled exceptions at the\n        server level, let the server crash instead. If ``use_debugger``\n        is enabled, the debugger will still catch such errors.\n    :param ssl_context: Configure TLS to serve over HTTPS. Can be an\n        :class:`ssl.SSLContext` object, a ``(cert_file, key_file)``\n        tuple to create a typical context, or the string ``'adhoc'`` to\n        generate a temporary self-signed certificate.\n\n    .. versionchanged:: 2.1\n        Instructions are shown for dealing with an \"address already in\n        use\" error.\n\n    .. versionchanged:: 2.1\n        Running on ``0.0.0.0`` or ``::`` shows the loopback IP in\n        addition to a real IP.\n\n    .. versionchanged:: 2.1\n        The command-line interface was removed.\n\n    .. versionchanged:: 2.0\n        Running on ``0.0.0.0`` or ``::`` shows a real IP address that\n        was bound as well as a warning not to run the development server\n        in production.\n\n    .. versionchanged:: 2.0\n        The ``exclude_patterns`` parameter was added.\n\n    .. versionchanged:: 0.15\n        Bind to a Unix socket by passing a ``hostname`` that starts with\n        ``unix://``.\n\n    .. versionchanged:: 0.10\n        Improved the reloader and added support for changing the backend\n        through the ``reloader_type`` parameter.\n\n    .. versionchanged:: 0.9\n        A command-line interface was added.\n\n    .. versionchanged:: 0.8\n        ``ssl_context`` can be a tuple of paths to the certificate and\n        private key files.\n\n    .. versionchanged:: 0.6\n        The ``ssl_context`` parameter was added.\n\n    .. versionchanged:: 0.5\n       The ``static_files`` and ``passthrough_errors`` parameters were\n       added.\n    \"\"\"\n    if not isinstance(port, int):\n        raise TypeError(\"port must be an integer\")\n\n    if static_files:\n        from .middleware.shared_data import SharedDataMiddleware\n\n        application = SharedDataMiddleware(application, static_files)\n\n    if use_debugger:\n        from .debug import DebuggedApplication\n\n        application = DebuggedApplication(application, evalex=use_evalex)\n\n        # Allow the specified hostname to use the debugger, in addition to\n        # localhost domains.\n        if hostname not in {\"0.0.0.0\", \"[::]\"}:\n            application.trusted_hosts.append(hostname)\n\n    if not is_running_from_reloader():\n        fd = None\n    else:\n        fd = int(os.environ[\"WERKZEUG_SERVER_FD\"])\n\n    srv = make_server(\n        hostname,\n        port,\n        application,\n        threaded,\n        processes,\n        request_handler,\n        passthrough_errors,\n        ssl_context,\n        fd=fd,\n    )\n    srv.socket.set_inheritable(True)\n    os.environ[\"WERKZEUG_SERVER_FD\"] = str(srv.fileno())\n\n    if not is_running_from_reloader():\n        srv.log_startup()\n        _log(\"info\", _ansi_style(\"Press CTRL+C to quit\", \"yellow\"))\n\n    if use_reloader:\n        from ._reloader import run_with_reloader\n\n        try:\n            run_with_reloader(\n                srv.serve_forever,\n                extra_files=extra_files,\n                exclude_patterns=exclude_patterns,\n                interval=reloader_interval,\n                reloader_type=reloader_type,\n            )\n        finally:\n            srv.server_close()\n    else:\n        srv.serve_forever()",
+   "sha256": "fa025fccd73ecb5dfcb920be34a3af7bac71fe1e639d0a8fa488f8c75f277f73",
+   "metrics": {
+    "lines": 168,
+    "signature": 18
+   }
+  },
+  "src/werkzeug/test.py#run_wsgi_app": {
+   "relative_path": "src/werkzeug/test.py",
+   "start_line": 1231,
+   "end_line": 1304,
+   "text": "def run_wsgi_app(\n    app: wt.WSGIApplication, environ: wt.WSGIEnvironment, buffered: bool = False\n) -> tuple[t.Iterable[bytes], str, Headers]:\n    \"\"\"Return a tuple in the form (app_iter, status, headers) of the\n    application output.  This works best if you pass it an application that\n    returns an iterator all the time.\n\n    Sometimes applications may use the `write()` callable returned\n    by the `start_response` function.  This tries to resolve such edge\n    cases automatically.  But if you don't get the expected output you\n    should set `buffered` to `True` which enforces buffering.\n\n    If passed an invalid WSGI application the behavior of this function is\n    undefined.  Never pass non-conforming WSGI applications to this function.\n\n    :param app: the application to execute.\n    :param buffered: set to `True` to enforce buffering.\n    :return: tuple in the form ``(app_iter, status, headers)``\n    \"\"\"\n    # Copy environ to ensure any mutations by the app (ProxyFix, for\n    # example) don't affect subsequent requests (such as redirects).\n    environ = _get_environ(environ).copy()\n    status: str\n    response: tuple[str, list[tuple[str, str]]] | None = None\n    buffer: list[bytes] = []\n\n    def start_response(\n        status: str,\n        headers: list[tuple[str, str]],\n        exc_info: tuple[type[BaseException], BaseException, TracebackType]\n        | tuple[None, None, None]\n        | None = None,\n    ) -> t.Callable[[bytes], object]:\n        nonlocal response\n\n        if exc_info:\n            try:\n                raise exc_info[1].with_traceback(exc_info[2])  # type: ignore[union-attr]\n            finally:\n                exc_info = None\n\n        response = (status, headers)\n        return buffer.append\n\n    app_rv = app(environ, start_response)\n    close_func = getattr(app_rv, \"close\", None)\n    app_iter: t.Iterable[bytes] = iter(app_rv)\n\n    # when buffering we emit the close call early and convert the\n    # application iterator into a regular list\n    if buffered:\n        try:\n            app_iter = list(app_iter)\n        finally:\n            if close_func is not None:\n                close_func()\n\n    # Otherwise, iterate until a response, chain any received data with the\n    # original, and restore a close callable if needed.\n    else:\n        for item in app_iter:\n            buffer.append(item)\n\n            if response is not None:\n                break\n\n        if buffer:\n            app_iter = chain(buffer, app_iter)\n\n        if close_func is not None and app_iter is not app_rv:\n            app_iter = ClosingIterator(app_iter, close_func)\n\n    status, headers = response  # type: ignore[misc]\n    return app_iter, status, Headers(headers)",
+   "sha256": "8d5e16f9259e068af6f80931be014ac95ac1a5b5d9303771bac44b2dc37f290b",
+   "metrics": {
+    "lines": 74,
+    "signature": 3
+   }
+  },
+  "src/werkzeug/utils.py#send_file": {
+   "relative_path": "src/werkzeug/utils.py",
+   "start_line": 309,
+   "end_line": 554,
+   "text": "def send_file(\n    path_or_file: os.PathLike[str] | str | t.IO[bytes],\n    environ: wt.WSGIEnvironment,\n    mimetype: str | None = None,\n    as_attachment: bool = False,\n    download_name: str | None = None,\n    conditional: bool = True,\n    etag: bool | ETag | str = True,\n    last_modified: datetime | int | float | None = None,\n    max_age: int\n    | t.Callable[[os.PathLike[str] | str | None], int | None]\n    | None = None,\n    use_x_sendfile: bool = False,\n    response_class: type[Response] | None = None,\n    _root_path: os.PathLike[str] | str | None = None,\n) -> Response:\n    \"\"\"Send the contents of a file to the client.\n\n    The first argument can be a file path or a file-like object in ``rb`` mode.\n    Paths are preferred in most cases because Werkzeug can manage the file.\n    Passing a file-like object is mostly useful when building a file in memory\n    with :class:`io.BytesIO`. If the file is seekable, its position will be set\n    to the beginning.\n\n    Never pass a path provided by a user. The path is assumed to be trusted, so\n    a user could craft a path to access a file you didn't intend. Use\n    :func:`send_from_directory` to safely serve user-provided paths.\n\n    If the WSGI server provides ``environ[\"wsgi.file_wrapper\"]``, it is\n    used. Alternatively, if the HTTP server supports ``X-Sendfile``,\n    ``use_x_sendfile=True`` will tell the server to send the given path, which\n    is much more efficient than reading it in Python.\n\n    :param path_or_file: The path to the file to send, relative to the current\n        directory if a relative path is given. Alternatively, a file-like object\n        in ``rb`` mode. The path will be ``file.name`` if available.\n    :param environ: The WSGI environ for the current request.\n    :param mimetype: The MIME type to send for the file. If not provided, it is\n        detected from the file, and falls back to ``application/octet-stream``.\n    :param as_attachment: Indicate to a browser that it should offer to save the\n        file instead of displaying it.\n    :param download_name: The default name browsers will use when saving the\n        file. Defaults to the passed file name.\n    :param conditional: Enable conditional and range responses based on request\n        headers.\n    :param etag: Generate a strong ETag based on the file's last modified time\n        and size if available. Or an already generated ETag, assumed strong if a\n        ``str`` is given.\n    :param last_modified: The last modified time as a ``datetime`` or seconds\n        seconds. If not provided, it is detected from the file. Typically only\n        needs to be provided for ``BytesIO``.\n    :param max_age: How long the client should cache the file, in seconds. If\n        set, ``Cache-Control`` will be ``public``, otherwise it will be\n        ``no-cache`` to prefer conditional caching.\n    :param use_x_sendfile: Set the ``X-Sendfile`` header to let the server\n        efficiently send the file. Requires support from the HTTP server..\n    :param response_class: Build the response using this class. Defaults to\n        :class:`.Response`.\n    :param _root_path: Do not use. For internal use only. Use\n        :func:`send_from_directory` to safely send files under a path.\n\n    .. versionchanged:: 3.2\n        Improve handling of conditional and range requests.\n\n        Path, size, and modification time are detected from file-like objects.\n        The position is set to the beginning.\n\n        If ``mimetype`` nor ``download_name`` is given, default to\n        ``application/octet-stream``.\n\n    .. versionchanged:: 2.0.2\n        ``send_file`` only sets a detected ``Content-Encoding`` if\n        ``as_attachment`` is disabled.\n\n    .. versionadded:: 2.0\n        Adapted from Flask's implementation.\n\n        ``download_name`` replaces Flask's ``attachment_filename`` parameter. If\n        ``as_attachment=False``, it is passed with\n        ``Content-Disposition: inline`` instead.\n\n        ``max_age`` replaces Flask's ``cache_timeout`` parameter.\n        ``conditional`` is enabled and ``max_age`` is not set by default.\n\n        ``etag`` replaces Flask's ``add_etags`` parameter. It can be a string to\n        use instead of generating one.\n\n        If an encoding is returned when guessing ``mimetype``, set the\n        ``Content-Encoding`` header.\n    \"\"\"\n    if response_class is None:\n        from .wrappers import Response\n\n        response_class = Response\n\n    path: os.PathLike[str] | str | None = None\n    file: t.IO[bytes]\n    size: int | None = None\n    headers = Headers()\n\n    if isinstance(path_or_file, (os.PathLike, str)):\n        path = path_or_file\n\n        # Flask will pass app.root_path, allowing its send_file wrapper\n        # to not have to deal with paths.\n        if _root_path is not None:\n            path = os.path.join(_root_path, path)\n        else:\n            path = os.path.abspath(path)\n\n        stat = os.stat(path)\n        size = stat.st_size\n\n        if last_modified is None:\n            last_modified = stat.st_mtime\n\n        file = open(path, \"rb\")\n    else:\n        file = path_or_file\n\n        if isinstance(file, io.TextIOBase):\n            raise ValueError(\"File must be in binary mode, or 'BytesIO'.\")\n\n        if hasattr(file, \"name\"):\n            path = file.name\n\n        if file.seekable():\n            size = file.seek(0, os.SEEK_END)\n            file.seek(0)\n\n        if size is None or last_modified is None:\n            try:\n                fileno = file.fileno()\n            except OSError:\n                pass\n            else:\n                stat = os.stat(fileno)\n\n                if size is None:\n                    size = stat.st_size\n\n                if last_modified is None:\n                    last_modified = stat.st_mtime\n\n    if download_name is None and path is not None:\n        download_name = os.path.basename(path)\n\n    if mimetype is None:\n        if download_name is None:\n            mimetype = \"application/octet-stream\"\n        else:\n            mimetype, encoding = mimetypes.guess_type(download_name)\n\n            if mimetype is None:\n                mimetype = \"application/octet-stream\"\n\n            # Don't send encoding for attachments, it causes browsers to\n            # decompress tar.gz files when saving.\n            if encoding is not None and not as_attachment:\n                headers[\"Content-Encoding\"] = encoding\n\n    if download_name is not None:\n        if download_name.isascii():\n            names = {\"filename\": download_name}\n        else:\n            simple = unicodedata.normalize(\"NFKD\", download_name)\n            simple = simple.encode(\"ascii\", \"ignore\").decode(\"ascii\")\n            # safe = RFC 5987 attr-char\n            quoted = quote(download_name, safe=\"!#$&+-.^_`|~\")\n            names = {\"filename\": simple, \"filename*\": f\"UTF-8''{quoted}\"}\n\n        value = \"attachment\" if as_attachment else \"inline\"\n        headers.set(\"Content-Disposition\", value, **names)\n    elif as_attachment:\n        raise TypeError(\n            \"No name provided for attachment. Either pass 'download_name', or\"\n            \" pass a path instead of a file.\"\n        )\n\n    from .wrappers.request import Request\n\n    request = Request(environ)\n    rv = response_class(\n        request.wrap_file(file),\n        mimetype=mimetype,\n        headers=headers,\n        direct_passthrough=True,\n    )\n\n    if use_x_sendfile and path is not None:\n        file.close()\n        rv.headers[\"X-Sendfile\"] = path\n        rv.response = []\n\n    if size is not None:\n        rv.content_length = size\n\n    if last_modified is not None:\n        rv.last_modified = last_modified\n\n    cache_control = ResponseCacheControl()\n    cache_control.no_cache = True\n\n    # Flask will pass app.get_send_file_max_age, allowing its send_file\n    # wrapper to not have to deal with paths.\n    if callable(max_age):\n        max_age = max_age(path)\n\n    if max_age is not None:\n        if max_age > 0:\n            cache_control.no_cache = None\n            cache_control.public = True\n\n        cache_control.max_age = max_age\n        rv.expires = int(time() + max_age)\n\n    rv.cache_control = cache_control\n\n    if isinstance(etag, str):\n        rv.etag = etag\n    elif etag:\n        parts = []\n\n        if last_modified is not None:\n            if isinstance(last_modified, datetime):\n                parts.append(str(last_modified.timestamp()))\n            else:\n                parts.append(str(last_modified))\n\n        if size is not None:\n            parts.append(str(size))\n\n        rv.etag = \"-\".join(parts)\n\n    if conditional:\n        try:\n            rv.apply_conditions(request)\n            rv.apply_range(request)\n        except HTTPException:\n            rv.close()\n            raise\n\n        if rv.status_code == 304:\n            rv.headers.pop(\"X-Sendfile\", None)\n\n    return rv",
+   "sha256": "7b42d463a638c355cb72e739638bceffb53f58f960734689f291f5980fa6eeb9",
+   "metrics": {
+    "lines": 246,
+    "signature": 16
+   }
+  },
+  "tools/dumppdf.py#dumpallobjs": {
+   "relative_path": "tools/dumppdf.py",
+   "start_line": 122,
+   "end_line": 145,
+   "text": "def dumpallobjs(\n    out: TextIO,\n    doc: PDFDocument,\n    codec: str | None = None,\n    show_fallback_xref: bool = False,\n) -> None:\n    visited = set()\n    out.write(\"<pdf>\")\n    for xref in doc.xrefs:\n        for objid in xref.get_objids():\n            if objid in visited:\n                continue\n            visited.add(objid)\n            try:\n                obj = doc.getobj(objid)\n                if obj is None:\n                    continue\n                out.write(f'<object id=\"{objid}\">\\n')\n                dumpxml(out, obj, codec=codec)\n                out.write(\"\\n</object>\\n\\n\")\n            except PDFObjectNotFound as e:\n                print(f\"not found: {e!r}\")\n    dumptrailers(out, doc, show_fallback_xref)\n    out.write(\"</pdf>\")",
+   "sha256": "899d7b0c1b10cfefd00ba33f3e99a1762670043291dcef64711a9b9d90d25924",
+   "metrics": {
+    "lines": 24,
+    "signature": 6
+   }
+  },
+  "tools/dumppdf.py#dumpoutline": {
+   "relative_path": "tools/dumppdf.py",
+   "start_line": 148,
+   "end_line": 204,
+   "text": "def dumpoutline(\n    outfp: TextIO,\n    fname: str,\n    objids: Any,\n    pagenos: Container[int],\n    password: str = \"\",\n    dumpall: bool = False,\n    codec: str | None = None,\n    extractdir: str | None = None,\n) -> None:\n    with open(fname, \"rb\") as fp:\n        parser = PDFParser(fp)\n        doc = PDFDocument(parser, password)\n        pages = {\n            page.pageid: pageno\n            for (pageno, page) in enumerate(PDFPage.create_pages(doc), 1)\n        }\n\n        def resolve_dest(dest: object) -> Any:\n            if isinstance(dest, (str, bytes)):\n                dest = resolve1(doc.get_dest(dest))\n            elif isinstance(dest, PSLiteral):\n                dest = resolve1(doc.get_dest(dest.name))\n            if isinstance(dest, dict):\n                dest = dest[\"D\"]\n            if isinstance(dest, PDFObjRef):\n                dest = dest.resolve()\n            return dest\n\n        try:\n            outlines = doc.get_outlines()\n            outfp.write(\"<outlines>\\n\")\n            for level, title, dest, a, _se in outlines:\n                pageno = None\n                if dest:\n                    dest = resolve_dest(dest)\n                    pageno = pages[dest[0].objid]\n                elif a:\n                    action = a\n                    if isinstance(action, dict):\n                        subtype = action.get(\"S\")\n                        if subtype and repr(subtype) == \"/'GoTo'\" and action.get(\"D\"):\n                            dest = resolve_dest(action[\"D\"])\n                            pageno = pages[dest[0].objid]\n                s = escape(title)\n                outfp.write(f'<outline level=\"{level!r}\" title=\"{s}\">\\n')\n                if dest is not None:\n                    outfp.write(\"<dest>\")\n                    dumpxml(outfp, dest)\n                    outfp.write(\"</dest>\\n\")\n                if pageno is not None:\n                    outfp.write(f\"<pageno>{pageno!r}</pageno>\\n\")\n                outfp.write(\"</outline>\\n\")\n            outfp.write(\"</outlines>\\n\")\n        except PDFNoOutlines:\n            pass\n        parser.flush()",
+   "sha256": "1d09e96a6e022e4e4672adf84e5e9c46736b5c76b20925fcb75c5ee7d83130ea",
+   "metrics": {
+    "lines": 57,
+    "signature": 10
+   }
+  },
+  "tools/dumppdf.py#dumppdf": {
+   "relative_path": "tools/dumppdf.py",
+   "start_line": 250,
+   "end_line": 282,
+   "text": "def dumppdf(\n    outfp: TextIO,\n    fname: str,\n    objids: Iterable[int],\n    pagenos: Container[int],\n    password: str = \"\",\n    dumpall: bool = False,\n    codec: str | None = None,\n    extractdir: str | None = None,\n    show_fallback_xref: bool = False,\n) -> None:\n    with open(fname, \"rb\") as fp:\n        parser = PDFParser(fp)\n        doc = PDFDocument(parser, password)\n        if objids:\n            for objid in objids:\n                obj = doc.getobj(objid)\n                dumpxml(outfp, obj, codec=codec)\n        if pagenos:\n            for pageno, page in enumerate(PDFPage.create_pages(doc)):\n                if pageno in pagenos:\n                    if codec:\n                        for obj in page.contents:\n                            obj = stream_value(obj)\n                            dumpxml(outfp, obj, codec=codec)\n                    else:\n                        dumpxml(outfp, page.attrs)\n        if dumpall:\n            dumpallobjs(outfp, doc, codec, show_fallback_xref)\n        if (not objids) and (not pagenos) and (not dumpall):\n            dumptrailers(outfp, doc, show_fallback_xref)\n    if codec not in (\"raw\", \"binary\"):\n        outfp.write(\"\\n\")",
+   "sha256": "c17766bc228ad3b300f9f59e2ddb33a4aa62e79f88e4fa740b0cf470a943f9af",
+   "metrics": {
+    "lines": 33,
+    "signature": 11
+   }
+  },
+  "tools/dumppdf.py#dumptrailers": {
+   "relative_path": "tools/dumppdf.py",
+   "start_line": 102,
+   "end_line": 119,
+   "text": "def dumptrailers(\n    out: TextIO,\n    doc: PDFDocument,\n    show_fallback_xref: bool = False,\n) -> None:\n    for xref in doc.xrefs:\n        if not isinstance(xref, PDFXRefFallback) or show_fallback_xref:\n            out.write(\"<trailer>\\n\")\n            dumpxml(out, xref.get_trailer())\n            out.write(\"\\n</trailer>\\n\\n\")\n    no_xrefs = all(isinstance(xref, PDFXRefFallback) for xref in doc.xrefs)\n    if no_xrefs and not show_fallback_xref:\n        msg = (\n            \"This PDF does not have an xref. Use --show-fallback-xref if \"\n            \"you want to display the content of a fallback xref that \"\n            \"contains all objects.\"\n        )\n        logger.warning(msg)",
+   "sha256": "40edc6d811ac43e72755a5844878179194c6fd6cf4ad61ddaa00caa9e3e048d3",
+   "metrics": {
+    "lines": 18,
+    "signature": 5
+   }
+  },
+  "tools/pdf2txt.py#extract_text": {
+   "relative_path": "tools/pdf2txt.py",
+   "start_line": 31,
+   "end_line": 69,
+   "text": "def extract_text(\n    files: Iterable[str] = [],\n    outfile: str = \"-\",\n    laparams: LAParams | None = None,\n    output_type: str = \"text\",\n    codec: str = \"utf-8\",\n    strip_control: bool = False,\n    maxpages: int = 0,\n    page_numbers: Container[int] | None = None,\n    password: str = \"\",\n    scale: float = 1.0,\n    rotation: int = 0,\n    layoutmode: str = \"normal\",\n    output_dir: str | None = None,\n    debug: bool = False,\n    disable_caching: bool = False,\n    **kwargs: Any,\n) -> None:\n    if not files:\n        raise PDFValueError(\"Must provide files to work upon!\")\n\n    if output_type == \"text\" and outfile != \"-\":\n        for override, alttype in OUTPUT_TYPES:\n            if outfile.endswith(override):\n                output_type = alttype\n\n    if outfile == \"-\":\n        outfp: AnyIO = sys.stdout\n        if sys.stdout.encoding is not None:\n            codec = \"utf-8\"\n        for fname in files:\n            with open(fname, \"rb\") as fp:\n                pdfminer.high_level.extract_text_to_fp(fp, **locals())\n    else:\n        # Use context manager for file output, ensuring proper cleanup\n        with open(outfile, \"wb\") as outfp:\n            for fname in files:\n                with open(fname, \"rb\") as fp:\n                    pdfminer.high_level.extract_text_to_fp(fp, **locals())",
+   "sha256": "ac7ec05c0cf54fabb22e16dc137e466355aec7a92cfc4ade73370b16880e994b",
+   "metrics": {
+    "lines": 39,
+    "signature": 18
+   }
+  }
+ }
+}

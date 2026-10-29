@@ -1,0 +1,26 @@
+{
+  "id": "P2", "repo": "pdfminer/pdfminer.six", "slot": "B", "style": "explicit",
+  "query": "Explain how `dumppdf` in `tools/dumppdf.py` decides what to dump from a PDF file: how object ids, page numbers, the dump-all option and the codec interact, what `dumpallobjs` and `dumptrailers` contribute, and how fallback cross-reference tables and missing objects are handled.",
+  "operations": [
+    {"name": "Requested object ids are fetched from the document and dumped as XML", "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": ["obj = doc.getobj(objid)"]},
+    {"name": "For selected pages a codec dumps the page content streams, otherwise the page attributes", "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": ["obj = stream_value(obj)", "dumpxml(outfp, page.attrs)"]},
+    {"name": "The dump-all option dumps every object in the document", "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": ["dumpallobjs(outfp, doc, codec, show_fallback_xref)"]},
+    {"name": "With nothing requested only the trailers are dumped", "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": ["if (not objids) and (not pagenos) and (not dumpall):", "dumptrailers(outfp, doc, show_fallback_xref)"]},
+    {"name": "The full dump skips objects it has already seen and reports objects that cannot be found", "canonical_id": "tools/dumppdf.py#dumpallobjs",
+     "expressions": ["if objid in visited:", "except PDFObjectNotFound as e:"]}
+  ],
+  "dependencies": [
+    {"name": "A trailing newline is written unless the codec is raw or binary", "canonical_id": "tools/dumppdf.py#dumppdf",
+     "expressions": ["if codec not in (\"raw\", \"binary\"):"]},
+    {"name": "Trailers of fallback cross-reference tables are shown only on request", "canonical_id": "tools/dumppdf.py#dumptrailers",
+     "expressions": ["if not isinstance(xref, PDFXRefFallback) or show_fallback_xref:"]},
+    {"name": "A warning is logged when the file has no real cross-reference table and fallback tables are hidden", "canonical_id": "tools/dumppdf.py#dumptrailers",
+     "expressions": ["no_xrefs = all(isinstance(xref, PDFXRefFallback) for xref in doc.xrefs)", "if no_xrefs and not show_fallback_xref:", "logger.warning(msg)"]},
+    {"name": "The full dump is wrapped in a pdf element and ends with the trailers", "canonical_id": "tools/dumppdf.py#dumpallobjs",
+     "expressions": ["out.write(\"<pdf>\")", "dumptrailers(out, doc, show_fallback_xref)", "out.write(\"</pdf>\")"]}
+  ]
+}

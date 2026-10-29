@@ -1,0 +1,26 @@
+{
+  "id": "P4", "repo": "pdfminer/pdfminer.six", "slot": "D", "style": "natural",
+  "query": "How does pdfminer's command-line dump tool print a document's outline (its bookmarks): how does it map each entry to a page number, how does it deal with destinations given as names, references or actions, and what happens when the document has no outline?",
+  "operations": [
+    {"name": "A table from page object ids to page numbers is built first", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["for (pageno, page) in enumerate(PDFPage.create_pages(doc), 1)"]},
+    {"name": "Named destinations are looked up in the document, whether given as a string or a literal", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["dest = resolve1(doc.get_dest(dest))", "dest = resolve1(doc.get_dest(dest.name))"]},
+    {"name": "A dictionary destination is unwrapped to its D entry", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["dest = dest[\"D\"]"]},
+    {"name": "A GoTo action supplies the destination when there is no direct one", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["if subtype and repr(subtype) == \"/'GoTo'\" and action.get(\"D\"):"]},
+    {"name": "A document without an outline is handled silently", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["except PDFNoOutlines:"]}
+  ],
+  "dependencies": [
+    {"name": "Actions are only consulted when an entry has no direct destination", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["elif a:"]},
+    {"name": "Indirect object references are resolved to the object they point to", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["if isinstance(dest, PDFObjRef):", "dest = dest.resolve()"]},
+    {"name": "The destination and the page number are written only when they were found", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["if dest is not None:", "if pageno is not None:"]},
+    {"name": "Titles are escaped before they are written into the XML attribute", "canonical_id": "tools/dumppdf.py#dumpoutline",
+     "expressions": ["s = escape(title)"]}
+  ]
+}

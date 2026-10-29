@@ -1,0 +1,84 @@
+{
+  "id": "W3",
+  "repo": "pallets/werkzeug",
+  "slot": "C",
+  "style": "explicit",
+  "query": "In `src/werkzeug/_reloader.py`, explain how `run_with_reloader` runs an application under the reloader: how the reloader implementation is chosen, how the process behaves differently when it is the reloaded child versus the original parent, how the application and the reloader loop run together, and how it exits on a termination signal and on Ctrl+C.",
+  "operations": [
+    {
+      "name": "A termination signal makes the process exit cleanly",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))"
+      ],
+      "needed_for": "how it exits on a termination signal"
+    },
+    {
+      "name": "The reloader implementation is looked up by the requested type",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "reloader = reloader_loops[reloader_type]("
+      ],
+      "needed_for": "how the reloader implementation is chosen"
+    },
+    {
+      "name": "In the child the application runs in a daemon thread",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "t = threading.Thread(target=main_func, args=())",
+        "t.daemon = True"
+      ],
+      "needed_for": "how the application runs in the reloaded child"
+    },
+    {
+      "name": "The reloader update loop runs alongside the application thread",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "reloader.run()"
+      ],
+      "needed_for": "how the application and the reloader loop run together"
+    },
+    {
+      "name": "The original parent process restarts itself under the reloader and exits with its status",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "sys.exit(reloader.restart_with_reloader())"
+      ],
+      "needed_for": "how it behaves as the original parent"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "Child versus parent is decided from an environment variable",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "if os.environ.get(\"WERKZEUG_RUN_MAIN\") == \"true\":"
+      ],
+      "needed_for": "how the process behaves as the reloaded child versus the original parent"
+    },
+    {
+      "name": "The application thread is started only after the reloader context has been entered",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "with reloader:",
+        "t.start()"
+      ],
+      "needed_for": "how the application and the reloader loop run together"
+    },
+    {
+      "name": "Ctrl+C ends the run quietly",
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "expressions": [
+        "except KeyboardInterrupt:"
+      ],
+      "needed_for": "how it exits on Ctrl+C"
+    }
+  ],
+  "revisions": [
+    {
+      "round": 1,
+      "reviewer_note": "resolve the terminal-echo dependency",
+      "change": "Removed the `ensure_echo_on()` dependency. The function only calls a helper whose behaviour (restoring terminal echo) is not visible in `run_with_reloader`, and the question does not ask about it. Three dependencies and five operations remain; every expression is otherwise unchanged and the witness window is still 18 lines."
+    }
+  ]
+}

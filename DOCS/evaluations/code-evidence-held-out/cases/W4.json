@@ -1,0 +1,86 @@
+{
+  "id": "W4",
+  "repo": "pallets/werkzeug",
+  "slot": "D",
+  "style": "natural",
+  "query": "How does Werkzeug's test machinery execute a WSGI application and return its response: what happens when the application raises through start_response or uses the old write callable, how is the response iterator handled and closed, and what changes when the caller asks for the output to be buffered?",
+  "operations": [
+    {
+      "name": "An exc_info passed to start_response is re-raised with its traceback",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "raise exc_info[1].with_traceback(exc_info[2])"
+      ],
+      "needed_for": "what happens when the application raises through start_response"
+    },
+    {
+      "name": "The write callable returned by start_response appends to a buffer",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "return buffer.append"
+      ],
+      "needed_for": "what happens when the application uses the old write callable"
+    },
+    {
+      "name": "Buffered mode turns the iterator into a list and closes the application early",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "app_iter = list(app_iter)",
+        "close_func()"
+      ],
+      "needed_for": "what changes when the output is buffered"
+    },
+    {
+      "name": "Unbuffered mode iterates only until a response has started and chains what was already read",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "if response is not None:",
+        "app_iter = chain(buffer, app_iter)"
+      ],
+      "needed_for": "how the response iterator is handled"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "The application's close callable is discovered up front",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "close_func = getattr(app_rv, \"close\", None)"
+      ],
+      "needed_for": "how the iterator is closed"
+    },
+    {
+      "name": "A close callable is restored on the chained iterator only when the iterator was replaced",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "if close_func is not None and app_iter is not app_rv:",
+        "app_iter = ClosingIterator(app_iter, close_func)"
+      ],
+      "needed_for": "how the iterator is closed"
+    },
+    {
+      "name": "The exc_info reference is always cleared after re-raising",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "exc_info = None"
+      ],
+      "needed_for": "what happens when the application raises through start_response"
+    },
+    {
+      "name": "The status and headers come from the recorded response and are returned with the iterator",
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "expressions": [
+        "status, headers = response",
+        "return app_iter, status, Headers(headers)"
+      ],
+      "needed_for": "how the response is returned"
+    }
+  ],
+  "revisions": [
+    {
+      "round": 1,
+      "reviewer_note": "resolve the environment-copy requirement",
+      "change": "Removed the `environ = _get_environ(environ).copy()` operation: the question does not ask whether the caller's environment is protected. Four operations and four dependencies remain; the question is unchanged."
+    }
+  ]
+}

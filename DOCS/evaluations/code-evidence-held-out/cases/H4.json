@@ -1,0 +1,82 @@
+{
+  "id": "H4",
+  "repo": "pypa/hatch",
+  "slot": "D",
+  "style": "natural",
+  "query": "When I execute a command in project environments with hatch and combine environment names, matrix include/exclude variables and a JSON filter, how does hatch decide which environments the command is actually executed in, and in which situations does it refuse to continue?",
+  "operations": [
+    {
+      "name": "A duplicated included matrix variable aborts",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "app.abort(f\"Duplicate included variable: {e}\")"
+      ]
+    },
+    {
+      "name": "With no environment named the current default environment is used",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "env_names = (app.env,)"
+      ]
+    },
+    {
+      "name": "Named environments are de-duplicated while keeping their order",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "ordered_env_names = list(dict.fromkeys(env_names))"
+      ]
+    },
+    {
+      "name": "A matrix name expands to its environments, narrowed by the include and exclude variables",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "environments.extend(select_environments(env_data, included_variables, excluded_variables))"
+      ]
+    },
+    {
+      "name": "If nothing was selected the command aborts",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "app.abort(\"No environments were selected\")"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "The special system environment is defined on the fly when it is requested",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "elif \"system\" in env_names:",
+        "\"type\": \"system\","
+      ]
+    },
+    {
+      "name": "A matrix with no variables defined aborts",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "app.abort(f\"No variables defined for matrix: {env_name}\")"
+      ]
+    },
+    {
+      "name": "A JSON filter must be a mapping and then replaces the selection",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "app.abort(\"The --filter/-f option must be a JSON mapping\")",
+        "environments[:] = filter_environments(project.config.envs, filter_data)"
+      ]
+    },
+    {
+      "name": "Include/exclude variables are rejected when no matrix was selected",
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "expressions": [
+        "elif not matrix_selected and (included_variables or excluded_variables):"
+      ]
+    }
+  ],
+  "revisions": [
+    {
+      "round": 0,
+      "note": "Question rewritten before review to remove the CLI command name (the symbol's name) from a natural-language question. No expression changed."
+    }
+  ]
+}

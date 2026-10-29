@@ -1,0 +1,26 @@
+{
+  "id": "W1", "repo": "pallets/werkzeug", "slot": "A", "style": "natural",
+  "query": "In Werkzeug, when a file or a path is served back to the client as a WSGI response, how are the download name and content type worked out, which headers are produced for downloading, caching and conditional or range requests, and which invalid inputs cause errors?",
+  "operations": [
+    {"name": "A text-mode file object is rejected", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["raise ValueError(\"File must be in binary mode, or 'BytesIO'.\")"]},
+    {"name": "A non-ASCII download name produces both a plain and an RFC 5987 encoded filename", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["names = {\"filename\": simple, \"filename*\": f\"UTF-8''{quoted}\"}"]},
+    {"name": "An attachment without any name is rejected", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["\"No name provided for attachment. Either pass 'download_name', or\""]},
+    {"name": "X-Sendfile mode hands the path to the server and empties the body", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["rv.headers[\"X-Sendfile\"] = path"]},
+    {"name": "Conditional and range handling is applied, and the response is closed if it fails", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["rv.apply_conditions(request)", "rv.apply_range(request)", "rv.close()"]}
+  ],
+  "dependencies": [
+    {"name": "A content encoding header is only sent when the file is not an attachment", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["mimetype, encoding = mimetypes.guess_type(download_name)", "if encoding is not None and not as_attachment:"]},
+    {"name": "For a path the size and modification time come from stat; for a file object they come from seeking, falling back to its file descriptor", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["stat = os.stat(path)", "size = file.seek(0, os.SEEK_END)", "fileno = file.fileno()", "except OSError:"]},
+    {"name": "Responses default to no-cache; a positive max age makes them public and sets an expiry", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["cache_control.no_cache = True", "cache_control.public = True", "rv.expires = int(time() + max_age)"]},
+    {"name": "An ETag given as a string is used as is; otherwise it is built from modification time and size", "canonical_id": "src/werkzeug/utils.py#send_file",
+     "expressions": ["if isinstance(etag, str):", "rv.etag = \"-\".join(parts)"]}
+  ]
+}
