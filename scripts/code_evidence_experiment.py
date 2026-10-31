@@ -621,7 +621,10 @@ def install_observers(service: Any):
 
     def observe_assemble(chunks, budget):
         result = original_assemble(chunks, budget)
-        if budget <= 4096:
+        if budget > 4096:
+            # #300: the unbounded call's input is the pre-budget candidate list.
+            observed["pre_budget_chunks"] = list(chunks)
+        else:
             observed["final_chunks"] = result.chunks
             observed["assembled_context"] = result.text
         return result
@@ -684,6 +687,7 @@ async def control(args: argparse.Namespace) -> None:
 
 
 async def capture(args: argparse.Namespace, mode: str) -> None:
+    label_name = args.label or mode
     import httpx
 
     manifest = read(DIRECTORY / "manifest.json")
@@ -726,7 +730,7 @@ async def capture(args: argparse.Namespace, mode: str) -> None:
     logging.disable(logging.CRITICAL)
     try:
         for case in cases:
-            path = RAW / f"{mode}-{case['id']}.json"
+            path = RAW / f"{label_name}-{case['id']}.json"
             if path.exists():
                 print(f"{case['id']}: existing baseline preserved", flush=True)
                 continue
@@ -789,7 +793,8 @@ async def capture(args: argparse.Namespace, mode: str) -> None:
         if observed and "score" not in observed:
             # Preserve observations without giving an incomplete request a score.
             observed["status"] = "incomplete-no-quality-score"
-            write(RESULTS / f"incomplete-{mode}-{observed['case_id']}.json", observed)
+            incomplete = f"incomplete-{label_name}-{observed['case_id']}.json"
+            write(RESULTS / incomplete, observed)
         restore()
 
 
@@ -806,6 +811,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("freeze", "baseline", "control"))
     parser.add_argument("--host", default=os.environ.get("E1_HOST"))
+    parser.add_argument(
+        "--label", help="capture file prefix (default: the command), e.g. control-pool"
+    )
     args = parser.parse_args()
     if args.command != "freeze" and not args.host:
         parser.error("baseline/control need --host or E1_HOST (e.g. http://<host>)")
