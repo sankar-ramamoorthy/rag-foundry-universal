@@ -61,8 +61,11 @@ The foundry pin above (generation `60d5ed0a-a294-4276-890f-741d7cad5c41`, commit
 longer exists in the deployed stack: a re-ingest replaced it, and the current generation also
 contains answer-bearing documents. F1-F3 are to be re-run only on a clean corpus rebuilt from
 commit `109f12d8` (#292), after answer-bearing paths are excludable (#291). The frozen
-`manifest.json` is not edited; a new pin file will record the new corpus. LightRAG's pin is
-intact. See the [decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md).
+`manifest.json` is not edited; the new corpus is recorded in
+[dev-corpus-pin.json](/DOCS/evaluations/code-evidence-e1/dev-corpus-pin.json) (2026-10-31:
+repo `a6e336ef-d0ee-54dd-a687-140dc1df17d3`, generation `d1dfbf70-7a95-4b0e-b3ed-786b9e68b4f9`,
+commit `109f12d8`, 10,293 nodes; four function hashes match; embedder digest and one path-pattern
+match still unverified; pending owner approval). LightRAG's pin is intact. See the [decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md).
 
 Reproduce baseline capture using the existing repository virtual environment:
 

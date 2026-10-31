@@ -1,0 +1,53 @@
+{
+  "purpose": "Clean development corpus for E1 cases F1-F3 (issue #292); replaces the lost pin in manifest.json, which is not edited",
+  "status": "recorded-pending-owner-approval; no F1-F3 query may run until the owner approves the equivalence evidence",
+  "recorded_at": "2026-10-31",
+  "source": {
+    "git_url": "https://github.com/sankar-ramamoorthy/rag-foundry-universal-e1-dev-corpus.git",
+    "commit_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+    "tree_sha": "377b725ca21b51ee3ebc4b36c2a1e4321597d8d5",
+    "same_commit_object_as_main_repository": true
+  },
+  "generation": {
+    "repo_id": "a6e336ef-d0ee-54dd-a687-140dc1df17d3",
+    "ingestion_id": "d1dfbf70-7a95-4b0e-b3ed-786b9e68b4f9",
+    "generation_status": "ready",
+    "ingested_commit_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+    "started_at": "2026-10-31T01:40:38Z",
+    "finished_at": "2026-10-31T02:03:03Z",
+    "is_incremental": false,
+    "node_count": 10293,
+    "chunk_count": 22670,
+    "file_count": 768,
+    "chunking_config_version": "heuristic-v1",
+    "embedding_config_version": "ollama:mxbai-embed-large:latest",
+    "deployed_runtime_git_sha": "88fa1b7f146538c3b590f4287d1bf3d6f474d270"
+  },
+  "comparison_with_original_generation": {
+    "original_ingestion_id": "60d5ed0a-a294-4276-890f-741d7cad5c41",
+    "original_node_count": 10293,
+    "node_count_equal": true,
+    "note": "The original rows and vectors no longer exist, so equivalence is argued (same commit, same tree, same function hashes, same node count, same embedder name) but cannot be proven. The 2026-10-14 baseline stays historical."
+  },
+  "function_text_sha256_verified_against_manifest": {
+    "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context": "09299aafbc370d45da6a6a98b22a22212afa93f41f0ffd00fa21d93e9c5dc4ef",
+    "rag_orchestrator/src/retrieval/agent_adapter.py#conservative_token_count": "ffdaadf447efcb7403528d65db5b521c4ef83446029cd3256bb59f3653a38e22",
+    "rag_orchestrator/src/retrieval/codebase_utils.py#get_cached_graph_with_generation": "36ae8ff22bb1c9bab78e60a7c1f3382133e3da5028a2ec1072f8042321152913",
+    "rag_orchestrator/src/core/service.py#run_rag": "34a9632b3731981e8c9da4e9b64d3bc588c73824863a98e921388a9ebd6a5c3e"
+  },
+  "answer_bearing_check": {
+    "method": "POST /v1/graph/repos/{repo_id}/nodes/lookup for 33 tracked files under DOCS/evaluations/code-evidence-e1/ and code-evidence-held-out/; the same probe finds 11 in the current dev repo",
+    "nodes_found_in_clean_corpus": 0,
+    "caveat": "A broader path-pattern SELECT (including '%e1%', '%oracle%', '%feasibility%') matched 22 nodes. The only file in the pinned tree matching any pattern is DOCS/test_results/phase1_benchmark.py ('phase1' contains 'e1'), which has 3 definitions; the 22-node count is not yet explained per path. The follow-up per-path query was denied by the permission classifier and not retried."
+  },
+  "embedder": {
+    "contract_model": "mxbai-embed-large:latest",
+    "contract_digest": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
+    "digest_used_for_this_ingestion": "unknown",
+    "note": "The embedding digest is not stored per ingestion; only the model name is. Treat the digest as unverified until the operator reports the effective digest on the host."
+  },
+  "known_differences": [
+    "file_count 768 vs 777 files in my earlier local ingestion-walk count; node count equals the original, so likely benign but unexplained",
+    "ingestion ran on the deployed build 88fa1b7, whose behavior may differ from the original ingestion's build"
+  ]
+}
