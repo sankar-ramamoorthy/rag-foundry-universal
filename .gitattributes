@@ -16,3 +16,6 @@ DOCS/evaluations/code-evidence-held-out/manifest.sha256 text eol=lf
 # Frozen E1 held-out pre-registration (#303): its recorded SHA-256 covers LF content.
 DOCS/evaluations/code-evidence-held-out/preregistration-named-symbol-first.md text eol=lf
 DOCS/evaluations/code-evidence-held-out/preregistration-named-symbol-first.sha256 text eol=lf
+# Frozen E1 held-out snapshot clarification (#305): its recorded SHA-256 covers LF content.
+DOCS/evaluations/code-evidence-held-out/clarification-snapshot-tree-equivalence.md text eol=lf
+DOCS/evaluations/code-evidence-held-out/clarification-snapshot-tree-equivalence.sha256 text eol=lf
