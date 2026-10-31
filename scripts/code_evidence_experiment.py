@@ -645,7 +645,45 @@ def install_observers(service: Any):
     return observed, checkpoint, restore
 
 
+def control_inputs(
+    manifest: dict, dev_pin: dict, target_document_ids: dict[str, str]
+) -> tuple[list[dict], dict, dict]:
+    """Retarget the foundry cases to the clean development corpus (#297).
+
+    Returns (cases, pins, sources) as new objects; the frozen manifest is not
+    mutated. Only the foundry cases (F1-F3) are replayed. Target document ids
+    come from the new repository because the manifest's ids belong to the lost
+    generation; the oracle source text is unchanged.
+    """
+    generation = dev_pin["generation"]
+    expected = manifest["pins"]["foundry"]["commit_sha"]
+    if generation["ingested_commit_sha"] != expected:
+        raise RuntimeError(
+            f"dev corpus commit {generation['ingested_commit_sha']} != {expected}"
+        )
+    cases = [c for c in manifest["cases"] if c["repo"] == "foundry"]
+    sources = {k: dict(v) for k, v in manifest["sources"].items()}
+    for case in cases:
+        target = case["target"]
+        if target not in target_document_ids:
+            raise RuntimeError(f"target {target} not found in the clean corpus")
+        sources[target]["document_id"] = target_document_ids[target]
+    pins = {k: dict(v) for k, v in manifest["pins"].items()}
+    pins["foundry"].update(
+        repo_id=generation["repo_id"], ingestion_id=generation["ingestion_id"]
+    )
+    return cases, pins, sources
+
+
 async def baseline(args: argparse.Namespace) -> None:
+    await capture(args, "baseline")
+
+
+async def control(args: argparse.Namespace) -> None:
+    await capture(args, "control")
+
+
+async def capture(args: argparse.Namespace, mode: str) -> None:
     import httpx
 
     manifest = read(DIRECTORY / "manifest.json")
@@ -653,6 +691,20 @@ async def baseline(args: argparse.Namespace) -> None:
         digest((DIRECTORY / "manifest.json").read_text(encoding="utf-8"))
         == (DIRECTORY / "manifest.sha256").read_text().strip()
     )
+    cases = manifest["cases"]
+    if mode == "control":
+        dev_pin = read(DIRECTORY / "dev-corpus-pin.json")
+        targets = {c["target"] for c in cases if c["repo"] == "foundry"}
+        async with httpx.AsyncClient(timeout=60) as client:
+            lookup = await client.post(
+                f"{args.host}:8001/v1/graph/repos/"
+                f"{dev_pin['generation']['repo_id']}/nodes/lookup",
+                json={"canonical_ids": sorted(targets)},
+            )
+            lookup.raise_for_status()
+        ids = {n["canonical_id"]: n["document_id"] for n in lookup.json()["nodes"]}
+        cases, pins, sources = control_inputs(manifest, dev_pin, ids)
+        manifest = {**manifest, "pins": pins, "sources": sources}
     await check_availability(args.host)
     sys.path.insert(0, str(ROOT))
     sys.path.insert(0, str(ROOT / "rag_orchestrator"))
@@ -673,8 +725,8 @@ async def baseline(args: argparse.Namespace) -> None:
     observed, checkpoint, restore = install_observers(service)
     logging.disable(logging.CRITICAL)
     try:
-        for case in manifest["cases"]:
-            path = RAW / f"baseline-{case['id']}.json"
+        for case in cases:
+            path = RAW / f"{mode}-{case['id']}.json"
             if path.exists():
                 print(f"{case['id']}: existing baseline preserved", flush=True)
                 continue
@@ -682,6 +734,7 @@ async def baseline(args: argparse.Namespace) -> None:
             observed.update(
                 {
                     "case_id": case["id"],
+                    "mode": mode,
                     "captured_at": datetime.now(timezone.utc).isoformat(),
                     "scope": (
                         "Local unchanged orchestrator with remote read-only HTTP serv"
@@ -702,8 +755,11 @@ async def baseline(args: argparse.Namespace) -> None:
                 before.raise_for_status()
                 observed["generation_before"] = before.json()
                 assert before.json()["ingestion_id"] == str(pin["ingestion_id"])
+                if mode == "control":
+                    assert before.json()["generation_status"] == "ready"
+                    assert before.json()["commit_sha"] == pin["commit_sha"]
                 observed["versions"] = await fetch_versions(client, args.host)
-            print(f"{case['id']}: capturing baseline", flush=True)
+            print(f"{case['id']}: capturing {mode}", flush=True)
             checkpoint("case_started")
             response = await service.run_rag(
                 query=case["query"],
@@ -733,7 +789,7 @@ async def baseline(args: argparse.Namespace) -> None:
         if observed and "score" not in observed:
             # Preserve observations without giving an incomplete request a score.
             observed["status"] = "incomplete-no-quality-score"
-            write(RESULTS / f"incomplete-{observed['case_id']}.json", observed)
+            write(RESULTS / f"incomplete-{mode}-{observed['case_id']}.json", observed)
         restore()
 
 
@@ -748,13 +804,15 @@ async def fetch_versions(client: Any, host: str) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("freeze", "baseline"))
+    parser.add_argument("command", choices=("freeze", "baseline", "control"))
     parser.add_argument("--host", default=os.environ.get("E1_HOST"))
     args = parser.parse_args()
-    if args.command == "baseline" and not args.host:
-        parser.error("baseline needs --host or E1_HOST (e.g. http://<host>)")
+    if args.command != "freeze" and not args.host:
+        parser.error("baseline/control need --host or E1_HOST (e.g. http://<host>)")
     if args.command == "freeze":
         freeze()
+    elif args.command == "control":
+        asyncio.run(control(args))
     else:
         asyncio.run(baseline(args))
 

@@ -129,3 +129,58 @@ def test_observer_does_not_change_assembled_selection(monkeypatch, tmp_path):
         assert observed["assembled_context"] == "original"
     finally:
         restore()
+
+
+DEV_PIN = {
+    "source": {"commit_sha": "109f12d83ab83a306318423be618c195f8c4e6ea"},
+    "generation": {
+        "repo_id": "new-repo",
+        "ingestion_id": "new-ing",
+        "ingested_commit_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+    },
+}
+
+
+def _manifest():
+    return {
+        "cases": [
+            {"id": "L1", "repo": "lightrag", "target": "a.py#x"},
+            {"id": "F1", "repo": "foundry", "target": "b.py#y"},
+        ],
+        "pins": {
+            "lightrag": {"repo_id": "L", "ingestion_id": "li"},
+            "foundry": {
+                "repo_id": "old-repo",
+                "ingestion_id": "old-ing",
+                "commit_sha": "109f12d83ab83a306318423be618c195f8c4e6ea",
+            },
+        },
+        "sources": {"b.py#y": {"document_id": "old-doc", "text": "t"}},
+    }
+
+
+def test_control_retargets_foundry_cases_to_the_clean_corpus():
+    manifest = _manifest()
+    cases, pins, sources = experiment.control_inputs(
+        manifest, DEV_PIN, {"b.py#y": "new-doc"}
+    )
+    assert [c["id"] for c in cases] == ["F1"]  # L cases are out of scope
+    assert pins["foundry"]["repo_id"] == "new-repo"
+    assert pins["foundry"]["ingestion_id"] == "new-ing"
+    assert sources["b.py#y"]["document_id"] == "new-doc"
+    assert sources["b.py#y"]["text"] == "t"  # oracle text unchanged
+    # the frozen manifest object is not mutated
+    assert manifest["pins"]["foundry"]["repo_id"] == "old-repo"
+    assert manifest["sources"]["b.py#y"]["document_id"] == "old-doc"
+
+
+def test_control_refuses_a_pin_for_a_different_commit():
+    bad = json.loads(json.dumps(DEV_PIN))
+    bad["generation"]["ingested_commit_sha"] = "deadbeef"
+    with pytest.raises(RuntimeError, match="commit"):
+        experiment.control_inputs(_manifest(), bad, {"b.py#y": "new-doc"})
+
+
+def test_control_refuses_when_a_target_is_missing_from_the_new_corpus():
+    with pytest.raises(RuntimeError, match="b.py#y"):
+        experiment.control_inputs(_manifest(), DEV_PIN, {})
