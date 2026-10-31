@@ -65,8 +65,8 @@
       "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
     },
     "code-evidence-e1/capture-events.jsonl": {
-      "bytes": 113053,
-      "sha256": "1057ba17d843feebf891a3a3d6bd7482af0de7c16f90b6044fe78dcd1d352a7a",
+      "bytes": 151523,
+      "sha256": "7744e52b26686f88ef1c63530c1ac3a6d7f41db01e8b991f34ccac4b0c7f00fd",
       "produced_by": "scripts/code_evidence_experiment.py baseline",
       "cited_by": "DOCS/test_results/2026-10-14-code-evidence-e1-results.md",
       "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
@@ -88,6 +88,27 @@
     "code-evidence-e1/control-F3.json": {
       "bytes": 1442545,
       "sha256": "7f2de42016477ab82a4422e2325ebf17390a5066dadbd6caec75a545967738f4",
+      "produced_by": "",
+      "cited_by": "",
+      "notes": ""
+    },
+    "code-evidence-e1/control-pool-F1.json": {
+      "bytes": 1560797,
+      "sha256": "6d9a17a53b8012dec8a1ae3798d665dc32dc085b452edac082d09c2742cfa4aa",
+      "produced_by": "",
+      "cited_by": "",
+      "notes": ""
+    },
+    "code-evidence-e1/control-pool-F2.json": {
+      "bytes": 1490370,
+      "sha256": "da9878241785bcd4fe411c27c037cfb15b6da806dbdaf2eaca07b07622e3b31a",
+      "produced_by": "",
+      "cited_by": "",
+      "notes": ""
+    },
+    "code-evidence-e1/control-pool-F3.json": {
+      "bytes": 1627561,
+      "sha256": "dc1fafc0e6030a44a7f885816a091d9d92dbb7085b0161cc2bd8abed220a68d3",
       "produced_by": "",
       "cited_by": "",
       "notes": ""
