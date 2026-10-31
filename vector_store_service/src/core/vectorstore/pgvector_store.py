@@ -62,6 +62,10 @@ class PgVectorStore(VectorStore):
         never-removed MS6 dual-write target and is read nowhere in the
         query path. `document_id` is nullable, so records without one
         are still persisted.
+
+        Idempotent (#287): a replayed batch is ignored row by row, so a
+        client may safely resend a batch whose first attempt timed out
+        after the server had already committed it.
         """
         records = list(records)
         chunks_sql = sql.SQL("""
@@ -70,6 +74,7 @@ class PgVectorStore(VectorStore):
              chunk_text, source_metadata, provider, document_id,
              repo_id, doc_type, source_type, language)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (ingestion_id, chunk_id, chunk_index) DO NOTHING
         """).format(schema=sql.Identifier(self.SCHEMA))
 
         with psycopg.connect(self._dsn) as conn:
