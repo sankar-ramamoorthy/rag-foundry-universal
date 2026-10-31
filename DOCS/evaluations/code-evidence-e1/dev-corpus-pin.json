@@ -43,8 +43,8 @@
   "embedder": {
     "contract_model": "mxbai-embed-large:latest",
     "contract_digest": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
-    "digest_used_for_this_ingestion": "unknown",
-    "note": "The embedding digest is not stored per ingestion; only the model name is. Treat the digest as unverified until the operator reports the effective digest on the host."
+    "digest_used_for_this_ingestion": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8 (inferred, see note)",
+    "note": "Observed 2026-10-31 via a read-only model-list GET on the host: mxbai-embed-large:latest has digest 468836162de7... (equal to the contract) and modified_at 2026-09-02, which predates this ingestion (2026-10-31), so this is the model that was on disk when it ran. The digest is not stored per ingestion, so this is inference from the host state, not a recorded fact."
   },
   "known_differences": [
     "file_count 768 vs 777 files in my earlier local ingestion-walk count; node count equals the original, so likely benign but unexplained",

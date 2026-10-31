@@ -143,8 +143,8 @@ such documents from ingestion (#291) and to run F1-F3 on a clean corpus rebuilt 
 [decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md). The clean corpus
 was ingested 2026-10-31 and recorded in
 [dev-corpus-pin.json](/DOCS/evaluations/code-evidence-e1/dev-corpus-pin.json) (commit
-`109f12d8`, 10,293 nodes, function hashes match; embedder digest unverified, awaiting owner
-approval). No F1-F3 run happens before that approval and a trustworthy control (#270).
+`109f12d8`, 10,293 nodes, function hashes match; embedder digest matches the contract (inferred); one
+path-pattern match unexplained; awaiting owner approval). No F1-F3 run happens before that approval and a trustworthy control (#270).
 Measure discovery, evidence delivery and answer faithfulness separately, keep
 the 4096-byte cap fixed, and combine only independently successful mechanisms.
 No retrieval-policy merge or production deployment is authorized. #254 remains

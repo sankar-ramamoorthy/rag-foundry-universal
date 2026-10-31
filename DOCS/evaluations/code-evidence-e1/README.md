@@ -64,8 +64,8 @@ commit `109f12d8` (#292), after answer-bearing paths are excludable (#291). The 
 `manifest.json` is not edited; the new corpus is recorded in
 [dev-corpus-pin.json](/DOCS/evaluations/code-evidence-e1/dev-corpus-pin.json) (2026-10-31:
 repo `a6e336ef-d0ee-54dd-a687-140dc1df17d3`, generation `d1dfbf70-7a95-4b0e-b3ed-786b9e68b4f9`,
-commit `109f12d8`, 10,293 nodes; four function hashes match; embedder digest and one path-pattern
-match still unverified; pending owner approval). LightRAG's pin is intact. See the [decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md).
+commit `109f12d8`, 10,293 nodes; four function hashes match; embedder digest matches the contract (inferred from host state); one path-pattern
+match still unexplained; pending owner approval). LightRAG's pin is intact. See the [decision note](/DOCS/notes/20261028-e1-dev-corpus-and-exclusion-decision.md).
 
 Reproduce baseline capture using the existing repository virtual environment:
 
