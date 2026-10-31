@@ -189,3 +189,20 @@ def test_relaxed_ann_candidates_are_explicitly_sorted(mock_connect):
         [0.1], 3, {"repo_id": "repo"},
     )
     assert [hit.metadata.chunk_id for hit in hits] == ["a", "b", "z"]
+
+
+class TestIdempotentBatchWrite:
+    """#287: a client that timed out may resend a batch the server already
+    committed; the insert must tolerate the replay instead of duplicating."""
+
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_insert_ignores_replayed_rows(self, mock_connect):
+        mock_cursor = _mock_cursor(mock_connect)
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+
+        store.add([_record()])
+
+        (insert,) = _insert_statements(mock_cursor)
+        assert "ON CONFLICT" in insert
+        assert "ingestion_id, chunk_id, chunk_index" in insert
+        assert "DO NOTHING" in insert
