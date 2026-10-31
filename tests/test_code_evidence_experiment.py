@@ -184,3 +184,23 @@ def test_control_refuses_a_pin_for_a_different_commit():
 def test_control_refuses_when_a_target_is_missing_from_the_new_corpus():
     with pytest.raises(RuntimeError, match="b.py#y"):
         experiment.control_inputs(_manifest(), DEV_PIN, {})
+
+
+def test_observer_records_the_pre_budget_chunks_and_stays_inert():
+    result_big = SimpleNamespace(chunks=["all"], text="big", token_count=9)
+    result_cap = SimpleNamespace(chunks=["final"], text="ctx", token_count=3)
+
+    def assemble(chunks, budget):
+        return result_big if budget > 4096 else result_cap
+
+    service = SimpleNamespace(assemble_context=assemble, embed_query=lambda *a, **k: [])
+    observed, _checkpoint, restore = experiment.install_observers(service)
+    try:
+        pool = [{"id": 1}, {"id": 2}]
+        assert service.assemble_context(pool, 2**63) is result_big
+        assert service.assemble_context(pool[:1], 4096) is result_cap
+    finally:
+        restore()
+    assert observed["pre_budget_chunks"] == pool
+    assert observed["final_chunks"] == ["final"]
+    assert observed["assembled_context"] == "ctx"
