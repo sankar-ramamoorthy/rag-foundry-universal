@@ -98,3 +98,18 @@ def test_inventory_walk_agrees_with_graph_walk(tmp_path):
     assert "src/hatch/cli/env/show.py" in inventory
     assert not [p for p in inventory if p.startswith("venvlike/env/")]
     assert graph <= inventory
+
+
+def test_crate_discovery_uses_same_env_rule(tmp_path):
+    (tmp_path / "crates/env").mkdir(parents=True)
+    (tmp_path / "crates/env/Cargo.toml").write_text(
+        '[package]\nname = "envcrate"\n', encoding="utf-8"
+    )
+    (tmp_path / "venvlike/env").mkdir(parents=True)
+    (tmp_path / "venvlike/env/pyvenv.cfg").write_text("", encoding="utf-8")
+    (tmp_path / "venvlike/env/Cargo.toml").write_text(
+        '[package]\nname = "junk"\n', encoding="utf-8"
+    )
+
+    builder = RepoGraphBuilder(tmp_path, ingestion_id=str(uuid4()))
+    assert builder._discover_crate_roots() == {"crates/env": "envcrate"}
