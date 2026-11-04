@@ -93,7 +93,6 @@ _MODULE_CONVENTIONS = CompositeModuleConvention({
 DEFAULT_IGNORED_DIRS = {
     "node_modules",
     "venv",
-    "env",
     "build",
     "dist",
     "target",
@@ -103,6 +102,34 @@ DEFAULT_IGNORED_DIRS = {
     "site-packages",
     "eggs",
 }
+
+# Issue #307: ``env`` is a common virtualenv name but also a legitimate
+# package name (e.g. Hatch's ``src/hatch/cli/env/``), so it is pruned only
+# when the directory actually looks like a virtualenv.
+VIRTUALENV_CANDIDATE_DIRS = {"env"}
+
+
+def _looks_like_virtualenv(path: Path) -> bool:
+    if (path / "pyvenv.cfg").is_file() or (path / "bin" / "activate").is_file():
+        return True
+    if (path / "Scripts" / "activate").is_file():
+        return True
+    if (path / "Lib" / "site-packages").is_dir():
+        return True
+    lib = path / "lib"
+    return lib.is_dir() and any(
+        (child / "site-packages").is_dir() for child in lib.glob("python*")
+    )
+
+
+def is_ignored_dir(parent: str | os.PathLike, name: str) -> bool:
+    """Single pruning predicate shared by every repository walk
+    (graph build, crate discovery, structural inventory)."""
+    if name.startswith(".") or name in DEFAULT_IGNORED_DIRS:
+        return True
+    return name in VIRTUALENV_CANDIDATE_DIRS and _looks_like_virtualenv(
+        Path(parent) / name
+    )
 
 
 _CARGO_NAME_RE = re.compile(r'^\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
@@ -188,8 +215,7 @@ class RepoGraphBuilder:
         crate_roots: dict[str, str] = {}
         for dirpath, dirnames, filenames in os.walk(self.repo_root):
             dirnames[:] = sorted(
-                d for d in dirnames
-                if not d.startswith(".") and d not in DEFAULT_IGNORED_DIRS
+                d for d in dirnames if not is_ignored_dir(dirpath, d)
             )
             if "Cargo.toml" not in filenames:
                 continue
@@ -261,8 +287,7 @@ class RepoGraphBuilder:
             # Prune ignored directories in place so os.walk never descends
             # into them; sorted for deterministic traversal order (ADR-030).
             dirnames[:] = sorted(
-                d for d in dirnames
-                if not d.startswith(".") and d not in DEFAULT_IGNORED_DIRS
+                d for d in dirnames if not is_ignored_dir(dirpath, d)
             )
             for filename in sorted(filenames):
                 if filename.startswith("."):

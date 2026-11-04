@@ -25,7 +25,7 @@ from urllib.parse import urlparse
 
 import yaml
 
-from src.core.codebase.repo_graph_builder import DEFAULT_IGNORED_DIRS, EXTRACTORS
+from src.core.codebase.repo_graph_builder import EXTRACTORS, is_ignored_dir
 
 # Exact-basename match only -- no dependency parsing, presence + path only
 # (MVP scope, #197 acceptance criteria).
@@ -138,16 +138,14 @@ class StructuralInventory:
 def walk_all_files(repo_root: Path) -> list[Path]:
     """Unfiltered walk over every first-party file in the checkout --
     mirrors RepoGraphBuilder._discover_crate_roots's/`_walk_repo`'s own
-    ignore-dir (DEFAULT_IGNORED_DIRS) and dot-dir/dotfile pruning
+    ignore-dir (is_ignored_dir) and dot-dir/dotfile pruning
     convention exactly, but without EXTRACTORS' suffix filter, so it also
     sees Dockerfiles, Compose YAML, and manifest files that the
     symbol-extraction walk never visits. Deterministic sorted order."""
     files: list[Path] = []
     for dirpath, dirnames, filenames in os.walk(repo_root):
         dirnames[:] = sorted(
-            d
-            for d in dirnames
-            if not d.startswith(".") and d not in DEFAULT_IGNORED_DIRS
+            d for d in dirnames if not is_ignored_dir(dirpath, d)
         )
         for filename in sorted(filenames):
             if filename.startswith("."):
