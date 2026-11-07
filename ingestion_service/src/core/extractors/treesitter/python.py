@@ -323,7 +323,14 @@ class PythonTreeSitterExtractor:
                 "doc_type": DEFAULT_DOC_TYPE,
             }
 
-        text = self._source_bytes[node.start_byte:end_byte].decode(
+        # Issue #311: the grammar nests a decorated def/class inside a
+        # `decorated_definition` whose children are the decorators. Start the
+        # stored text there so decorator lines are kept; span/lineno/identity
+        # stay those of the def/class node itself.
+        text_start = node.start_byte
+        if node.parent is not None and node.parent.type == "decorated_definition":
+            text_start = node.parent.start_byte
+        text = self._source_bytes[text_start:end_byte].decode(
             "utf-8", errors="replace"
         )
         return SymbolRecord(

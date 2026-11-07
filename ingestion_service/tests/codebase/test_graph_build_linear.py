@@ -57,7 +57,10 @@ TRICKY_SOURCES = [
 @pytest.mark.parametrize("source", TRICKY_SOURCES)
 def test_source_segment_matches_ast_get_source_segment(source):
     """_source_segment over pre-split lines must be byte-identical to
-    ast.get_source_segment for every def/class node."""
+    ast.get_source_segment for every undecorated def/class node. For a
+    decorated node (issue #311) the stored text additionally includes the
+    decorator lines: it starts at the first '@' and ends with exactly what
+    ast.get_source_segment returns for the def/class itself."""
     tree = ast.parse(source)
     lines = _splitlines_no_ff(source)
     checked = 0
@@ -65,7 +68,12 @@ def test_source_segment_matches_ast_get_source_segment(source):
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef,
                              ast.ClassDef)):
             expected = ast.get_source_segment(source, node)
-            assert _source_segment(lines, node) == expected
+            actual = _source_segment(lines, node)
+            if node.decorator_list:
+                assert actual.startswith("@")
+                assert actual.endswith(expected)
+            else:
+                assert actual == expected
             checked += 1
     assert checked > 0
 
