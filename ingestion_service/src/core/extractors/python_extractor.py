@@ -59,6 +59,18 @@ def _source_segment(lines: list[str], node) -> Optional[str]:
         end_lineno = node.end_lineno - 1
         col_offset = node.col_offset
         end_col_offset = node.end_col_offset
+        decorators = getattr(node, "decorator_list", None)
+        if decorators:
+            # Issue #311: node.lineno is the `def`/`class` line, so the
+            # decorators above it were dropped from the stored text. Start
+            # at the first decorator's `@` (the decorator expression begins
+            # after it, possibly after whitespace). Only the text start
+            # moves; the symbol's span/lineno are deliberately untouched.
+            first = decorators[0]
+            at_line = first.lineno - 1
+            at_col = lines[at_line].encode()[: first.col_offset].rfind(b"@")
+            if at_col >= 0:
+                lineno, col_offset = at_line, at_col
     except AttributeError:
         return None
 
