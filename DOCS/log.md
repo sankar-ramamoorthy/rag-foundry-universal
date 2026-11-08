@@ -6,6 +6,13 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-08
+
+Recorded the [E1 held-out control baseline](/DOCS/test_results/2026-11-08-e1-held-out-control-baseline.md)
+(issue #321, goal #294): 24 control executions, 12/12 final-context hashes reproduced, primary
+function in the pool in 10/12 and delivered in 7/12. Preserved the independent verification report
+unmodified. A baseline only: no candidate, no P1-P4 evaluation, no GO/NO-GO.
+
 ## 2026-10-12
 
 Formalized [README accuracy and product documentation policy](/DOCS/standards/readme-accuracy.md):
