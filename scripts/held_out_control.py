@@ -49,6 +49,7 @@ RUN_SETTINGS = {
     "max_chunks_per_doc": 5,
     "max_total_tokens": 4096,
     "rerank": False,
+    "overview_flags": False,
 }
 MODEL = "ollama/Qwen3:4b"
 EXPECTED_CASES = 12
@@ -106,6 +107,7 @@ def check_settings(contract: dict, settings: dict) -> None:
         "max_chunks_per_doc": contract["adapter_max_chunks_per_doc"],
         "max_total_tokens": contract["context_cap_bytes"],
         "rerank": contract["rerank"],
+        "overview_flags": contract["overview_flags"],
     }
     for key, value in expected.items():
         if settings.get(key) != value:
@@ -209,6 +211,57 @@ def capture_path(run: int, case_id: str) -> Path:
     return RAW / f"held-out-control-run{run}-{case_id}.json"
 
 
+def write_incomplete(run: int, case_id: str, data: dict, error: str) -> Path:
+    """Preserve what was observed for a case that did not complete, without a
+    summary and without overwriting anything."""
+    path = RAW / f"held-out-control-incomplete-run{run}-{case_id}.json"
+    write_capture(path, {**data, "status": "incomplete-no-summary", "error": error})
+    return path
+
+
+def validate_record(record: dict, cap: int) -> None:
+    """A case that did not produce a complete, self-consistent capture is an
+    explicit failure, never a silent continuation."""
+    for key in ("final_chunks", "pre_budget_chunks", "assembled_context"):
+        if record.get(key) is None:
+            raise HarnessError(f"capture is missing {key}")
+    context = record["assembled_context"]
+    if not context:
+        raise HarnessError("the delivered context is empty")
+    size = len(context.encode("utf-8"))
+    if size > cap:
+        raise HarnessError(f"delivered context is {size} bytes, over the {cap} cap")
+    try:
+        reported = record["response"]["retrieval_plan"]["tokens_after_budget"]
+    except (KeyError, TypeError):
+        raise HarnessError("the response carries no retrieval_plan bytes") from None
+    if reported != size:
+        raise HarnessError(
+            f"retrieval_plan reports {reported} bytes, the context has {size}"
+        )
+
+
+def rag_arguments(case: dict, entry: dict) -> dict:
+    """The only arguments the control passes to the unchanged runtime. Beyond the
+    question and the pinned repo id, the sole manifest-derived value is
+    trace_canonical_ids, which the orchestrator uses only to add a diagnostic
+    entry to the retrieval plan after retrieval is done."""
+    off = RUN_SETTINGS["overview_flags"]
+    return {
+        "query": case["query"],
+        "repo_id": entry["repo_id"],
+        "top_k": RUN_SETTINGS["top_k"],
+        "max_chunks_per_doc": RUN_SETTINGS["max_chunks_per_doc"],
+        "max_total_tokens": RUN_SETTINGS["max_total_tokens"],
+        "model": MODEL,
+        "rerank": RUN_SETTINGS["rerank"],
+        "trace_canonical_ids": case_ids(case),
+        "repository_overview_claim_selection_enabled": off,
+        "repository_overview_canonical_selection_enabled": off,
+        "repository_overview_structured_answers_enabled": off,
+    }
+
+
 def plan_lines(inputs: Inputs, runs: int = 2) -> list[str]:
     lines = []
     for run in range(1, runs + 1):
@@ -227,6 +280,23 @@ def fetch_generation(host: str, repo_id: str) -> dict:
     url = f"{host}:8001/v1/repos/{repo_id}/generation"
     with urllib.request.urlopen(url, timeout=30) as response:  # noqa: S310
         return json.load(response)
+
+
+def check_services(host: str) -> dict:
+    """Read-only health: each application service's /version, nothing else."""
+    import urllib.request
+
+    versions = {}
+    for port in (8001, 8002, 8003, 8004):
+        url = f"{host}:{port}/version"
+        try:
+            with urllib.request.urlopen(url, timeout=15) as response:  # noqa: S310
+                versions[str(port)] = json.load(response)
+        except OSError as error:
+            raise HarnessError(
+                f"service on port {port} unavailable: {error}"
+            ) from error
+    return versions
 
 
 def check_all_generations(inputs: Inputs, host: str) -> dict:
@@ -315,25 +385,22 @@ async def run_control(args: argparse.Namespace, inputs: Inputs) -> int:
                 observed["generation_before"] = before
                 print(f"run{run} {case['id']}: capturing", flush=True)
                 checkpoint("case_started", run=run)
-                response = await service.run_rag(
-                    query=case["query"],
-                    repo_id=entry["repo_id"],
-                    top_k=RUN_SETTINGS["top_k"],
-                    max_chunks_per_doc=RUN_SETTINGS["max_chunks_per_doc"],
-                    max_total_tokens=RUN_SETTINGS["max_total_tokens"],
-                    model=MODEL,
-                    rerank=RUN_SETTINGS["rerank"],
-                    trace_canonical_ids=case_ids(case),
-                    repository_overview_claim_selection_enabled=False,
-                    repository_overview_canonical_selection_enabled=False,
-                    repository_overview_structured_answers_enabled=False,
-                )
-                observed["response"] = response.model_dump(mode="json")
-                async with httpx.AsyncClient(timeout=30) as client:
-                    after = (await client.get(url)).json()
-                if after != before:
-                    raise HarnessError(f"{case['id']}: generation changed mid-run")
-                observed["generation_after"] = after
+                try:
+                    response = await service.run_rag(**rag_arguments(case, entry))
+                    observed["response"] = response.model_dump(mode="json")
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        after = (await client.get(url)).json()
+                    if after != before:
+                        raise HarnessError(f"{case['id']}: generation changed mid-run")
+                    observed["generation_after"] = after
+                    validate_record(observed, RUN_SETTINGS["max_total_tokens"])
+                except Exception as error:
+                    write_incomplete(run, case["id"], dict(observed), repr(error))
+                    if isinstance(error, HarnessError):
+                        raise
+                    raise HarnessError(
+                        f"{case['id']} run{run} failed: {error!r}"
+                    ) from error
                 summary = summarize_record(case, observed)
                 observed["summary"] = summary
                 write_capture(path, observed)
@@ -361,15 +428,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("command", choices=("plan", "run"))
     parser.add_argument("--host", default=os.environ.get("E1_HOST"))
     parser.add_argument("--allow-dirty", action="store_true")
+    parser.add_argument(
+        "--execute-frozen-questions",
+        action="store_true",
+        help="required by `run`: this executes the preregistered held-out questions",
+    )
     args = parser.parse_args(argv)
     try:
         inputs = load_inputs()
         if args.command == "plan":
             print("\n".join(plan_lines(inputs)))
             if args.host:
+                check_services(args.host)
                 check_all_generations(inputs, args.host)
-                print("generations: all pinned generations ready and matching")
+                print("services up; all pinned generations ready and matching")
             return 0
+        if not args.execute_frozen_questions:
+            print(
+                "run executes the preregistered held-out questions; add "
+                "--execute-frozen-questions to confirm (use `plan` for preflight)",
+                file=sys.stderr,
+            )
+            return 1
         if not args.host:
             parser.error("run needs --host or E1_HOST (e.g. http://<host>)")
         return asyncio.run(run_control(args, inputs))
