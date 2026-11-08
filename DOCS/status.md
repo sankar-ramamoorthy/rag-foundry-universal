@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-09-19
+date: 2026-11-08
 type: status
 status: current
 tags: [status, overview]
@@ -67,7 +67,12 @@ Historical measurements, not current accuracy/performance guarantees:
   rollback path (`PYTHON_TREESITTER_ENABLED` /
   `PYTHON_TREESITTER_AUTO_FALLBACK` env vars); see the WP-L5 section of
   [`DOCS/audit/03-Multi-Language-Graph-Plan.md`](/DOCS/audit/03-Multi-Language-Graph-Plan.md)
-  for the rollback mechanism and parity evidence.
+  for the rollback mechanism and parity evidence. Since #311 (PR #312,
+  2026-11-08) both Python extractors store a decorated function or class
+  with its decorator lines (the stored text starts at the first `@`);
+  `span`/`lineno` still describe the `def`/`class` line (open question
+  #314), and previously ingested repositories keep their old text until a
+  `force_full_rebuild=true` re-ingest (reuse-identity gap, #313).
 - **TypeScript / JavaScript** — tree-sitter-based extraction, shipped
   (WP-L2, issue #83).
 - **Rust** — tree-sitter-based extraction, shipped (WP-L3, issue #130,
@@ -119,9 +124,9 @@ scoring, fallback behaviour, and the ADR-054 held-out plan) and
 [ADR-055](/DOCS/adr/ADR-055-node-text-read-endpoint.md) (a bounded,
 generation-fenced node-text endpoint, since no current API returns a node's
 source) are **accepted, and the contract frozen, as of 2026-10-28** (checksum
-recorded; nothing is implemented). Still open: the held-out repositories and cases
-are not yet chosen or written, and the experiment stays blocked on a trustworthy
-control replay (#270). The GO pass rate is fixed by the frozen
+recorded; nothing is implemented). Still open at that point: the held-out repositories
+and cases were not yet chosen or written (done since, below), and the experiment stayed
+blocked on a trustworthy control replay (#270). The GO pass rate is fixed by the frozen
 [addendum](/DOCS/evaluations/code-evidence-e1/statement-level-contract-addendum-go-rate.md)
 (2026-10-28, checksum recorded): on 12 held-out cases over 3 repositories, GO needs
 at least 10 passing the delivery gate, at least 5 wins over the unchanged control, at
@@ -134,8 +139,18 @@ the held-out repositories are now selected by that rule (pypa/hatch, pallets/wer
 pdfminer/pdfminer.six; see the
 [selection record](/DOCS/evaluations/code-evidence-held-out/selection-record.md)), and the 12 held-out
 cases are written, independently reviewed by the owner and **frozen on 2026-10-28**
-([README](/DOCS/evaluations/code-evidence-held-out/README.md); checksum recorded). No
-held-out repository has been ingested yet; nothing has been run on them.
+([README](/DOCS/evaluations/code-evidence-held-out/README.md); checksum recorded).
+**All three held-out corpora are now ingested, certified and pinned (2026-11-08):** the
+[held-out corpus pin](/DOCS/evaluations/code-evidence-held-out/held-out-corpus-pin.json)
+(#315, PR #316) records, per repository, the `ready` generation, the frozen commit
+(werkzeug: the verified snapshot, #305), node and chunk counts, and that all 17 frozen
+function texts hash to the manifest; each fact is marked measured, fetched, inferred,
+reported or unverified. Not established: the embedder digest used at ingestion (only the
+current host digest, equal to the contract, is recorded) and the deployed runtime SHA at
+ingestion time. The pre-registration is merged (PR #304). Getting there found and fixed
+a Python extractor defect (below, #311). **No held-out query, control or candidate run has
+been made;** the held-out control harness is #317. See the
+[work record](/DOCS/notes/20261108-e1-held-out-corpus-certification-and-decorator-fix.md).
 Separately, the E1 development cases F1-F3 lost their pinned generation to a re-ingest on
 2026-10-28 and the corpus now holds answer-bearing documents; the owner decided to exclude
 such documents from ingestion (#291) and to run F1-F3 on a clean corpus rebuilt from commit
@@ -778,6 +793,15 @@ roadmap tranche, not restated here** — see
 [`07-Roadmap.md`'s Phase 6](/DOCS/audit/07-Roadmap.md#phase-6--repository-document-and-coding-agent-intelligence)
 and issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/196)-[#208](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/208).
 
+- **Open follow-ups from the E1 held-out corpus work (2026-11-08):**
+  [#313](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/313)
+  (design: make extractor behavior part of the incremental-reuse identity;
+  until then an extractor change needs a `force_full_rebuild=true` re-ingest to
+  take effect, because reuse compares file bytes and chunking/embedding config
+  only), [#314](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/314)
+  (design: whether `span` means the definition or the full stored text), and
+  [#317](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/317)
+  (held-out control harness; no held-out run exists yet).
 - The [September 16 architecture audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
   identifies production blockers now tracked as
   [WP-R1–R8](/specs/005-production-correctness/spec.md): #160 memory, #161
