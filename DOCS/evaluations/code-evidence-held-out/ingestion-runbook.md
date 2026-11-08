@@ -85,10 +85,29 @@ read-only:
 - Record the result in `DOCS/evaluations/code-evidence-held-out/held-out-corpus-pin.json`
   (repo ids, ingestion ids, commits, counts, date). The frozen manifest is **not** edited.
 
-## Step 3: not before
-No held-out control or candidate run until all three corpora are verified and recorded, the
-pre-registration is merged, and the control path is agreed (the F1-F3 control used the harness
-`control` mode; a held-out equivalent needs its own harness change under its own issue).
+## Step 3: the control run (harness: `scripts/held_out_control.py`, #317)
+The three corpora are certified and pinned in
+[held-out-corpus-pin.json](/DOCS/evaluations/code-evidence-held-out/held-out-corpus-pin.json).
+The control harness replays the 12 frozen cases twice through the unchanged runtime and reports
+whether every final-context hash reproduces (pre-registration, Run discipline 1). It implements no
+candidate. Endpoints come from `--host` or `E1_HOST` (no default address).
+```powershell
+python scripts/held_out_control.py plan                  # offline: checksums, settings, 24-line plan
+python scripts/held_out_control.py plan --host $env:E1_HOST   # also checks each pinned generation
+python scripts/held_out_control.py run  --host $env:E1_HOST   # the two runs (owner-approved only)
+```
+`run` refuses to start if the manifest checksum, the pin, the execution-contract settings or any
+generation (ready, ingestion id, commit, not incremental) does not match, or if tracked files are
+modified; it never overwrites a capture. Captures and a summary land in
+`DOCS/test_results/_raw/code-evidence-held-out/` (git-ignored; record them with
+`scripts/raw_index.py update`). Running it against the deployed stack is a separate, owner-approved
+step; the harness change itself ships without a run.
+
+## Step 3b: preconditions and what stays blocked
+No held-out control or candidate run until all three corpora are verified and recorded (done,
+2026-11-08), the pre-registration is merged (done, PR #304) and the control path is agreed (the
+harness above, #317; the F1-F3 `control` mode is not used). The candidate stays unimplemented
+and unrun until the control has been replayed twice and its reproduction reported.
 
 ## What is expected to be in these corpora
 The upstream tests, docs and examples are ingested too, so tests and prose are candidate
