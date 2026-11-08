@@ -1,0 +1,372 @@
+{
+ "schema_version": "1",
+ "purpose": "Held-out corpus pin record required by ingestion-runbook.md Step 2 (issue #315, goal #294). Records which generation of each held-out repository was verified, and how. The frozen manifest is not edited.",
+ "recorded_on": "2026-11-08",
+ "manifest_sha256": "ef5727be08d1a569957760e9014b884d83c4e71a70e25e7ddf2e92c16f97cfc5",
+ "status_vocabulary": {
+  "verified": "established by a read-only check whose source is cited",
+  "reported": "stated by the repository owner; not independently checked",
+  "unverified": "not established; no value is recorded"
+ },
+ "repositories": {
+  "pypa/hatch": {
+   "repo_id": "15f342ab-984c-5727-952c-513b25320d92",
+   "ingestion_id": "c142f7d1-f473-4731-a33e-b0e7431e7b8d",
+   "pinned_commit": "740565ac2929597cb9def8d46338cbef6493fc8d",
+   "generation": {
+    "ingestion_status": {
+     "value": "completed",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.status)"
+    },
+    "commit_sha": {
+     "value": "740565ac2929597cb9def8d46338cbef6493fc8d",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.commit_sha equals the frozen pin)"
+    },
+    "is_incremental": {
+     "value": false,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "parent_generation_id": {
+     "value": "184d3d89-6e15-4699-8f6f-1eccd195748b",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "finished_at_utc": {
+     "value": "2026-11-08T02:36:42.871656",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "only_generation_for_repo": {
+     "value": true,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (one ingestion_requests row and one document_nodes ingestion_id for this repo_id)"
+    },
+    "document_nodes": {
+     "value": 9243,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (all rows carry this ingestion_id)"
+    },
+    "ready_api_response": {
+     "value": null,
+     "status": "unverified",
+     "source": "GET /v1/repos/{repo_id}/generation was not called from the verifying host"
+    }
+   },
+   "config_versions": {
+    "chunking": {
+     "value": "heuristic-v1",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.chunking_config_version)"
+    },
+    "embedding": {
+     "value": "ollama:mxbai-embed-large:latest",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.embedding_config_version)"
+    }
+   },
+   "frozen_functions": {
+    "status": "verified",
+    "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (sha256 of stored DocumentNode.text vs manifest sources[].sha256, no normalization)",
+    "matched": 5,
+    "of": 5,
+    "functions": [
+     {
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "manifest_sha256": "d129a32454f6b12d48245a5fc019986a9f4c51e1191310285d465e2aaa820225",
+      "stored_text_sha256": "d129a32454f6b12d48245a5fc019986a9f4c51e1191310285d465e2aaa820225",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/lock.py#lock",
+      "manifest_sha256": "fb9681ce63113dd8c766cca719cd0bb51a7a93c1b0ea67c583326c24fc6843ac",
+      "stored_text_sha256": "fb9681ce63113dd8c766cca719cd0bb51a7a93c1b0ea67c583326c24fc6843ac",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+      "manifest_sha256": "d8db19c8df5cd6baa84851af746948380a392c1e412e98bc339cfde9612e6b04",
+      "stored_text_sha256": "d8db19c8df5cd6baa84851af746948380a392c1e412e98bc339cfde9612e6b04",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "manifest_sha256": "0bcfbc075bef2e43aefef306107de8f8fcaf2d73f91e68c8db5cc86a546e4a84",
+      "stored_text_sha256": "0bcfbc075bef2e43aefef306107de8f8fcaf2d73f91e68c8db5cc86a546e4a84",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "manifest_sha256": "99ddfe4e14eca25599075222a4e375b63e9a2d47350a855c3821b709f96f5e76",
+      "stored_text_sha256": "99ddfe4e14eca25599075222a4e375b63e9a2d47350a855c3821b709f96f5e76",
+      "result": "MATCH"
+     }
+    ]
+   },
+   "rebuild_note": {
+    "text": "Re-ingested with force_full_rebuild=true after #311 (PR #312) so decorator lines are stored; the earlier generation 184d3d89-6e15-4699-8f6f-1eccd195748b mismatched 3 of 5 frozen hashes (decorators missing) and is superseded.",
+    "status": "verified",
+    "source": "Issue #311, PR #312, this record"
+   },
+   "owner_reported": {
+    "generation_api_response": "generation_status=ready, is_incremental=false, commit_sha=740565ac...",
+    "nodes_processed": "4861/4861",
+    "chunks_persisted": 13795,
+    "status": "reported",
+    "source": "Owner session report 2026-11-08; not independently checked here"
+   },
+   "env_directory_functions_present": {
+    "value": true,
+    "status": "verified",
+    "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (4 frozen src/hatch/cli/env/ functions present; 79 nodes under src/hatch/cli/env/); #307/PR #310"
+   }
+  },
+  "pdfminer/pdfminer.six": {
+   "repo_id": "2dd9827e-3682-5d60-bbb1-973c235b6294",
+   "ingestion_id": "85085698-8251-4471-9bd2-4101f8af471e",
+   "pinned_commit": "a18de2a9c479b4c847538500017b449ddaec177e",
+   "generation": {
+    "ingestion_status": {
+     "value": "completed",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.status)"
+    },
+    "commit_sha": {
+     "value": "a18de2a9c479b4c847538500017b449ddaec177e",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.commit_sha equals the frozen pin)"
+    },
+    "is_incremental": {
+     "value": false,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "parent_generation_id": {
+     "value": null,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "finished_at_utc": {
+     "value": "2026-11-02T04:45:28.025828",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "only_generation_for_repo": {
+     "value": true,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (one ingestion_requests row and one document_nodes ingestion_id for this repo_id)"
+    },
+    "document_nodes": {
+     "value": 2922,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (all rows carry this ingestion_id)"
+    },
+    "ready_api_response": {
+     "value": null,
+     "status": "unverified",
+     "source": "GET /v1/repos/{repo_id}/generation was not called from the verifying host"
+    }
+   },
+   "config_versions": {
+    "chunking": {
+     "value": "heuristic-v1",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.chunking_config_version)"
+    },
+    "embedding": {
+     "value": "ollama:mxbai-embed-large:latest",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.embedding_config_version)"
+    }
+   },
+   "frozen_functions": {
+    "status": "verified",
+    "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (sha256 of stored DocumentNode.text vs manifest sources[].sha256, no normalization)",
+    "matched": 6,
+    "of": 6,
+    "functions": [
+     {
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "manifest_sha256": "d4c11f000869610effc13a26bd30e48c4f05d3e3ade866be3f75ae79a26b0d44",
+      "stored_text_sha256": "d4c11f000869610effc13a26bd30e48c4f05d3e3ade866be3f75ae79a26b0d44",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumpallobjs",
+      "manifest_sha256": "899d7b0c1b10cfefd00ba33f3e99a1762670043291dcef64711a9b9d90d25924",
+      "stored_text_sha256": "899d7b0c1b10cfefd00ba33f3e99a1762670043291dcef64711a9b9d90d25924",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumpoutline",
+      "manifest_sha256": "1d09e96a6e022e4e4672adf84e5e9c46736b5c76b20925fcb75c5ee7d83130ea",
+      "stored_text_sha256": "1d09e96a6e022e4e4672adf84e5e9c46736b5c76b20925fcb75c5ee7d83130ea",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumppdf",
+      "manifest_sha256": "c17766bc228ad3b300f9f59e2ddb33a4aa62e79f88e4fa740b0cf470a943f9af",
+      "stored_text_sha256": "c17766bc228ad3b300f9f59e2ddb33a4aa62e79f88e4fa740b0cf470a943f9af",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumptrailers",
+      "manifest_sha256": "40edc6d811ac43e72755a5844878179194c6fd6cf4ad61ddaa00caa9e3e048d3",
+      "stored_text_sha256": "40edc6d811ac43e72755a5844878179194c6fd6cf4ad61ddaa00caa9e3e048d3",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/pdf2txt.py#extract_text",
+      "manifest_sha256": "ac7ec05c0cf54fabb22e16dc137e466355aec7a92cfc4ade73370b16880e994b",
+      "stored_text_sha256": "ac7ec05c0cf54fabb22e16dc137e466355aec7a92cfc4ade73370b16880e994b",
+      "result": "MATCH"
+     }
+    ]
+   }
+  },
+  "pallets/werkzeug": {
+   "repo_id": "520a1d74-1784-561c-a37e-effc32c8fc95",
+   "ingestion_id": "046c6d19-baff-4f1e-912c-2734e9797914",
+   "pinned_commit": "585fb463d91ea384ae35e4d13ecc9294d0c911f2",
+   "generation": {
+    "ingestion_status": {
+     "value": "completed",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.status)"
+    },
+    "commit_sha": {
+     "value": "585fb463d91ea384ae35e4d13ecc9294d0c911f2",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.commit_sha equals the frozen pin)"
+    },
+    "is_incremental": {
+     "value": false,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "parent_generation_id": {
+     "value": null,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "finished_at_utc": {
+     "value": "2026-11-02T05:00:33.840563",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08"
+    },
+    "only_generation_for_repo": {
+     "value": true,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (one ingestion_requests row and one document_nodes ingestion_id for this repo_id)"
+    },
+    "document_nodes": {
+     "value": 6084,
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (all rows carry this ingestion_id)"
+    },
+    "ready_api_response": {
+     "value": null,
+     "status": "unverified",
+     "source": "GET /v1/repos/{repo_id}/generation was not called from the verifying host"
+    }
+   },
+   "config_versions": {
+    "chunking": {
+     "value": "heuristic-v1",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.chunking_config_version)"
+    },
+    "embedding": {
+     "value": "ollama:mxbai-embed-large:latest",
+     "status": "verified",
+     "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (ingestion_requests.embedding_config_version)"
+    }
+   },
+   "frozen_functions": {
+    "status": "verified",
+    "source": "Read-only SELECT against production ingestion_service.document_nodes / ingestion_requests, run by the agent on 2026-11-08 (sha256 of stored DocumentNode.text vs manifest sources[].sha256, no normalization)",
+    "matched": 6,
+    "of": 6,
+    "functions": [
+     {
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "manifest_sha256": "6a3a5176a0547d4a7a4af61fde421a2ee99f3bb78f5b0dcdf7910b3e785cdf89",
+      "stored_text_sha256": "6a3a5176a0547d4a7a4af61fde421a2ee99f3bb78f5b0dcdf7910b3e785cdf89",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/serving.py#is_running_from_reloader",
+      "manifest_sha256": "ccb0dae1edc3a05007a9176557cdfe90609676e23be1872716b460e7bb719a45",
+      "stored_text_sha256": "ccb0dae1edc3a05007a9176557cdfe90609676e23be1872716b460e7bb719a45",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/serving.py#make_server",
+      "manifest_sha256": "ef562c9a07128440477b156aa477477de68dc64838613592a5cfeea895245d2f",
+      "stored_text_sha256": "ef562c9a07128440477b156aa477477de68dc64838613592a5cfeea895245d2f",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "manifest_sha256": "fa025fccd73ecb5dfcb920be34a3af7bac71fe1e639d0a8fa488f8c75f277f73",
+      "stored_text_sha256": "fa025fccd73ecb5dfcb920be34a3af7bac71fe1e639d0a8fa488f8c75f277f73",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "manifest_sha256": "8d5e16f9259e068af6f80931be014ac95ac1a5b5d9303771bac44b2dc37f290b",
+      "stored_text_sha256": "8d5e16f9259e068af6f80931be014ac95ac1a5b5d9303771bac44b2dc37f290b",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/utils.py#send_file",
+      "manifest_sha256": "7b42d463a638c355cb72e739638bceffb53f58f960734689f291f5980fa6eeb9",
+      "stored_text_sha256": "7b42d463a638c355cb72e739638bceffb53f58f960734689f291f5980fa6eeb9",
+      "result": "MATCH"
+     }
+    ]
+   },
+   "snapshot": {
+    "upstream_pinned_commit": "b73dce5a2ce14f7c7fd645699d1d878de48d2948",
+    "snapshot_repository": "https://github.com/sankar-ramamoorthy/werkzeug-e1-heldout-pin",
+    "snapshot_main_commit": {
+     "value": "585fb463d91ea384ae35e4d13ecc9294d0c911f2",
+     "status": "verified",
+     "source": "git ls-remote on 2026-11-08: refs/heads/main"
+    },
+    "source_tree": {
+     "value": "93f10217a04d9b5b3367d57227d3fec46c7990b8",
+     "status": "verified",
+     "source": "shallow clone on 2026-11-08: HEAD^{tree}; equals the tree of the pinned upstream commit per clarification-snapshot-tree-equivalence.md (#305)"
+    }
+   }
+  }
+ },
+ "attestations": {
+  "embedder_model_digest": {
+   "expected_from_execution_contract": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
+   "contract": "DOCS/evaluations/code-evidence-e1/execution-contract.json",
+   "value": null,
+   "status": "unverified",
+   "source": "The database records only the model name; the digest on the host that ran the three ingestions was not read"
+  },
+  "deployed_code_commit_per_ingestion": {
+   "value": null,
+   "status": "unverified",
+   "source": "Not recorded by the ingestion service; the Hatch rebuild post-dates PR #312 per the owner"
+  },
+  "preregistration_merged": {
+   "value": "PR #304 (issue #303), commit 2058cf0",
+   "status": "verified",
+   "source": "git log of preregistration-named-symbol-first.md and gh pr view 304"
+  }
+ },
+ "readiness_gaps": [
+  "Embedder digest on the ingestion host is not attested against execution-contract.json",
+  "pdfminer.six and werkzeug generations ran before PR #312; their frozen functions have no decorators and all match, but the deployed code commit is unrecorded",
+  "Generation-ready API response not captured for pdfminer.six or werkzeug (database shows completed, sole generation)",
+  "Held-out control harness (own issue) and the control path are not agreed; E1 has not been run"
+ ]
+}
