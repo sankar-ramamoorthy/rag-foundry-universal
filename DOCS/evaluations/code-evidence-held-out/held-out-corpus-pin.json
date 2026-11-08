@@ -1,0 +1,455 @@
+{
+ "schema_version": "2",
+ "purpose": "Held-out corpus pin for E1 (issue #315, goal #294); field names follow code-evidence-e1/dev-corpus-pin.json. The frozen manifest is not edited.",
+ "recorded_at": "2026-11-08",
+ "deviations_from_dev_corpus_pin": [
+  "One entry per repository under 'repositories' (the dev pin holds one corpus).",
+  "Each fact carries value/status/source; status is measured, fetched, inferred, reported or unverified (the dev pin uses plain fields and notes)."
+ ],
+ "status_vocabulary": {
+  "measured": "read directly from the production database by the cited read-only query",
+  "fetched": "returned by a read-only GET or git command on the cited date",
+  "inferred": "concluded from other evidence; not an observation of the thing itself",
+  "reported": "stated by the repository owner; not independently checked",
+  "unverified": "not established; no value is recorded"
+ },
+ "manifest_sha256": "ef5727be08d1a569957760e9014b884d83c4e71a70e25e7ddf2e92c16f97cfc5",
+ "repositories": {
+  "pypa/hatch": {
+   "repo_id": "15f342ab-984c-5727-952c-513b25320d92",
+   "ingestion_id": "c142f7d1-f473-4731-a33e-b0e7431e7b8d",
+   "source": {
+    "pinned_commit": "740565ac2929597cb9def8d46338cbef6493fc8d",
+    "recorded_commit": "740565ac2929597cb9def8d46338cbef6493fc8d"
+   },
+   "generation": {
+    "generation_status": {
+     "value": "ready",
+     "status": "fetched",
+     "source": "GET /v1/repos/{repo_id}/generation on the production ingestion service, fetched 2026-11-08"
+    },
+    "ingestion_status": {
+     "value": "completed",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "ingested_commit_sha": {
+     "value": "740565ac2929597cb9def8d46338cbef6493fc8d",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "started_at": {
+     "value": "2026-11-08T02:16:03.403660",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "finished_at": {
+     "value": "2026-11-08T02:36:42.871656",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "is_incremental": {
+     "value": false,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "parent_generation_id": {
+     "value": "184d3d89-6e15-4699-8f6f-1eccd195748b",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "node_count": {
+     "value": 9243,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "chunk_count": {
+     "value": 13795,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "file_counts": {
+     "value": {
+      "indexed": 478,
+      "non_indexed": 33,
+      "total": 511
+     },
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "only_generation_for_repo": {
+     "value": true,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "chunking_config_version": {
+     "value": "heuristic-v1",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "embedding_config_version": {
+     "value": "ollama:mxbai-embed-large:latest",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "deployed_runtime_git_sha": {
+     "value": null,
+     "status": "unverified",
+     "source": "Not stored per ingestion; no evidence of the runtime at ingestion time was found. The current deployment SHA is deliberately not substituted."
+    }
+   },
+   "function_text_sha256_vs_manifest": {
+    "status": "measured",
+    "method": "sha256 of document_nodes.text (UTF-8) selected with repo_id AND ingestion_id of this generation, compared with the manifest sources[].sha256; no normalization. Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)",
+    "matched": 5,
+    "of": 5,
+    "functions": [
+     {
+      "canonical_id": "release/unix/make_scripts_portable.py#main",
+      "manifest_sha256": "d129a32454f6b12d48245a5fc019986a9f4c51e1191310285d465e2aaa820225",
+      "stored_text_sha256": "d129a32454f6b12d48245a5fc019986a9f4c51e1191310285d465e2aaa820225",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/lock.py#lock",
+      "manifest_sha256": "fb9681ce63113dd8c766cca719cd0bb51a7a93c1b0ea67c583326c24fc6843ac",
+      "stored_text_sha256": "fb9681ce63113dd8c766cca719cd0bb51a7a93c1b0ea67c583326c24fc6843ac",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/lock.py#run_lock_workflow",
+      "manifest_sha256": "d8db19c8df5cd6baa84851af746948380a392c1e412e98bc339cfde9612e6b04",
+      "stored_text_sha256": "d8db19c8df5cd6baa84851af746948380a392c1e412e98bc339cfde9612e6b04",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/run.py#run",
+      "manifest_sha256": "0bcfbc075bef2e43aefef306107de8f8fcaf2d73f91e68c8db5cc86a546e4a84",
+      "stored_text_sha256": "0bcfbc075bef2e43aefef306107de8f8fcaf2d73f91e68c8db5cc86a546e4a84",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/hatch/cli/env/show.py#show",
+      "manifest_sha256": "99ddfe4e14eca25599075222a4e375b63e9a2d47350a855c3821b709f96f5e76",
+      "stored_text_sha256": "99ddfe4e14eca25599075222a4e375b63e9a2d47350a855c3821b709f96f5e76",
+      "result": "MATCH"
+     }
+    ]
+   },
+   "rebuild_note": "Re-ingested with force_full_rebuild=true after #311 (PR #312) so decorator lines are stored; the previous generation 184d3d89-6e15-4699-8f6f-1eccd195748b mismatched 3 of 5 frozen hashes and was superseded.",
+   "owner_reported": {
+    "status": "reported",
+    "source": "Owner session report 2026-11-08; not independently checked",
+    "nodes_processed": "4861/4861",
+    "chunks_persisted": 13795
+   }
+  },
+  "pdfminer/pdfminer.six": {
+   "repo_id": "2dd9827e-3682-5d60-bbb1-973c235b6294",
+   "ingestion_id": "85085698-8251-4471-9bd2-4101f8af471e",
+   "source": {
+    "pinned_commit": "a18de2a9c479b4c847538500017b449ddaec177e",
+    "recorded_commit": "a18de2a9c479b4c847538500017b449ddaec177e"
+   },
+   "generation": {
+    "generation_status": {
+     "value": "ready",
+     "status": "fetched",
+     "source": "GET /v1/repos/{repo_id}/generation on the production ingestion service, fetched 2026-11-08"
+    },
+    "ingestion_status": {
+     "value": "completed",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "ingested_commit_sha": {
+     "value": "a18de2a9c479b4c847538500017b449ddaec177e",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "started_at": {
+     "value": "2026-11-02T04:42:24.138715",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "finished_at": {
+     "value": "2026-11-02T04:45:28.025828",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "is_incremental": {
+     "value": false,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "parent_generation_id": {
+     "value": null,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "node_count": {
+     "value": 2922,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "chunk_count": {
+     "value": 3113,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "file_counts": {
+     "value": {
+      "indexed": 70,
+      "non_indexed": 245,
+      "total": 315
+     },
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "only_generation_for_repo": {
+     "value": true,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "chunking_config_version": {
+     "value": "heuristic-v1",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "embedding_config_version": {
+     "value": "ollama:mxbai-embed-large:latest",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "deployed_runtime_git_sha": {
+     "value": null,
+     "status": "unverified",
+     "source": "Not stored per ingestion; no evidence of the runtime at ingestion time was found. The current deployment SHA is deliberately not substituted."
+    }
+   },
+   "function_text_sha256_vs_manifest": {
+    "status": "measured",
+    "method": "sha256 of document_nodes.text (UTF-8) selected with repo_id AND ingestion_id of this generation, compared with the manifest sources[].sha256; no normalization. Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)",
+    "matched": 6,
+    "of": 6,
+    "functions": [
+     {
+      "canonical_id": "pdfminer/high_level.py#extract_text_to_fp",
+      "manifest_sha256": "d4c11f000869610effc13a26bd30e48c4f05d3e3ade866be3f75ae79a26b0d44",
+      "stored_text_sha256": "d4c11f000869610effc13a26bd30e48c4f05d3e3ade866be3f75ae79a26b0d44",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumpallobjs",
+      "manifest_sha256": "899d7b0c1b10cfefd00ba33f3e99a1762670043291dcef64711a9b9d90d25924",
+      "stored_text_sha256": "899d7b0c1b10cfefd00ba33f3e99a1762670043291dcef64711a9b9d90d25924",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumpoutline",
+      "manifest_sha256": "1d09e96a6e022e4e4672adf84e5e9c46736b5c76b20925fcb75c5ee7d83130ea",
+      "stored_text_sha256": "1d09e96a6e022e4e4672adf84e5e9c46736b5c76b20925fcb75c5ee7d83130ea",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumppdf",
+      "manifest_sha256": "c17766bc228ad3b300f9f59e2ddb33a4aa62e79f88e4fa740b0cf470a943f9af",
+      "stored_text_sha256": "c17766bc228ad3b300f9f59e2ddb33a4aa62e79f88e4fa740b0cf470a943f9af",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/dumppdf.py#dumptrailers",
+      "manifest_sha256": "40edc6d811ac43e72755a5844878179194c6fd6cf4ad61ddaa00caa9e3e048d3",
+      "stored_text_sha256": "40edc6d811ac43e72755a5844878179194c6fd6cf4ad61ddaa00caa9e3e048d3",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "tools/pdf2txt.py#extract_text",
+      "manifest_sha256": "ac7ec05c0cf54fabb22e16dc137e466355aec7a92cfc4ade73370b16880e994b",
+      "stored_text_sha256": "ac7ec05c0cf54fabb22e16dc137e466355aec7a92cfc4ade73370b16880e994b",
+      "result": "MATCH"
+     }
+    ]
+   }
+  },
+  "pallets/werkzeug": {
+   "repo_id": "520a1d74-1784-561c-a37e-effc32c8fc95",
+   "ingestion_id": "046c6d19-baff-4f1e-912c-2734e9797914",
+   "source": {
+    "pinned_commit": "b73dce5a2ce14f7c7fd645699d1d878de48d2948",
+    "recorded_commit": "585fb463d91ea384ae35e4d13ecc9294d0c911f2"
+   },
+   "generation": {
+    "generation_status": {
+     "value": "ready",
+     "status": "fetched",
+     "source": "GET /v1/repos/{repo_id}/generation on the production ingestion service, fetched 2026-11-08"
+    },
+    "ingestion_status": {
+     "value": "completed",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "ingested_commit_sha": {
+     "value": "585fb463d91ea384ae35e4d13ecc9294d0c911f2",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "started_at": {
+     "value": "2026-11-02T04:53:57.228466",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "finished_at": {
+     "value": "2026-11-02T05:00:33.840563",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "is_incremental": {
+     "value": false,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "parent_generation_id": {
+     "value": null,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "node_count": {
+     "value": 6084,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "chunk_count": {
+     "value": 6640,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "file_counts": {
+     "value": {
+      "indexed": 145,
+      "non_indexed": 133,
+      "total": 278
+     },
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "only_generation_for_repo": {
+     "value": true,
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "chunking_config_version": {
+     "value": "heuristic-v1",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "embedding_config_version": {
+     "value": "ollama:mxbai-embed-large:latest",
+     "status": "measured",
+     "source": "Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)"
+    },
+    "deployed_runtime_git_sha": {
+     "value": null,
+     "status": "unverified",
+     "source": "Not stored per ingestion; no evidence of the runtime at ingestion time was found. The current deployment SHA is deliberately not substituted."
+    }
+   },
+   "function_text_sha256_vs_manifest": {
+    "status": "measured",
+    "method": "sha256 of document_nodes.text (UTF-8) selected with repo_id AND ingestion_id of this generation, compared with the manifest sources[].sha256; no normalization. Read-only SELECT on 2026-11-08 via scripts/held_out_corpus_pin.py measure (ingestion_requests, document_nodes, vector_chunks)",
+    "matched": 6,
+    "of": 6,
+    "functions": [
+     {
+      "canonical_id": "src/werkzeug/_reloader.py#run_with_reloader",
+      "manifest_sha256": "6a3a5176a0547d4a7a4af61fde421a2ee99f3bb78f5b0dcdf7910b3e785cdf89",
+      "stored_text_sha256": "6a3a5176a0547d4a7a4af61fde421a2ee99f3bb78f5b0dcdf7910b3e785cdf89",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/serving.py#is_running_from_reloader",
+      "manifest_sha256": "ccb0dae1edc3a05007a9176557cdfe90609676e23be1872716b460e7bb719a45",
+      "stored_text_sha256": "ccb0dae1edc3a05007a9176557cdfe90609676e23be1872716b460e7bb719a45",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/serving.py#make_server",
+      "manifest_sha256": "ef562c9a07128440477b156aa477477de68dc64838613592a5cfeea895245d2f",
+      "stored_text_sha256": "ef562c9a07128440477b156aa477477de68dc64838613592a5cfeea895245d2f",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/serving.py#run_simple",
+      "manifest_sha256": "fa025fccd73ecb5dfcb920be34a3af7bac71fe1e639d0a8fa488f8c75f277f73",
+      "stored_text_sha256": "fa025fccd73ecb5dfcb920be34a3af7bac71fe1e639d0a8fa488f8c75f277f73",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/test.py#run_wsgi_app",
+      "manifest_sha256": "8d5e16f9259e068af6f80931be014ac95ac1a5b5d9303771bac44b2dc37f290b",
+      "stored_text_sha256": "8d5e16f9259e068af6f80931be014ac95ac1a5b5d9303771bac44b2dc37f290b",
+      "result": "MATCH"
+     },
+     {
+      "canonical_id": "src/werkzeug/utils.py#send_file",
+      "manifest_sha256": "7b42d463a638c355cb72e739638bceffb53f58f960734689f291f5980fa6eeb9",
+      "stored_text_sha256": "7b42d463a638c355cb72e739638bceffb53f58f960734689f291f5980fa6eeb9",
+      "result": "MATCH"
+     }
+    ]
+   },
+   "snapshot": {
+    "upstream_pinned_commit": "b73dce5a2ce14f7c7fd645699d1d878de48d2948",
+    "snapshot_repository": "https://github.com/sankar-ramamoorthy/werkzeug-e1-heldout-pin",
+    "snapshot_main_commit": {
+     "value": "585fb463d91ea384ae35e4d13ecc9294d0c911f2",
+     "status": "fetched",
+     "source": "git ls-remote refs/heads/main, 2026-11-08"
+    },
+    "source_tree": {
+     "value": "93f10217a04d9b5b3367d57227d3fec46c7990b8",
+     "status": "fetched",
+     "source": "shallow clone HEAD^{tree}, 2026-11-08; equals the pinned upstream tree per clarification-snapshot-tree-equivalence.md (#305)"
+    }
+   }
+  }
+ },
+ "embedder": {
+  "contract_model": "mxbai-embed-large:latest",
+  "contract_digest": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
+  "current_host_digest": {
+   "value": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8",
+   "status": "fetched",
+   "source": "GET /api/tags on the ingestion host's Ollama, 2026-11-08"
+  },
+  "current_host_modified_at": {
+   "value": "2026-09-02T19:01:03.158461841-04:00",
+   "status": "fetched",
+   "source": "same response"
+  },
+  "current_host_digest_equals_contract": true,
+  "digest_used_for_each_ingestion": {
+   "value": null,
+   "status": "unverified",
+   "source": "The digest is not stored per ingestion. The current host model matches the contract and its modified_at predates every ingestion, which is consistent with, but does not prove, that this model produced the vectors."
+  },
+  "inference": {
+   "value": "consistent-with-contract",
+   "status": "inferred",
+   "source": "current host digest equals the contract digest and modified_at predates the earliest ingestion finish; current host state, not historical ingestion-time evidence"
+  }
+ },
+ "preregistration_merged": {
+  "value": "PR #304 (issue #303), commit 2058cf0",
+  "status": "fetched",
+  "source": "git log of preregistration-named-symbol-first.md; gh pr view 304"
+ },
+ "limitations": [
+  "Production data was read by scripts/held_out_corpus_pin.py measure on 2026-11-08; the tests in tests/test_held_out_corpus_pin.py cross-check the recorded values against the frozen manifest and do NOT re-read production.",
+  "Deployed runtime SHA at ingestion time is not recorded anywhere found.",
+  "Embedder digest at ingestion time is inferred from current host state only.",
+  "pdfminer.six and werkzeug ran before PR #312; their frozen functions have no decorators and match.",
+  "Held-out control harness and control path are not yet agreed; E1 has not run."
+ ]
+}
