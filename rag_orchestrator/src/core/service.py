@@ -32,6 +32,9 @@ from rag_orchestrator.src.retrieval.agent_adapter import (
 from rag_orchestrator.src.retrieval.exact_source_preservation import (
     prioritize_exact_sources,
 )
+from rag_orchestrator.src.retrieval.named_symbol_first import (
+    promote_named_symbol_chunks,
+)
 from rag_orchestrator.src.retrieval.types import RetrievedChunk, RetrievedContext
 from src.core.reranker import rerank_chunks
 
@@ -1196,6 +1199,7 @@ async def run_rag(
     repository_overview_claim_selection_enabled: Optional[bool] = None,
     repository_overview_structured_answers_enabled: Optional[bool] = None,
     repository_overview_canonical_selection_enabled: Optional[bool] = None,
+    named_symbol_first: bool = False,
 ) -> RAGResult:
     settings = get_settings()
     claim_selection = (
@@ -1369,6 +1373,11 @@ async def run_rag(
             - conservative_token_count(query),
         ),
     )
+    if named_symbol_first:
+        # E1 #323: ordering-only; runs after the unbounded pool call above so
+        # the observed pool matches the control. Diagnostic key is never read.
+        agent_chunks, named_trace = promote_named_symbol_chunks(agent_chunks, query)
+        retrieval_plan_dict["named_symbol_first"] = named_trace
     agent_chunks, preservation_trace = prioritize_exact_sources(
         agent_chunks,
         query,
