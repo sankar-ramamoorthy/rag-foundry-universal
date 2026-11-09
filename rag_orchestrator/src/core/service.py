@@ -1183,6 +1183,19 @@ def _prioritize_explicit_mentions(
 # ------------------------------------------------------------------
 
 
+def _order_named_symbol_first(
+    agent_chunks: list[Any],
+    query: str,
+    enabled: bool,
+    retrieval_plan_dict: dict[str, Any],
+) -> list[Any]:
+    if not enabled:
+        return agent_chunks
+    ordered, trace = promote_named_symbol_chunks(agent_chunks, query)
+    retrieval_plan_dict["named_symbol_first"] = trace
+    return ordered
+
+
 async def run_rag(
     query: str,
     repo_id: Optional[str] = None,
@@ -1373,11 +1386,11 @@ async def run_rag(
             - conservative_token_count(query),
         ),
     )
-    if named_symbol_first:
-        # E1 #323: ordering-only; runs after the unbounded pool call above so
-        # the observed pool matches the control. Diagnostic key is never read.
-        agent_chunks, named_trace = promote_named_symbol_chunks(agent_chunks, query)
-        retrieval_plan_dict["named_symbol_first"] = named_trace
+    # E1 #323: ordering-only; runs after the unbounded pool call above so the
+    # observed pool matches the control. Diagnostic key is never read.
+    agent_chunks = _order_named_symbol_first(
+        agent_chunks, query, named_symbol_first, retrieval_plan_dict
+    )
     agent_chunks, preservation_trace = prioritize_exact_sources(
         agent_chunks,
         query,

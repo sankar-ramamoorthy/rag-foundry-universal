@@ -122,7 +122,7 @@ def test_service_call_site_pins_the_integration_invariant():
     source = SERVICE.read_text(encoding="utf-8")
     assert "enabled=claim_type == \"repository_overview\" and claim_selection" in source
     assert "named_symbol_first: bool = False" in source
-    flag = source.index("if named_symbol_first:")
+    flag = source.index("agent_chunks = _order_named_symbol_first(")
     pool_call = source.index("assemble_context(agent_chunks, 2**63)")
     exact = source.index("agent_chunks, preservation_trace = prioritize_exact_sources(")
     budgeted = source.index("assemble_context(agent_chunks, context_budget)")
