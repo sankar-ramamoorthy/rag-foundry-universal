@@ -55,7 +55,11 @@ makes worth testing, including the held-out case plan required by ADR-054. The
 pypa/hatch, pallets/werkzeug and pdfminer/pdfminer.six, independently reviewed) is ingested and
 its corpora are recorded in the [held-out corpus pin](/DOCS/evaluations/code-evidence-held-out/held-out-corpus-pin.json)
 ([the work record](/DOCS/notes/20261108-e1-held-out-corpus-certification-and-decorator-fix.md));
-no held-out query, control or candidate run has been made.
+the frozen control has been run twice and recorded in the
+[control baseline](/DOCS/test_results/2026-11-08-e1-held-out-control-baseline.md); the
+[named-symbol-first mechanism spec](/DOCS/evaluations/code-evidence-held-out/mechanism-spec-named-symbol-first.md)
+is frozen and the candidate is not yet implemented or run. Resume from the
+[E1 handoff note](/DOCS/notes/20261108-e1-control-baseline-and-candidate-handoff.md).
 
 `DOCS/adr/` — check each ADR's own `status` field before relying on it;
 don't assume numeric order implies currency.

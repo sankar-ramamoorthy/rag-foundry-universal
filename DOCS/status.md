@@ -148,9 +148,18 @@ function texts hash to the manifest; each fact is marked measured, fetched, infe
 reported or unverified. Not established: the embedder digest used at ingestion (only the
 current host digest, equal to the contract, is recorded) and the deployed runtime SHA at
 ingestion time. The pre-registration is merged (PR #304). Getting there found and fixed
-a Python extractor defect (below, #311). **No held-out query, control or candidate run has
-been made;** the held-out control harness is #317. See the
+a Python extractor defect (below, #311). See the
 [work record](/DOCS/notes/20261108-e1-held-out-corpus-certification-and-decorator-fix.md).
+**The frozen control has run (2026-11-08):** the control harness (#317, PR #320) replayed the 12
+cases twice, 24/24 executions, 12/12 final-context hashes reproduced; the primary function was in
+the candidate pool in 10/12 and delivered in 7/12 (primary presence only, not the S3-S6 delivery
+gate, which is unscored). Recorded in the
+[control baseline](/DOCS/test_results/2026-11-08-e1-held-out-control-baseline.md) (#321, PR #322).
+The named-symbol-first mechanism specification is frozen
+([spec](/DOCS/evaluations/code-evidence-held-out/mechanism-spec-named-symbol-first.md), #323,
+PR #324); **the candidate is not implemented and has not been run**. Named-symbol-first (#275)
+and statement-level delivery (#276) are treated as separate experiments and the GO criteria are
+not changed. Resume from the [E1 handoff note](/DOCS/notes/20261108-e1-control-baseline-and-candidate-handoff.md).
 Separately, the E1 development cases F1-F3 lost their pinned generation to a re-ingest on
 2026-10-28 and the corpus now holds answer-bearing documents; the owner decided to exclude
 such documents from ingestion (#291) and to run F1-F3 on a clean corpus rebuilt from commit
@@ -801,7 +810,9 @@ and issues [#196](https://github.com/sankar-ramamoorthy/rag-foundry-universal/is
   only), [#314](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/314)
   (design: whether `span` means the definition or the full stored text), and
   [#317](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/317)
-  (held-out control harness; no held-out run exists yet).
+  (held-out control harness; merged in PR #320, control executed and recorded in PR #322),
+  and [#323](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/323)
+  (implement the frozen named-symbol-first candidate; open).
 - The [September 16 architecture audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
   identifies production blockers now tracked as
   [WP-R1–R8](/specs/005-production-correctness/spec.md): #160 memory, #161

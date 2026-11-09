@@ -8,6 +8,11 @@ governed.
 
 ## 2026-11-08
 
+Added the [E1 handoff note](/DOCS/notes/20261108-e1-control-baseline-and-candidate-handoff.md)
+and updated `DOCS/status.md` and the roadmap (issue #325): the frozen named-symbol-first
+mechanism spec (PR #324) and the decision to treat it and statement-level delivery as
+separate experiments.
+
 Recorded the [E1 held-out control baseline](/DOCS/test_results/2026-11-08-e1-held-out-control-baseline.md)
 (issue #321, goal #294): 24 control executions, 12/12 final-context hashes reproduced, primary
 function in the pool in 10/12 and delivered in 7/12. Preserved the independent verification report
