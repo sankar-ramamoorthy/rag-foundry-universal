@@ -2,7 +2,7 @@
 title: "E1 mechanism specification: named-symbol-first ordering"
 date: 2026-11-09
 type: experiment-specification
-status: draft-pending-owner-review
+status: frozen-before-implementation
 tags: [held-out, adr-054, mechanism-spec, byte-allocation, named-symbol-first]
 related:
   - "[Issue #323](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/323)"
@@ -19,9 +19,9 @@ Roadmap phase: Phase 6, workstream E. Tracked by #323 under goal #294.
 
 This document turns the preregistered mechanism into an implementable specification. It
 adds **no prediction, no threshold and no scoring rule**, and does not edit the
-pre-registration. It authorizes no implementation and no run: implementation starts only
-after the owner accepts this specification, and the one candidate execution needs a separate
-approval (#323).
+pre-registration. It authorizes no implementation and no run. It was accepted and frozen on 2026-11-09 (section 9);
+implementation is the next step, and the one candidate execution needs a separate approval
+(#323).
 
 ## 1. Provenance and what this was not derived from
 Derived only from:
@@ -31,11 +31,17 @@ Derived only from:
 - the current runtime source (`rag_orchestrator/src/core/service.py`,
   `rag_orchestrator/src/retrieval/agent_adapter.py`).
 
-Not used: any held-out capture, hash, pool, rank or per-case control result. The frozen
-held-out manifest was visible to the author as a frozen input (it is also what the
-pre-registration's "named" rule is applied to), but no choice below depends on a held-out
-question, function name or outcome. Where a choice could be tuned, this document takes the
-reading closest to the pre-registration's literal text and says so.
+Not used to choose anything: any held-out capture, hash, pool, rank or per-case control result.
+
+**Disclosure: this design was not blinded.** The author (an AI assistant) had prior visibility
+of held-out material: the frozen held-out manifest (cases, function names, questions) and, in
+the same working session, the aggregate and per-case control outcomes (7/12 delivered; which
+cases were discovery misses or delivery losses). The specification does not use them, and
+the choices below were made from the pre-registration text and F1-F3, taking the reading
+closest to the pre-registration's literal wording wherever a choice could be tuned. But the
+process cannot be described as blind, and freezing before implementation limits what can
+change afterwards without ruling out that the author's choices were unconsciously influenced.
+Reviewers should read section 8 with that in mind.
 
 ## 2. Mechanism (unchanged from the pre-registration)
 When the query names an exact symbol that is present in the pre-budget candidate pool, that
@@ -53,6 +59,31 @@ Reason: the evaluation observer records the pre-budget pool from the unbounded
 control's, so pool membership and rank stay comparable and the only difference is the order
 seen by the budgeted call. `assemble_context` is first-fit in list order and skips a passage that
 does not fit; the mechanism does not alter that.
+
+### Integration with `prioritize_exact_sources` (checked 2026-11-09)
+`prioritize_exact_sources` runs between the placement above and the budgeted
+`assemble_context`. It can reorder chunks, so the promoted group reaches the allocator first
+only if it is a no-op. Source analysis (development fixtures only):
+- The call site is `prioritize_exact_sources(agent_chunks, query, context_budget,
+  enabled=claim_type == "repository_overview" and claim_selection)`.
+- With `enabled` false the function executes `return chunks, {}`: the same list object, no
+  reorder and no trace.
+- The experiment's `run_rag` arguments (`rag_arguments` in `scripts/held_out_control.py`)
+  never pass `claim_type`, so it is `None`, and pass
+  `repository_overview_claim_selection_enabled=False`. `enabled` is therefore false for every
+  case, and the only other reordering stage, overview selection, is skipped for the same reason
+  (`claim_type == "repository_overview"`), with `rerank=False`.
+- A synthetic check confirmed both halves: with `enabled=False` the input list object comes
+  back unchanged; with `enabled=True` and a query naming a path it does move chunks, so the
+  interaction would be real if an overview request enabled the flag.
+
+**Invariant, established for the frozen settings:** the order presented to the final byte
+allocator is the stable partition produced by this mechanism. Placement is therefore
+correct as specified and is **not** changed. The invariant is conditional: the implementation
+must keep it true and pinned by tests (section 7), and the candidate harness must keep passing
+no `claim_type`. If a future configuration enabled exact-source preservation, the mechanism's
+output order would no longer be what the allocator sees, and that configuration needs its own
+specification.
 
 ## 4. Definitions (all mechanical)
 - **Label** of a chunk: its canonical id, taken as in the existing capture code (`canonical_id`
@@ -110,26 +141,32 @@ Consequences stated so they are not rediscovered as surprises:
 | 3 only order changes | stable partition (section 5); multiset equality test |
 | 3 identical when nothing is named | step 2 returns the same list |
 | 4 reads no case data | signature in section 6; a test pins the parameters |
+| invariant: the partition is the order the allocator sees | tests pin the `enabled=` expression at the call site, that `rag_arguments` passes no `claim_type`, and that the candidate output is the same list order passed to the budgeted `assemble_context` |
 | 5 verification inputs | synthetic fixtures and the F1-F3 development pools only |
 
 Development expectation (from the #275 note, an offline counterfactual, not a held-out result):
 F1 unchanged (target chunks already first, 3 to 3), F2 and F3 target chunks 0 to 3 in the final
 context. This is the only prediction used to check the implementation.
 
-## 8. Decisions made here that the owner may overrule
+## 8. Decisions made here (accepted by the owner on 2026-11-09)
 1. `.py`-only code labels (section 4).
 2. Name-only matching, no path disambiguation, all matching symbols promoted (section 5).
 3. No minimum name length or stop-word filter, accepting that the mechanism may fire on
    natural-language cases (section 5).
 4. Reordering after the unbounded pool call so the pool capture matches the control (section 3).
-5. A diagnostic `retrieval_plan` key (section 6).
+5. A diagnostic `retrieval_plan` key (section 6). It is written after the reorder, to a new
+   key that no later code reads (the downstream reads are `expansion_metadata`,
+   `generation_id` and keys set by other stages); it cannot influence retrieval or allocation.
 
 Each is the reading nearest the pre-registration or the one that keeps the control comparison
-clean. Any change the owner requests must be made **before** this specification is hashed and
-before implementation; none may be made after a candidate run without making the held-out
-cases development data.
+clean. The owner accepted all five, with decision 3 explicitly accepted: a false promotion on a
+not-named case refutes P2 and is reported, never filtered away afterwards. Decision 4 is
+accepted subject to the integration invariant in section 3. No change may be made after a
+candidate run without making the held-out cases development data.
 
 ## 9. Freezing
-On owner acceptance: set `status: frozen-before-implementation`, add
-`mechanism-spec-named-symbol-first.sha256` (SHA-256 of the LF content) and a test that pins it,
-as for the pre-registration. The implementation records this hash in its capture.
+Frozen on 2026-11-09 by owner acceptance, before any implementation. The SHA-256 of this file's
+LF content is in `mechanism-spec-named-symbol-first.sha256` and a unit test fails if they
+disagree. After freezing the file is not edited; a change needs a new dated specification that
+supersedes it, and a change after a candidate run makes the held-out cases development data.
+The implementation records this hash in its capture.
