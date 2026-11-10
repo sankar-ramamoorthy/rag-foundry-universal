@@ -32,6 +32,26 @@ aliases:
 | [[08-RAG-Quality-Evaluation-Methodology]] | Is a reranker actually needed? | Not yet — verify chunking, retrieval recall, and clean-context generation first |
 | [WP-T1-retrieval-evidence-trace](/DOCS/audit/WP-T1-retrieval-evidence-trace.md) | Does evidence actually survive seed retrieval → graph expansion → caps → chunk fetch → token budget → final context? | Complete — T1a-d shipped the trace; T1e's first live run found two real generation failures despite correct evidence reaching context, plus follow-ups #106/#107, both now resolved |
 
+## Subsequent code intelligence review — November 10, 2026
+
+The [November 10 code intelligence architecture audit](/DOCS/audit/2026-11-10-code-intelligence-architecture-audit.md)
+reviews source commit `4ba2387ecd51e869357d5d015b7c29b079da884d` in three stages:
+architecture discovery, critical assessment, and prioritized investigations.
+It reconciles the July 9 findings above and the
+[September 16 architecture audit](/DOCS/audit/2026-09-16-repository-architecture-audit.md)
+against current code, distinguishing defects, implementation bugs, technical debt,
+and missing capabilities. It also assesses the
+[November 10 strategic discussion](/DOCS/notes/20261110-full-vision-and-strategic-roadmap.md).
+Document intelligence is explicitly reserved for a separate audit. Findings are
+based on source and synthetic in-memory probes, not a fresh production verification.
+The earlier audits remain historical records; the new report is not a live
+completion ledger or implementation authorization.
+
+The [independent review and audit-author response](/DOCS/audit/2026-11-10-code-intelligence-independent-review-and-response.md)
+preserves the owner's supplied review and discusses revised investigation priorities,
+evidence contracts, and qualifications. It is discussion, not a new independent
+reproduction of the findings or an approved implementation plan.
+
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
 > September 16 update: the historical release below remains valid evidence.
