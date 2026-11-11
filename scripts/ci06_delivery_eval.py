@@ -91,7 +91,7 @@ class Index:
                              cov._legacy_truncate(unit)))
         # Legacy relied on Ollama's default server truncation for overflow;
         # Embeddings.ensure falls back to exactly that.
-        self.emb.ensure([r[3] for r in rows], label="legacy")
+        self.emb.ensure([r[3] for r in rows], label="legacy", server_truncate=True)
         return rows
 
     def fitted(self, arts: list[cov.Artifact], fn: Callable) -> list[Passage]:

@@ -419,22 +419,39 @@ class Embeddings:
         with self.cache_path.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(row) + "\n")
 
-    def ensure(self, texts: list[str], batch: int = 16, label: str = "") -> None:
+    def _strict(self, part: list[str]) -> None:
+        """Embed with truncation off; bisect a rejected batch. A text the
+        model rejects alone is stored as its server-truncated vector and
+        marked in ``overflow`` (the legacy serving behavior)."""
+        try:
+            for text, vec in zip(part, self._post(part, truncate=False)):
+                self._store(text, vec, False)
+        except urllib.error.HTTPError:
+            if len(part) == 1:
+                self._store(part[0], self._post(part, True)[0], True)
+                return
+            mid = len(part) // 2
+            self._strict(part[:mid])
+            self._strict(part[mid:])
+
+    def ensure(self, texts: list[str], batch: int = 32, label: str = "",
+               server_truncate: bool = False) -> None:
+        """Embed and cache missing texts.
+
+        ``server_truncate=True`` reproduces the legacy request (Ollama's
+        default truncation, one request per batch) and does not record which
+        inputs overflowed; otherwise inputs are embedded strictly.
+        """
         todo = sorted({t for t in texts if self.key(t) not in self.cache})
         print(f"[embed {label}] {len(todo)} new inputs", flush=True)
         for start in range(0, len(todo), batch):
             part = todo[start:start + batch]
             t0 = time.time()
-            try:
-                vecs = self._post(part, truncate=False)
-                for text, vec in zip(part, vecs):
+            if server_truncate:
+                for text, vec in zip(part, self._post(part, truncate=True)):
                     self._store(text, vec, False)
-            except urllib.error.HTTPError:
-                for text in part:  # isolate context-length overflow
-                    try:
-                        self._store(text, self._post([text], False)[0], False)
-                    except urllib.error.HTTPError:
-                        self._store(text, self._post([text], True)[0], True)
+            else:
+                self._strict(part)
             self.seconds += time.time() - t0
             self.computed += len(part)
             if (start // batch) % 10 == 0:
