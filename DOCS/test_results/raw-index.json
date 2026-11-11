@@ -34,14 +34,28 @@
       "sha256": "dade63221429f7e41a410a5a1317b1b62439707d2c2cb2eca8718b622da006e6",
       "produced_by": "scripts/ci06_embedding_coverage.py coverage --repo . (working tree on fix/337) --contracts legacy-v1,unfitted,factory-docs,factory-code --vocab ci06/mxbai-embed-large-vocab.json",
       "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
-      "notes": ""
+      "notes": "Token fields come from the offline WordPiece counter withdrawn after review R3; coverage fields remain valid."
     },
     "ci06/coverage-lightrag.json": {
       "bytes": 4883,
       "sha256": "804fdf97e8db3a8ff2e90adaabca52d3758d69835bc7327345fa40e85087c714",
       "produced_by": "scripts/ci06_embedding_coverage.py coverage --repo <LightRAG @ 4d0afc1> --contracts legacy-v1,unfitted,factory-docs,factory-code --vocab ci06/mxbai-embed-large-vocab.json",
       "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
-      "notes": ""
+      "notes": "Token fields come from the offline WordPiece counter withdrawn after review R3; coverage fields remain valid."
+    },
+    "ci06/delivery-eval.json": {
+      "bytes": 22900,
+      "sha256": "f8bd635fc785af3f1b81d82c517962ff1b273dfd9a7ddcbbd3f07ed2825d7765",
+      "produced_by": "scripts/ci06_delivery_eval.py (protocol DOCS/evaluations/2026-11-10-ci06-delivery-evaluation-protocol.md)",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Pre-registered delivery evaluation; all criteria passed"
+    },
+    "ci06/emb-cache-delivery.jsonl": {
+      "bytes": 324315442,
+      "sha256": "3b567afca6a3cd5740c9794d16f7cb363b339c99a2830443694014f77c7b568e",
+      "produced_by": "scripts/ci06_delivery_eval.py embedding cache",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Deletable"
     },
     "ci06/emb-cache-foundry.jsonl": {
       "bytes": 167509293,
@@ -57,12 +71,26 @@
       "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
       "notes": "Remote Ollama mxbai-embed-large:latest digest 468836162de7; deletable"
     },
+    "ci06/fit-foundry.json": {
+      "bytes": 550,
+      "sha256": "e812538d19650c7354c865988a7e4c62a2fdb0cf3ca1ad9158d0fa95da104198",
+      "produced_by": "scripts/ci06_embedding_coverage.py fit --repo . --contracts factory-code --ollama <remote>",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Serving-model fit, Ollama 0.32.1, digest 468836162de7; 0 rejected"
+    },
+    "ci06/fit-lightrag.json": {
+      "bytes": 674,
+      "sha256": "3e706640ed2c6665418d61f85f42f58b43c79cca3a8f7aac8c62cc574365815b",
+      "produced_by": "scripts/ci06_embedding_coverage.py fit --repo <LightRAG @ 4d0afc1> --contracts factory-code --ollama <remote>",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Serving-model fit; 0 rejected"
+    },
     "ci06/mxbai-embed-large-vocab.json": {
       "bytes": 459903,
       "sha256": "8e07c63f3d3ddf276d4efed082d7cbe02acf0882a1babb71c7782bdf72d799e7",
       "produced_by": "Ollama /api/show verbose=true, model_info['tokenizer.ggml.tokens'] for mxbai-embed-large:latest (digest 468836162de7)",
       "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
-      "notes": "Measurement-only token counter input"
+      "notes": "Measurement-only token counter input Token fields come from the offline WordPiece counter withdrawn after review R3; coverage fields remain valid."
     },
     "ci06/retrieval-foundry.json": {
       "bytes": 215883,

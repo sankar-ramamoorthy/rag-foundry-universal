@@ -31,8 +31,13 @@ gate, not silently mixed).
 - [x] Evidence, status, log and PR description recorded.
 - [x] Published [PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339);
   remote CI passed on the implementation head ([run](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/42956421223)).
-- [ ] Owner review and merge. Deployment and re-ingestion sequencing are the
-  owner's (see ADR-056 "Rollout").
+- [x] Independent review (R1–R5) verified and resolved: no passage truncation
+  (split on model rejection), generation-fenced reuse with real PostgreSQL
+  regression tests, serving-model token-fit validation, pre-registered bounded
+  delivery evaluation (all criteria passed), identity/rollout limits in ADR-056.
+- [x] Owner decision (2026-11-11): clean rebuild of existing indexes at
+  deployment; keep the generation fence; no historical compatibility.
+- [ ] Owner review and merge. Deployment and rebuild are operator-owned.
 
 Handoff for resuming: [CI-06 handoff note](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
 

@@ -6,6 +6,15 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-11
+
+Revised proposed [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) after
+the independent CI-06 review: no stored-passage truncation, generation-fenced
+reuse, explicit reuse-identity limits and a clean-rebuild rollout (owner
+decision). Added the pre-registered
+[CI-06 delivery evaluation protocol](/DOCS/evaluations/2026-11-10-ci06-delivery-evaluation-protocol.md)
+and a note in ADR-040 on its relationship to ADR-056.
+
 ## 2026-11-10
 
 Added the [independent CI-06 review of PR #339 and proposed ADR-056](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)

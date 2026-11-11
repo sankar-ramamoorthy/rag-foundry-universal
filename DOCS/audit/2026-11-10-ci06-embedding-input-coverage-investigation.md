@@ -23,9 +23,12 @@ related:
 > The finding is confirmed and larger than the audit's illustration: about
 > 10–12% of non-whitespace artifact text reached no embedding input. A shared
 > embedding-input contract now makes every stored passage the exact model input,
-> sized to the model's real limit. The reuse gate re-embeds legacy generations
-> once. Discovery of previously omitted text roughly doubles on sampled queries;
-> effects on already-covered text are small and mixed.
+> sized to the model's real limit, with the model's own rejection as the final
+> guard. Discovery of previously omitted text roughly doubles on sampled
+> queries; effects on already-covered text are small and mixed; a pre-registered
+> bounded delivery evaluation passed. Revised 2026-11-11 after the
+> [independent review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)
+> (§9).
 
 ## 1. Question and invariant
 
@@ -67,8 +70,9 @@ Corpus-level measurement (details in the
   10.2% and 12.2% in LightRAG, reached no input. 1,491 and 4,624 artifacts were
   partially unrepresented.
 - The dominant cause was oversized sentence/paragraph units, not the window gap.
-- A second, independent loss: 376 legacy inputs exceeded 512 tokens and were cut
-  again by Ollama. Most were Chinese and Japanese documentation.
+- A second, independent loss: Ollama silently truncates inputs past 512 tokens
+  by default. The first estimate of how many legacy inputs this hit (376) came
+  from an offline counter later shown to be inexact and is withdrawn (§9).
 
 ## 4. Alternatives
 
@@ -76,18 +80,17 @@ Pairs of figures are foundry / LightRAG.
 
 | Option | Coverage | Token fit | Passages vs legacy | Notes |
 | --- | --- | --- | --- | --- |
-| A. Remove the client cut only | complete | 236 / 1,245 overflows | same | Moves the silent loss to the server. |
+| A. Remove the client cut only | complete | many overflows (offline estimate, withdrawn) | same | Moves the silent loss to the server. |
 | B. Larger character budget (1,000–1,500) | complete | overflows grow quickly | fewer | 18% of sampled code windows at 1,500 characters hit the limit. |
-| C. Fit legacy units to 800 characters + token estimate | complete | 0 | +13% / +18% | Controls consistently slightly worse. |
-| D. Exact line windows, 800 characters + token estimate | complete | 0 | −22.5% / −4.9% | Chosen for repository artifacts. |
-| E. Line windows, 400–500 characters | complete | 0 | +82% (400) and +43% (500) in the foundry sample | 400 best on needle discovery; delivery effect unmeasured. |
-| F. Model tokenizer inside the chunker | complete | exact | n/a | Model-specific vocabulary in production code; not needed for zero overflow on these corpora. |
+| C. Fit legacy units to 800 characters + token estimate | complete | model guard | +13% / +18% | Controls consistently slightly worse. |
+| D. Exact line windows, 800 characters + token estimate | complete | model guard; 0 rejections on the serving model | −22.5% / −4.9% | Chosen for repository artifacts. |
+| E. Line windows, 400–500 characters | complete | model guard | +82% (400) and +43% (500) in the foundry sample | 400 best on needle discovery; delivery not evaluated. |
+| F. Model tokenizer inside the chunker | complete | exact | n/a | No tokenizer endpoint in the serving Ollama; an offline reimplementation diverged from it. |
 
 The token estimate (`estimate_tokens`) counts each punctuation or non-ASCII
-character as one token and an ASCII alphanumeric run of length L as ⌈L/3⌉. It is
-additive across lines and overestimates real counts by about a third in
-aggregate, so the 480 cap leaves room under 512. Calibration and the exact
-counter used to check it are in the verification.
+character as one token and an ASCII alphanumeric run of length L as ⌈L/3⌉. It
+is a packing heuristic, not a bound: rare letter runs can need far more real
+tokens. The serving model's strict rejection is the guard (ADR-056 rule 3).
 
 ## 5. Discovery and delivery
 
@@ -96,23 +99,25 @@ C, D and E (p < 0.001). For already-covered text, D was slightly better on one
 corpus by hit@5 and slightly worse on the other. E (400) was neutral or better
 but its advantage partly reflects the needle metric, which favors small passages.
 
-Delivery was not measured. The orchestrator selects a fixed **number** of
-passages per artifact, so passage size directly sets delivered evidence per
-artifact. That is the main reason to keep 800 rather than adopt 400 now. Delivery
-evaluation (E1-style obligation coverage) is the right gate for tuning size.
+The orchestrator selects a fixed **number** of passages per artifact, so passage
+size directly sets delivered evidence per artifact; that is why 800 was kept
+rather than 400. A bounded, pre-registered delivery evaluation of 800 against
+legacy passed all five criteria (verification). 400 was not evaluated for
+delivery.
 
 ## 6. Relationship with CI-03
 
 - **Transformation identity.** The contract has its own identifier
-  (`exact-input-v2`), included in the embedding version string. The chunking
-  version also changes. Both are recorded per generation with no schema change.
-- **Incremental reuse.** The existing all-or-nothing gate re-embeds every
-  artifact once when either string differs, so legacy and new vectors are never
-  mixed in one generation. Verified against PostgreSQL (§ verification).
-- **Re-embedding.** Required once per repository after deployment; later
-  incremental runs reuse as before. Every vector also records the contract and
-  whether any truncation occurred, so a mixed or degraded index is detectable
-  from vector metadata.
+  (`exact-input-v3`), included with provider, model and dimension in the
+  embedding version string. Both strings are recorded per generation with no
+  schema change.
+- **Incremental reuse.** The all-or-nothing gate re-embeds every artifact when
+  either string differs. Reuse itself is now fenced to the expected prior
+  generation (ADR-056 rule 8), because stale rows left by a failed cleanup could
+  otherwise be relabeled into a new generation even with one contract
+  throughout. Verified against PostgreSQL.
+- **Migration.** Owner decision: existing indexes are rebuilt cleanly at
+  deployment; no historical compatibility is kept.
 - **Not solved here.** Extractor behavior and the immutable model digest are
   still absent from the reuse identity (#313). An input-text fingerprint per
   vector would allow selective reuse across contract changes; that is a CI-03
@@ -129,5 +134,16 @@ Uploaded Markdown and Docling section ingestion (`run_with_sections`) fails on
 Adopt option D for repository artifacts and option C's per-unit fit for document
 uploads, under the contract in
 [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) (proposed). Owner
-decisions remaining: ADR acceptance, rollout timing relative to pinned evaluation
-corpora, and whether to evaluate passage size with a delivery-side experiment.
+decisions remaining: ADR acceptance and rebuild timing relative to pinned
+evaluation corpora.
+
+## 9. Revision after the independent review (2026-11-11)
+
+The [review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md) found that
+budget-compliant passages could still be stored beside a truncated embedding
+(R1), that reuse could relabel stale rows from a failed cleanup (R2), that the
+offline token counter was not the serving tokenizer (R3), and that delivery was
+unmeasured (R4). All four were independently reproduced or accepted and are
+resolved as recorded in the
+[verification](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md#review-follow-up-r1r5).
+Token-fit figures from the offline counter are withdrawn.

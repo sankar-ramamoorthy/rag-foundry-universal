@@ -29,24 +29,22 @@ document.
 ## CI-06 embedding-input coverage
 
 [#337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337):
-implemented on `fix/337-ci06-embedding-input-coverage` and published as
 [PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)
-(remote CI green) for owner review; not merged or deployed. Under the legacy contract about 10–12% of artifact text reached no
-embedding input (oversized chunks cut to 800 characters by the embedder, and
-some inputs cut again by Ollama at 512 tokens). Proposed
+open for owner review; not merged or deployed. Under the legacy contract about
+10–12% of artifact text reached no embedding input. Proposed
 [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every stored
-passage the exact model input: repository artifacts become exact 800-character
-line windows with a token-estimate cap, document uploads keep their strategy with
-each unit fitted, and the embedder never trims silently. The chunking and
-embedding version strings change, so the next ingestion of every repository after
-deployment re-embeds everything once. Measurements on two development corpora are
-in the [CI-06 evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md):
-complete coverage and no token overflow; needle discovery of previously omitted
-text improves strongly; already-covered text is mixed on one corpus. Pinned
-evaluation generations are still legacy-contract until the owner re-ingests them.
-Resume from the [CI-06 handoff](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
-Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path fails
-on `main`).
+passage the exact model input: exact 800-character line windows for repository
+artifacts, fitted units for uploads, `truncate: false` with the model's
+rejection as the final guard (a rejected passage is split, never truncated),
+and incremental reuse fenced to the expected prior generation. The
+[independent review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)
+findings R1–R5 were reproduced and resolved; a pre-registered bounded delivery
+evaluation passed (see the
+[CI-06 evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md)).
+Owner decision: existing indexes are rebuilt cleanly at deployment. Resume from
+the [CI-06 handoff](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
+Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path
+fails on `main`).
 
 ## CI-01 graph snapshot consistency
 
