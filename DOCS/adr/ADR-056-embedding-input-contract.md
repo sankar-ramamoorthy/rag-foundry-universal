@@ -119,26 +119,31 @@ Measured in the [verification](/DOCS/test_results/2026-11-10-ci06-embedding-inpu
 - Repository passages are verbatim, preserving whitespace the old
   sentence/paragraph strategies normalized.
 - Queries over 800 characters change behavior as soon as the shared embedder is
-  deployed, before any re-ingestion (rule 6).
+  deployed (rule 6).
 
 ## Rollout and rollback (owner)
 
-Deployment and re-ingestion are operator-owned.
+Owner decision (2026-11-11): the project is in development, so existing
+repository indexes are **deleted and rebuilt cleanly** under this contract at
+deployment. Preserving legacy embeddings is not a requirement, and no
+historical-vector compatibility or multi-generation storage is introduced for
+the transition. Deployment and re-ingestion remain operator-owned.
 
 - **Deploy together.** `vector_store_service` and `ingestion_service` must ship
   together: the retag request now requires the expected generation, and the
   ingestion client refuses a response without the moved document IDs.
-- **Migration inventory.** Every repository's next ingestion re-embeds all of
-  its artifacts once; budget the time from that repository's last full
-  ingestion. Uploaded documents have no reuse gate and keep their legacy
-  passages until re-uploaded.
-- **Pin the model** for the migration and record its digest with the run.
-- **Pinned evaluation generations** (E1 development and held-out corpora) were
-  built under the legacy contract; re-ingesting them changes their passages and
-  vectors. Finish or re-baseline in-flight comparisons first.
-- **Rollback** is not free: older code writes the legacy identity strings, so
-  the next ingestion after a rollback re-embeds everything again. Restoring the
-  old index means re-ingesting under the old code.
+- **Clean rebuild.** Delete each repository and re-ingest it; uploaded documents
+  are re-uploaded if their passages matter. The reuse-identity change (rule 7)
+  would also force full re-embedding on its own, but the plan does not rely on
+  it for the migration.
+- **Pin the model** during the rebuild and record its digest.
+- **Pinned evaluation generations** (E1 development and held-out corpora) change
+  when rebuilt; finish or re-baseline in-flight comparisons first.
+- **Rollback** means reverting the code and rebuilding again.
+
+Generation-fenced reuse (rule 8) is retained independently of the migration:
+stale vectors left by a failed cleanup can contaminate a later incremental
+generation even when every generation uses the same contract.
 
 ## Not decided here
 

@@ -448,28 +448,34 @@ def _fail_superseded_cleanup(monkeypatch):
 def test_failed_cleanup_never_mixes_generations_on_reuse(
     monkeypatch, vector_http_url, repo_id, tmp_path,
 ):
-    """CI-06 review R2 (#337): G1 legacy -> G2 full re-embed whose cleanup of
-    G1 fails -> G3 unchanged reuse. Only G2's rows may become G3's rows; the
-    stale G1 rows must stay G1 (and remain removable by G1's cleanup)."""
+    """CI-06 review R2 (#337), with one embedding contract throughout:
+    G1 fresh -> G2 re-embeds a changed file while cleanup of G1 fails ->
+    G3 reuses that file unchanged. Only G2's rows may become G3's rows; the
+    stale G1 rows (obsolete source text) must stay G1 and remain removable."""
     _write_repo(tmp_path, "def touch():\n    return 1\n")
     _fail_superseded_cleanup(monkeypatch)
 
     id1 = uuid.uuid4()
     _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
-    _mark_legacy_contract(id1)
-    keep_doc_id = _document_id(repo_id, "keep.py")
-    legacy_rows = _vector_generations(keep_doc_id)
-    assert legacy_rows and set(legacy_rows) == {str(id1)}
+    touch_doc_id = _document_id(repo_id, "touch.py")
+    stale_rows = _vector_generations(touch_doc_id)
+    assert stale_rows and set(stale_rows) == {str(id1)}
 
+    # G2: touch.py changes, so it is re-embedded under the same document_id.
+    (tmp_path / "touch.py").write_text(
+        "def touch():\n    return 2\n", encoding="utf-8"
+    )
     id2 = uuid.uuid4()
     _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id2)
     assert _request_row(id2).status == "completed"
-    after_g2 = _vector_generations(keep_doc_id)
-    # Cleanup failed, so the stale G1 rows coexist with G2's for one document.
-    assert after_g2.count(str(id1)) == len(legacy_rows)
+    assert _document_id(repo_id, "touch.py") == touch_doc_id
+    after_g2 = _vector_generations(touch_doc_id)
+    # Cleanup failed, so G1's obsolete rows coexist with G2's for one document.
+    assert after_g2.count(str(id1)) == len(stale_rows)
     current_rows = after_g2.count(str(id2))
     assert current_rows > 0
 
+    # G3: nothing changes; touch.py is reused from G2.
     id3 = uuid.uuid4()
     embedder, embedded_ids = _counting_embedder()
     _run_ingestion(
@@ -477,18 +483,18 @@ def test_failed_cleanup_never_mixes_generations_on_reuse(
     )
     req3 = _request_row(id3)
     assert req3.status == "completed" and req3.is_incremental is True
-    assert "keep.py" not in embedded_ids  # reused, not re-embedded
+    assert "touch.py" not in embedded_ids and "touch.py#touch" not in embedded_ids
 
-    after_g3 = _vector_generations(keep_doc_id)
+    after_g3 = _vector_generations(touch_doc_id)
     assert after_g3.count(str(id3)) == current_rows, (
         "only the expected prior generation's rows may join the new generation"
     )
-    assert after_g3.count(str(id1)) == len(legacy_rows), "stale rows were relabeled"
+    assert after_g3.count(str(id1)) == len(stale_rows), "stale rows were relabeled"
     assert str(id2) not in after_g3
 
     # Generation-scoped deletion of G1 now removes exactly the stale rows.
     HttpVectorStore(vector_http_url).delete_by_ingestion_id(str(id1))
-    assert _vector_generations(keep_doc_id) == [str(id3)] * current_rows
+    assert _vector_generations(touch_doc_id) == [str(id3)] * current_rows
 
 
 def test_reusable_artifact_without_prior_vectors_is_embedded(
