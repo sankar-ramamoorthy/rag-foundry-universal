@@ -14,6 +14,10 @@ here goes stale, fix the routing, not by copying content into this file.
 
 ## Status
 
+The November 10-11 [engineering retrospective](/DOCS/notes/2026-11-11-two-day-engineering-review.md)
+and [technical evidence / Linux handoff](/DOCS/notes/2026-11-11-ci01-ci06-technical-evidence-and-linux-handoff.md)
+preserve the reasoning, evidence and operator restart plan for CI-01 and CI-06.
+
 [`DOCS/status.md`](/DOCS/status.md) is the single, continuously-updated
 snapshot of what's currently shipped, in progress, and known-broken —
 language/codebase-graph support, RAG quality evaluation results, and
