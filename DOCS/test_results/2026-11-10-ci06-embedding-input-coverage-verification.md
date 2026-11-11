@@ -170,6 +170,7 @@ measure. See [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md).
 | `ingestion_service` full suite on test PostgreSQL (pgvector pg15, port 5433, all migrations) | 578 passed. The 9 failures and 3 errors are identical on a clean `main` worktree (SQLite URLs, missing `alembic` executable, git-backed and ownership fixtures). |
 | Incremental ingestion integration (`tests/api/test_incremental_ingest.py`) | 6 passed, including the new legacy-contract re-embed test |
 | `rag_orchestrator` and `vector_store_service` non-DB suites | 433 and 31 passed |
+| Remote CI on [PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339) ([run 42956421223](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/42956421223)) | lint, unit-tests, integration-tests and bounded-memory passed; the new incremental-reuse step ran 6 tests on Linux, all passed |
 | Ruff on changed files | clean |
 | Pyright on new shared modules, new tests and the script | 0 errors. Remaining errors in touched service modules also exist on `main` (`git` stub, `local_path` typing, and the `ExtractionResult` defect filed as #338). |
 

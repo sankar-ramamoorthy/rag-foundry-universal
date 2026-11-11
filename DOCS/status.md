@@ -29,8 +29,9 @@ document.
 ## CI-06 embedding-input coverage
 
 [#337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337):
-implemented on `fix/337-ci06-embedding-input-coverage` for review; not merged or
-deployed. Under the legacy contract about 10–12% of artifact text reached no
+implemented on `fix/337-ci06-embedding-input-coverage` and published as
+[PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)
+(remote CI green) for owner review; not merged or deployed. Under the legacy contract about 10–12% of artifact text reached no
 embedding input (oversized chunks cut to 800 characters by the embedder, and
 some inputs cut again by Ollama at 512 tokens). Proposed
 [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every stored

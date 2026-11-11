@@ -29,7 +29,9 @@ gate, not silently mixed).
   unchanged-contract reuse still works (real PostgreSQL test).
 - [x] Unit, integration and lint/type checks; failures compared with `main`.
 - [x] Evidence, status, log and PR description recorded.
-- [ ] Owner review, CI, merge. Deployment and re-ingestion sequencing are the
+- [x] Published [PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339);
+  remote CI passed on the implementation head ([run](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/42956421223)).
+- [ ] Owner review and merge. Deployment and re-ingestion sequencing are the
   owner's (see ADR-056 "Rollout").
 
 ## Out of scope
