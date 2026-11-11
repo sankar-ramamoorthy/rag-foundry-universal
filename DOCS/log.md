@@ -6,6 +6,12 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-10
+
+Accepted the [documentation-conventions proposal](/DOCS/proposals/2026-11-10-documentation-conventions.md)
+(issue #332): document types and authority, placement, discoverability and the
+investigation-to-implementation path. The OKF standard is not yet amended.
+
 ## 2026-11-08
 
 Added the [E1 handoff note](/DOCS/notes/20261108-e1-control-baseline-and-candidate-handoff.md)

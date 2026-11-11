@@ -170,7 +170,7 @@ not a shipped capability.
 not a live planning document.
 
 The [documentation-conventions proposal](/DOCS/proposals/2026-11-10-documentation-conventions.md)
-(#332, `proposed`) drafts document types, authority, placement, navigation and the
+(#332, `accepted`) drafts document types, authority, placement, navigation and the
 investigation-to-implementation path; see its
 [review note](/DOCS/notes/20261110-knowledge-base-conventions-review.md).
 

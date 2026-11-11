@@ -2,7 +2,7 @@
 title: "Proposal — Minimal documentation conventions (taxonomy, authority, placement, navigation)"
 date: 2026-11-10
 type: proposal
-status: proposed
+status: accepted
 tracking_issue: 332
 tags: [proposal, documentation, governance, okf, sdd]
 related:
@@ -13,8 +13,10 @@ related:
 
 # Proposal — Minimal documentation conventions
 
-Tracked by issue #332. Not binding until the owner accepts it and the
-[OKF standard](/DOCS/standards/okf-documentation.md) is amended. It adds to the
+Tracked by issue #332. **Accepted by the owner on 2026-11-10**, with the
+recommended resolutions below. Not yet binding on agents until the
+[OKF standard](/DOCS/standards/okf-documentation.md) is amended with these
+sections (next step). It adds to the
 standard; it does not replace it. Findings are in the
 [review note](/DOCS/notes/20261110-knowledge-base-conventions-review.md).
 
@@ -110,10 +112,9 @@ Filenames for new notes use `YYYY-MM-DD-slug.md`; the `YYYYMMDD-` form already i
 6. **Evidence** from the run goes to `test_results/` and links back to the spec
    or ADR it verifies.
 
-## Open questions: recommended resolutions
+## Open questions: accepted resolutions
 
-Recommended in review on 2026-11-10; they take effect only when the owner accepts
-this proposal.
+Recommended in review on 2026-11-10 and accepted with the proposal.
 
 1. **`spec.md` frontmatter:** no. Keep Spec Kit headers and treat `specs/NNN-*/spec.md`
    as type `spec` by location, to avoid altering established Spec Kit conventions
