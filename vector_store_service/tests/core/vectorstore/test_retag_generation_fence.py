@@ -83,7 +83,7 @@ def test_retag_moves_only_the_expected_generation(with_provenance):
             documents, g3, provenance, expected_ingestion_id=g2
         )
 
-        assert result.count == 2
+        assert result.rows == 2
         assert result.document_ids == sorted([mixed, current_only])
         refreshed = "new" if with_provenance else "old"
         assert _rows(dsn, mixed) == sorted([

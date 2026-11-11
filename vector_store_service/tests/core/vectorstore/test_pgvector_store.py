@@ -160,7 +160,7 @@ class TestPgVectorStore:
             ["doc-1", "doc-2"], "ing-new", expected_ingestion_id="ing-old"
         )
 
-        assert result.count == 3
+        assert result.rows == 3
         assert result.document_ids == ["doc-1", "doc-2"]
         update_stmts = [
             call for call in mock_cursor.execute.call_args_list
@@ -203,7 +203,7 @@ class TestPgVectorStore:
 
         result = store.retag_ingestion_id([], "ing-new", expected_ingestion_id="old")
 
-        assert result.count == 0
+        assert result.rows == 0
         mock_cursor.execute.assert_not_called()
 
 

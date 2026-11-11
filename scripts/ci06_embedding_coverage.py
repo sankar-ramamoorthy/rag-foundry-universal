@@ -239,15 +239,21 @@ class ServingFit:
             f"{self.base_url}/api/embed", data=body.encode(),
             headers={"Content-Type": "application/json"},
         )
-        self.requests += 1
-        try:
-            with urllib.request.urlopen(req, timeout=600) as resp:
-                resp.read()
-            return True
-        except urllib.error.HTTPError as err:
-            if b"exceeds the context length" in err.read():
-                return False
-            raise
+        for attempt in range(4):  # bounded retry for transient resets
+            self.requests += 1
+            try:
+                with urllib.request.urlopen(req, timeout=600) as resp:
+                    resp.read()
+                return True
+            except urllib.error.HTTPError as err:
+                if b"exceeds the context length" in err.read():
+                    return False
+                raise
+            except (ConnectionError, urllib.error.URLError):
+                if attempt == 3:
+                    raise
+                time.sleep(5 * (attempt + 1))
+        raise RuntimeError("unreachable")
 
     def _rejected(self, texts: list[str]) -> list[str]:
         if self._accepts(texts):
@@ -393,8 +399,15 @@ class Embeddings:
             f"{self.base_url}/api/embed", data=body.encode(),
             headers={"Content-Type": "application/json"},
         )
-        with urllib.request.urlopen(req, timeout=600) as resp:
-            return json.load(resp)["embeddings"]
+        for attempt in range(4):  # bounded retry for transient resets
+            try:
+                with urllib.request.urlopen(req, timeout=600) as resp:
+                    return json.load(resp)["embeddings"]
+            except (ConnectionError, urllib.error.URLError) as err:
+                if isinstance(err, urllib.error.HTTPError) or attempt == 3:
+                    raise
+                time.sleep(5 * (attempt + 1))
+        raise RuntimeError("unreachable")
 
     def _store(self, text: str, vec: list[float], overflow: bool) -> None:
         k = self.key(text)

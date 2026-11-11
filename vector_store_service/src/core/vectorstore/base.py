@@ -10,7 +10,7 @@ from shared.models.vector import VectorRecord
 class RetagResult(NamedTuple):
     """Rows moved by a fenced retag and the distinct document_ids moved."""
 
-    count: int
+    rows: int
     document_ids: List[str]
 
 

@@ -159,13 +159,13 @@ async def retag_vectors(
             )
         )
         logger.info(
-            f"Retagged {result.count} vector row(s) of "
+            f"Retagged {result.rows} vector row(s) of "
             f"{request.expected_ingestion_id} to ingestion_id "
             f"{request.new_ingestion_id}"
         )
         return {
             "status": "ok",
-            "count": result.count,
+            "count": result.rows,
             "document_ids": result.document_ids,
         }
     except Exception as e:
