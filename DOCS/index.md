@@ -77,6 +77,12 @@ records the accepted WP-R5 (narrowed #168) decision keying
 bounding, and its explicit non-goals (no vector-store generation filtering,
 no live two-service HTTP round-trip test yet).
 
+[ADR-056: embedding-input contract](/DOCS/adr/ADR-056-embedding-input-contract.md)
+— **proposed** (#337, CI-06) — makes each stored passage the exact embedding
+input and versions that contract in the incremental-reuse gate. See the
+[CI-06 investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)
+and [evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md).
+
 The accepted [CI-01 graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
 (2026-11-10) clarifies these ADRs: one generation-identified export snapshot,
 preferred repeatable-read transaction, expected-generation fencing and validated

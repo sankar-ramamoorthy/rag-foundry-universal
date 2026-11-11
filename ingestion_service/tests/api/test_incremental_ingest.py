@@ -369,6 +369,55 @@ def test_config_version_mismatch_forces_full_reembed(
 
 
 # ---------------------------------------------------------------------
+# CI-06 (#337): vectors built under the legacy embedding-input contract
+# (heuristic-v1 chunks cut to 800 chars by the embedder) are never reused.
+# ---------------------------------------------------------------------
+
+def test_legacy_input_contract_generation_is_fully_reembedded(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+    req1 = _request_row(id1)
+    assert req1.chunking_config_version == api.ChunkerFactory.VERSION
+    assert req1.embedding_config_version.endswith(f":{api.EMBEDDING_INPUT_CONTRACT}")
+
+    # Make generation 1 look exactly like one built before CI-06.
+    legacy_embedding = req1.embedding_config_version.rsplit(":", 1)[0]
+    Session = get_sessionmaker()
+    with Session() as s:
+        row = s.get(IngestionRequest, id1)
+        row.chunking_config_version = "heuristic-v1"
+        row.embedding_config_version = legacy_embedding
+        s.commit()
+
+    id2 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id2, embedder=embedder,
+    )
+    req2 = _request_row(id2)
+    assert req2.status == "completed" and req2.is_incremental is True
+    assert "keep.py" in embedded_ids and "touch.py" in embedded_ids, (
+        "unchanged files built under the legacy contract must be re-embedded"
+    )
+    # Fresh vectors exist for generation 2 (superseded-generation cleanup is
+    # best-effort and not under test here).
+    keep_doc_id = _document_id(repo_id, "keep.py")
+    assert str(id2) in _vector_ingestion_ids(keep_doc_id)
+
+    # Generation 2 is current-contract: an unchanged re-run reuses it again.
+    id3 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id3, embedder=embedder,
+    )
+    assert "keep.py" not in embedded_ids and "touch.py" not in embedded_ids
+
+
+# ---------------------------------------------------------------------
 # T016: FR-005 -- prior generation not completed -> full ingestion
 # ---------------------------------------------------------------------
 

@@ -22,6 +22,76 @@
       "cited_by": "DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md",
       "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
     },
+    "20261104-status-update-307-hatch-reingest.md": {
+      "bytes": 2477,
+      "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
+      "produced_by": "",
+      "cited_by": "",
+      "notes": ""
+    },
+    "ci06/coverage-foundry.json": {
+      "bytes": 4724,
+      "sha256": "dade63221429f7e41a410a5a1317b1b62439707d2c2cb2eca8718b622da006e6",
+      "produced_by": "scripts/ci06_embedding_coverage.py coverage --repo . (working tree on fix/337) --contracts legacy-v1,unfitted,factory-docs,factory-code --vocab ci06/mxbai-embed-large-vocab.json",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": ""
+    },
+    "ci06/coverage-lightrag.json": {
+      "bytes": 4883,
+      "sha256": "804fdf97e8db3a8ff2e90adaabca52d3758d69835bc7327345fa40e85087c714",
+      "produced_by": "scripts/ci06_embedding_coverage.py coverage --repo <LightRAG @ 4d0afc1> --contracts legacy-v1,unfitted,factory-docs,factory-code --vocab ci06/mxbai-embed-large-vocab.json",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": ""
+    },
+    "ci06/emb-cache-foundry.jsonl": {
+      "bytes": 167509293,
+      "sha256": "0fd0bd5d90d21a4b1a665b01e1c83b8576e1fe6c0ad1e35e7e67fbdab4af7c47",
+      "produced_by": "scripts/ci06_embedding_coverage.py retrieval embedding cache (sha256(model, input) -> vector)",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Remote Ollama mxbai-embed-large:latest digest 468836162de7; deletable"
+    },
+    "ci06/emb-cache-lightrag.jsonl": {
+      "bytes": 193970457,
+      "sha256": "3661ceb55094868dcbe7ce4148aee866e562133e7685061d3c9b675e6c15dea6",
+      "produced_by": "scripts/ci06_embedding_coverage.py retrieval embedding cache (sha256(model, input) -> vector)",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Remote Ollama mxbai-embed-large:latest digest 468836162de7; deletable"
+    },
+    "ci06/mxbai-embed-large-vocab.json": {
+      "bytes": 459903,
+      "sha256": "8e07c63f3d3ddf276d4efed082d7cbe02acf0882a1babb71c7782bdf72d799e7",
+      "produced_by": "Ollama /api/show verbose=true, model_info['tokenizer.ggml.tokens'] for mxbai-embed-large:latest (digest 468836162de7)",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Measurement-only token counter input"
+    },
+    "ci06/retrieval-foundry.json": {
+      "bytes": 215883,
+      "sha256": "b5832e076ebc72c0c2c37e84730fb91a0c978270ee5a542f2984f01699f2c0a6",
+      "produced_by": "scripts/ci06_embedding_coverage.py retrieval --repo . --sample 80 --distractors 240 --seed 337 (exploratory)",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Exploratory run; contract labels predate the final script names"
+    },
+    "ci06/retrieval-lightrag.json": {
+      "bytes": 215512,
+      "sha256": "cedc930b80f8d40e9b9f2295781fbe5af79e7d521bc44a482fbf90d6953100e4",
+      "produced_by": "scripts/ci06_embedding_coverage.py retrieval --repo <LightRAG @ 4d0afc1> --sample 80 --distractors 240 --seed 337 (exploratory)",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Exploratory run; contract labels predate the final script names"
+    },
+    "ci06/retrieval2-foundry.json": {
+      "bytes": 415620,
+      "sha256": "460149c4ca75dcf44cd765ba1471b1531bab100f123a67949645451521feec89",
+      "produced_by": "scripts/ci06_embedding_coverage.py retrieval --repo . --budgets 400,500 --token-budgets 480 --sample 150 --distractors 600 --seed 3370",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Confirmatory run"
+    },
+    "ci06/retrieval2-lightrag.json": {
+      "bytes": 393447,
+      "sha256": "ef64c093b6011f50ed4731cd864f112c3756c0814b415c8eab0941d2a9553e89",
+      "produced_by": "scripts/ci06_embedding_coverage.py retrieval --repo <LightRAG @ 4d0afc1> --budgets 400,500 --token-budgets 480 --sample 150 --distractors 600 --seed 3370",
+      "cited_by": "DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md",
+      "notes": "Confirmatory run"
+    },
     "code-evidence-e1/baseline-F1.json": {
       "bytes": 1371416,
       "sha256": "2799dc987a68438e533a33630896f0460cff5f0c5bad0367e5e85e9e4557e53a",
@@ -109,6 +179,13 @@
     "code-evidence-e1/control-pool-F3.json": {
       "bytes": 1627561,
       "sha256": "dc1fafc0e6030a44a7f885816a091d9d92dbb7085b0161cc2bd8abed220a68d3",
+      "produced_by": "",
+      "cited_by": "",
+      "notes": ""
+    },
+    "held-out-corpus-pin/measurements.json": {
+      "bytes": 4554,
+      "sha256": "fe57b2e80af8de752af022d9f23cbeb261710db9f12f97eede13ed909ba8c94f",
       "produced_by": "",
       "cited_by": "",
       "notes": ""

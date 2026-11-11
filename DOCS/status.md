@@ -26,6 +26,26 @@ This is where ADR/issue/PR-numbered detail belongs — `README.md` links
 here rather than embedding it, so the README stays a stable reference
 document.
 
+## CI-06 embedding-input coverage
+
+[#337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337):
+implemented on `fix/337-ci06-embedding-input-coverage` for review; not merged or
+deployed. Under the legacy contract about 10–12% of artifact text reached no
+embedding input (oversized chunks cut to 800 characters by the embedder, and
+some inputs cut again by Ollama at 512 tokens). Proposed
+[ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every stored
+passage the exact model input: repository artifacts become exact 800-character
+line windows with a token-estimate cap, document uploads keep their strategy with
+each unit fitted, and the embedder never trims silently. The chunking and
+embedding version strings change, so the next ingestion of every repository after
+deployment re-embeds everything once. Measurements on two development corpora are
+in the [CI-06 evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md):
+complete coverage and no token overflow; needle discovery of previously omitted
+text improves strongly; already-covered text is mixed on one corpus. Pinned
+evaluation generations are still legacy-contract until the owner re-ingests them.
+Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path fails
+on `main`).
+
 ## CI-01 graph snapshot consistency
 
 [#335](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/335):

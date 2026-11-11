@@ -240,7 +240,9 @@ class IngestionPipeline:
         )
 
         if self._chunker is None:
-            selected_chunker, chunker_params = ChunkerFactory.choose_strategy(text)
+            selected_chunker, chunker_params = ChunkerFactory.choose_strategy(
+                text, source_type=source_type
+            )
         else:
             selected_chunker = self._chunker
             chunker_params = {}

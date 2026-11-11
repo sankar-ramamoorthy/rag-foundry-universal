@@ -32,6 +32,7 @@ from src.core.pipeline import IngestionPipeline
 from src.core.config import get_settings
 from shared.chunkers.selector import ChunkerFactory
 from shared.embedders.factory import get_embedder
+from shared.embedders.input_contract import EMBEDDING_INPUT_CONTRACT
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.codebase.identity import build_repo_id
 from src.core.codebase.snapshot_diff import classify as classify_snapshot_diff
@@ -372,8 +373,11 @@ def _resolve_reuse_eligibility(
 
     settings = get_settings()
     chunking_config_version = ChunkerFactory.VERSION
+    # CI-06 (#337): the input contract is part of the vector's identity;
+    # vectors built under another contract encode different text.
     embedding_config_version = (
         f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
+        f":{EMBEDDING_INPUT_CONTRACT}"
     )
     StatusManager(session).record_generation_start(
         ingestion_id,

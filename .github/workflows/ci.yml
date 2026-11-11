@@ -90,6 +90,10 @@ jobs:
         working-directory: ingestion_service
         run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q -s -k "not fresh_process_memory_scaling"
 
+      - name: ingestion_service integration tests (incremental reuse gate, #196/#337)
+        working-directory: ingestion_service
+        run: ../.venv/bin/python -m pytest tests/api/test_incremental_ingest.py -q
+
       - name: ingestion_service integration tests (repository lifecycle, #166/#168)
         working-directory: ingestion_service
         run: |

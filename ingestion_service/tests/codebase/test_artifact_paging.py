@@ -386,10 +386,12 @@ def test_real_http_vector_writes_have_normalized_buffer_parity(vector_http_url):
             outputs.append(_real_embedding_fixture(
                 fixture, vector_http_url, buffer_size=size,
             ))
-    assert len(outputs[0]) == 144  # one short artifact + actual 143-chunk artifact
+    # One short artifact + the large artifact's exact 800-char windows
+    # (CI-06, #337; formerly 143 windows of 1000/100).
+    assert len(outputs[0]) == 161
     assert outputs[0] == outputs[1] == outputs[2]
     indices = [row.chunk_index for row in outputs[0] if row.canonical_id == "4.py"]
-    assert indices == list(range(143))
+    assert indices == list(range(160))
 
 
 def test_acknowledged_http_batches_survive_later_failure(corpus, vector_http_url):

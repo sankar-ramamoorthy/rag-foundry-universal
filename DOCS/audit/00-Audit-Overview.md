@@ -56,6 +56,10 @@ The [CI-01 generation-snapshot investigation](/DOCS/audit/2026-11-10-ci01-genera
 traces the existing WP-R3/WP-R5 and ADR-050/051 guarantees, records synthetic
 reproductions, and proposes a narrow contract clarification before implementation.
 
+The [CI-06 embedding-input coverage investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)
+measures how much artifact text reached no embedding input, compares aligned
+contracts on development corpora and records the reuse-gate implications (CI-03).
+
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
 > September 16 update: the historical release below remains valid evidence.

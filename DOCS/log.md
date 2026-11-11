@@ -8,6 +8,13 @@ governed.
 
 ## 2026-11-10
 
+Proposed [ADR-056: embedding-input contract](/DOCS/adr/ADR-056-embedding-input-contract.md)
+(issue #337, CI-06) with its [investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)
+and [measurements](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md):
+stored passages are the exact embedding input, sized to the model's real limit,
+and the reuse gate re-embeds generations built under the old contract. Proposed,
+implemented on a branch for review; not deployed.
+
 Accepted the [CI-01 repository graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
 and amended ADR-050/051 and the WP-R3/WP-R5 specifications: one generation-identified
 read snapshot, preferred export-scoped repeatable-read transaction, explicit
