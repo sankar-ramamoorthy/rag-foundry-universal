@@ -369,6 +369,167 @@ def test_config_version_mismatch_forces_full_reembed(
 
 
 # ---------------------------------------------------------------------
+# CI-06 (#337): vectors built under the legacy embedding-input contract
+# (heuristic-v1 chunks cut to 800 chars by the embedder) are never reused.
+# ---------------------------------------------------------------------
+
+def test_legacy_input_contract_generation_is_fully_reembedded(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+    req1 = _request_row(id1)
+    assert req1.chunking_config_version == api.ChunkerFactory.VERSION
+    assert req1.embedding_config_version.endswith(f":{api.EMBEDDING_INPUT_CONTRACT}")
+
+    # Make generation 1 look exactly like one built before CI-06.
+    _mark_legacy_contract(id1)
+
+    id2 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id2, embedder=embedder,
+    )
+    req2 = _request_row(id2)
+    assert req2.status == "completed" and req2.is_incremental is True
+    assert "keep.py" in embedded_ids and "touch.py" in embedded_ids, (
+        "unchanged files built under the legacy contract must be re-embedded"
+    )
+    # Fresh vectors exist for generation 2 (superseded-generation cleanup is
+    # best-effort and not under test here).
+    keep_doc_id = _document_id(repo_id, "keep.py")
+    assert str(id2) in _vector_ingestion_ids(keep_doc_id)
+
+    # Generation 2 is current-contract: an unchanged re-run reuses it again.
+    id3 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id3, embedder=embedder,
+    )
+    assert "keep.py" not in embedded_ids and "touch.py" not in embedded_ids
+
+
+def _vector_generations(document_id):
+    """Ingestion id of every vector row for a document, one entry per row."""
+    Session = get_sessionmaker()
+    with Session() as s:
+        rows = s.execute(
+            text(
+                "SELECT ingestion_id FROM ingestion_service.vector_chunks "
+                "WHERE document_id = :document_id"
+            ),
+            {"document_id": document_id},
+        ).all()
+        return sorted(str(r[0]) for r in rows)
+
+
+def _mark_legacy_contract(ingestion_id):
+    Session = get_sessionmaker()
+    with Session() as s:
+        row = s.get(IngestionRequest, ingestion_id)
+        settings = api.get_settings()
+        row.chunking_config_version = "heuristic-v1"
+        # The deployed pre-CI-06 identity: provider and model only.
+        row.embedding_config_version = (
+            f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
+        )
+        s.commit()
+
+
+def _fail_superseded_cleanup(monkeypatch):
+    def fail(*args, **kwargs):
+        raise RuntimeError("injected superseded-generation cleanup failure")
+
+    monkeypatch.setattr(api.db_utils, "superseded_ingestion_ids_for_repo", fail)
+
+
+def test_failed_cleanup_never_mixes_generations_on_reuse(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    """CI-06 review R2 (#337), with one embedding contract throughout:
+    G1 fresh -> G2 re-embeds a changed file while cleanup of G1 fails ->
+    G3 reuses that file unchanged. Only G2's rows may become G3's rows; the
+    stale G1 rows (obsolete source text) must stay G1 and remain removable."""
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+    _fail_superseded_cleanup(monkeypatch)
+
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+    touch_doc_id = _document_id(repo_id, "touch.py")
+    stale_rows = _vector_generations(touch_doc_id)
+    assert stale_rows and set(stale_rows) == {str(id1)}
+
+    # G2: touch.py changes, so it is re-embedded under the same document_id.
+    (tmp_path / "touch.py").write_text(
+        "def touch():\n    return 2\n", encoding="utf-8"
+    )
+    id2 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id2)
+    assert _request_row(id2).status == "completed"
+    assert _document_id(repo_id, "touch.py") == touch_doc_id
+    after_g2 = _vector_generations(touch_doc_id)
+    # Cleanup failed, so G1's obsolete rows coexist with G2's for one document.
+    assert after_g2.count(str(id1)) == len(stale_rows)
+    current_rows = after_g2.count(str(id2))
+    assert current_rows > 0
+
+    # G3: nothing changes; touch.py is reused from G2.
+    id3 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id3, embedder=embedder,
+    )
+    req3 = _request_row(id3)
+    assert req3.status == "completed" and req3.is_incremental is True
+    assert "touch.py" not in embedded_ids and "touch.py#touch" not in embedded_ids
+
+    after_g3 = _vector_generations(touch_doc_id)
+    assert after_g3.count(str(id3)) == current_rows, (
+        "only the expected prior generation's rows may join the new generation"
+    )
+    assert after_g3.count(str(id1)) == len(stale_rows), "stale rows were relabeled"
+    assert str(id2) not in after_g3
+
+    # Generation-scoped deletion of G1 now removes exactly the stale rows.
+    HttpVectorStore(vector_http_url).delete_by_ingestion_id(str(id1))
+    assert _vector_generations(touch_doc_id) == [str(id3)] * current_rows
+
+
+def test_reusable_artifact_without_prior_vectors_is_embedded(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    """Reuse is verified: an unchanged-file artifact with no vectors in the
+    prior generation is embedded instead of completing without vectors."""
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+    keep_doc_id = _document_id(repo_id, "keep.py")
+    Session = get_sessionmaker()
+    with Session() as s:
+        s.execute(
+            text(
+                "DELETE FROM ingestion_service.vector_chunks "
+                "WHERE document_id = :document_id"
+            ),
+            {"document_id": keep_doc_id},
+        )
+        s.commit()
+
+    id2 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id2, embedder=embedder,
+    )
+    req2 = _request_row(id2)
+    assert req2.status == "completed" and req2.is_incremental is True
+    assert "keep.py" in embedded_ids
+    assert set(_vector_generations(keep_doc_id)) == {str(id2)}
+
+
+# ---------------------------------------------------------------------
 # T016: FR-005 -- prior generation not completed -> full ingestion
 # ---------------------------------------------------------------------
 

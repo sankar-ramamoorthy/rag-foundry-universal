@@ -12,6 +12,15 @@ related:
 * **ADR-038** – Pipeline construction ownership
 * **ADR-039** – Artifact-level embedding strategy
 
+> [!note] Relationship to ADR-056 (accepted 2026-11-11, #337)
+> The implementation has sub-chunked artifacts for embedding since before this
+> note, contrary to the "1:1 node/embedding unit" wording in §2 and the
+> sub-artifact deferral in §7. [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md)
+> governs passage sizing: an artifact maps to one or more exact,
+> model-sized passages. The graph remains the structural layer and artifacts
+> remain the retrieval and identity unit, so ADR-040's deferred hybrid chunk
+> layer (Option 3: retrieval units independent of artifacts) is still deferred.
+
 Thisis a Formal ADR  **decision boundary document** that:
 
 1. Explains Option 2 vs Option 3 clearly

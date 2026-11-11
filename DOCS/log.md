@@ -6,7 +6,39 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-11
+
+Accepted [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) (owner) and
+merged PR #339 (#337). Deployment and clean re-ingestion remain deferred.
+
+Added the [final CI-06 independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
+at `770e3c9` and the [supplied assessment](/DOCS/notes/2026-11-11-ci06-final-review-assessment.md).
+Recorded the recommendation to accept ADR-056 and merge subject to current CI;
+corrected the delivery report's count-versus-expression wording and recorded the
+open evaluation-cache follow-up (#340). ADR acceptance, merge and deployment state are
+unchanged by these documentation updates.
+
+Revised proposed [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) after
+the independent CI-06 review: no stored-passage truncation, generation-fenced
+reuse, explicit reuse-identity limits and a clean-rebuild rollout (owner
+decision). Added the pre-registered
+[CI-06 delivery evaluation protocol](/DOCS/evaluations/2026-11-10-ci06-delivery-evaluation-protocol.md)
+and a note in ADR-040 on its relationship to ADR-056.
+
 ## 2026-11-10
+
+Added the [independent CI-06 review of PR #339 and proposed ADR-056](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)
+and linked it from the audit index. The review distinguishes live model
+counterexamples, source-confirmed lifecycle defects, and evaluation gaps;
+recommends holding the PR and retaining the ADR as proposed. It does not amend
+the ADR, specifications, implementation, or deployment state.
+
+Proposed [ADR-056: embedding-input contract](/DOCS/adr/ADR-056-embedding-input-contract.md)
+(issue #337, CI-06) with its [investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)
+and [measurements](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md):
+stored passages are the exact embedding input, sized to the model's real limit,
+and the reuse gate re-embeds generations built under the old contract. Proposed,
+implemented on a branch for review; not deployed.
 
 Accepted the [CI-01 repository graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
 and amended ADR-050/051 and the WP-R3/WP-R5 specifications: one generation-identified

@@ -90,6 +90,10 @@ jobs:
         working-directory: ingestion_service
         run: ../.venv/bin/python -m pytest tests/codebase/test_artifact_paging.py -q -s -k "not fresh_process_memory_scaling"
 
+      - name: ingestion_service integration tests (incremental reuse gate, #196/#337)
+        working-directory: ingestion_service
+        run: ../.venv/bin/python -m pytest tests/api/test_incremental_ingest.py -q
+
       - name: ingestion_service integration tests (repository lifecycle, #166/#168)
         working-directory: ingestion_service
         run: |
@@ -100,6 +104,10 @@ jobs:
             tests/api/test_graph_snapshot_integration.py \
             tests/api/test_graph_export_relationship_metadata.py \
             -q
+
+      - name: vector_store_service integration tests (generation-fenced retag, #337)
+        working-directory: vector_store_service
+        run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_retag_generation_fence.py -q
 
       - name: vector_store_service integration tests (WP-R4 passages)
         working-directory: vector_store_service

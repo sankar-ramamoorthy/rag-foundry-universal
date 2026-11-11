@@ -32,6 +32,7 @@ from src.core.pipeline import IngestionPipeline
 from src.core.config import get_settings
 from shared.chunkers.selector import ChunkerFactory
 from shared.embedders.factory import get_embedder
+from shared.embedders.input_contract import EMBEDDING_INPUT_CONTRACT
 from src.core.http_vectorstore import HttpVectorStore
 from src.core.codebase.identity import build_repo_id
 from src.core.codebase.snapshot_diff import classify as classify_snapshot_diff
@@ -126,7 +127,8 @@ def _retag_reused_vectors(
     pipeline: IngestionPipeline,
     provenance_by_document_id: dict[str, dict],
     ingestion_id: str,
-) -> None:
+    prior_generation_id: str | None,
+) -> set[str]:
     """Issue #196 (FR-007b, T024): bulk-carry reused artifacts' existing
     vectors forward to this generation's ingestion_id, no re-embedding.
 
@@ -144,16 +146,22 @@ def _retag_reused_vectors(
     the same node.
     """
     if not provenance_by_document_id:
-        return
+        return set()
+    if not prior_generation_id:
+        raise RuntimeError("Reuse requires the prior generation id (#337)")
     document_ids = list(provenance_by_document_id)
-    retagged = pipeline._vector_store.retag_ingestion_id(
-        document_ids, ingestion_id, provenance_by_document_id
+    # CI-06 review R2 (#337): fenced to the prior generation, so rows of an
+    # older generation whose cleanup failed are never relabeled as current.
+    rows, retagged = pipeline._vector_store.retag_ingestion_id(
+        document_ids, ingestion_id, provenance_by_document_id,
+        expected_ingestion_id=prior_generation_id,
     )
     logger.info(
-        f"Re-tagged {retagged} reused vector row(s) "
-        f"({len(document_ids)} artifact(s)) to ingestion {ingestion_id}, "
-        f"provenance refreshed"
+        f"Re-tagged {rows} reused vector row(s) of generation "
+        f"{prior_generation_id} ({len(retagged)}/{len(document_ids)} "
+        f"artifact(s)) to ingestion {ingestion_id}, provenance refreshed"
     )
+    return retagged
 
 
 # -----------------------------
@@ -169,6 +177,7 @@ def _embed_repo_artifacts(
     settings: Settings,
     report_progress: Callable[[dict], None],
     eligible_relative_paths: frozenset = frozenset(),
+    prior_generation_id: str | None = None,
 ) -> tuple[int, int]:
     """Page persisted artifacts; bound chunk and vector state independently.
 
@@ -265,8 +274,36 @@ def _embed_repo_artifacts(
         raise RuntimeError("Embeddable artifact count changed during embedding")
     buffer.flush()
     acknowledged()
-    _retag_reused_vectors(pipeline, retag_provenance_by_document_id, ingestion_id)
+    retagged = _retag_reused_vectors(
+        pipeline, retag_provenance_by_document_id, ingestion_id, prior_generation_id
+    )
+    missing = set(retag_provenance_by_document_id) - retagged
+    _embed_missing_reuse(pages, missing, pipeline, buffer, repo_id, provider)
+    acknowledged()
+    progress["reuse_missing_reembedded"] = len(missing)
+    report_progress(dict(progress))
     return buffer.chunks_persisted, 0
+
+
+def _embed_missing_reuse(pages, missing, pipeline, buffer, repo_id, provider):
+    """Embed reuse-eligible artifacts the prior generation had no vectors for.
+
+    CI-06 review R2 (#337): reuse is verified, not assumed. A new canonical_id
+    in an unchanged file, or lost prior vectors, would otherwise leave the new
+    generation without vectors for that artifact.
+    """
+    if not missing:
+        return
+    logger.warning(
+        f"{len(missing)} reuse-eligible artifact(s) had no vectors in the prior "
+        "generation; embedding them"
+    )
+    for page in pages():
+        for node in page:
+            if str(node.document_id) in missing:
+                _chunk_and_buffer_node(pipeline, buffer, node, repo_id, provider)
+        del page
+    buffer.flush()
 
 
 def _build_and_persist_graph(
@@ -351,6 +388,20 @@ def _build_and_persist_graph(
     return stats, current_file_hashes, inventory
 
 
+def embedding_config_identity(settings) -> str:
+    """Reuse-gate identity of the vectors this deployment produces.
+
+    FR-006 (spec 006): provider, model and dimension. CI-06 (#337): plus the
+    embedding-input contract, because vectors built under another contract
+    encode different text. It does not identify the model's immutable digest
+    or extractor behavior; those belong to CI-03 (#313).
+    """
+    return (
+        f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
+        f":{settings.VECTOR_DIMENSION}d:{EMBEDDING_INPUT_CONTRACT}"
+    )
+
+
 def _resolve_reuse_eligibility(
     session,
     ingestion_id: UUID,
@@ -370,11 +421,8 @@ def _resolve_reuse_eligibility(
     prior_generation_id = db_utils.resolve_current_generation(repo_id)
     is_incremental = prior_generation_id is not None and not force_full_rebuild
 
-    settings = get_settings()
     chunking_config_version = ChunkerFactory.VERSION
-    embedding_config_version = (
-        f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
-    )
+    embedding_config_version = embedding_config_identity(get_settings())
     StatusManager(session).record_generation_start(
         ingestion_id,
         parent_generation_id=prior_generation_id,
@@ -444,7 +492,7 @@ def _background_ingest_repo(
         # T020/T021/T025/R6 (#196): resolve lineage + FR-006 reuse-gate
         # identity before cloning -- repo_id is a pure function of the
         # source URL/path, no checkout needed.
-        _prior_generation_id, is_incremental, prior_hashes, config_matches = (
+        prior_generation_id, is_incremental, prior_hashes, config_matches = (
             _resolve_reuse_eligibility(
                 session,
                 ingestion_id,
@@ -522,6 +570,7 @@ def _background_ingest_repo(
             settings=settings,
             report_progress=report_progress,
             eligible_relative_paths=eligible_relative_paths,
+            prior_generation_id=prior_generation_id,
         )
         logger.info(
             f"[{ingestion_id}] Embedded {chunk_count} chunks "

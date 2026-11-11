@@ -1,10 +1,17 @@
 # src/core/vectorstore/base.py
 # vector_store_service/src/core/vectorstore/base.py
 from abc import ABC, abstractmethod
-from typing import Iterable, Sequence, List
+from typing import Iterable, List, NamedTuple, Sequence
 
 # Import from shared
 from shared.models.vector import VectorRecord
+
+
+class RetagResult(NamedTuple):
+    """Rows moved by a fenced retag and the distinct document_ids moved."""
+
+    rows: int
+    document_ids: List[str]
 
 
 class VectorStore(ABC):
@@ -39,11 +46,16 @@ class VectorStore(ABC):
         document_ids: List[str],
         new_ingestion_id: str,
         provenance_by_document_id: "dict[str, dict] | None" = None,
-    ) -> int:
-        """Re-tag every vector row for the given document_ids to
-        new_ingestion_id, in place (no re-embedding). Returns the number
-        of rows updated. Issue #196 (FR-007b): carries a reused, unchanged
-        artifact's existing vectors forward to the new generation.
+        *,
+        expected_ingestion_id: str,
+    ) -> RetagResult:
+        """Re-tag the given document_ids' vector rows that belong to
+        ``expected_ingestion_id`` (the reused prior generation) to
+        new_ingestion_id, in place (no re-embedding); rows of any other
+        generation are untouched (CI-06 review R2, #337). Returns the row
+        count and the distinct document_ids retagged. Issue #196 (FR-007b):
+        carries a reused, unchanged artifact's existing vectors forward to
+        the new generation.
 
         Issue #199 (ADR-053, Stage B2 incremental-reuse fix): when
         `provenance_by_document_id` is given, each listed document_id's

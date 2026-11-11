@@ -14,7 +14,9 @@ class MockEmbedder(BaseEmbedder):
     name = "mock"
     dimension = 1024
 
-    def embed(self, chunks: List[Chunk]) -> List[List[float]]:
+    def embed(
+        self, chunks: List[Chunk], *, truncate_overflow: bool = False
+    ) -> List[List[float]]:
         embeddings: List[List[float]] = []
 
         for chunk in chunks:

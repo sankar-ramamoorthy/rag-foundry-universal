@@ -26,6 +26,31 @@ This is where ADR/issue/PR-numbered detail belongs — `README.md` links
 here rather than embedding it, so the README stays a stable reference
 document.
 
+## CI-06 embedding-input coverage
+
+[#337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337):
+[PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)
+merged; **not deployed** (deployment and clean re-ingestion deferred,
+operator-owned). Under the legacy contract about
+10–12% of artifact text reached no embedding input. Accepted
+[ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every stored
+passage the exact model input: exact 800-character line windows for repository
+artifacts, fitted units for uploads, `truncate: false` with the model's
+rejection as the final guard (a rejected passage is split, never truncated),
+and incremental reuse fenced to the expected prior generation. The
+[independent review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)
+findings R1–R5 were reproduced and resolved; a pre-registered bounded delivery
+evaluation passed (see the
+[CI-06 evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md)).
+Owner decision: existing indexes are rebuilt cleanly at deployment. Resume from
+the [CI-06 handoff](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
+The [final independent verification at 770e3c9](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
+recommended acceptance and merge; the owner accepted ADR-056 on 2026-11-11 and
+the PR merged after green CI on its final commit. Reporting wording is
+corrected; the evaluation-cache defect remains a nonblocking follow-up (#340).
+Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path
+fails on `main`).
+
 ## CI-01 graph snapshot consistency
 
 [#335](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/335):

@@ -1,5 +1,6 @@
 # vector_store_service/src/api/v1/vectors.py
 import asyncio
+from functools import partial
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
@@ -37,6 +38,10 @@ class VectorSearchRequest(BaseModel):
 class VectorRetagRequest(BaseModel):
     document_ids: List[str]
     new_ingestion_id: str
+    # CI-06 review R2 (#337): only rows of this generation (the reused prior
+    # generation) are retagged. Required: an unfenced retag could relabel a
+    # stale generation's rows that failed cleanup into the new generation.
+    expected_ingestion_id: str
     # Issue #199 (Stage B2 incremental-reuse fix): document_id -> the
     # ADR-053 provenance envelope to patch into that document's rows'
     # source_metadata.provenance, in the same update. Every other
@@ -144,17 +149,25 @@ async def retag_vectors(
     """Re-tag reused artifacts' vectors to a new ingestion_id (issue #196)."""
     try:
         # #170 (WP-R7): off the event loop (see add_vectors above).
-        count = await asyncio.to_thread(
-            store.retag_ingestion_id,
-            request.document_ids,
-            request.new_ingestion_id,
-            request.provenance_by_document_id,
+        result = await asyncio.to_thread(
+            partial(
+                store.retag_ingestion_id,
+                request.document_ids,
+                request.new_ingestion_id,
+                request.provenance_by_document_id,
+                expected_ingestion_id=request.expected_ingestion_id,
+            )
         )
         logger.info(
-            f"Retagged {count} vector row(s) to ingestion_id "
+            f"Retagged {result.rows} vector row(s) of "
+            f"{request.expected_ingestion_id} to ingestion_id "
             f"{request.new_ingestion_id}"
         )
-        return {"status": "ok", "count": count}
+        return {
+            "status": "ok",
+            "count": result.rows,
+            "document_ids": result.document_ids,
+        }
     except Exception as e:
         logger.error(f"Error retagging vectors: {e}")
         raise HTTPException(status_code=500, detail=str(e))

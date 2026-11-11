@@ -189,9 +189,16 @@ class HttpVectorStore:
         document_ids: List[str],
         new_ingestion_id: str,
         provenance_by_document_id: "dict[str, dict] | None" = None,
-    ) -> int:
+        *,
+        expected_ingestion_id: str,
+    ) -> tuple[int, set[str]]:
         """Re-tag reused artifacts' vectors to the new generation's
         ingestion_id, in place (issue #196, FR-007b) -- no re-embedding.
+
+        CI-06 review R2 (#337): only rows of ``expected_ingestion_id`` (the
+        reused prior generation) move; stale rows of an older generation that
+        failed cleanup stay where they are. Returns (rows retagged, distinct
+        document_ids retagged) so the caller can verify the reused set.
 
         Issue #199 (Stage B2 incremental-reuse fix): when
         `provenance_by_document_id` is given, each batch also carries the
@@ -203,11 +210,14 @@ class HttpVectorStore:
         preserve-other-keys guarantee.
         """
         check_ownership()
+        if not expected_ingestion_id:
+            raise ValueError("expected_ingestion_id is required")
         if not document_ids:
-            return 0
+            return 0, set()
         provenance_by_document_id = provenance_by_document_id or {}
         url = f"{self.base_url}/v1/vectors/retag"
         total = 0
+        retagged: set[str] = set()
         for start in range(0, len(document_ids), self.RETAG_BATCH_SIZE):
             batch = document_ids[start:start + self.RETAG_BATCH_SIZE]
             batch_provenance = {
@@ -220,10 +230,18 @@ class HttpVectorStore:
                 json={
                     "document_ids": batch,
                     "new_ingestion_id": new_ingestion_id,
+                    "expected_ingestion_id": expected_ingestion_id,
                     "provenance_by_document_id": batch_provenance or None,
                 },
                 timeout=90,
             )
             resp.raise_for_status()
-            total += resp.json().get("count", 0)
-        return total
+            body = resp.json()
+            if "document_ids" not in body:
+                raise RuntimeError(
+                    "vector_store_service retag response lacks document_ids; "
+                    "deploy vector_store_service with ingestion_service (#337)"
+                )
+            total += body.get("count", 0)
+            retagged.update(str(d) for d in body["document_ids"])
+        return total, retagged

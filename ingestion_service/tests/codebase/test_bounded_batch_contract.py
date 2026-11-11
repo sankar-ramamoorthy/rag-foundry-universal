@@ -140,7 +140,9 @@ def test_large_artifact_normalized_parity_across_buffers(buffer_size):
         validator=Mock(), embedder=embedder, vector_store=store
     )
     items = pipeline._chunk("x" * 128000, "code", "mock")
-    assert len(items) == 143
+    # CI-06 (#337): one unbroken line -> exact 800-char windows (overlap
+    # repeats whole lines only), formerly 143 windows of 1000/100.
+    assert len(items) == 160
     buffer = EmbeddingBuffer(
         pipeline, "attempt", max_chunks=buffer_size, max_bytes=7000
     )
@@ -149,9 +151,9 @@ def test_large_artifact_normalized_parity_across_buffers(buffer_size):
         assert len(buffer.chunks) <= buffer_size
         assert buffer.byte_count <= 7000
     buffer.flush()
-    assert buffer.chunks_persisted == 143
+    assert buffer.chunks_persisted == 160
     assert not buffer.chunks and not buffer.document_ids and not buffer.chunk_indices
-    assert [r["metadata"]["chunk_index"] for r in records] == list(range(143))
+    assert [r["metadata"]["chunk_index"] for r in records] == list(range(160))
     assert [r["metadata"]["chunk_text"] for r in records] == [c.content for c in items]
     assert [r["vector"] for r in records] == [[float(len(c.content))] for c in items]
     assert [r["metadata"]["source_metadata"] for r in records] == [

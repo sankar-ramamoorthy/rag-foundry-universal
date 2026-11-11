@@ -20,7 +20,9 @@ class OllamaEmbedder(BaseEmbedder):
         logging.debug("OllamaEmbedder self.base_url %s", self.base_url)
         logging.debug("OllamaEmbedder self.model %s", self.model)
 
-    def embed(self, chunks: List[Chunk]) -> List[List[float]]:
+    def embed(
+        self, chunks: List[Chunk], *, truncate_overflow: bool = False
+    ) -> List[List[float]]:
         logging.debug(
             "OllamaEmbedder received %d items, types: %s",
             len(chunks),

@@ -39,6 +39,10 @@ class EmbeddingBuffer:
         self.chunks_persisted = 0
         self.max_buffer_chunks = 0
         self.max_buffer_bytes = 0
+        # CI-06 (#337): extra pieces created by splitting passages the model
+        # rejected, per document, so later ordinals stay consecutive. Only
+        # documents that actually needed a split appear here.
+        self.ordinal_shift: dict[str, int] = {}
 
     def append(self, chunk: Chunk, document_id: str, chunk_index: int) -> None:
         size = len(chunk.content.encode("utf-8"))
@@ -54,7 +58,7 @@ class EmbeddingBuffer:
             self.flush()
         self.chunks.append(chunk)
         self.document_ids.append(document_id)
-        self.chunk_indices.append(chunk_index)
+        self.chunk_indices.append(chunk_index + self.ordinal_shift.get(document_id, 0))
         self.byte_count += size
         self.max_buffer_chunks = max(self.max_buffer_chunks, len(self.chunks))
         self.max_buffer_bytes = max(self.max_buffer_bytes, self.byte_count)
@@ -62,13 +66,19 @@ class EmbeddingBuffer:
     def flush(self) -> None:
         if not self.chunks:
             return
-        self.pipeline.embed_and_persist_batch(
+        extra = self.pipeline.embed_and_persist_batch(
             chunks=self.chunks,
             ingestion_id=self.ingestion_id,
             document_ids=self.document_ids,
             chunk_indices=self.chunk_indices,
         )
-        self.chunks_persisted += len(self.chunks)
+        if not isinstance(extra, dict):  # legacy doubles return None
+            extra = {}
+        for document_id, count in extra.items():
+            self.ordinal_shift[document_id] = (
+                self.ordinal_shift.get(document_id, 0) + count
+            )
+        self.chunks_persisted += len(self.chunks) + sum(extra.values())
         self.chunks.clear()
         self.document_ids.clear()
         self.chunk_indices.clear()

@@ -8,7 +8,7 @@ storage behavior, but to ensure interface correctness and clarity.
 
 import pytest
 
-from src.core.vectorstore.base import VectorStore
+from src.core.vectorstore.base import RetagResult, VectorStore
 from shared.models.vector import VectorRecord, VectorMetadata
 
 pytestmark = pytest.mark.unit
@@ -67,13 +67,20 @@ def test_vectorstore_contract_with_minimal_implementation():
                 if r.metadata.ingestion_id != ingestion_id
             ]
 
-        def retag_ingestion_id(self, document_ids, new_ingestion_id: str) -> int:
-            count = 0
-            for r in self._records:
-                if r.metadata.document_id in document_ids:
-                    r.metadata.ingestion_id = new_ingestion_id
-                    count += 1
-            return count
+        def retag_ingestion_id(
+            self, document_ids, new_ingestion_id: str,
+            provenance_by_document_id=None, *, expected_ingestion_id: str,
+        ) -> RetagResult:
+            moved = [
+                r for r in self._records
+                if r.metadata.document_id in document_ids
+                and r.metadata.ingestion_id == expected_ingestion_id
+            ]
+            for r in moved:
+                r.metadata.ingestion_id = new_ingestion_id
+            return RetagResult(
+                len(moved), sorted({str(r.metadata.document_id) for r in moved})
+            )
 
     store = DummyVectorStore()
 
