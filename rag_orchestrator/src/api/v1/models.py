@@ -112,6 +112,7 @@ class GapNoteModel(BaseModel):
 
 class TraceResponse(BaseModel):
     repo_id: str
+    ingestion_id: str
     resolved_start: ResolvedStartModel
     relation_types: List[str]
     direction: str
@@ -138,6 +139,7 @@ class ImpactCandidateModel(BaseModel):
 
 class ImpactResponse(BaseModel):
     repo_id: str
+    ingestion_id: str
     resolved_start: ResolvedStartModel
     relation_types_considered: List[str]
     max_depth: int

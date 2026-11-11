@@ -1,5 +1,7 @@
 from collections import deque, defaultdict
-from typing import List, Set, Dict, Optional
+from typing import List, Set, Dict, Optional, NoReturn
+from uuid import UUID
+from fastapi import HTTPException
 import requests  # New import to call the ingestion service API
 from src.core.config import get_settings
 import logging
@@ -49,6 +51,8 @@ class CodebaseGraph:
     """
 
     def __init__(self):
+        self.repo_id: Optional[str] = None
+        self.ingestion_id: Optional[str] = None
         self.nodes: Dict[str, Node] = {}
         # Issue #220: per-edge relationship_metadata (confidence,
         # call_sites, bases, etc. -- see graph_assembler.py), keyed by the
@@ -271,97 +275,142 @@ def get_nodes_by_canonical_ids_from_api(
         )
 
 
-def get_repo_generation(repo_id: str) -> tuple[Optional[str], str]:
-    """
-    #168 (WP-R5): cheap check of repo_id's current servable generation --
-    does not fetch nodes/relationships, only ingestion_service's
-    db_utils.resolve_current_generation/generation_status lookup (#166).
-    Used by the graph cache to detect a rebuild without paying for a full
-    graph re-fetch on every request.
+class GraphSnapshotError(HTTPException):
+    """Explicit unavailable/conflict/protocol outcome, never source absence."""
 
-    Returns (ingestion_id, generation_status). ingestion_id is None unless
-    generation_status is "ready". A non-200 response (repo_id truly
-    unknown to this call, or a transient error) is treated the same as
-    "unknown" -- callers must not raise the whole retrieval request over a
-    freshness-check failure; graph expansion degrading to empty is
-    preferable to a hard failure on the vector-seed half of the answer.
-    """
+
+def get_repo_generation(repo_id: str) -> tuple[Optional[str], str]:
+    """Cheap coherent lookup. Untrusted/failed lookups cannot authorize a hit."""
     url = f"{ingestion_service_url}/v1/repos/{repo_id}/generation"
     try:
         response = requests.get(url, timeout=5)
-    except requests.RequestException:
-        logger.warning(
-            f"Generation check failed for repo_id={repo_id[:8]}",
-            exc_info=True,
-        )
-        return None, "unknown"
-
-    if response.status_code != 200:
-        logger.warning(
-            f"Generation check for repo_id={repo_id[:8]} returned "
-            f"{response.status_code}: {response.text}"
-        )
-        return None, "unknown"
-
-    body = response.json()
-    return body.get("ingestion_id"), body.get("generation_status", "unknown")
+        if response.status_code != 200:
+            return None, "unknown"
+        body = response.json()
+        if not isinstance(body, dict) or body.get("repo_id") != repo_id:
+            return None, "unknown"
+        status = body.get("generation_status")
+        identity = body.get("ingestion_id")
+        if status == "ready" and isinstance(identity, str):
+            return str(UUID(identity)), "ready"
+        if status in ("building", "failed", "unknown") and identity is None:
+            return None, status
+    except (requests.RequestException, ValueError, TypeError):
+        logger.warning("Generation check failed for %s", repo_id, exc_info=True)
+    return None, "unknown"
 
 
-def get_full_graph_from_api(repo_id: str) -> Dict:
-    """
-    Fetch the full graph (nodes and relationships) for a given repository
-    from the ingestion_service API.
-    """
-    # url = f"http://ingestion_service/v1/graph/repos/{repo_id}"
+def get_full_graph_from_api(
+    repo_id: str,
+    expected_generation_id: Optional[str] = None,
+) -> Dict:
     url = f"{ingestion_service_url}/v1/graph/repos/{repo_id}"
-    response = requests.get(url)
+    params = (
+        {"expected_generation_id": expected_generation_id}
+        if expected_generation_id is not None
+        else {}
+    )
+    try:
+        response = requests.get(url, params=params, timeout=(5, 70))
+        if response.status_code == 409:
+            raise GraphSnapshotError(409, "Repository generation changed; retry")
+        if response.status_code != 200:
+            raise GraphSnapshotError(503, "Repository graph export unavailable")
+        return response.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise GraphSnapshotError(503, "Repository graph export unavailable") from exc
 
-    if response.status_code == 200:
-        return response.json()  # returns both nodes and edges
-    else:
-        raise Exception(
-            f"Error fetching full graph: {response.status_code} - {response.text}"
-        )
+
+def _invalid_graph() -> NoReturn:
+    raise GraphSnapshotError(502, "Invalid repository graph snapshot envelope")
 
 
-# --- Graph Loading ---
+def _validate_nodes(nodes) -> set[str]:
+    if not isinstance(nodes, list) or not nodes:
+        _invalid_graph()
+    cids, document_ids = set(), set()
+    fields = ("canonical_id", "document_id", "relative_path", "title", "doc_type")
+    for node in nodes:
+        if not isinstance(node, dict):
+            _invalid_graph()
+        if any(not isinstance(node.get(field), str) for field in fields):
+            _invalid_graph()
+        cid, doc_id = node["canonical_id"], node["document_id"]
+        if not cid or not doc_id or cid in cids or doc_id in document_ids:
+            _invalid_graph()
+        if node.get("provenance") is not None and not isinstance(
+            node["provenance"], dict
+        ):
+            _invalid_graph()
+        cids.add(cid)
+        document_ids.add(doc_id)
+    return cids
 
 
-def load_graph_for_repo(repo_id: str) -> CodebaseGraph:
-    """
-    Build an in-memory CodebaseGraph from the ingestion_service API.
-    """
-    graph = CodebaseGraph()
-
-    graph_data = get_full_graph_from_api(repo_id)
-
-    # Step 1: Load Nodes
-    # API returns nodes as a LIST of GraphNode dicts (not a dict keyed by canonical_id)
-    for node in graph_data.get("nodes", []):
-        new_node = Node(
-            canonical_id=node["canonical_id"],
-            file_path=node.get("relative_path"),
-            lineno=node.get("lineno"),
-            provenance=node.get("provenance"),
-        )
-        graph.add_node(new_node)
-
-    # Step 2: Load Relationships
-    # relationships is dict: from_canonical_id → [{to_canonical_id, relation_type}]
-    for from_cid, edges in graph_data.get("relationships", {}).items():
+def _validate_relationships(relationships, cids: set[str]) -> None:
+    if not isinstance(relationships, dict):
+        _invalid_graph()
+    for source, edges in relationships.items():
+        if source not in cids or not isinstance(edges, list):
+            _invalid_graph()
         for edge in edges:
-            to_cid = edge.get("to_canonical_id")
-            relation_type = edge.get("relation_type")
-            if from_cid in graph.nodes and to_cid in graph.nodes:
-                # Issue #220: relationship_metadata now survives the
-                # export -- pass it through so trace_impact.py can surface
-                # confidence/call-site evidence per hop.
-                graph.add_edge(
-                    from_cid,
-                    to_cid,
-                    relation_type,
-                    metadata=edge.get("relationship_metadata"),
-                )
+            if not isinstance(edge, dict):
+                _invalid_graph()
+            target, relation = edge.get("to_canonical_id"), edge.get("relation_type")
+            if (
+                not isinstance(target, str)
+                or target not in cids
+                or not isinstance(relation, str)
+                or not relation
+                or not isinstance(edge.get("relationship_metadata"), dict)
+            ):
+                _invalid_graph()
 
-    logger.info(f"Graph built: {len(graph.nodes)} nodes")
+
+def _validate_graph_snapshot(data: Dict, repo_id: str, expected: Optional[str]) -> str:
+    """Validate before constructing a graph or discarding metadata."""
+    if not isinstance(data, dict) or data.get("repo_id") != repo_id:
+        _invalid_graph()
+    status = data.get("generation_status")
+    if status in ("building", "failed", "unknown"):
+        raise GraphSnapshotError(503, f"Repository graph unavailable ({status})")
+    if status != "ready" or not isinstance(data.get("ingestion_id"), str):
+        _invalid_graph()
+    try:
+        generation = str(UUID(data["ingestion_id"]))
+    except (ValueError, TypeError, AttributeError):
+        _invalid_graph()
+    if expected is not None and generation != expected:
+        raise GraphSnapshotError(409, "Repository graph identity changed; retry")
+    cids = _validate_nodes(data.get("nodes"))
+    if type(data.get("total_nodes")) is not int or data["total_nodes"] != len(cids):
+        _invalid_graph()
+    _validate_relationships(data.get("relationships"), cids)
+    return generation
+
+
+def load_graph_for_repo(
+    repo_id: str,
+    expected_generation_id: Optional[str] = None,
+) -> CodebaseGraph:
+    data = get_full_graph_from_api(repo_id, expected_generation_id)
+    generation = _validate_graph_snapshot(data, repo_id, expected_generation_id)
+    graph = CodebaseGraph()
+    graph.repo_id, graph.ingestion_id = repo_id, generation
+    for node in data["nodes"]:
+        graph.add_node(
+            Node(
+                canonical_id=node["canonical_id"],
+                file_path=node["relative_path"],
+                provenance=node.get("provenance"),
+            )
+        )
+    for from_cid, edges in data["relationships"].items():
+        for edge in edges:
+            graph.add_edge(
+                from_cid,
+                edge["to_canonical_id"],
+                edge["relation_type"],
+                metadata=edge["relationship_metadata"],
+            )
     return graph

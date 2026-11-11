@@ -4,6 +4,7 @@ from dataclasses import asdict
 import logging
 
 import httpx
+from starlette.concurrency import run_in_threadpool
 
 from src.api.v1.models import (
     EvidenceRequest,
@@ -158,12 +159,22 @@ async def trace_endpoint(
             f"({settings.TRACE_MAX_DEPTH})",
         )
 
-    from src.retrieval.codebase_utils import get_cached_graph
+    from src.retrieval.codebase_utils import get_cached_graph_with_generation
 
-    graph = get_cached_graph(repo_id)
+    generation, graph = await run_in_threadpool(
+        get_cached_graph_with_generation, repo_id
+    )
     resolved = resolve_start_symbol(graph, start)
     if resolved is None:
-        raise HTTPException(404, f"No symbol resolves for start={start!r}")
+        raise HTTPException(
+            404,
+            {
+                "code": "symbol_not_found",
+                "repo_id": repo_id,
+                "ingestion_id": generation,
+                "start": start,
+            },
+        )
     if isinstance(resolved, AmbiguousStart):
         raise HTTPException(
             409,
@@ -179,7 +190,7 @@ async def trace_endpoint(
         max_depth=effective_depth,
         max_nodes=settings.TRACE_MAX_NODES,
     )
-    return TraceResponse(repo_id=repo_id, **asdict(result))
+    return TraceResponse(repo_id=repo_id, ingestion_id=generation, **asdict(result))
 
 
 @router.get("/repos/{repo_id}/impact", response_model=ImpactResponse)
@@ -196,12 +207,22 @@ async def impact_endpoint(repo_id: str, start: str, max_depth: int | None = None
             f"({settings.IMPACT_MAX_DEPTH})",
         )
 
-    from src.retrieval.codebase_utils import get_cached_graph
+    from src.retrieval.codebase_utils import get_cached_graph_with_generation
 
-    graph = get_cached_graph(repo_id)
+    generation, graph = await run_in_threadpool(
+        get_cached_graph_with_generation, repo_id
+    )
     resolved = resolve_start_symbol(graph, start)
     if resolved is None:
-        raise HTTPException(404, f"No symbol resolves for start={start!r}")
+        raise HTTPException(
+            404,
+            {
+                "code": "symbol_not_found",
+                "repo_id": repo_id,
+                "ingestion_id": generation,
+                "start": start,
+            },
+        )
     if isinstance(resolved, AmbiguousStart):
         raise HTTPException(
             409,
@@ -215,7 +236,7 @@ async def impact_endpoint(repo_id: str, start: str, max_depth: int | None = None
         max_depth=effective_depth,
         max_candidates=settings.IMPACT_MAX_CANDIDATES,
     )
-    return ImpactResponse(repo_id=repo_id, **asdict(result))
+    return ImpactResponse(repo_id=repo_id, ingestion_id=generation, **asdict(result))
 
 
 @router.post("/rag/simple", response_model=SimpleRAGResponse)

@@ -12,7 +12,6 @@ needed.
 
 import asyncio
 import time
-from types import SimpleNamespace
 
 import httpx
 import pytest
@@ -27,19 +26,21 @@ EXPORT_SECONDS = 1.0
 REPO_ID = "00000000-0000-4000-8000-000000000271"
 
 
-def _node(canonical_id: str) -> SimpleNamespace:
-    return SimpleNamespace(
-        document_id=f"doc-{canonical_id}",
-        canonical_id=canonical_id,
-        relative_path="a.py",
-        title=canonical_id,
-        doc_type="function",
-        provenance={"authority": "code"},
-    )
+def _node(canonical_id: str) -> dict:
+    return {
+        "document_id": f"doc-{canonical_id}",
+        "canonical_id": canonical_id,
+        "relative_path": "a.py",
+        "title": canonical_id,
+        "doc_type": "function",
+        "provenance": {"authority": "code"},
+    }
 
 
 def _graph_data() -> dict:
     return {
+        "repo_id": REPO_ID,
+        "ingestion_id": REPO_ID,
         "nodes": {"a.py#f": _node("a.py#f"), "a.py#g": _node("a.py#g")},
         "relationships": {
             "a.py#f": [
@@ -72,7 +73,7 @@ def _client(app: FastAPI) -> httpx.AsyncClient:
 
 
 def test_other_requests_are_served_while_an_export_runs(monkeypatch):
-    def slow_export(repo_id: str) -> dict:
+    def slow_export(repo_id: str, expected_generation_id=None) -> dict:
         time.sleep(EXPORT_SECONDS)  # synchronous, like the real DB export
         return _graph_data()
 
@@ -100,9 +101,11 @@ def test_other_requests_are_served_while_an_export_runs(monkeypatch):
     assert response.status_code == 200
 
 
-def test_export_response_contract_is_unchanged(monkeypatch):
+def test_export_preserves_graph_fields_and_adds_snapshot_identity(monkeypatch):
     monkeypatch.setattr(
-        db_utils, "get_full_graph_for_repo", lambda repo_id: _graph_data()
+        db_utils,
+        "get_full_graph_for_repo",
+        lambda repo_id, expected_generation_id=None: _graph_data(),
     )
 
     async def fetch():
@@ -111,7 +114,15 @@ def test_export_response_contract_is_unchanged(monkeypatch):
 
     body = asyncio.run(fetch()).json()
 
-    assert set(body) == {"nodes", "relationships", "total_nodes", "generation_status"}
+    assert set(body) == {
+        "repo_id",
+        "ingestion_id",
+        "nodes",
+        "relationships",
+        "total_nodes",
+        "generation_status",
+    }
+    assert body["repo_id"] == body["ingestion_id"] == REPO_ID
     assert body["total_nodes"] == 2
     assert body["generation_status"] == "ready"
     assert {n["canonical_id"] for n in body["nodes"]} == {"a.py#f", "a.py#g"}

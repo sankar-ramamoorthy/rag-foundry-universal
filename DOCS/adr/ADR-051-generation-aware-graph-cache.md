@@ -3,8 +3,11 @@ title: "ADR-051: Generation-aware rag_orchestrator graph cache"
 date: 2026-09-17
 type: adr
 status: accepted
+amended: 2026-11-10
 tags: [rag_orchestrator, caching, freshness, generation, repository]
 related:
+  - "[CI-01 implementation verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)"
+  - "[CI-01 graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)"
   - "[WP-R5 specification](/specs/005-production-correctness/issues/freshness.md)"
   - "[ADR-050](/DOCS/adr/ADR-050-repository-lifecycle-consistency.md)"
   - "[ADR-030](/DOCS/adr/ADR-030-unified-artifact-graph.md)"
@@ -30,11 +33,12 @@ it. A warm worker could keep answering from a pre-rebuild generation
 indefinitely, combining new vector evidence (from `vector_store_service`,
 filtered only by `repo_id`) with old graph evidence (from the stale cache).
 
-R3/ADR-050 already fixed the underlying *data*-correctness half: a cold
-`GET /v1/graph/repos/{repo_id}` now returns exactly one current-completed
-generation's nodes, never a mix. It deliberately did not propagate that
-generation identity to any caller's cache — that propagation is this ADR's
-subject.
+R3/ADR-050 introduced actual-owner/completion gating. The original version of
+this ADR asserted that this alone made cold exports internally consistent.
+The [CI-01 investigation](/DOCS/audit/2026-11-10-ci01-generation-snapshot-investigation.md)
+found separate reader sessions/statements and missing export identity; the
+original claim was stronger than its evidence. The November 10 amendment below
+defines the required composition without changing R3's mutation decision.
 
 ## Decision
 
@@ -47,19 +51,21 @@ to find out.
 
 **Key the cache on `(repo_id, generation_id)`, not `repo_id` alone.**
 `get_cached_graph` calls the cheap generation endpoint on every invocation.
-A cache hit requires the stored generation to still match; any mismatch
-(including "no entry yet") triggers a real reload via the existing full
-`get_full_graph_from_api`/`load_graph_for_repo` path. Only the current
+A cache hit requires a coherent ready lookup whose identity matches the stored
+generation. Any mismatch (including "no entry yet") triggers a generation-fenced,
+validated reload via `get_full_graph_from_api`/`load_graph_for_repo` under the
+CI-01 contract. Only the selected
 generation is ever kept per `repo_id` — a stale entry is replaced outright,
 not kept alongside the new one, so the cache never holds two generations of
 the same repository simultaneously.
 
-**One query, one generation.** `hybrid_retrieve` calls `get_cached_graph`
-exactly once per request (its single graph-expansion step). Resolving the
-generation once per call and using it consistently for that call therefore
-means a single query can never mix two generations' graph evidence within
-itself — a rebuild landing mid-request is invisible to that request and
-observed by the *next* one, not chased mid-flight.
+**One structural operation, one materialized graph snapshot.** A validated graph
+A can finish traversal even if B subsequently commits. A separate lookup plus
+an unvalidated export cannot establish that the loaded graph was A. Nor does
+snapshot-consistent graph traversal establish generation alignment across vector,
+graph and passage reads. Preserve existing RAG/evidence outer fences and their
+retry/failure behavior on drift; finishing graph traversal on A is not permission
+to finish a mixed-generation whole request.
 
 **Bound the cache by repo count, not by generation.** The original defect
 was unbounded growth across every `repo_id` ever queried, not "too many
@@ -67,26 +73,57 @@ generations of one repo" (structurally impossible to hold more than one, by
 construction above). `_repo_graphs` is now an `OrderedDict` with LRU
 eviction at `GRAPH_CACHE_MAX_REPOS` (default 32) distinct repositories.
 
-**No completed generation, no fetch.** If the cheap check reports
-`building`/`failed`/`unknown` (no `ingestion_id`), `get_cached_graph`
-returns an empty `CodebaseGraph()` without calling the full-graph endpoint
-at all and without writing a cache entry — `ingestion_service` would only
-return empty in that case anyway (ADR-050); the cheap check now avoids
-paying for it.
+**No completed generation, no usable graph.** A cheap check reporting
+`building`/`failed`/`unknown`, missing identity or transport failure cannot
+authorize fetching/reusing a ready graph or writing a cache entry. Propagate
+unavailability distinctly from absence. The original implementation returned an
+empty `CodebaseGraph()` here; CI-01 requires explicit unavailable semantics so
+structural consumers cannot turn missing data into supported-looking absence.
 
 **Thread safety.** A `threading.Lock` guards all reads/writes of
 `_repo_graphs`, since concurrent requests can call `get_cached_graph`
 simultaneously and the previous implementation had no such guard.
+
+## CI-01 export validation (accepted 2026-11-10)
+
+The [graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
+is authoritative for the envelope, outcomes and race acceptance. Owner acceptance
+authorizes this clarification only, not application changes. Original delivery
+evidence below remains historical, not verification of this amendment.
+
+Implementation was subsequently authorized separately under #335; local
+[verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)
+records the new evidence. Merge/deployment state is tracked in `DOCS/status.md`.
+
+Cold and forced loads send `expected_generation_id` for their selected ingestion
+UUID. Before constructing a usable graph or caching it, validate the export's
+repository, explicit ready status, non-null identity matching the expectation,
+node count and graph shape. The cache label comes from this validated export,
+never from an unrelated earlier lookup. Reject 409, non-ready, malformed, legacy
+identity-missing and transport-failure results without stale fallback or insertion.
+
+Warm reuse keeps the cheap generation check; its identity/status must be coherent
+at its own read boundary. A check at A permits reuse of a correctly identified
+A snapshot even if B commits just afterward. Every later invocation checks again.
+Concurrent loads must preserve payload/label coupling and cannot bypass the next
+freshness check. Keep bounded LRU storage and synchronization; coalescing is optional.
+Direct TRACE/IMPACT must expose the graph identity and distinguish unavailable
+from absent-at-snapshot. Non-ready empty wire collections are not ready graphs.
+
+Producer support ships before validating consumers; new consumers fail closed
+against older envelopes. Both sides must be verified before claiming CI-01 closure.
+The preferred single repeatable-read export transaction is described in amended
+ADR-050. No canonical-ID, storage-generation retention or vector-filtering change
+is adopted here.
 
 ## Explicit non-goals
 
 - No vector-store-side generation filtering. `vector_store_service` search
   still filters by `repo_id` only; a rebuild's superseded-generation
   vectors are cleaned up best-effort by R3 (#166), not guaranteed
-  synchronously with this cache's freshness. A query's vector seeds and its
-  graph expansion are therefore each internally consistent with *a*
-  generation, but not formally proven to be the *same* generation in every
-  race window — closing that fully would require vector search to also key
+  synchronously with this cache's freshness. Graph snapshot consistency does
+  not certify that vector seeds belong to the same generation in every race
+  window — closing that fully would require vector search to also key
   on `ingestion_id`, out of scope here.
 - No canonical ID change (ADR-030/031). Generation is cache/query metadata
   only, never appended to or mixed into canonical IDs.
@@ -99,7 +136,7 @@ simultaneously and the previous implementation had no such guard.
 - Ingestion source-revision provenance (#180) and evaluation three-revision
   provenance (#181) remain separate, unimplemented follow-ups.
 
-## Verification required
+## Original verification (September 2026)
 
 Unit tests (`rag_orchestrator/tests/test_graph_cache_generation.py`) prove:
 cold load caches; warm hit on matching generation skips refetch; a
@@ -114,3 +151,9 @@ the new endpoint's contract end to end through the actual FastAPI route —
 including the specific rebuild-in-progress case (graph already replaced,
 not yet completed) and the re-ingest-under-same-repo_id case #168's
 acceptance criteria centers on.
+
+CI-01 additionally requires real PostgreSQL barrier-controlled export races and
+HTTP-client/loader/cache composition, including legacy/error rejection, unavailable
+semantics, concurrent loads, direct structural identity and retained outer fences.
+The full matrix and connection-cleanup requirements are in the graph contract;
+none is claimed executed by the original tests or this documentation amendment.

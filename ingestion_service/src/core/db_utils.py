@@ -12,7 +12,12 @@ from typing import Optional, List, Dict
 from uuid import UUID
 import logging
 
-from sqlalchemy import func
+from sqlalchemy import func, text, select
+from time import monotonic
+from copy import deepcopy
+
+from .database_session import read_snapshot
+from .config import get_settings
 
 from .database_session import get_sessionmaker
 from .models import IngestionRequest
@@ -300,9 +305,9 @@ def _document_node_owner(session, repo_id: str) -> Optional[str]:
     persist_graph atomically deletes+replaces ALL of repo_id's document_nodes
     inside one transaction (a transaction-scoped advisory lock keyed on
     repo_id serializes concurrent rebuilds — see CodebaseGraphPersistence.
-    persist_graph), and DocumentNode enforces a unique (repo_id, canonical_id)
-    constraint. So at most one ingestion_id's rows can exist for repo_id at
-    any moment; there is no schema-level way for two generations to coexist.
+    persist_graph). The writer protocol maintains one owner; the canonical-ID
+    uniqueness constraint alone does not enforce that repository-wide invariant.
+    scalar() rejects multiple owners instead of choosing an arbitrary one.
     """
     return (
         session.query(DocumentNode.ingestion_id)
@@ -529,75 +534,169 @@ def get_document_nodes_by_canonical_ids(
         return nodes
 
 
-def get_full_graph_for_repo(repo_id: str) -> Dict:
-    """
-    Load nodes and relationships for a repo's *current completed generation*
-    only (#166) — never a mix of an old generation and an in-flight rebuild's
-    partial rows, and never two completed generations at once.
-    """
-    current_ingestion_id = resolve_current_generation(repo_id)
-    if current_ingestion_id is None:
-        return {
-            "nodes": {},
-            "relationships": {},
-            "generation_status": generation_status(repo_id),
-        }
-
-    with SessionLocal() as session:
-        nodes = (
-            session.query(DocumentNode)
-            .filter(
-                DocumentNode.repo_id == repo_id,
-                DocumentNode.ingestion_id == current_ingestion_id,
-            )
-            .all()
-        )
-
-        if not nodes:
-            return {
-                "nodes": {},
-                "relationships": {},
-                "generation_status": "ready",
-            }
-
-        node_data = {node.canonical_id: node for node in nodes}
-        document_ids = {node.document_id for node in nodes}
-
-        relationships = (
-            session.query(DocumentRelationship)
-            .filter(DocumentRelationship.from_document_id.in_(document_ids))
-            .all()
-        )
-
-        doc_id_to_canonical = {node.document_id: node.canonical_id for node in nodes}
-
-        rel_data: Dict = {}
-        for rel in relationships:
-            from_cid = doc_id_to_canonical.get(rel.from_document_id)
-            to_cid = doc_id_to_canonical.get(rel.to_document_id)
-            if from_cid and to_cid:
-                if from_cid not in rel_data:
-                    rel_data[from_cid] = []
-                rel_data[from_cid].append(
-                    {
-                        "to_canonical_id": to_cid,
-                        "relation_type": rel.relation_type,
-                        # Issue #220: confidence/call_sites/bases/etc, populated
-                        # at assembly time (graph_assembler.py) and persisted
-                        # verbatim (codebase_persistence.py) -- previously
-                        # dropped here, the first export step, even though it
-                        # survives correctly all the way to Postgres.
-                        "relationship_metadata": rel.relationship_metadata or {},
-                    }
-                )
-
-        logger.info(
-            f"DB: get_full_graph_for_repo repo={repo_id[:8]} "
-            f"— {len(node_data)} nodes, {len(rel_data)} relationship groups"
-        )
-
-        return {
-            "nodes": node_data,
-            "relationships": rel_data,
+class GraphGenerationConflict(Exception):
+    def __init__(self, repo_id: str, expected: str, actual: str):
+        self.detail = {
+            "code": "generation_conflict",
+            "repo_id": repo_id,
+            "expected_generation_id": expected,
+            "ingestion_id": actual,
             "generation_status": "ready",
         }
+        super().__init__("Repository generation changed")
+
+
+def _read_generation(session, repo_id: str, deadline: float) -> Dict:
+    """Resolve owner/status/lineage inside the caller's snapshot (#335)."""
+    owner = _document_node_owner(session, repo_id)
+    _remaining_export_time(session, deadline)
+    result = {"repo_id": repo_id, "ingestion_id": None, "generation_status": "unknown"}
+    if owner is not None:
+        request = (
+            session.query(
+                IngestionRequest.status,
+                IngestionRequest.commit_sha,
+                IngestionRequest.finished_at,
+                IngestionRequest.parent_generation_id,
+                IngestionRequest.is_incremental,
+            )
+            .filter(
+                IngestionRequest.ingestion_id == owner,
+            )
+            .one_or_none()
+        )
+        if request is None:
+            logger.error("Graph owner has no ingestion request: %s", repo_id)
+            return result
+        status = request.status
+        if status == "completed":
+            result.update(
+                ingestion_id=str(owner),
+                generation_status="ready",
+                commit_sha=request.commit_sha,
+                ingested_at=request.finished_at,
+                parent_generation_id=(
+                    str(request.parent_generation_id)
+                    if request.parent_generation_id
+                    else None
+                ),
+                is_incremental=bool(request.is_incremental),
+            )
+            return result
+    else:
+        status = (
+            session.query(IngestionRequest.status)
+            .filter(
+                IngestionRequest.repo_id == repo_id,
+            )
+            .order_by(
+                IngestionRequest.created_at.desc(), IngestionRequest.ingestion_id.desc()
+            )
+            .limit(1)
+            .scalar()
+        )
+    if status in ("accepted", "running"):
+        result["generation_status"] = "building"
+    elif status == "failed":
+        result["generation_status"] = "failed"
+    return result
+
+
+def _remaining_export_time(session, deadline: float) -> None:
+    remaining_ms = int((deadline - monotonic()) * 1000)
+    if remaining_ms <= 0:
+        raise TimeoutError("Graph snapshot deadline exceeded")
+    # Trusted integer, transaction-local; never interpolate request data.
+    session.execute(text(f"SET LOCAL statement_timeout = {remaining_ms}"))
+    session.execute(
+        text(f"SET LOCAL idle_in_transaction_session_timeout = {remaining_ms}")
+    )
+
+
+def get_repo_generation_snapshot(repo_id: str) -> Dict:
+    """Cheap coherent identity/status/lineage; no graph export."""
+    deadline = monotonic() + get_settings().GRAPH_EXPORT_TIMEOUT_SECONDS
+    with read_snapshot(SessionLocal) as session:
+        _remaining_export_time(session, deadline)
+        result = _read_generation(session, repo_id, deadline)
+        _remaining_export_time(session, deadline)
+        return result
+
+
+def get_full_graph_for_repo(
+    repo_id: str,
+    expected_generation_id: Optional[str] = None,
+) -> Dict:
+    """CI-01: identify and materialize a graph in one read-only snapshot."""
+    deadline = monotonic() + get_settings().GRAPH_EXPORT_TIMEOUT_SECONDS
+    with read_snapshot(SessionLocal) as session:
+        _remaining_export_time(session, deadline)
+        generation = _read_generation(session, repo_id, deadline)
+        result = {
+            "repo_id": repo_id,
+            "ingestion_id": generation["ingestion_id"],
+            "generation_status": generation["generation_status"],
+            "nodes": {},
+            "relationships": {},
+        }
+        if generation["generation_status"] != "ready":
+            return result
+        owner = generation["ingestion_id"]
+        if expected_generation_id is not None and expected_generation_id != owner:
+            raise GraphGenerationConflict(repo_id, expected_generation_id, owner)
+        _remaining_export_time(session, deadline)
+        # Select only wire fields; no detached ORM objects or source-text loads.
+        nodes = session.execute(
+            select(
+                DocumentNode.document_id,
+                DocumentNode.canonical_id,
+                DocumentNode.relative_path,
+                DocumentNode.title,
+                DocumentNode.doc_type,
+                DocumentNode.provenance,
+            ).where(DocumentNode.repo_id == repo_id, DocumentNode.ingestion_id == owner)
+        ).all()
+        if not nodes:
+            raise RuntimeError("Ready graph owner has no nodes in its snapshot")
+        doc_to_cid = {}
+        for node in nodes:
+            if monotonic() >= deadline:
+                raise TimeoutError("Graph snapshot materialization deadline exceeded")
+            doc_to_cid[node.document_id] = node.canonical_id
+            result["nodes"][node.canonical_id] = {
+                "document_id": str(node.document_id),
+                "canonical_id": node.canonical_id,
+                "relative_path": node.relative_path or "",
+                "title": node.title or "",
+                "doc_type": node.doc_type or "",
+                "provenance": deepcopy(node.provenance),
+            }
+        _remaining_export_time(session, deadline)
+        relationships = session.execute(
+            select(
+                DocumentRelationship.from_document_id,
+                DocumentRelationship.to_document_id,
+                DocumentRelationship.relation_type,
+                DocumentRelationship.relationship_metadata,
+            ).where(
+                DocumentRelationship.repo_id == repo_id,
+            )
+        ).all()
+        for rel in relationships:
+            if monotonic() >= deadline:
+                raise TimeoutError("Graph snapshot materialization deadline exceeded")
+            from_cid = doc_to_cid.get(rel.from_document_id)
+            to_cid = doc_to_cid.get(rel.to_document_id)
+            if from_cid is None or to_cid is None:
+                raise RuntimeError(
+                    "Graph relationship endpoint is outside its snapshot"
+                )
+            result["relationships"].setdefault(from_cid, []).append(
+                {
+                    "to_canonical_id": to_cid,
+                    "relation_type": rel.relation_type,
+                    "relationship_metadata": deepcopy(rel.relationship_metadata or {}),
+                }
+            )
+        _remaining_export_time(session, deadline)
+        return result

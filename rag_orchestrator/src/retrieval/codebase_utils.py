@@ -6,7 +6,12 @@ from typing import Set, Dict, List, Optional, Tuple
 import logging
 import threading
 import requests
-from .codebase_queries import CodebaseGraph, get_repo_generation, load_graph_for_repo
+from .codebase_queries import (
+    CodebaseGraph,
+    GraphSnapshotError,
+    get_repo_generation,
+    load_graph_for_repo,
+)
 from src.core.config import get_settings
 
 
@@ -231,48 +236,15 @@ def get_cached_graph(repo_id: str, force_reload: bool = False) -> CodebaseGraph:
 def get_cached_graph_with_generation(
     repo_id: str, force_reload: bool = False
 ) -> Tuple[str, CodebaseGraph]:
-    """
-    Get CodebaseGraph for repo_id (in-memory cached), keyed on repo_id's
-    *current servable generation* (#168 / WP-R5), not repo_id alone.
+    """CI-01 / #335: each cache label belongs to its validated graph snapshot.
 
-    Issue #200 (Stage A2): unlike `get_cached_graph`, also returns the
-    generation_id the graph was resolved against, so a caller that needs
-    a generation fence (verify nothing changed before trusting the
-    result) has something to fence against -- `get_cached_graph` alone
-    gives no such envelope, which the handoff calls out explicitly as a
-    gap. Returns `("", CodebaseGraph())` when nothing is servable; an
-    empty generation_id is never a valid fence target, so callers must
-    treat it as "not ready," not "matches."
-
-    A re-ingested repo gets a new ingestion_id under the same repo_id; the
-    previous implementation kept whichever graph it loaded first forever,
-    so a warm worker could keep answering from a stale generation
-    indefinitely after a rebuild. get_repo_generation is a cheap check
-    (no node/relationship fetch) run on every call, so this can detect a
-    generation change without paying for a full graph re-fetch when
-    nothing has changed. One generation is resolved once per call and used
-    consistently for that call's graph -- callers (hybrid_retrieve calls
-    this exactly once per request) therefore never mix two generations'
-    graph evidence within a single query.
-
-    Bounded to _CACHE_MAX_REPOS entries (LRU eviction) so the number of
-    distinct repositories ever queried cannot grow this cache without
-    limit -- the original defect was unbounded growth by repo_id, and
-    keying by generation instead of fixing that would just move the same
-    problem to "unbounded growth by (repo_id, generation)".
+    Every invocation checks freshness, including force reload. A completed
+    materialized snapshot can finish after rebuild; whole-request fences remain
+    the caller's responsibility. No unavailable/legacy result becomes empty data.
     """
     generation_id, status = get_repo_generation(repo_id)
-
-    if generation_id is None:
-        # No completed generation to serve (never ingested, still
-        # building, or every attempt failed) -- nothing to cache, and
-        # fetching the full graph would only ever return empty per #166.
-        if status != "unknown":
-            logger.info(
-                f"Graph for repo_id={repo_id[:8]} not servable "
-                f"(generation_status={status}); returning empty graph"
-            )
-        return "", CodebaseGraph()
+    if generation_id is None or status != "ready":
+        raise GraphSnapshotError(503, f"Repository graph unavailable ({status})")
 
     with _repo_graphs_lock:
         cached = _repo_graphs.get(repo_id)
@@ -283,11 +255,18 @@ def get_cached_graph_with_generation(
     logger.info(
         f"Loading graph for repo_id={repo_id[:8]} generation={generation_id[:8]}..."
     )
-    graph = load_graph_for_repo(repo_id)
+    graph = load_graph_for_repo(repo_id, expected_generation_id=generation_id)
+    loaded_generation = graph.ingestion_id
+    if (
+        loaded_generation is None
+        or graph.repo_id != repo_id
+        or loaded_generation != generation_id
+    ):
+        raise GraphSnapshotError(502, "Loaded graph has an invalid snapshot identity")
     logger.info(f"Graph loaded: {len(graph.nodes)} nodes")
 
     with _repo_graphs_lock:
-        _repo_graphs[repo_id] = (generation_id, graph)
+        _repo_graphs[repo_id] = (loaded_generation, graph)
         _repo_graphs.move_to_end(repo_id)
         while len(_repo_graphs) > _CACHE_MAX_REPOS:
             evicted_repo_id, _ = _repo_graphs.popitem(last=False)
