@@ -13,14 +13,15 @@ _TOKEN_RUN = re.compile(r"[A-Za-z0-9]+|[^\sA-Za-z0-9]")
 
 
 def estimate_tokens(text: str) -> int:
-    """Conservative, model-agnostic estimate of subword tokens in ``text``.
+    """Model-agnostic packing estimate of subword tokens in ``text``.
 
     Each punctuation/symbol and each non-ASCII character counts as one token
     (BERT-style tokenizers split them individually; CJK text is roughly one
     token per character) and an ASCII alphanumeric run of length L counts as
-    ceil(L / 3). Calibrated in the CI-06 investigation against the
-    mxbai-embed-large WordPiece vocabulary: on two development corpora it
-    overestimates in aggregate by about a third. It is additive across lines.
+    ceil(L / 3). Additive across lines. It is a heuristic, not an upper
+    bound: rare letter sequences can need several times more real tokens
+    (CI-06 review R1). The serving model's strict rejection is the guard; see
+    IngestionPipeline._embed_fitted.
     """
     total = 0
     for run in _TOKEN_RUN.findall(text):
