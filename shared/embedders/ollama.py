@@ -1,7 +1,7 @@
 import requests
 import logging
-from typing import List
-from shared.embedders.base import BaseEmbedder
+from typing import List, Optional
+from shared.embedders.base import BaseEmbedder, EmbeddingInputTooLong
 from shared.embedders.input_contract import EMBEDDING_INPUT_CONTRACT
 from shared.chunks import Chunk
 
@@ -16,14 +16,16 @@ _CONTEXT_OVERFLOW = "exceeds the context length"
 class OllamaEmbedder(BaseEmbedder):
     """Embed chunk text exactly as given (CI-06, #337).
 
-    The client never shortens input, and requests set ``truncate: false`` so
-    Ollama rejects an over-context input instead of silently encoding a
-    prefix. Such an input is isolated and, as a last resort, embedded with
-    server-side truncation; that chunk is marked
-    ``metadata["embedding_input"]["truncated"] = True`` and logged, so the
-    loss is recorded on the persisted vector rather than hidden. Chunkers
-    size passages to ``shared.embedders.input_contract`` so this should not
-    happen for ingested passages.
+    Requests always set ``truncate: false``, so Ollama rejects an over-context
+    input instead of silently encoding a prefix, and the client never shortens
+    input. A rejected batch is bisected to find the offending inputs while the
+    rest are embedded normally.
+
+    - Stored passages (default): offenders raise
+      :class:`EmbeddingInputTooLong`; the ingestion pipeline splits them.
+    - Queries (``truncate_overflow=True``): offenders are re-sent with
+      server-side truncation, logged, and marked
+      ``metadata["embedding_input"]["truncated"] = True``.
     """
 
     name = "ollama"
@@ -35,7 +37,7 @@ class OllamaEmbedder(BaseEmbedder):
         self.model = model
         self.batch_size = batch_size
         self.dimension = dimension or 1024
-        self.truncated_inputs = 0
+        self.truncated_queries = 0
 
         logger.debug(
             "OllamaEmbedder base_url=%s model=%s dimension=%d",
@@ -69,29 +71,23 @@ class OllamaEmbedder(BaseEmbedder):
     def _overflowed(response: requests.Response) -> bool:
         return response.status_code != 200 and _CONTEXT_OVERFLOW in response.text
 
-    def _embed_batch(self, chunks: List[Chunk]) -> List[List[float]]:
-        texts = [chunk.content for chunk in chunks]
+    def _strict(self, texts: List[str]) -> List[Optional[List[float]]]:
+        """Embed with truncation disabled; ``None`` marks a rejected input.
+
+        Bisection costs O(k log n) extra requests for k offenders in a batch
+        of n, instead of one request per input.
+        """
         response = self._post(texts, truncate=False)
         if not self._overflowed(response):
-            return self._vectors(response, len(texts))
-        if len(chunks) > 1:
-            # Isolate which input(s) overflowed; the rest stay exact.
-            vectors: List[List[float]] = []
-            for chunk in chunks:
-                vectors.extend(self._embed_batch([chunk]))
-            return vectors
+            return list(self._vectors(response, len(texts)))
+        if len(texts) == 1:
+            return [None]
+        middle = len(texts) // 2
+        return self._strict(texts[:middle]) + self._strict(texts[middle:])
 
-        chunk = chunks[0]
-        self.truncated_inputs += 1
-        chunk.metadata.setdefault("embedding_input", {})["truncated"] = True
-        logger.warning(
-            "OllamaEmbedder: input of %d chars exceeds the %s context; embedded "
-            "a server-truncated prefix (canonical_id=%s)",
-            len(texts[0]), self.model, chunk.metadata.get("canonical_id"),
-        )
-        return self._vectors(self._post(texts, truncate=True), 1)
-
-    def embed(self, chunks: List[Chunk]) -> List[List[float]]:
+    def embed(
+        self, chunks: List[Chunk], *, truncate_overflow: bool = False
+    ) -> List[List[float]]:
         logger.debug("OllamaEmbedder received %d items", len(chunks))
         if not chunks:
             return []
@@ -104,18 +100,34 @@ class OllamaEmbedder(BaseEmbedder):
                 "truncated": False,
             }
 
-        embeddings: List[List[float]] = []
+        vectors: List[Optional[List[float]]] = []
         try:
             for start in range(0, len(chunks), self.batch_size):
-                embeddings.extend(
-                    self._embed_batch(chunks[start:start + self.batch_size])
-                )
+                batch = chunks[start:start + self.batch_size]
+                vectors.extend(self._strict([c.content for c in batch]))
+            rejected = [i for i, v in enumerate(vectors) if v is None]
+            if rejected and truncate_overflow:
+                for i in rejected:
+                    vectors[i] = self._truncated_query(chunks[i])
+                rejected = []
         except Exception as e:
             raise RuntimeError(f"Ollama embedder error: {e}") from e
 
-        if len(embeddings) != len(chunks):
+        if rejected:
+            raise EmbeddingInputTooLong(rejected, vectors)
+        if len(vectors) != len(chunks):
             raise RuntimeError(
-                f"Ollama returned {len(embeddings)} embeddings "
+                f"Ollama returned {len(vectors)} embeddings "
                 f"for {len(chunks)} inputs"
             )
-        return embeddings
+        return [v for v in vectors if v is not None]
+
+    def _truncated_query(self, chunk: Chunk) -> List[float]:
+        self.truncated_queries += 1
+        chunk.metadata["embedding_input"]["truncated"] = True
+        logger.warning(
+            "OllamaEmbedder: query of %d chars exceeds the %s context; "
+            "embedded a server-truncated prefix",
+            len(chunk.content), self.model,
+        )
+        return self._vectors(self._post([chunk.content], truncate=True), 1)[0]

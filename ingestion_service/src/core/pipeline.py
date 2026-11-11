@@ -1,12 +1,15 @@
 # ingestion_service/src/core/pipeline.py - MS6 COMPLETE (both run() + run_with_chunks)
 from __future__ import annotations
 from typing import Any, Optional
+import copy
 import logging
 from uuid import uuid4, uuid5, UUID
 
 from shared.chunks import Chunk
 from shared.chunkers.base import BaseChunker
 from shared.chunkers.selector import ChunkerFactory
+from shared.chunkers.text import split_for_overflow
+from shared.embedders.base import EmbeddingInputTooLong
 from src.core.database_session import get_sessionmaker
 from src.core.crud.crud_document_node import create_document_node
 from src.core.crud.document_relationships import create_document_relationship
@@ -107,7 +110,7 @@ class IngestionPipeline:
             relative_path=relative_path,              # ADD
             canonical_id=canonical_id,                # ADD
         )
-        embeddings = self._embed(chunks)
+        chunks, embeddings, _ = self._embed_fitted(chunks)
         logger.debug(
             f"📦 MS6 run() Persisting {len(chunks)} chunks "
             f"with document_id={document_id}"
@@ -181,7 +184,7 @@ class IngestionPipeline:
             chunk.metadata.get("chunk_strategy", "unknown"))
 
         # Continue pipeline
-        embeddings = self._embed(chunks)
+        chunks, embeddings, _ = self._embed_fitted(chunks)
         logger.debug(
             f"📦 MS6 run_with_chunks() Persisting {len(chunks)} chunks "
             f"with document_id={document_id}"
@@ -195,28 +198,48 @@ class IngestionPipeline:
         ingestion_id: str,
         document_ids: list[str],
         chunk_indices: list[int] | None = None,
-    ) -> None:
+    ) -> dict[str, int]:
         """
         Embed pre-chunked artifacts and bulk-persist them (F-08).
 
         Unlike _persist(), every chunk carries its own document_id, so one
         call covers a caller-bounded buffer. Explicit document-local indices
         preserve ordinals when one artifact spans several buffers (#160).
+
+        CI-06 (#337): a passage the model rejects as too long is replaced by
+        exact smaller pieces with consecutive ordinals; later ordinals of the
+        same document shift accordingly. Returns the extra pieces added per
+        document_id so a caller assigning later ordinals can apply the shift.
         """
         validate_batch_identity(len(chunks), document_ids, chunk_indices)
         if not chunks:
             logger.debug("embed_and_persist_batch: no chunks to persist")
-            return
+            return {}
 
-        embeddings = self._embed(chunks)
-        index_args = {} if chunk_indices is None else {"chunk_indices": chunk_indices}
+        fitted, embeddings, origin = self._embed_fitted(chunks)
+        fitted_document_ids = [document_ids[o] for o in origin]
+        extra: dict[str, int] = {}
+        index_args = {}
+        if chunk_indices is not None:
+            fitted_indices = []
+            for position, o in enumerate(origin):
+                document_id = document_ids[o]
+                if position and origin[position - 1] == o:
+                    extra[document_id] = extra.get(document_id, 0) + 1
+                fitted_indices.append(chunk_indices[o] + extra.get(document_id, 0))
+            index_args = {"chunk_indices": fitted_indices}
+        else:
+            for position, o in enumerate(origin):
+                if position and origin[position - 1] == o:
+                    extra[document_ids[o]] = extra.get(document_ids[o], 0) + 1
         self._vector_store.persist_batch(
-            chunks=chunks,
+            chunks=fitted,
             embeddings=embeddings,
             ingestion_id=ingestion_id,
-            document_ids=document_ids,
+            document_ids=fitted_document_ids,
             **index_args,
         )
+        return extra
 
     def _validate(self, text: str) -> None:
         """Validate input text (currently no-op)."""
@@ -277,6 +300,52 @@ class IngestionPipeline:
             logger.debug(f"   → Chunk {i}: {len(chunk.content)} chars")
 
         return chunks
+
+    def _embed_fitted(
+        self, chunks: list[Chunk]
+    ) -> tuple[list[Chunk], list[Any], list[int]]:
+        """Embed passages; split any the model rejects as too long (CI-06).
+
+        Returns (passages, vectors, origin) where origin[i] is the input
+        position passage i came from. A rejected passage is replaced by exact
+        consecutive pieces (each a verbatim slice, together covering it) that
+        are embedded in turn, so every stored passage is its exact embedding
+        input. Nothing is ever truncated; a passage that cannot be split
+        further fails the ingestion.
+        """
+        try:
+            return chunks, self._embed(chunks), list(range(len(chunks)))
+        except EmbeddingInputTooLong as overflow:
+            rejected = set(overflow.positions)
+            vectors = overflow.vectors
+
+        passages: list[Chunk] = []
+        out_vectors: list[Any] = []
+        origin: list[int] = []
+        for position, chunk in enumerate(chunks):
+            if position not in rejected:
+                passages.append(chunk)
+                out_vectors.append(vectors[position])
+                origin.append(position)
+                continue
+            pieces = []
+            for text in split_for_overflow(chunk.content):
+                metadata = copy.deepcopy(chunk.metadata or {})
+                metadata["overflow_split"] = True
+                pieces.append(
+                    Chunk(content=text, chunk_id=str(uuid4()), metadata=metadata)
+                )
+            logger.warning(
+                "Passage of %d chars (canonical_id=%s) exceeded the embedding "
+                "context; split into %d exact pieces",
+                len(chunk.content), (chunk.metadata or {}).get("canonical_id"),
+                len(pieces),
+            )
+            fitted, fitted_vectors, _ = self._embed_fitted(pieces)
+            passages.extend(fitted)
+            out_vectors.extend(fitted_vectors)
+            origin.extend([position] * len(fitted))
+        return passages, out_vectors, origin
 
     def _embed(self, chunks: list[Chunk]) -> list[Any]:
         """

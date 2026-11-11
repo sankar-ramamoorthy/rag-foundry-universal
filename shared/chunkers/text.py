@@ -34,20 +34,23 @@ def estimate_tokens(text: str) -> int:
 def _split_line(line: str, max_chars: int, max_tokens: int | None) -> List[str]:
     """Split one line into consecutive pieces that fit both budgets."""
     pieces: List[str] = []
-    while line:
-        end = min(len(line), max_chars)
+    start = 0  # index-based so long lines are not re-copied per piece
+    while start < len(line):
+        end = min(len(line), start + max_chars)
         if max_tokens is not None:
-            while end > 1 and estimate_tokens(line[:end]) > max_tokens:
+            while end > start + 1 and (
+                cost := estimate_tokens(line[start:end])
+            ) > max_tokens:
                 # Shrink proportionally, then by one, so progress is bounded.
-                ratio = max_tokens / estimate_tokens(line[:end])
-                end = min(end - 1, max(1, int(end * ratio)))
+                width = end - start
+                end = start + min(width - 1, max(1, int(width * max_tokens / cost)))
         if end < len(line):
             # Prefer ending after whitespace so words stay whole.
-            space = max(line.rfind(" ", 0, end), line.rfind("\t", 0, end))
-            if space >= end // 2:
+            space = max(line.rfind(" ", start, end), line.rfind("\t", start, end))
+            if space >= start + (end - start) // 2:
                 end = space + 1
-        pieces.append(line[:end])
-        line = line[end:]
+        pieces.append(line[start:end])
+        start = end
     return pieces
 
 
@@ -85,6 +88,18 @@ def line_windows(
             break
         start = packer.overlap_start(start, end, overlap)
     return windows
+
+
+def split_for_overflow(text: str) -> List[str]:
+    """Split a passage the model rejected into exact, smaller passages.
+
+    CI-06 (#337): used when the provider reports a passage as longer than its
+    context despite the estimate. Pieces are contiguous verbatim slices
+    (preferring line, then whitespace boundaries) of at most half the length.
+    """
+    if len(text) < 2:
+        raise ValueError("A single character cannot be split further")
+    return line_windows(text, -(-len(text) // 2), 0)
 
 
 class _Packer:

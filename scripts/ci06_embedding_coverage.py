@@ -34,7 +34,6 @@ import random
 import re
 import sys
 import time
-import unicodedata
 import urllib.error
 import urllib.request
 from collections import Counter, defaultdict
@@ -48,7 +47,12 @@ sys.path.insert(0, str(ROOT / "ingestion_service"))
 os.environ.setdefault("DATABASE_URL", "postgresql://unused:unused@localhost/unused")
 
 from shared.chunkers.selector import ChunkerFactory  # noqa: E402
-from shared.chunkers.text import TextChunker, line_windows  # noqa: E402
+from shared.chunkers.text import (  # noqa: E402
+    TextChunker,
+    estimate_tokens,
+    line_windows,
+    split_for_overflow,
+)
 
 WS = re.compile(r"\s+")
 IDENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]{2,}")
@@ -195,75 +199,107 @@ def contracts(budgets: list[int], token_budgets: list[int]) -> dict[str, Callabl
 
 
 # --------------------------------------------------------------------------
-# Offline token counts (measurement only)
+# Token fit, judged by the serving model itself
 # --------------------------------------------------------------------------
-class WordPieceCounter:
-    """BERT WordPiece token counter for the model's own vocabulary.
+def serving_identity(base_url: str) -> dict:
+    """Ollama version, model digest and context, recorded with fit evidence."""
+    def get(path: str, body: dict | None = None) -> dict:
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(f"{base_url.rstrip('/')}{path}", data=data)
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            return json.load(resp)
 
-    Measurement only. The vocabulary is ``model_info["tokenizer.ggml.tokens"]``
-    from Ollama ``/api/show`` with ``verbose: true`` (llama.cpp marks word
-    starts with U+2581 instead of continuation ``##``). Counts include
-    [CLS]/[SEP] and matched Ollama's ``prompt_eval_count`` exactly on 43/43
-    sampled passages, including accented, CJK and base64 inputs.
+    tags = get("/api/tags")["models"]
+    show = get("/api/show", {"model": MODEL})
+    return {
+        "ollama_version": get("/api/version").get("version"),
+        "model": MODEL,
+        "digest": next((m["digest"] for m in tags if m["name"] == MODEL), None),
+        "context_length": show["model_info"].get("bert.context_length"),
+        "quantization": show["details"].get("quantization_level"),
+    }
+
+
+class ServingFit:
+    """Which inputs the serving model rejects with ``truncate: false``.
+
+    No offline tokenizer: an earlier offline WordPiece counter diverged from
+    Ollama's llama.cpp tokenizer on long words and normalization (CI-06 review
+    R3). Batches are bisected, so cost is about one embedding per input.
     """
 
-    def __init__(self, vocab_path: Path):
-        self.vocab = set(json.loads(vocab_path.read_text(encoding="utf-8")))
+    def __init__(self, base_url: str, batch: int = 64):
+        self.base_url = base_url.rstrip("/")
+        self.batch = batch
+        self.requests = 0
 
-    @staticmethod
-    def _split(ch: str) -> bool:
-        cp = ord(ch)
-        if 33 <= cp <= 47 or 58 <= cp <= 64 or 91 <= cp <= 96 or 123 <= cp <= 126:
-            return True
-        return unicodedata.category(ch).startswith("P") or (
-            0x4E00 <= cp <= 0x9FFF or 0x3400 <= cp <= 0x4DBF
-            or 0x20000 <= cp <= 0x2B81F or 0xF900 <= cp <= 0xFAFF
-            or 0x2F800 <= cp <= 0x2FA1F
+    def _accepts(self, texts: list[str]) -> bool:
+        body = json.dumps({"model": MODEL, "input": texts, "truncate": False})
+        req = urllib.request.Request(
+            f"{self.base_url}/api/embed", data=body.encode(),
+            headers={"Content-Type": "application/json"},
         )
+        self.requests += 1
+        try:
+            with urllib.request.urlopen(req, timeout=600) as resp:
+                resp.read()
+            return True
+        except urllib.error.HTTPError as err:
+            if b"exceeds the context length" in err.read():
+                return False
+            raise
 
-    def _words(self, text: str) -> list[str]:
-        text = unicodedata.normalize("NFD", text.lower())
-        out: list[str] = []
-        cur: list[str] = []
-        for ch in text:
-            cat = unicodedata.category(ch)
-            if cat == "Mn" or ord(ch) in (0, 0xFFFD) or (
-                cat.startswith("C") and ch not in "\t\n\r"
-            ):
-                continue
-            if ch.isspace() or self._split(ch):
-                if cur:
-                    out.append("".join(cur))
-                    cur = []
-                if not ch.isspace():
-                    out.append(ch)
-            else:
-                cur.append(ch)
-        if cur:
-            out.append("".join(cur))
+    def _rejected(self, texts: list[str]) -> list[str]:
+        if self._accepts(texts):
+            return []
+        if len(texts) == 1:
+            return texts
+        mid = len(texts) // 2
+        return self._rejected(texts[:mid]) + self._rejected(texts[mid:])
+
+    def rejected(self, texts: list[str]) -> set[str]:
+        unique = sorted(set(texts))
+        out: set[str] = set()
+        for start in range(0, len(unique), self.batch):
+            out.update(self._rejected(unique[start:start + self.batch]))
+            if (start // self.batch) % 200 == 0:
+                print(f"  fit {start}/{len(unique)}", flush=True)
         return out
 
-    def count(self, text: str) -> int:
-        n = 2
-        for word in self._words(text):
-            if len(word) > 100:
-                n += 1
-                continue
-            start, pieces = 0, 0
-            while start < len(word):
-                end = len(word)
-                while end > start:
-                    sub = word[start:end]
-                    if (("▁" + sub) if start == 0 else sub) in self.vocab:
-                        break
-                    end -= 1
-                if end == start:
-                    pieces = 1
-                    break
-                pieces += 1
-                start = end
-            n += pieces
-        return n
+    def split_until_accepted(self, text: str) -> list[str]:
+        """Mirror of IngestionPipeline._embed_fitted for one rejected passage."""
+        pieces = []
+        for piece in split_for_overflow(text):
+            pieces.extend(
+                [piece] if self._accepts([piece]) else self.split_until_accepted(piece)
+            )
+        return pieces
+
+
+def fit_report(artifacts: list[Artifact], fns: dict[str, Callable],
+               fit: ServingFit) -> dict:
+    report: dict = {}
+    for label, fn in fns.items():
+        inputs: dict[str, tuple[str, bool]] = {}
+        for art in artifacts:
+            for text in fn(art.text)[2]:
+                inputs.setdefault(text, (art.relative_path, art.is_code))
+        print(f"[fit {label}] {len(inputs)} unique inputs", flush=True)
+        rejected = fit.rejected(list(inputs))
+        groups: dict = defaultdict(Counter)
+        for text, (_, is_code) in inputs.items():
+            g = groups["code" if is_code else "docs"]
+            g["unique_inputs"] += 1
+            g["rejected"] += text in rejected
+        examples = sorted(
+            (inputs[t][0], len(t), estimate_tokens(t)) for t in rejected
+        )[:20]
+        entry = {"groups": dict(groups), "rejected_examples": examples}
+        if label.startswith("factory"):
+            pieces = [len(fit.split_until_accepted(t)) for t in rejected]
+            entry["split_pieces_added"] = sum(pieces) - len(pieces)
+        report[label] = entry
+    return report
 
 
 # --------------------------------------------------------------------------
@@ -294,22 +330,13 @@ def covered_mask(text: str, inputs: list[str]) -> bytearray:
     return mask
 
 
-def coverage_report(artifacts: list[Artifact], fns: dict[str, Callable],
-                    tokens: WordPieceCounter | None = None,
-                    context: int = 512) -> dict:
+def coverage_report(artifacts: list[Artifact], fns: dict[str, Callable]) -> dict:
     report: dict = {}
     for label, fn in fns.items():
         groups: dict = defaultdict(Counter)
         sizes: list[int] = []
-        token_sizes: list[int] = []
         for art in artifacts:
             strategy, units, inputs = fn(art.text)
-            if tokens is not None:
-                counts = [tokens.count(i) for i in inputs]
-                token_sizes.extend(counts)
-                over = sum(c > context for c in counts)
-                for key in ("code" if art.is_code else "docs", "all"):
-                    groups[key]["inputs_over_context"] += over
             mask = covered_mask(art.text, inputs)
             total, hit = len(mask), sum(mask)
             for key in ("code" if art.is_code else "docs", "all"):
@@ -323,14 +350,7 @@ def coverage_report(artifacts: list[Artifact], fns: dict[str, Callable],
             groups["strategy:" + strategy]["artifacts"] += 1
             sizes.extend(len(i) for i in inputs)
         sizes.sort()
-        token_sizes.sort()
         report[label] = {
-            "input_tokens": {
-                "max": token_sizes[-1],
-                "p50": token_sizes[len(token_sizes) // 2],
-                "p99": token_sizes[int(len(token_sizes) * 0.99)],
-                "p999": token_sizes[int(len(token_sizes) * 0.999)],
-            } if token_sizes else None,
             "groups": {
                 k: {**v, "coverage_pct": round(100 * v["covered"] / v["chars"], 3)
                     if v.get("chars") else None}
@@ -592,7 +612,7 @@ def summarize(rows: list[dict]) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", choices=["coverage", "retrieval"])
+    ap.add_argument("command", choices=["coverage", "fit", "retrieval"])
     ap.add_argument("--repo", type=Path, required=True)
     ap.add_argument("--budgets", default="800")
     ap.add_argument("--token-budgets", default="",
@@ -604,8 +624,6 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=337)
     ap.add_argument("--cache", type=Path)
     ap.add_argument("--ollama", default="http://localhost:11434")
-    ap.add_argument("--vocab", type=Path,
-                    help="JSON token list from Ollama /api/show (verbose)")
     ap.add_argument("--contracts", default="",
                     help="comma-separated subset of contract labels")
     args = ap.parse_args()
@@ -620,9 +638,13 @@ def main() -> None:
 
     if args.command == "coverage":
         out = {"repo": str(args.repo), "artifacts": len(artifacts),
-               "report": coverage_report(
-                   artifacts, fns,
-                   WordPieceCounter(args.vocab) if args.vocab else None)}
+               "report": coverage_report(artifacts, fns)}
+    elif args.command == "fit":
+        fit = ServingFit(args.ollama)
+        out = {"repo": str(args.repo), "artifacts": len(artifacts),
+               "serving": serving_identity(args.ollama),
+               "report": fit_report(artifacts, fns, fit),
+               "requests": fit.requests}
     else:
         if not args.cache:
             ap.error("retrieval requires --cache")

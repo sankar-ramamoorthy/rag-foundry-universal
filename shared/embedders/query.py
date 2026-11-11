@@ -26,7 +26,10 @@ def embed_query(query: str, embedder: BaseEmbedder) -> List[float]:
         metadata={"type": "query"},
     )
 
-    embeddings = embedder.embed([query_chunk])
+    # CI-06 (#337): a query is not stored evidence; an over-context query may
+    # be encoded as a truncated prefix (logged by the embedder) rather than
+    # failing the request. Stored passages never take this path.
+    embeddings = embedder.embed([query_chunk], truncate_overflow=True)
 
     if not embeddings or len(embeddings) != 1:
         raise RuntimeError(f"Expected 1 embedding for query, got {len(embeddings)}")

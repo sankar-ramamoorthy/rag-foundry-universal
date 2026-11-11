@@ -127,7 +127,8 @@ def _retag_reused_vectors(
     pipeline: IngestionPipeline,
     provenance_by_document_id: dict[str, dict],
     ingestion_id: str,
-) -> None:
+    prior_generation_id: str | None,
+) -> set[str]:
     """Issue #196 (FR-007b, T024): bulk-carry reused artifacts' existing
     vectors forward to this generation's ingestion_id, no re-embedding.
 
@@ -145,16 +146,22 @@ def _retag_reused_vectors(
     the same node.
     """
     if not provenance_by_document_id:
-        return
+        return set()
+    if not prior_generation_id:
+        raise RuntimeError("Reuse requires the prior generation id (#337)")
     document_ids = list(provenance_by_document_id)
-    retagged = pipeline._vector_store.retag_ingestion_id(
-        document_ids, ingestion_id, provenance_by_document_id
+    # CI-06 review R2 (#337): fenced to the prior generation, so rows of an
+    # older generation whose cleanup failed are never relabeled as current.
+    rows, retagged = pipeline._vector_store.retag_ingestion_id(
+        document_ids, ingestion_id, provenance_by_document_id,
+        expected_ingestion_id=prior_generation_id,
     )
     logger.info(
-        f"Re-tagged {retagged} reused vector row(s) "
-        f"({len(document_ids)} artifact(s)) to ingestion {ingestion_id}, "
-        f"provenance refreshed"
+        f"Re-tagged {rows} reused vector row(s) of generation "
+        f"{prior_generation_id} ({len(retagged)}/{len(document_ids)} "
+        f"artifact(s)) to ingestion {ingestion_id}, provenance refreshed"
     )
+    return retagged
 
 
 # -----------------------------
@@ -170,6 +177,7 @@ def _embed_repo_artifacts(
     settings: Settings,
     report_progress: Callable[[dict], None],
     eligible_relative_paths: frozenset = frozenset(),
+    prior_generation_id: str | None = None,
 ) -> tuple[int, int]:
     """Page persisted artifacts; bound chunk and vector state independently.
 
@@ -266,8 +274,36 @@ def _embed_repo_artifacts(
         raise RuntimeError("Embeddable artifact count changed during embedding")
     buffer.flush()
     acknowledged()
-    _retag_reused_vectors(pipeline, retag_provenance_by_document_id, ingestion_id)
+    retagged = _retag_reused_vectors(
+        pipeline, retag_provenance_by_document_id, ingestion_id, prior_generation_id
+    )
+    missing = set(retag_provenance_by_document_id) - retagged
+    _embed_missing_reuse(pages, missing, pipeline, buffer, repo_id, provider)
+    acknowledged()
+    progress["reuse_missing_reembedded"] = len(missing)
+    report_progress(dict(progress))
     return buffer.chunks_persisted, 0
+
+
+def _embed_missing_reuse(pages, missing, pipeline, buffer, repo_id, provider):
+    """Embed reuse-eligible artifacts the prior generation had no vectors for.
+
+    CI-06 review R2 (#337): reuse is verified, not assumed. A new canonical_id
+    in an unchanged file, or lost prior vectors, would otherwise leave the new
+    generation without vectors for that artifact.
+    """
+    if not missing:
+        return
+    logger.warning(
+        f"{len(missing)} reuse-eligible artifact(s) had no vectors in the prior "
+        "generation; embedding them"
+    )
+    for page in pages():
+        for node in page:
+            if str(node.document_id) in missing:
+                _chunk_and_buffer_node(pipeline, buffer, node, repo_id, provider)
+        del page
+    buffer.flush()
 
 
 def _build_and_persist_graph(
@@ -448,7 +484,7 @@ def _background_ingest_repo(
         # T020/T021/T025/R6 (#196): resolve lineage + FR-006 reuse-gate
         # identity before cloning -- repo_id is a pure function of the
         # source URL/path, no checkout needed.
-        _prior_generation_id, is_incremental, prior_hashes, config_matches = (
+        prior_generation_id, is_incremental, prior_hashes, config_matches = (
             _resolve_reuse_eligibility(
                 session,
                 ingestion_id,
@@ -526,6 +562,7 @@ def _background_ingest_repo(
             settings=settings,
             report_progress=report_progress,
             eligible_relative_paths=eligible_relative_paths,
+            prior_generation_id=prior_generation_id,
         )
         logger.info(
             f"[{ingestion_id}] Embedded {chunk_count} chunks "

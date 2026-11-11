@@ -150,14 +150,18 @@ class TestPgVectorStore:
     def test_retag_ingestion_id_updates_vector_chunks(self, mock_connect):
         """Issue #196 (FR-007b): retag issues an UPDATE against
         vector_chunks, scoped by document_id, setting the new ingestion_id
-        -- no re-embedding, no delete/insert."""
+        -- no re-embedding, no delete/insert. CI-06 review R2 (#337): the
+        UPDATE is fenced to the expected prior generation."""
         mock_cursor = _mock_cursor(mock_connect)
-        mock_cursor.rowcount = 3
+        mock_cursor.fetchall.return_value = [("doc-1",), ("doc-1",), ("doc-2",)]
         store = PgVectorStore(dsn="mock_dsn", dimension=1024)
 
-        count = store.retag_ingestion_id(["doc-1", "doc-2"], "ing-new")
+        result = store.retag_ingestion_id(
+            ["doc-1", "doc-2"], "ing-new", expected_ingestion_id="ing-old"
+        )
 
-        assert count == 3
+        assert result.count == 3
+        assert result.document_ids == ["doc-1", "doc-2"]
         update_stmts = [
             call for call in mock_cursor.execute.call_args_list
             if "UPDATE" in str(call.args[0])
@@ -165,16 +169,41 @@ class TestPgVectorStore:
         assert len(update_stmts) == 1
         stmt, params = update_stmts[0].args
         assert "vector_chunks" in str(stmt)
-        assert params == ("ing-new", ["doc-1", "doc-2"])
+        assert "ingestion_id = %s" in str(stmt).split("WHERE", 1)[1]
+        assert params == ("ing-new", ["doc-1", "doc-2"], "ing-old")
+
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_retag_with_provenance_is_fenced_to_expected_generation(
+        self, mock_connect
+    ):
+        mock_cursor = _mock_cursor(mock_connect)
+        mock_cursor.fetchall.return_value = [("11111111-1111-1111-1111-111111111111",)]
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+        doc = "11111111-1111-1111-1111-111111111111"
+
+        result = store.retag_ingestion_id(
+            [doc], "ing-new", {doc: {"role": "x"}}, expected_ingestion_id="ing-old"
+        )
+
+        stmt, params = mock_cursor.execute.call_args_list[-1].args
+        assert "vc.ingestion_id = %s" in str(stmt)
+        assert params[-1] == "ing-old"
+        assert result.document_ids == [doc]
+
+    @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+    def test_retag_requires_expected_generation(self, mock_connect):
+        store = PgVectorStore(dsn="mock_dsn", dimension=1024)
+        with pytest.raises(ValueError):
+            store.retag_ingestion_id(["doc-1"], "ing-new", expected_ingestion_id="")
 
     @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
     def test_retag_ingestion_id_empty_list_no_sql(self, mock_connect):
         mock_cursor = _mock_cursor(mock_connect)
         store = PgVectorStore(dsn="mock_dsn", dimension=1024)
 
-        count = store.retag_ingestion_id([], "ing-new")
+        result = store.retag_ingestion_id([], "ing-new", expected_ingestion_id="old")
 
-        assert count == 0
+        assert result.count == 0
         mock_cursor.execute.assert_not_called()
 
 

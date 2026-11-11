@@ -6,7 +6,7 @@ from psycopg import sql
 from psycopg.types.json import Jsonb
 import logging
 
-from src.core.vectorstore.base import VectorStore
+from src.core.vectorstore.base import RetagResult, VectorStore
 from shared.models.vector import VectorRecord, VectorMetadata
 
 logging.basicConfig(level=logging.DEBUG)
@@ -279,24 +279,31 @@ class PgVectorStore(VectorStore):
         document_ids: List[str],
         new_ingestion_id: str,
         provenance_by_document_id: "dict[str, dict] | None" = None,
-    ) -> int:
+        *,
+        expected_ingestion_id: str,
+    ) -> RetagResult:
         """Issue #196 (FR-007b, T024): re-tag reused artifacts' existing
         vector_chunks rows to the new generation's ingestion_id, in place.
 
-        Scoped by document_id alone (not the prior ingestion_id): R1's
-        document_id-stability invariant means a reused document_id has at
-        most one generation's vectors alive at a time, so there is no
-        ambiguity about which rows "belong" to it.
+        CI-06 review R2 (#337): fenced to ``expected_ingestion_id``, the prior
+        generation whose vectors are being reused. A reused document_id can
+        still carry rows of an older generation when best-effort cleanup of
+        that generation failed; matching on document_id alone would relabel
+        those stale rows into the new generation. Rows of any other
+        generation are never touched. Returns the row count and the distinct
+        document_ids actually retagged, so the caller can verify the reused
+        set and re-embed anything missing.
 
         Issue #199 (Stage B2 incremental-reuse fix): document_ids present
         in `provenance_by_document_id` also get `source_metadata`'s
         `provenance` key replaced in the same statement, via `jsonb_set`
         (preserves every other existing key -- never a full overwrite).
-        No embedding call, no row insert; still exactly one UPDATE
-        statement per batch.
+        No embedding call, no row insert.
         """
+        if not expected_ingestion_id:
+            raise ValueError("expected_ingestion_id is required")
         if not document_ids:
-            return 0
+            return RetagResult(0, [])
         provenance_by_document_id = provenance_by_document_id or {}
         with_provenance = [d for d in document_ids if d in provenance_by_document_id]
         without_provenance = [
@@ -304,16 +311,23 @@ class PgVectorStore(VectorStore):
         ]
 
         updated = 0
+        retagged: set[str] = set()
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
                 if without_provenance:
                     plain_sql = sql.SQL("""
                         UPDATE {schema}.vector_chunks
                         SET ingestion_id = %s
-                        WHERE document_id = ANY(%s)
+                        WHERE document_id = ANY(%s) AND ingestion_id = %s
+                        RETURNING document_id
                     """).format(schema=sql.Identifier(self.SCHEMA))
-                    cur.execute(plain_sql, (new_ingestion_id, without_provenance))
-                    updated += cur.rowcount
+                    cur.execute(
+                        plain_sql,
+                        (new_ingestion_id, without_provenance, expected_ingestion_id),
+                    )
+                    rows = cur.fetchall()
+                    updated += len(rows)
+                    retagged.update(str(r[0]) for r in rows)
 
                 if with_provenance:
                     values_sql = sql.SQL(", ").join(
@@ -331,6 +345,8 @@ class PgVectorStore(VectorStore):
                             )
                         FROM (VALUES {values}) AS v(document_id, provenance)
                         WHERE vc.document_id = v.document_id
+                          AND vc.ingestion_id = %s
+                        RETURNING vc.document_id
                     """).format(
                         schema=sql.Identifier(self.SCHEMA), values=values_sql
                     )
@@ -338,9 +354,12 @@ class PgVectorStore(VectorStore):
                     for document_id in with_provenance:
                         params.append(document_id)
                         params.append(Jsonb(provenance_by_document_id[document_id]))
+                    params.append(expected_ingestion_id)
                     cur.execute(combined_sql, params)
-                    updated += cur.rowcount
-        return updated
+                    rows = cur.fetchall()
+                    updated += len(rows)
+                    retagged.update(str(r[0]) for r in rows)
+        return RetagResult(updated, sorted(retagged))
 
     def get_chunks_by_document_id(
         self, document_id: str, k: int = 3,
