@@ -35,11 +35,13 @@ def _fixture_graph() -> CodebaseGraph:
 
 def _patch_graph(monkeypatch, graph: CodebaseGraph):
     def fake_get_cached_graph(repo_id, force_reload=False):
-        return graph
+        return "00000000-0000-4000-8000-000000000001", graph
 
     import src.retrieval.codebase_utils as codebase_utils
 
-    monkeypatch.setattr(codebase_utils, "get_cached_graph", fake_get_cached_graph)
+    monkeypatch.setattr(
+        codebase_utils, "get_cached_graph_with_generation", fake_get_cached_graph
+    )
 
 
 def test_trace_success(monkeypatch):
@@ -54,6 +56,7 @@ def test_trace_success(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert body["repo_id"] == "repo-x"
+    assert body["ingestion_id"] == "00000000-0000-4000-8000-000000000001"
     assert body["resolved_start"]["canonical_id"] == "caller.py#outer"
     assert [h["canonical_id"] for h in body["hops"]] == [
         "mid.py#helper",
@@ -122,6 +125,7 @@ def test_impact_success(monkeypatch):
     assert response.status_code == 200
     body = response.json()
     assert body["repo_id"] == "repo-x"
+    assert body["ingestion_id"] == "00000000-0000-4000-8000-000000000001"
     candidate_ids = {c["canonical_id"] for c in body["candidates"]}
     assert candidate_ids == {"mid.py#helper", "caller.py#outer"}
     assert body["truncated"] is False

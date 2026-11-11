@@ -9,6 +9,15 @@ satisfied by extending this one).
 
 ## Response (new fields)
 
+CI-01 clarification (accepted 2026-11-10): this endpoint remains a cheap freshness
+lookup, not a certificate for a later graph export. A lookup used to authorize
+cache reuse must return coherent repository/ready identity/status from one read
+boundary. A cold export must validate the returned graph's own identity and its
+expected-generation fence under the
+[repository graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md).
+Lineage and commit SHA do not substitute for that validation; no lineage field
+or historical graph retrieval requirement is added here.
+
 Existing fields (unchanged): `repo_id`, `ingestion_id`,
 `generation_status`.
 

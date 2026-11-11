@@ -2,6 +2,9 @@
 
 from fastapi import APIRouter, HTTPException, Query
 from typing import List, Dict, Optional
+from typing import Literal
+from uuid import UUID
+from sqlalchemy.exc import OperationalError
 from pydantic import BaseModel
 import logging
 
@@ -34,6 +37,8 @@ class CanonicalLookupResponse(BaseModel):
 
 
 class FullGraphResponse(BaseModel):
+    repo_id: str
+    ingestion_id: Optional[str]
     nodes: List[GraphNode]
     relationships: Dict
     total_nodes: int
@@ -41,7 +46,8 @@ class FullGraphResponse(BaseModel):
     # (repo has an active ingestion, no completed generation to serve yet),
     # or "unknown" (repo_id has no ingestion_requests row at all). Callers
     # must not treat an empty "building" response as "repo has no nodes".
-    generation_status: str = "ready"
+    generation_status: Literal["ready", "building", "failed", "unknown"]
+
 
 # New models for document relationships endpoint
 class RelationshipItem(BaseModel):
@@ -148,6 +154,7 @@ async def post_nodes_by_canonical_ids(repo_id: str, payload: CanonicalLookupRequ
 @router.get("/repos/{repo_id}", response_model=FullGraphResponse)
 def get_full_graph(
     repo_id: str,
+    expected_generation_id: Optional[UUID] = None,
 ):
     """
     Export the entire graph (nodes and relationships) for the given repository.
@@ -167,20 +174,19 @@ def get_full_graph(
     """
     logger.debug(f"Graph export: repo={repo_id[:8]}")
 
-    graph_data = db_utils.get_full_graph_for_repo(repo_id)
-
-    # graph_data["nodes"] is dict: canonical_id → DocumentNode ORM object
-    nodes = [
-        GraphNode(
-            document_id=str(node.document_id),   # cast UUID → str
-            canonical_id=node.canonical_id,
-            relative_path=node.relative_path or "",
-            title=node.title or "",
-            doc_type=node.doc_type or "",
-            provenance=node.provenance,
+    try:
+        graph_data = db_utils.get_full_graph_for_repo(
+            repo_id,
+            str(expected_generation_id) if expected_generation_id else None,
         )
-        for canonical_id, node in graph_data["nodes"].items()
-    ]
+    except db_utils.GraphGenerationConflict as exc:
+        raise HTTPException(409, exc.detail) from exc
+    except (TimeoutError, OperationalError) as exc:
+        logger.warning("Graph snapshot unavailable for %s", repo_id, exc_info=True)
+        raise HTTPException(503, "Graph snapshot temporarily unavailable") from exc
+
+    # Values were fully materialized inside the database snapshot.
+    nodes = [GraphNode(**node) for canonical_id, node in graph_data["nodes"].items()]
 
     logger.info(
         f"Graph export: repo={repo_id[:8]} — "
@@ -190,10 +196,12 @@ def get_full_graph(
     )
 
     return FullGraphResponse(
+        repo_id=graph_data["repo_id"],
+        ingestion_id=graph_data["ingestion_id"],
         nodes=nodes,
         relationships=graph_data["relationships"],
         total_nodes=len(nodes),
-        generation_status=graph_data.get("generation_status", "ready"),
+        generation_status=graph_data["generation_status"],
     )
 
 

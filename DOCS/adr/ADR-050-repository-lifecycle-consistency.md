@@ -3,8 +3,11 @@ title: "ADR-050: Repository rebuild/delete lifecycle consistency"
 date: 2026-09-17
 type: adr
 status: accepted
+amended: 2026-11-10
 tags: [ingestion, lifecycle, recovery, concurrency, repository]
 related:
+  - "[CI-01 implementation verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)"
+  - "[CI-01 graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)"
   - "[WP-R3 specification](/specs/005-production-correctness/issues/lifecycle.md)"
   - "[ADR-049](/DOCS/adr/ADR-049-ingestion-ownership-recovery.md)"
   - "[ADR-030](/DOCS/adr/ADR-030-unified-artifact-graph.md)"
@@ -58,9 +61,10 @@ already exists for that `repo_id`, rather than racing to acquire the lock.
 
 **Resolve "the current generation" from `document_nodes`' actual owner, not
 from ingestion status alone.** `document_nodes` can hold at most one
-`ingestion_id`'s rows per `repo_id` at any moment (enforced by
-`DocumentNode`'s `(repo_id, canonical_id)` unique constraint plus
-`persist_graph`'s atomic replace) — trust that as ground truth for *which*
+`ingestion_id`'s rows per `repo_id` at any moment under the serialized
+`persist_graph` atomic-replacement protocol. This is a writer invariant;
+`DocumentNode`'s `(repo_id, canonical_id)` unique constraint alone does not
+enforce a single repository-wide owner. Trust the actual owner as ground truth for *which*
 generation is present, then gate servability on that owner's
 `ingestion_requests.status`. A read whose owner is not `completed` (a
 rebuild still running, or one that later failed) reports `generation_status:
@@ -79,6 +83,45 @@ Once a repo ingestion reaches `completed`, delete every other historical
 stale vectors (degraded recall, dead document_id references dropped silently
 by graph expansion) but does not retroactively invalidate the new
 generation's own completion, and is logged for manual/#171 follow-up.
+
+## CI-01 reader clarification (accepted 2026-11-10)
+
+The owner accepted a single-snapshot, generation-identified graph export. The
+[graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
+defines its observable behavior and acceptance evidence. This amendment preserves
+the original mutation/lifecycle decision and its historical verification; those
+tests did not establish the export/cache composition now required.
+
+Implementation was subsequently authorized separately under #335; local
+[verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)
+records the new evidence. Merge/deployment state is tracked in `DOCS/status.md`.
+
+Use one export-scoped PostgreSQL repeatable-read, read-only transaction for actual
+owner selection, completion status, expected-generation validation, nodes and
+relationships. Configure isolation before the first data statement, share the
+session across helpers, and materialize response values before closing it. Release
+the connection before HTTP delivery or downstream work. Source review of the
+PostgreSQL 15 / SQLAlchemy 1.4 stack, atomic graph upsert/edge replacement, later
+completion commit and transactional deletion supports this preferred design;
+the contract records the exact seams and remaining real-database verification.
+No reader advisory lock, global isolation change or storage migration is adopted.
+
+The ready response identifies its actual `ingestion_id` from that snapshot. An
+optional expected generation either matches, conflicts with a different ready
+owner (409), or receives an explicit non-ready result. A separate generation
+lookup cannot certify export content. Stable document IDs cannot identify edge
+versions across rebuilds. If replacement/deletion commits after snapshot A is
+established, the reader may finish exporting A; this is not historical retrieval
+on a later call or whole-request freshness.
+
+Ownership is established by graph rows under the current lifecycle. A completed
+attempt with no nodes does not establish a ready empty snapshot. Building,
+failed, unknown and integrity/error outcomes must never masquerade as ready empty
+graphs; a ready graph with zero edges is valid. Supporting completed zero-node
+publication needs a separate ownership decision. Non-ready outcomes retain HTTP
+200 with explicit status, null identity and empty collections under the contract.
+Implementation is not authorized by this amendment. If database verification
+invalidates repeatable read, bring the alternative design back to the owner.
 
 ## Explicit non-goals
 

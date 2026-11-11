@@ -7,7 +7,7 @@ route's response-model wiring -- see test_repo_lifecycle.py (integration
 marker) for the real-Postgres behavior of resolve_current_generation/
 generation_status this route wraps.
 """
-import asyncio
+
 from unittest.mock import patch
 
 import pytest
@@ -17,16 +17,15 @@ from src.api.v1.repos import get_repo_generation
 pytestmark = pytest.mark.unit
 
 
-def _run(coro):
-    return asyncio.run(coro)
-
-
 @patch("src.api.v1.repos.db_utils")
 def test_ready_generation_round_trips_ingestion_id(mock_db_utils):
-    mock_db_utils.resolve_current_generation.return_value = "ing-1"
-    mock_db_utils.generation_status.return_value = "ready"
+    mock_db_utils.get_repo_generation_snapshot.return_value = {
+        "repo_id": "repo-x",
+        "ingestion_id": "ing-1",
+        "generation_status": "ready",
+    }
 
-    response = _run(get_repo_generation("repo-x"))
+    response = get_repo_generation("repo-x")
 
     assert response.repo_id == "repo-x"
     assert response.ingestion_id == "ing-1"
@@ -36,10 +35,13 @@ def test_ready_generation_round_trips_ingestion_id(mock_db_utils):
 @pytest.mark.parametrize("status", ["building", "failed", "unknown"])
 @patch("src.api.v1.repos.db_utils")
 def test_no_completed_generation_has_null_ingestion_id(mock_db_utils, status):
-    mock_db_utils.resolve_current_generation.return_value = None
-    mock_db_utils.generation_status.return_value = status
+    mock_db_utils.get_repo_generation_snapshot.return_value = {
+        "repo_id": "repo-x",
+        "ingestion_id": None,
+        "generation_status": status,
+    }
 
-    response = _run(get_repo_generation("repo-x"))
+    response = get_repo_generation("repo-x")
 
     assert response.ingestion_id is None
     assert response.generation_status == status

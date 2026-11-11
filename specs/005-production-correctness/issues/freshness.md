@@ -1,9 +1,10 @@
 # WP-R5: generation-aware query/graph-cache freshness
 
 Tracking issue: [#168](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/168)
-Status: Implemented on branch `feat/168-generation-aware-graph-cache`, CI
-pending. See [ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md)
-(proposed) and [test-results evidence](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md).
+Original delivery: merged via PR #183; ADR-051 records acceptance and real-PostgreSQL
+CI evidence. Linux rollout evidence remains a separate gate. See
+[ADR-051](/DOCS/adr/ADR-051-generation-aware-graph-cache.md) (accepted) and
+[test-results evidence](/DOCS/test_results/2026-09-17-generation-aware-cache-issue-168.md).
 
 Roadmap: Phase 4 production correctness, WP-R1 through WP-R8.
 
@@ -43,13 +44,12 @@ orchestrator cache still holds graph A
 query uses: vector evidence from B, graph traversal from A
 ```
 
-`ingestion_service`'s `/v1/graph/repos/{repo_id}` (what `load_graph_for_repo`
-calls) already, post-R3, filters `document_nodes` to one current-completed
-`ingestion_id` and returns a `generation_status` field (`ready`/`building`/
-`failed`/`unknown`) — so a *cold* load can no longer mix generations at the
-data layer. But the response does not expose the generation identifier
-itself, and `rag_orchestrator` discards `generation_status` entirely today;
-nothing tells a warm cache it is stale.
+R3 added owner/completion gating and `generation_status` to
+`/v1/graph/repos/{repo_id}`. The original specification inferred that cold loads
+could no longer mix generations. CI-01 found that separate reader sessions and
+statements did not establish that guarantee; the response also lacks generation
+identity and the loader discards status. The accepted clarification below binds
+these reads and validates the actual exported identity.
 
 ## Proposed plan
 
@@ -63,11 +63,10 @@ nothing tells a warm cache it is stale.
   generation_id)` instead of `repo_id` alone; bound it (eviction, not
   indefinite growth — LRU or similar, sized for the realistic number of
   concurrently-queried repos).
-- Pin a query to one generation at its start: resolve current generation
-  once, use that resolved graph consistently for the whole request. If
-  generation B completes while a query is already running against A, that
-  query finishes on A — detect the change for the *next* query, don't
-  chase it mid-request and don't combine snapshots within one request.
+- Pin graph traversal to one validated materialized snapshot. Traversal can
+  finish on A if B subsequently commits. This permission applies to graph
+  snapshot consistency; it does not remove existing RAG/evidence outer fences
+  that retry/fail on generation drift across vector, graph and passage reads.
 - Honor ADR-031 canonical identity: no generation suffix appended to
   canonical IDs. Generation is cache/query metadata, never part of
   identity.
@@ -92,7 +91,38 @@ nothing tells a warm cache it is stale.
   two-live-process round trip; see ADR-051's non-goals for why that gap is
   disclosed rather than silently claimed closed.
 
-## Delivery tasks
+## CI-01 clarification (accepted 2026-11-10)
+
+Implementation was separately authorized under #335 and delivered through
+[PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336).
+See the [PostgreSQL verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)
+for new evidence; original delivery evidence below remains historical.
+
+The [graph snapshot contract](../contracts/repository-graph-snapshot.md) and
+amended ADR-051 require the cache label to match the actual validated export,
+whose identity/status/content share one snapshot under amended ADR-050. A cheap
+lookup alone does not establish a later export's identity or consistency.
+
+- Warm hits require a coherent ready cheap check matching the entry's identity;
+  errors/non-ready/missing identity cannot authorize stale fallback.
+- Cold/forced loads send `expected_generation_id`, validate the HTTP outcome,
+  repository, explicit ready status, matching ingestion UUID, count and graph
+  shape before constructing a usable graph or inserting it into the cache.
+- Conflict, non-ready, legacy/invalid envelope and transport failures must not
+  become authoritative empty graphs. Direct TRACE/IMPACT distinguish unavailable
+  from absent-at-snapshot and expose the graph's repository/generation identity.
+- Preserve bounded LRU storage, synchronization and the existing RAG/evidence
+  whole-request generation fences. Concurrent loads cannot mislabel content or
+  bypass the next cheap check. Coalescing is optional.
+
+Acceptance requires the contract's PostgreSQL race matrix and actual
+route/HTTP-client/loader/cache composition for lookup A/export B, unavailable and
+legacy rejection, warm reuse, forced/concurrent loads and consumer identity/fences.
+Producer support precedes validating consumers; missing identity fails closed.
+Original sequential tests and the synthetic investigation do not close these
+gates. No application changes are authorized by accepting this clarification.
+
+## Original delivery tasks
 
 - [x] Finalize issue-linked specification, plan, contracts, and acceptance
   tests for this narrowed scope (this file; ADR-051).

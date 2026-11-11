@@ -74,6 +74,21 @@ staged publication and is not implied by graph-transaction atomicity.
 
 ## Cross-package acceptance
 
+CI-01 clarification accepted 2026-11-10 (documentation only): the
+[repository graph snapshot contract](./contracts/repository-graph-snapshot.md)
+requires each ready export to identify one completed generation whose owner,
+status, nodes and relationships share one database snapshot. Preferred design:
+one export-scoped repeatable-read transaction, as amended in ADR-050/051.
+Expected-generation conflicts, explicit unavailability and validated cache
+identity are part of this contract; existing WP-R3/WP-R5 closure does not certify
+this follow-up as implemented. A coherent graph snapshot can finish on A after
+B commits; whole-request vector/graph/passage freshness remains a separate fence.
+
+Implementation was subsequently authorized under
+[#335](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/335);
+see the [CI-01 plan](./ci01-plan.md) and
+[local PostgreSQL verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md).
+
 - One query uses one completed ingestion generation or returns an explicit
   retryable generation-change/building response; it never mixes cached edges
   with another snapshot's vectors.

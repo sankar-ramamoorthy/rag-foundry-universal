@@ -93,31 +93,13 @@ class RepoGenerationResponse(BaseModel):
 
 
 @router.get("/repos/{repo_id}/generation", response_model=RepoGenerationResponse)
-async def get_repo_generation(repo_id: str):
-    """
-    #168 (WP-R5): the cheap half of generation resolution -- callers that
-    only need to know "has this repo's servable generation changed" (e.g.
-    rag_orchestrator's graph cache) must not have to fetch the full graph
-    (GET /v1/graph/repos/{repo_id}) just to find out. Backed by the same
-    db_utils.resolve_current_generation/generation_status logic #166 added,
-    which is a single indexed lookup, not a full node/relationship export.
+def get_repo_generation(repo_id: str):
+    """Cheap owner/status/lineage lookup in one read snapshot (#335).
 
-    Issue #196: also surfaces snapshot lineage (commit_sha, ingested_at,
-    parent_generation_id, is_incremental) for the current generation, only
-    when it is actually "completed" -- resolve_current_generation already
-    returns None otherwise, so lineage naturally stays unpopulated for a
-    repo with no stable generation to describe.
+    No node or edge export. Synchronous database work runs in the framework's
+    thread pool. Non-ready results carry no usable generation identity.
     """
-    ingestion_id = db_utils.resolve_current_generation(repo_id)
-    status = db_utils.generation_status(repo_id)
-    lineage = (
-        db_utils.generation_lineage(ingestion_id) if ingestion_id is not None
-        else {}
-    )
-    return RepoGenerationResponse(
-        repo_id=repo_id, ingestion_id=ingestion_id, generation_status=status,
-        **lineage,
-    )
+    return RepoGenerationResponse(**db_utils.get_repo_generation_snapshot(repo_id))
 
 
 @router.get("/repos/{repo_id}/compose-snapshot")

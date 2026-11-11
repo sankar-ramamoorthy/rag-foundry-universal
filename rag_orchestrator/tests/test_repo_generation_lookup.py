@@ -30,14 +30,18 @@ def test_ready_generation_returns_ingestion_id_and_status(monkeypatch):
     monkeypatch.setattr(
         codebase_queries.requests, "get",
         lambda url, timeout=None: FakeResponse(
-            200, {"repo_id": "repo-x", "ingestion_id": "ing-1",
-                  "generation_status": "ready"},
+            200,
+            {
+                "repo_id": "repo-x",
+                "ingestion_id": "00000000-0000-4000-8000-000000000001",
+                "generation_status": "ready",
+            },
         ),
     )
 
     ingestion_id, status = codebase_queries.get_repo_generation("repo-x")
 
-    assert ingestion_id == "ing-1"
+    assert ingestion_id == "00000000-0000-4000-8000-000000000001"
     assert status == "ready"
 
 
@@ -45,8 +49,12 @@ def test_building_generation_has_no_ingestion_id(monkeypatch):
     monkeypatch.setattr(
         codebase_queries.requests, "get",
         lambda url, timeout=None: FakeResponse(
-            200, {"repo_id": "repo-x", "ingestion_id": None,
-                  "generation_status": "building"},
+            200,
+            {
+                "repo_id": "repo-x",
+                "ingestion_id": None,
+                "generation_status": "building",
+            },
         ),
     )
 

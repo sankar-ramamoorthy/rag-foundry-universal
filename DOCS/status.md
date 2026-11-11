@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-11-08
+date: 2026-11-10
 type: status
 status: current
 tags: [status, overview]
@@ -25,6 +25,27 @@ status.
 This is where ADR/issue/PR-numbered detail belongs — `README.md` links
 here rather than embedding it, so the README stays a stable reference
 document.
+
+## CI-01 graph snapshot consistency
+
+[#335](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/335):
+implementation delivered through
+[PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336)
+on `fix/ci01-generation-bound-graph-export`. The owner authorized publication,
+remote CI verification, diff review and merge; the PR records the final CI and
+merge state. Not deployed. The approved
+[contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
+binds export owner/status/nodes/edges to one read-only repeatable-read snapshot,
+identifies the generation, fences expected generations and validates cache loads.
+Direct TRACE/IMPACT exposes snapshot identity and separates unavailable from absent.
+Existing whole-request RAG/evidence fences remain in place.
+
+Real PostgreSQL concurrent rebuild/delete/completion/cleanup and HTTP client/cache
+verification are recorded in the
+[CI-01 evidence](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md).
+Repository-wide Pyright still has existing failures; local focused checks and
+the baseline comparison are disclosed there. No staged publication, historical
+graph API, ready zero-node publication, vector-filter change or quality claim.
 
 ## README maintenance and validation records
 

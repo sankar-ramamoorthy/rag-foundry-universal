@@ -49,8 +49,15 @@ not mislabel whitespace words as tokens. Selection changes require evaluation.
 
 WP-R5: resolved source SHA is stored at ingestion; local dirty worktrees need a
 fingerprint/explicit dirty provenance. Cache keys include repo_id+generation,
-with bounded eviction; generation changes during query cause retry/failure,
-not silent combination. Include runtime revision in query/evaluation evidence.
+with bounded eviction. Under the accepted 2026-11-10
+[CI-01 contract](./contracts/repository-graph-snapshot.md), one export-scoped
+repeatable-read transaction binds owner, completion status, nodes and edges;
+validate the expected generation and export envelope before caching. A coherent
+materialized graph A may finish traversal after B commits. Generation changes
+across a whole request's vector/graph/passage operations still cause retry/failure
+under existing outer fences, never silent combination. Include runtime revision
+in query/evaluation evidence. This clarification authorizes no implementation;
+real PostgreSQL race/cleanup tests and loader/cache composition remain gates.
 
 WP-R6: executable CMD healthchecks, correct internal ports, finite timeouts.
 Read-only version API consumes image build variables, returning unknown for

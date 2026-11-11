@@ -8,6 +8,13 @@ governed.
 
 ## 2026-11-10
 
+Accepted the [CI-01 repository graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
+and amended ADR-050/051 and the WP-R3/WP-R5 specifications: one generation-identified
+read snapshot, preferred export-scoped repeatable-read transaction, explicit
+availability and expected-generation semantics, cache validation, and separate
+whole-request freshness fences. Specification work only; application changes
+remain unauthorized and real PostgreSQL acceptance evidence remains outstanding.
+
 Accepted the [documentation-conventions proposal](/DOCS/proposals/2026-11-10-documentation-conventions.md)
 (issue #332): document types and authority, placement, discoverability and the
 investigation-to-implementation path, and amended the

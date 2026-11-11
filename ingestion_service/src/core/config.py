@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     OLLAMA_EMBED_MODEL: str = "mxbai-embed-large:latest"
     OLLAMA_BATCH_SIZE: int = 50
     VECTOR_DIMENSION: int = 1024
+    # CI-01: includes all export queries and materialization, not HTTP delivery.
+    GRAPH_EXPORT_TIMEOUT_SECONDS: float = Field(default=60.0, gt=0)
 
     # #160: independent limits; a node page is not a chunk/memory bound.
     INGESTION_NODE_PAGE_SIZE: int = Field(default=32, gt=0)

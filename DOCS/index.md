@@ -77,6 +77,13 @@ records the accepted WP-R5 (narrowed #168) decision keying
 bounding, and its explicit non-goals (no vector-store generation filtering,
 no live two-service HTTP round-trip test yet).
 
+The accepted [CI-01 graph snapshot contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
+(2026-11-10) clarifies these ADRs: one generation-identified export snapshot,
+preferred repeatable-read transaction, expected-generation fencing and validated
+cache reuse. Implementation under #335 and local PostgreSQL verification are
+recorded in the [CI-01 evidence](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md);
+merge/deployment status belongs in `DOCS/status.md`.
+
 [ADR-053: source authority / subject / provenance model](/DOCS/adr/ADR-053-source-authority-provenance-model.md)
 — **proposed**, not yet implemented — records the issue #199 (Phase 6
 Stage B) contract: five orthogonal facets (origin/role/subject/
