@@ -23,8 +23,12 @@ ownership under the constitution. No retrieval-policy or schema change.
 - [x] Relevant service tests, Ruff, Pyright and CI integration selection. Full
   repository Pyright remains red; focused checks/baseline comparison and all
   commands/results are in the [evidence](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md).
-- [ ] Record commands/results/limits in a test-result and current status; prepare
-  an issue-linked PR. Do not claim closure before real PostgreSQL verification.
+- [x] Record commands/results/limits in a test-result and current status; prepare
+  the [issue-linked PR description](./ci01-pr-description.md). Actual PostgreSQL
+  verification is complete locally.
+- [ ] Publish branch/PR, review remote CI and merge. Automatic approval review
+  requires explicit owner authorization for the remote publication; implementation
+  approval alone was rejected for that action. No production deployment is included.
 
 Export deadline starts at 60 seconds, configurable using
 `GRAPH_EXPORT_TIMEOUT_SECONDS`. Each SQL phase receives the remaining statement
