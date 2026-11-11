@@ -28,6 +28,13 @@ document.
 
 ## CI-06 embedding-input coverage
 
+Development is paused pending the owner's Linux session. Resume with the
+[technical evidence and Linux handoff](/DOCS/notes/2026-11-11-ci01-ci06-technical-evidence-and-linux-handoff.md):
+read-only runtime inventory and evidence preservation precede any separately
+authorized cleanup, deployment or re-ingestion. The
+[two-day retrospective](/DOCS/notes/2026-11-11-two-day-engineering-review.md)
+records the reasoning behind this stopping point.
+
 [#337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337):
 [PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)
 merged; **not deployed** (deployment and clean re-ingestion deferred,

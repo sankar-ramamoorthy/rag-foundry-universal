@@ -6,6 +6,8 @@ status: complete
 summary: "ADR-056 accepted and PR #339 merged 2026-11-11; not deployed; clean rebuild deferred"
 tags: [ci06, ci03, embedding, chunking, handoff]
 related:
+  - "[Combined CI-01/CI-06 Linux handoff](/DOCS/notes/2026-11-11-ci01-ci06-technical-evidence-and-linux-handoff.md)"
+  - "[Two-day retrospective](/DOCS/notes/2026-11-11-two-day-engineering-review.md)"
   - "[Issue #337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337)"
   - "[PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)"
   - "[ADR-056 (accepted)](/DOCS/adr/ADR-056-embedding-input-contract.md)"
