@@ -158,6 +158,9 @@ frontmatter-linked — planned follow-up.
 
 ## Deployment
 
+[Mac local setup](/DOCS/deployment/mac-local-setup.md) provides the local Ollama
+handoff, environment template, startup commands and first-use guidance.
+
 `DOCS/deployment/` holds operational deployment guidance. Start with
 [Production Docker Compose Release Process](/DOCS/deployment/production-docker-compose.md)
 for the manual production release procedure, provenance checks, validation,

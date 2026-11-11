@@ -136,6 +136,10 @@ underlying reports; they are not general accuracy or performance guarantees.
 
 ## Quick start
 
+For an Apple Silicon Mac using Ollama on the same machine, follow the
+[Mac setup guide](DOCS/deployment/mac-local-setup.md), including its environment
+template and local-only model menu.
+
 Requires Docker Compose, Python 3.12 with `uv`, and GPU-backed inference capacity
 for embedding and generation. Use a local GPU or configure remote inference
 endpoints; a CPU-only laptop is not the intended setup. Memory requirements

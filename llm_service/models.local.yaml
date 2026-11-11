@@ -1,0 +1,10 @@
+# Local-only model menu for the Mac handoff. No provider catalogs or endpoint
+# inventories: these would add irrelevant cloud choices or the embedding model.
+models:
+  default:
+    model: ollama/${OLLAMA_MODEL:qwen3:8b}
+    api_base: ${OLLAMA_BASE_URL:http://host.docker.internal:11434}
+    timeout: 600
+
+timeouts:
+  default: 600
