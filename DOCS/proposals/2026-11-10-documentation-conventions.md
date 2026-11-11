@@ -39,8 +39,8 @@ spec permits unknown types), and mapping them is optional when a file is edited.
 | `adr` | An architectural decision | Authoritative for the decided fact when `accepted`; weaker states are not |
 | `spec` | Required behavior of a feature (Spec Kit) | Authoritative for that feature's requirements; defers to ADRs on technical facts |
 | `proposal` | A change under discussion | None until accepted |
-| `investigation` | Evidence and analysis toward a decision | Evidence only; never decides |
-| `audit` | A point-in-time assessment of the codebase or KB | Evidence only |
+| `investigation` | Evidence from testing a specific hypothesis, toward a decision | Evidence only; never decides |
+| `audit` | A point-in-time assessment of a broader system or area | Evidence only |
 | `evaluation` | Pre-registered protocols, manifests and fixtures | Binding on the experiment once `frozen` |
 | `test-result` | Observed outcomes of a run | Evidence only, tied to the run's stated commit |
 | `release-record` | What was deployed, from which commit | Record of fact |
@@ -78,8 +78,10 @@ Filenames for new notes use `YYYY-MM-DD-slug.md`; the `YYYYMMDD-` form already i
   current items a newcomer needs (current spec, accepted ADRs, `status.md`). It
   does not list every document and should not embed result narratives.
 - **Category indexes** (`DOCS/audit/00-Audit-Overview.md` and, if created, an
-  equivalent for `specs/` and `test_results/`) list their own members. A new
-  document must be linked from its category index.
+  equivalent for `specs/` and `test_results/`) list their principal members.
+  Not every document needs an index entry. The requirement is **predictable
+  discoverability**: every new document is reachable from a parent spec,
+  investigation, issue, ADR or a category index, through its `related` links.
 - **`DOCS/status.md`** links the current spec for any in-progress feature and any
   accepted-but-unimplemented ADR.
 - **`DOCS/log.md`** gets an entry when a document changes how the knowledge base
@@ -99,20 +101,32 @@ Filenames for new notes use `YYYY-MM-DD-slug.md`; the `YYYYMMDD-` form already i
 3. **Decision.** A change that alters architecture, identity, persistence or
    embedding behavior gets an ADR (`proposed` → `accepted`). A new feature or
    behavior gets a `spec` under `specs/`, which cites the ADRs.
-4. **Owner acceptance** is recorded in the ADR or spec status; acceptance of
-   either does not by itself authorize implementation unless it says so.
+4. **Owner acceptance** is recorded in the ADR or spec status. This proposal
+   adds no approval states beyond the existing constitution and Spec Kit
+   workflow (issue, spec, branch, PR); an accepted spec or ADR is not by itself
+   authorization to implement unless it says so.
 5. **Implementation** follows the spec's plan and tasks, on a branch and PR that
    cite the issue; `status.md` is updated when the work ships.
 6. **Evidence** from the run goes to `test_results/` and links back to the spec
    or ADR it verifies.
 
-## Open questions for the owner
+## Open questions: recommended resolutions
 
-1. Should `spec.md` files gain frontmatter (`type: spec`, `status`), or keep
-   their Spec Kit template headers and be treated as `spec` by location only?
-2. Is a controlled `status` vocabulary acceptable for new documents, or should it
-   stay free text?
-3. Should `investigation` be a separate type from `audit`, or a value of `audit`?
+Recommended in review on 2026-11-10; they take effect only when the owner accepts
+this proposal.
+
+1. **`spec.md` frontmatter:** no. Keep Spec Kit headers and treat `specs/NNN-*/spec.md`
+   as type `spec` by location, to avoid altering established Spec Kit conventions
+   for metadata consistency.
+2. **Controlled `status` vocabulary:** accept for new documents only; no historical
+   cleanup.
+3. **`investigation` as a separate type:** yes, distinct from `audit` (a specific
+   hypothesis versus a broader system or area). Retain the eleven types for now;
+   what matters is that a future agent can tell requirements, decisions,
+   investigations and observed evidence apart without guessing from the directory.
+
+Keep the accepted conventions short enough to apply without repeating them in
+prompts.
 
 ## After acceptance
 
