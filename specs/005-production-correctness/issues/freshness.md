@@ -91,7 +91,12 @@ these reads and validates the actual exported identity.
   two-live-process round trip; see ADR-051's non-goals for why that gap is
   disclosed rather than silently claimed closed.
 
-## CI-01 clarification (accepted 2026-11-10; not implemented)
+## CI-01 clarification (accepted 2026-11-10)
+
+Implementation was separately authorized under #335 and delivered through
+[PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336).
+See the [PostgreSQL verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)
+for new evidence; original delivery evidence below remains historical.
 
 The [graph snapshot contract](../contracts/repository-graph-snapshot.md) and
 amended ADR-051 require the cache label to match the actual validated export,

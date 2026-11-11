@@ -52,9 +52,9 @@ def get_db() -> Iterator[Session]:
 def read_snapshot(session_factory=None):
     """CI-01: a fresh read-only snapshot, never a writer's active session.
 
-    Isolation is set before autobegin emits data SQL. Rollback avoids ORM
-    expiration/reloads and resets transaction-local settings on pooled connections.
-    Callers must return materialized values, never ORM instances.
+    Isolation is set before autobegin emits data SQL. Rollback ends the read
+    transaction and resets its local settings before pool reuse. Callers must
+    return materialized values, never ORM instances that rollback would expire.
     """
     factory = session_factory or get_sessionmaker()
     with factory() as session:

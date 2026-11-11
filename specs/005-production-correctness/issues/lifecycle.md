@@ -22,7 +22,12 @@ Persist repository identity on ingestion attempts independently of nodes, backfi
 
 Fault-inject after vector cleanup and before/after graph commit; retry fully removes attempts. Test repeat ingestions, failure before graph creation, concurrent ingest/delete, and query rejection while rebuilding. Test PostgreSQL transactions and migration/backfill, not mocks alone.
 
-## CI-01 clarification (accepted 2026-11-10; not implemented)
+## CI-01 clarification (accepted 2026-11-10)
+
+Implementation was separately authorized under #335 and delivered through
+[PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336).
+See the [PostgreSQL verification](/DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md)
+for new evidence; original delivery evidence below remains historical.
 
 The [graph snapshot contract](../contracts/repository-graph-snapshot.md) and
 amended ADR-050 require one read snapshot for actual graph ownership, completed

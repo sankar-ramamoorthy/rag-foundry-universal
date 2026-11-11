@@ -3,7 +3,7 @@ title: "CI-01 generation-bound graph export: PostgreSQL verification"
 date: 2026-11-10
 type: test-result
 status: complete
-summary: "Local contract acceptance passed; repository-wide Pyright remains red; merge and deployment are separate"
+summary: "Local and remote CI acceptance passed; repository-wide Pyright remains red; deployment is separate"
 source_commit: "562de0b plus the #335 implementation working tree"
 tags: [ci01, graph, snapshot, postgresql, concurrency, cache]
 related:
@@ -134,6 +134,31 @@ repository failures. This is not a clean whole-repository type-check claim, and
 no repository-wide typing cleanup is included in #335.
 
 ## Limits and release boundary
+
+### Remote CI and diff review
+
+[PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336)
+was published after the owner's explicit push/PR/CI/review/merge authorization.
+[CI run 42945127373](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/42945127373)
+passed all four jobs on head `9edf709a246e9dd9e84bb6fc25d85bfe7b9d0a73`:
+lint, unit-tests, integration-tests and bounded-memory. The PostgreSQL lifecycle
+step explicitly selected `test_graph_snapshot_integration.py` and passed **50
+tests**, including all 28 CI-01 cases. Other integration steps passed 7 atomic
+persistence, 8 ownership/process-death, 12 paging, 1 passage and 12 ANN tests;
+one memory-scaling case was intentionally excluded from the paging step and
+covered by the separate bounded-memory job. Remote CI does not run the full
+repository Pyright check; its known failures above remain disclosed.
+
+Pre-merge diff review covered the producer transaction/materialization boundary,
+expected-generation and availability precedence, loader/cache validation and
+concurrent completions, structural result identity, retained whole-request fences,
+test scheduling/cleanup, CI selection and the approved specifications. No blocking
+finding remained. The review corrected an inaccurate rollback comment and stale
+publication/implementation status wording. These follow-up edits change comments
+and documentation only. Merge requires successful checks on the final PR head;
+the PR records that head, its checks and the eventual merge SHA.
+
+### Scope of the evidence
 
 This verifies the graph snapshot/cache contract on small controlled fixtures,
 not large-export latency, memory scaling or answer quality. ASGI request

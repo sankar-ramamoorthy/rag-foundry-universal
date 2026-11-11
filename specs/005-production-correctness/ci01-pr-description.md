@@ -28,6 +28,11 @@ retrieval-policy change or deployment.
 - Ruff, private-address guard, whitespace and new documentation links passed.
   Focused Pyright: 0 errors. Whole-repository Pyright remains red (366 diagnostics);
   original `db_utils.py` has 23 diagnostics versus 20 here, with no added message.
+- Remote [CI run 42945127373](https://github.com/sankar-ramamoorthy/rag-foundry-universal/actions/runs/42945127373)
+  passed lint, unit-tests, integration-tests and bounded-memory. The lifecycle
+  integration step explicitly ran all 28 CI-01 cases within its 50 passing tests.
+  Diff review found no remaining blocking issue; follow-up comments/status edits
+  also require green checks on the final PR head before merge.
 
 Full commands, acceptance mapping and limitations:
 `DOCS/test_results/2026-11-10-ci01-graph-snapshot-verification.md`.

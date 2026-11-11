@@ -29,9 +29,11 @@ document.
 ## CI-01 graph snapshot consistency
 
 [#335](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/335):
-implemented and committed locally on `fix/ci01-generation-bound-graph-export`;
-publication is awaiting explicit authorization after automatic approval review
-rejected push/PR publication. Remote CI, review and merge remain pending; not deployed. The approved
+implementation delivered through
+[PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336)
+on `fix/ci01-generation-bound-graph-export`. The owner authorized publication,
+remote CI verification, diff review and merge; the PR records the final CI and
+merge state. Not deployed. The approved
 [contract](/specs/005-production-correctness/contracts/repository-graph-snapshot.md)
 binds export owner/status/nodes/edges to one read-only repeatable-read snapshot,
 identifies the generation, fences expected generations and validates cache loads.

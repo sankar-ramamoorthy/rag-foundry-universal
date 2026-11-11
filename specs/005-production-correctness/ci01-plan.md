@@ -26,9 +26,11 @@ ownership under the constitution. No retrieval-policy or schema change.
 - [x] Record commands/results/limits in a test-result and current status; prepare
   the [issue-linked PR description](./ci01-pr-description.md). Actual PostgreSQL
   verification is complete locally.
-- [ ] Publish branch/PR, review remote CI and merge. Automatic approval review
-  requires explicit owner authorization for the remote publication; implementation
-  approval alone was rejected for that action. No production deployment is included.
+- [x] Publish [PR #336](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/336)
+  after the owner's explicit push/PR/CI/review/merge authorization. Review the
+  complete diff, resolve review findings, and merge only after the final head's
+  remote checks pass. The PR records the final CI and merge outcome; production
+  deployment remains outside this work.
 
 Export deadline starts at 60 seconds, configurable using
 `GRAPH_EXPORT_TIMEOUT_SECONDS`. Each SQL phase receives the remaining statement
