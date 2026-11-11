@@ -13,6 +13,7 @@ related:
   - "[Implementation plan](/specs/005-production-correctness/ci06-plan.md)"
   - "[Raw capture index](/DOCS/test_results/raw-index.json)"
   - "[Independent review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)"
+  - "[Final independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)"
   - "[Delivery evaluation protocol](/DOCS/evaluations/2026-11-10-ci06-delivery-evaluation-protocol.md)"
 ---
 
@@ -180,7 +181,7 @@ Development data only; serving model as above.
 | ID | Criterion | Legacy | New | Result |
 | --- | --- | ---: | ---: | --- |
 | D1 | Expected expressions delivered (of 112), margin 6 | 48 | 61 | pass |
-| D2 | No case loses over half its delivered expressions | | none lost any | pass |
+| D2 | No case loses over half its delivered expressions | | no case's delivered count declined | pass |
 | D3 | Primary targets discovered (of 14) | 14 | 14 | pass |
 | D4 | Multilingual doc hit@5 (of 150), margin 8 | 102 | repository path 94, upload path 114 | pass (repository path exactly at the margin) |
 | D5 | Long-query discovery (of 14): (a) legacy index + legacy query, (b) legacy index + new query, (c) new index + new query | (a) 13 | (b) 13, (c) 14 | pass |
@@ -200,6 +201,13 @@ gave identical totals):
 
 Notes and limits:
 
+- No case's delivered count declined, but individual expressions were not all
+  preserved: `R4-chain` increased from one delivered expression to two while
+  losing `_rank_expanded_canonical_ids` and gaining others. D2 still passes.
+- The [final independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
+  found a nonblocking cache-validation defect in the evaluation harness. Its
+  targeted check of 4,505 potentially affected upload passages found zero
+  strict-provider rejections. The harness follow-up remains open.
 - Delivery is simulated with the production `assemble_context` and the
   production caps, assuming graph expansion reaches every artifact the case
   names, for both contracts alike. Generated answers were not evaluated.

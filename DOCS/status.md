@@ -43,6 +43,12 @@ evaluation passed (see the
 [CI-06 evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md)).
 Owner decision: existing indexes are rebuilt cleanly at deployment. Resume from
 the [CI-06 handoff](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
+The [final independent verification at 770e3c9](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
+recommends accepting the ADR and merging subject to current green CI, which the
+reviewer could not verify through GitHub authentication. Reporting wording is
+corrected; the evaluation-cache defect remains a nonblocking follow-up (#340). Formal
+ADR acceptance, merge, deployment and clean re-ingestion have not been performed
+as part of this recording task.
 Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path
 fails on `main`).
 

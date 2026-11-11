@@ -63,7 +63,8 @@ Details: `DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verificatio
 - **Needle discovery:** lines legacy never embedded, hit@5 54→105/129 (foundry)
   and 60→97/116 (LightRAG); already-covered lines mixed (LightRAG hit@5 90→85).
 - **Delivery (pre-registered, committed before results):** expected expressions
-  delivered 48 → 61 of 112, no case lost any; targets discovered 14/14 both;
+  delivered 48 → 61 of 112, no case's delivered count declined (one case,
+  `R4-chain`, swapped one expression for others); targets discovered 14/14 both;
   multilingual docs hit@5 102 → 94 (repository path, exactly at the margin) and
   114 (upload path); long-query discovery 13 → 14. All five criteria passed.
 - **Tests:** ingestion unit 472 passed; incremental integration on PostgreSQL 8

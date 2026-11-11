@@ -8,6 +8,13 @@ governed.
 
 ## 2026-11-11
 
+Added the [final CI-06 independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
+at `770e3c9` and the [supplied assessment](/DOCS/notes/2026-11-11-ci06-final-review-assessment.md).
+Recorded the recommendation to accept ADR-056 and merge subject to current CI;
+corrected the delivery report's count-versus-expression wording and recorded the
+open evaluation-cache follow-up (#340). ADR acceptance, merge and deployment state are
+unchanged by these documentation updates.
+
 Revised proposed [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) after
 the independent CI-06 review: no stored-passage truncation, generation-fenced
 reuse, explicit reuse-identity limits and a clean-rebuild rollout (owner

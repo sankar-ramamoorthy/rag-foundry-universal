@@ -12,6 +12,8 @@ related:
   - "[CI-06 investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)"
   - "[CI-06 verification](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md)"
   - "[Independent review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)"
+  - "[Final independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)"
+  - "[Supplied final assessment](/DOCS/notes/2026-11-11-ci06-final-review-assessment.md)"
   - "[Delivery evaluation protocol](/DOCS/evaluations/2026-11-10-ci06-delivery-evaluation-protocol.md)"
   - "[Implementation plan](/specs/005-production-correctness/ci06-plan.md)"
 ---
@@ -35,6 +37,12 @@ November 10 audit.
 | Deployment / clean rebuild | **not done** | operator-owned |
 
 ## Owner decisions
+
+The [final Codex verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
+recommends acceptance and merge at `770e3c9`, subject to current CI. The reporting
+cleanup is recorded; the evaluation-cache issue remains a separate nonblocking
+follow-up. No further architecture review cycle is recommended. This is a
+recommendation, not a record of formal acceptance or merge.
 
 1. Accept or amend ADR-056 at review.
 2. Timing of the clean rebuild (decided 2026-11-11: rebuild existing indexes, no
@@ -61,6 +69,9 @@ November 10 audit.
 
 ## Related open work
 
+- Evaluation-cache strict-validation provenance: final verification F1; the
+  targeted provider check found zero rejections among 4,505 potentially affected
+  upload passages. Tracked as #340.
 - #313: the rest of CI-03 (extractor behavior, immutable model digest and
   inference configuration in the reuse identity).
 - #338: uploaded Markdown / Docling section ingestion fails on `main` since #81;
