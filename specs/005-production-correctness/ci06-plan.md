@@ -34,6 +34,8 @@ gate, not silently mixed).
 - [ ] Owner review and merge. Deployment and re-ingestion sequencing are the
   owner's (see ADR-056 "Rollout").
 
+Handoff for resuming: [CI-06 handoff note](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
+
 ## Out of scope
 
 - Extractor behavior in the reuse identity and immutable model digests: the rest

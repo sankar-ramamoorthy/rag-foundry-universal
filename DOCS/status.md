@@ -44,6 +44,7 @@ in the [CI-06 evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-cover
 complete coverage and no token overflow; needle discovery of previously omitted
 text improves strongly; already-covered text is mixed on one corpus. Pinned
 evaluation generations are still legacy-contract until the owner re-ingests them.
+Resume from the [CI-06 handoff](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
 Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path fails
 on `main`).
 
