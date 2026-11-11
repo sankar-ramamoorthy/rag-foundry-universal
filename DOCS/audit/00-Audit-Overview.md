@@ -52,10 +52,6 @@ preserves the owner's supplied review and discusses revised investigation priori
 evidence contracts, and qualifications. It is discussion, not a new independent
 reproduction of the findings or an approved implementation plan.
 
-The [CI-01 generation-snapshot investigation](/DOCS/audit/2026-11-10-ci01-generation-snapshot-investigation.md)
-traces the existing WP-R3/WP-R5 and ADR-050/051 guarantees, records synthetic
-reproductions, and proposes a narrow contract clarification before implementation.
-
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
 > September 16 update: the historical release below remains valid evidence.
