@@ -30,8 +30,9 @@ document.
 
 [#337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337):
 [PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)
-open for owner review; not merged or deployed. Under the legacy contract about
-10–12% of artifact text reached no embedding input. Proposed
+merged; **not deployed** (deployment and clean re-ingestion deferred,
+operator-owned). Under the legacy contract about
+10–12% of artifact text reached no embedding input. Accepted
 [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every stored
 passage the exact model input: exact 800-character line windows for repository
 artifacts, fitted units for uploads, `truncate: false` with the model's
@@ -44,11 +45,9 @@ evaluation passed (see the
 Owner decision: existing indexes are rebuilt cleanly at deployment. Resume from
 the [CI-06 handoff](/DOCS/notes/2026-11-10-ci06-embedding-input-contract-handoff.md).
 The [final independent verification at 770e3c9](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
-recommends accepting the ADR and merging subject to current green CI, which the
-reviewer could not verify through GitHub authentication. Reporting wording is
-corrected; the evaluation-cache defect remains a nonblocking follow-up (#340). Formal
-ADR acceptance, merge, deployment and clean re-ingestion have not been performed
-as part of this recording task.
+recommended acceptance and merge; the owner accepted ADR-056 on 2026-11-11 and
+the PR merged after green CI on its final commit. Reporting wording is
+corrected; the evaluation-cache defect remains a nonblocking follow-up (#340).
 Related: #313 (rest of CI-03), #338 (uploaded Markdown/Docling section path
 fails on `main`).
 

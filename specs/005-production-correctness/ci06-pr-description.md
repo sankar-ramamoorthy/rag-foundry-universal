@@ -7,7 +7,7 @@ development corpora: sentence/paragraph chunks had no size limit, the Ollama
 embedder cut every input to 800 characters, and Ollama silently truncates
 inputs past `mxbai-embed-large`'s 512-token context by default.
 
-Proposed [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every
+Accepted [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) makes every
 stored passage the exact, complete model input:
 
 - `shared/embedders/input_contract.py`: one contract (800 characters, 480 by a

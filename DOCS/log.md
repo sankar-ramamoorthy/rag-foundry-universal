@@ -8,6 +8,9 @@ governed.
 
 ## 2026-11-11
 
+Accepted [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) (owner) and
+merged PR #339 (#337). Deployment and clean re-ingestion remain deferred.
+
 Added the [final CI-06 independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)
 at `770e3c9` and the [supplied assessment](/DOCS/notes/2026-11-11-ci06-final-review-assessment.md).
 Recorded the recommendation to accept ADR-056 and merge subject to current CI;

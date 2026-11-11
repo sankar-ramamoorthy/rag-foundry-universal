@@ -3,12 +3,12 @@ title: "CI-06 handoff: exact-input embedding contract, PR #339, what the owner d
 date: 2026-11-10
 type: note
 status: complete
-summary: "PR #339 open after the independent review was resolved; not merged or deployed; ADR-056 proposed"
+summary: "ADR-056 accepted and PR #339 merged 2026-11-11; not deployed; clean rebuild deferred"
 tags: [ci06, ci03, embedding, chunking, handoff]
 related:
   - "[Issue #337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337)"
   - "[PR #339](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/339)"
-  - "[ADR-056 (proposed)](/DOCS/adr/ADR-056-embedding-input-contract.md)"
+  - "[ADR-056 (accepted)](/DOCS/adr/ADR-056-embedding-input-contract.md)"
   - "[CI-06 investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)"
   - "[CI-06 verification](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md)"
   - "[Independent review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)"
@@ -32,8 +32,8 @@ November 10 audit.
 | Investigation and measurements | done, revised after review | [investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md), [verification](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md) |
 | Independent review R1–R5 | reproduced and resolved | [review](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md); verification "Review follow-up" |
 | Delivery evaluation | pre-registered, all five criteria passed | [protocol](/DOCS/evaluations/2026-11-10-ci06-delivery-evaluation-protocol.md) |
-| Decision record | **proposed** | [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) |
-| Merge | **not done** | owner review of PR #339 |
+| Decision record | **accepted** 2026-11-11 | [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) |
+| Merge | done 2026-11-11 | PR #339 |
 | Deployment / clean rebuild | **not done** | operator-owned |
 
 ## Owner decisions
@@ -44,7 +44,7 @@ cleanup is recorded; the evaluation-cache issue remains a separate nonblocking
 follow-up. No further architecture review cycle is recommended. This is a
 recommendation, not a record of formal acceptance or merge.
 
-1. Accept or amend ADR-056 at review.
+1. ADR-056: accepted 2026-11-11.
 2. Timing of the clean rebuild (decided 2026-11-11: rebuild existing indexes, no
    historical compatibility). Pinned E1 development and held-out generations
    change when rebuilt; finish or re-baseline in-flight comparisons first.

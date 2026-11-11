@@ -78,7 +78,7 @@ bounding, and its explicit non-goals (no vector-store generation filtering,
 no live two-service HTTP round-trip test yet).
 
 [ADR-056: embedding-input contract](/DOCS/adr/ADR-056-embedding-input-contract.md)
-— **proposed** (#337, CI-06) — makes each stored passage the exact embedding
+— **accepted** 2026-11-11 (#337, CI-06; not yet deployed) — makes each stored passage the exact embedding
 input and versions that contract in the incremental-reuse gate. See the
 [CI-06 investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)
 and [evidence](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md).

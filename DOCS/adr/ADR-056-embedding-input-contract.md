@@ -2,7 +2,7 @@
 title: "ADR-056: Embedding-input contract — stored passages are the exact model input"
 date: 2026-11-10
 type: adr
-status: proposed
+status: accepted
 tags: [adr, embedding, chunking, incremental-ingestion, ci06, issue-337]
 related:
   - "[Issue #337](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/337)"
@@ -16,9 +16,10 @@ related:
 
 # ADR-056: Embedding-input contract
 
-**Status: Proposed (2026-11-10).** Implemented on branch
-`fix/337-ci06-embedding-input-coverage` for review. Not deployed. Acceptance is
-the owner's decision at PR review.
+**Status: Accepted (2026-11-11, owner, after the
+[final independent verification](/DOCS/audit/2026-11-11-ci06-pr339-final-verification.md)).**
+Proposed 2026-11-10; delivered by PR #339. Not deployed: deployment and the
+clean rebuild of existing indexes are operator-owned and deferred.
 
 Roadmap phase: Phase 6 correctness follow-up (CI-06, linked to CI-03).
 
