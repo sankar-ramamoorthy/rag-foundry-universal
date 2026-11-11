@@ -8,6 +8,12 @@ governed.
 
 ## 2026-11-10
 
+Added the [independent CI-06 review of PR #339 and proposed ADR-056](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)
+and linked it from the audit index. The review distinguishes live model
+counterexamples, source-confirmed lifecycle defects, and evaluation gaps;
+recommends holding the PR and retaining the ADR as proposed. It does not amend
+the ADR, specifications, implementation, or deployment state.
+
 Proposed [ADR-056: embedding-input contract](/DOCS/adr/ADR-056-embedding-input-contract.md)
 (issue #337, CI-06) with its [investigation](/DOCS/audit/2026-11-10-ci06-embedding-input-coverage-investigation.md)
 and [measurements](/DOCS/test_results/2026-11-10-ci06-embedding-input-coverage-verification.md):

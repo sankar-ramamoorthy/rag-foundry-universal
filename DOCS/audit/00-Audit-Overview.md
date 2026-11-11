@@ -60,6 +60,12 @@ The [CI-06 embedding-input coverage investigation](/DOCS/audit/2026-11-10-ci06-e
 measures how much artifact text reached no embedding input, compares aligned
 contracts on development corpora and records the reuse-gate implications (CI-03).
 
+The [independent CI-06 review of PR #339 and proposed ADR-056](/DOCS/audit/2026-11-10-ci06-pr339-independent-review.md)
+records live truncation counterexamples, a source-confirmed generation-mixing
+path after cleanup failure, token-counter discrepancies, and remaining delivery
+evidence gaps. It recommends holding the PR and retaining ADR-056 as proposed;
+it is review evidence, not an implementation or deployment authorization.
+
 ## Current status (2026-09-12 - supersedes the 2026-09-06 status below)
 
 > September 16 update: the historical release below remains valid evidence.
