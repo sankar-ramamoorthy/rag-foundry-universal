@@ -169,6 +169,11 @@ not a shipped capability.
 `07-Roadmap.md`'s Phase 6 (above); kept as the historical rationale record,
 not a live planning document.
 
+The [documentation-conventions proposal](/DOCS/proposals/2026-11-10-documentation-conventions.md)
+(#332, `accepted`) drafts document types, authority, placement, navigation and the
+investigation-to-implementation path; see its
+[review note](/DOCS/notes/20261110-knowledge-base-conventions-review.md).
+
 `DOCS/proposals/` — process/tooling proposals under discussion, not yet
 binding: [[proposals/sdd-spec-kit-adoption]],
 [[proposals/lean-instruction-routing-layer]] (before Phase 3).
