@@ -14,9 +14,9 @@ related:
 # Proposal — Minimal documentation conventions
 
 Tracked by issue #332. **Accepted by the owner on 2026-11-10**, with the
-recommended resolutions below. Not yet binding on agents until the
-[OKF standard](/DOCS/standards/okf-documentation.md) is amended with these
-sections (next step). It adds to the
+recommended resolutions below. Binding through the
+[amended OKF standard](/DOCS/standards/okf-documentation.md), which carries the
+accepted conventions. It adds to the
 standard; it does not replace it. Findings are in the
 [review note](/DOCS/notes/20261110-knowledge-base-conventions-review.md).
 

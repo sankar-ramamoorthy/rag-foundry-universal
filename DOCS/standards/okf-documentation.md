@@ -77,6 +77,56 @@ The spec reserves two filenames at any level of the hierarchy, which
   structural migrations) — not a substitute for `git log`, and not
   meant to capture routine content edits.
 
+## Document types and authority
+
+Authority comes from `type` + `status` + explicit `related` links, never from
+directory alone. New documents use one of these `type` values (existing values
+stay valid; remap only when substantially editing):
+
+| `type` | Establishes | Authority |
+|---|---|---|
+| `standard` | How documentation or process is done | Binding when `accepted` |
+| `adr` | An architectural decision | Authoritative for the decided fact when `accepted` |
+| `spec` | Required behavior of a feature | Authoritative for its requirements; defers to ADRs on technical facts |
+| `proposal` | A change under discussion | None until accepted |
+| `investigation` | Evidence from testing a specific hypothesis | Evidence only; never decides |
+| `audit` | A point-in-time assessment of a broader system or area | Evidence only |
+| `evaluation` | Pre-registered protocols, manifests, fixtures | Binding on the experiment once `frozen` |
+| `test-result` | Observed outcomes of a run (not `test-results`) | Evidence only, tied to the run's commit |
+| `release-record` | What was deployed, from which commit | Record of fact |
+| `status` | Current project state (`DOCS/status.md` only) | The single current-state document |
+| `note` | Working notes, handoffs, decision notes | None; promote to an ADR or spec if it decides something |
+
+`specs/NNN-*/spec.md` keeps its Spec Kit header and counts as type `spec` by
+location. New documents use one `status` from `proposed`, `accepted`, `frozen`,
+`complete`, `superseded`, `obsolete`; qualifiers go in a separate `summary` key.
+
+## Placement and discoverability
+
+Use existing directories: `DOCS/adr/` (`adr`), `specs/` (`spec`),
+`DOCS/proposals/`, `DOCS/audit/` (`audit`, and `investigation` tied to an audit
+finding), `DOCS/evaluations/` (defined before a run), `DOCS/test_results/` (what
+a run produced), `DOCS/notes/` (`note`, other investigations), `DOCS/releases/`
+and `DOCS/deployment/`, `DOCS/standards/`. New note filenames use
+`YYYY-MM-DD-slug.md`.
+
+Not every document needs an index entry. Every new document must be reachable
+through its `related` links from a parent spec, investigation, issue, ADR or
+category index. `DOCS/index.md` routes to category indexes and current items and
+does not embed result narratives. Add a `DOCS/log.md` entry when a change affects
+how the knowledge base is organized or governed, or when an ADR, spec or audit is
+added or accepted.
+
+## From investigation to implementation
+
+An investigation or audit only records evidence. Work proceeds issue → ADR (if
+architecture, identity, persistence or embedding behavior changes) or spec →
+owner acceptance → branch and PR citing the issue → `status.md` updated when it
+ships. This adds no approval states beyond the constitution and Spec Kit
+workflow, and acceptance of a spec or ADR does not by itself authorize
+implementation unless it says so. Rationale: the
+[accepted proposal](/DOCS/proposals/2026-11-10-documentation-conventions.md).
+
 ## Scope
 
 - New knowledge-bearing documents under `DOCS/` must be OKF-compliant

@@ -10,7 +10,8 @@ governed.
 
 Accepted the [documentation-conventions proposal](/DOCS/proposals/2026-11-10-documentation-conventions.md)
 (issue #332): document types and authority, placement, discoverability and the
-investigation-to-implementation path. The OKF standard is not yet amended.
+investigation-to-implementation path, and amended the
+[OKF standard](/DOCS/standards/okf-documentation.md) with the accepted sections.
 
 ## 2026-11-08
 
