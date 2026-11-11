@@ -388,6 +388,20 @@ def _build_and_persist_graph(
     return stats, current_file_hashes, inventory
 
 
+def embedding_config_identity(settings) -> str:
+    """Reuse-gate identity of the vectors this deployment produces.
+
+    FR-006 (spec 006): provider, model and dimension. CI-06 (#337): plus the
+    embedding-input contract, because vectors built under another contract
+    encode different text. It does not identify the model's immutable digest
+    or extractor behavior; those belong to CI-03 (#313).
+    """
+    return (
+        f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
+        f":{settings.VECTOR_DIMENSION}d:{EMBEDDING_INPUT_CONTRACT}"
+    )
+
+
 def _resolve_reuse_eligibility(
     session,
     ingestion_id: UUID,
@@ -407,14 +421,8 @@ def _resolve_reuse_eligibility(
     prior_generation_id = db_utils.resolve_current_generation(repo_id)
     is_incremental = prior_generation_id is not None and not force_full_rebuild
 
-    settings = get_settings()
     chunking_config_version = ChunkerFactory.VERSION
-    # CI-06 (#337): the input contract is part of the vector's identity;
-    # vectors built under another contract encode different text.
-    embedding_config_version = (
-        f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
-        f":{EMBEDDING_INPUT_CONTRACT}"
-    )
+    embedding_config_version = embedding_config_identity(get_settings())
     StatusManager(session).record_generation_start(
         ingestion_id,
         parent_generation_id=prior_generation_id,

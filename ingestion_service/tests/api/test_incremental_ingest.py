@@ -385,13 +385,7 @@ def test_legacy_input_contract_generation_is_fully_reembedded(
     assert req1.embedding_config_version.endswith(f":{api.EMBEDDING_INPUT_CONTRACT}")
 
     # Make generation 1 look exactly like one built before CI-06.
-    legacy_embedding = req1.embedding_config_version.rsplit(":", 1)[0]
-    Session = get_sessionmaker()
-    with Session() as s:
-        row = s.get(IngestionRequest, id1)
-        row.chunking_config_version = "heuristic-v1"
-        row.embedding_config_version = legacy_embedding
-        s.commit()
+    _mark_legacy_contract(id1)
 
     id2 = uuid.uuid4()
     embedder, embedded_ids = _counting_embedder()
@@ -435,8 +429,12 @@ def _mark_legacy_contract(ingestion_id):
     Session = get_sessionmaker()
     with Session() as s:
         row = s.get(IngestionRequest, ingestion_id)
+        settings = api.get_settings()
         row.chunking_config_version = "heuristic-v1"
-        row.embedding_config_version = row.embedding_config_version.rsplit(":", 1)[0]
+        # The deployed pre-CI-06 identity: provider and model only.
+        row.embedding_config_version = (
+            f"{settings.EMBEDDING_PROVIDER}:{settings.OLLAMA_EMBED_MODEL}"
+        )
         s.commit()
 
 

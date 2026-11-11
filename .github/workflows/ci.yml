@@ -105,6 +105,10 @@ jobs:
             tests/api/test_graph_export_relationship_metadata.py \
             -q
 
+      - name: vector_store_service integration tests (generation-fenced retag, #337)
+        working-directory: vector_store_service
+        run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_retag_generation_fence.py -q
+
       - name: vector_store_service integration tests (WP-R4 passages)
         working-directory: vector_store_service
         run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_wp_r4_passages.py -q

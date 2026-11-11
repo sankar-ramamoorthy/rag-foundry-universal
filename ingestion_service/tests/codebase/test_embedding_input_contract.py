@@ -434,12 +434,21 @@ def test_live_ollama_review_counterexamples(case):
 @pytest.mark.parametrize(
     "prior, expected_match",
     [
+        # Legacy (deployed) strings: provider:model only.
         (("heuristic-v1", "ollama:mxbai-embed-large:latest"), False),
         ((ChunkerFactory.VERSION, "ollama:mxbai-embed-large:latest"), False),
+        # Same contract but a different vector dimension (FR-006).
         (
             (
                 ChunkerFactory.VERSION,
-                f"ollama:mxbai-embed-large:latest:{EMBEDDING_INPUT_CONTRACT}",
+                f"ollama:mxbai-embed-large:latest:768d:{EMBEDDING_INPUT_CONTRACT}",
+            ),
+            False,
+        ),
+        (
+            (
+                ChunkerFactory.VERSION,
+                f"ollama:mxbai-embed-large:latest:1024d:{EMBEDDING_INPUT_CONTRACT}",
             ),
             True,
         ),
@@ -455,7 +464,8 @@ def test_reuse_gate_rejects_vectors_from_another_input_contract(
     monkeypatch.setattr(
         api, "get_settings",
         lambda: SimpleNamespace(
-            EMBEDDING_PROVIDER="ollama", OLLAMA_EMBED_MODEL="mxbai-embed-large:latest"
+            EMBEDDING_PROVIDER="ollama", OLLAMA_EMBED_MODEL="mxbai-embed-large:latest",
+            VECTOR_DIMENSION=1024,
         ),
     )
     monkeypatch.setattr(api.db_utils, "resolve_current_generation", lambda r: "prior")
