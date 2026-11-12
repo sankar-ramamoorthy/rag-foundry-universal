@@ -167,7 +167,10 @@ for the manual production release procedure, provenance checks, validation,
 and rollback rules. [Agent Execution Boundaries](/DOCS/deployment/agent-execution-and-verification.md)
 covers the operator-owned deployment boundary, the local/deployed execution
 model, the four SHAs that can differ, and the limits of HTTP-based
-verification.
+verification. [LLM Provider-Request Capture and Replay](/DOCS/deployment/llm-provider-request-capture.md)
+(#344) is the opt-in record of exactly what llm_service sends to the
+inference provider (flattened prompt, options, raw response, effective
+Ollama context length), plus a replay tool.
 
 `DOCS/releases/` holds production release records. Current release:
 [prod-2026-09-12](/DOCS/releases/2026-09-12-prod-release.md), deployed from

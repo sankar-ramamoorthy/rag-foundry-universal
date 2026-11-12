@@ -12,6 +12,7 @@ import logging
 
 import litellm
 
+from src.core import provider_capture
 from src.core.config import MAX_TRANSIENT_RETRIES, RETRY_BACKOFF_BASE_SECONDS
 from src.core.model_registry import ResolvedModel, get_registry
 from src.core.prompts import PROMPT_TEMPLATE_VERSION, build_messages
@@ -120,6 +121,48 @@ async def _acompletion_with_backoff(kwargs: dict):
             attempt += 1
 
 
+async def _complete_captured(
+    resolved: ResolvedModel, kwargs: dict, context: str, query: str
+):
+    """Issue #344: the same call, recorded as one capture per fallback
+    candidate (transient same-candidate retries appear as separate wire
+    exchanges inside it). Capture never alters the request beyond
+    supplying an equivalent HTTP client for Ollama routes, and never fails
+    the generation."""
+    provider_capture.install_litellm_hook(litellm)
+    attempt = provider_capture.Attempt.start(
+        model=resolved.model,
+        model_alias=resolved.alias,
+        api_base=resolved.api_base,
+        messages=kwargs["messages"],
+        prompt_template=PROMPT_TEMPLATE_VERSION,
+        context=context,
+        query=query,
+    )
+    call_kwargs = dict(kwargs)
+    client = (
+        provider_capture.wire_client(resolved.timeout) if attempt.wants_wire else None
+    )
+    if client is not None:
+        call_kwargs["client"] = client
+    try:
+        with attempt.bound():
+            response = await _acompletion_with_backoff(call_kwargs)
+    except Exception as e:
+        attempt.finish_error(e)
+        await attempt.write()
+        raise
+    finally:
+        if client is not None:
+            try:
+                await client.close()
+            except Exception:  # noqa: BLE001 - diagnostic client cleanup
+                pass
+    attempt.finish_ok(response)
+    await attempt.write()
+    return response
+
+
 async def _complete(
     resolved: ResolvedModel, *, context: str, query: str
 ) -> dict:
@@ -132,7 +175,10 @@ async def _complete(
     if resolved.api_base:
         kwargs["api_base"] = resolved.api_base
 
-    response = await _acompletion_with_backoff(kwargs)
+    if provider_capture.is_enabled():
+        response = await _complete_captured(resolved, kwargs, context, query)
+    else:
+        response = await _acompletion_with_backoff(kwargs)
 
     content = response.choices[0].message.content or ""
     usage = getattr(response, "usage", None)
