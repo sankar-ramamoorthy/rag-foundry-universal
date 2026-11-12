@@ -300,16 +300,26 @@ def plan_from_file(
     evidence = {"captured": captured_context, **evidence_files}
     arms = []
     for entry in plan:
+        if entry.get("op") == "unload":
+            # Round 3 cache control: evict the model (and with it the KV and
+            # prompt cache) before the next step.
+            arms.append({"op": "unload", "arm_id": entry["arm_id"]})
+            continue
         context = evidence[entry["evidence"]]
         adapter = entry.get("adapter", "generate")
         path, build = BUILDERS[adapter]
         options = {"num_ctx": entry["num_ctx"], "seed": entry["seed"]}
+        if "num_predict" in entry:
+            # A "prime": evaluates the prompt (warming the prompt cache) and
+            # generates almost nothing.
+            options["num_predict"] = entry["num_predict"]
         user_msg = f"Context:\n{context}\n\nQuestion:\n{query}"
         arms.append(
             {
                 "arm_id": entry.get("arm_id")
                 or f"{entry['evidence']}-{adapter}-ctx{entry['num_ctx']}"
                 f"-seed{entry['seed']}",
+                "op": "arm",
                 "evidence": entry["evidence"],
                 "adapter": adapter,
                 "path": path,
@@ -425,37 +435,75 @@ def write_private(path: Path, data: dict) -> None:
         handle.write(json.dumps(data, ensure_ascii=False, indent=1))
 
 
-def run(args: argparse.Namespace) -> int:
-    record = json.loads(args.capture.read_text(encoding="utf-8"))
-    gate = fidelity_gate(record)
-    if args.plan:
-        files = {
-            name: read_lf(Path(path))
-            for name, _, path in (e.partition("=") for e in args.evidence)
-        }
-        plan = json.loads(args.plan.read_text(encoding="utf-8"))
-        unknown = sorted(
-            {e["evidence"] for e in plan} - {"captured", *files}
-            | {e.get("adapter", "generate") for e in plan} - set(BUILDERS)
-        )
-        if unknown:
-            print(f"unknown evidence or adapter in plan: {unknown}", file=sys.stderr)
-            return 2
-        arms = plan_from_file(record, plan, files)
-    else:
+def record_unload(
+    client: httpx.Client, api_base: str, model: str, arm: dict, index: int,
+    out_dir: Path,
+) -> None:
+    """Ask Ollama to unload the model now, and record whether it did."""
+    before = loaded(client, api_base, model)
+    resp = client.post(
+        f"{api_base}/api/generate", json={"model": model, "keep_alive": 0}
+    )
+    after = loaded(client, api_base, model)
+    write_private(
+        out_dir / f"{arm['arm_id']}.json",
+        {
+            "schema": SCHEMA,
+            "op": "unload",
+            "arm_id": arm["arm_id"],
+            "step_index": index,
+            "at": datetime.now(timezone.utc).isoformat(),
+            "status_code": resp.status_code,
+            "ps_before": before,
+            "ps_after": after,
+            "unloaded": not after,
+        },
+    )
+    print(arm["arm_id"], resp.status_code, "unloaded" if not after else "STILL-LOADED",
+          flush=True)
+
+
+def build_arms(args: argparse.Namespace, record: dict) -> list[dict] | None:
+    """Arms from --plan or the round-1 flags; None if the plan is invalid."""
+    if not args.plan:
         impl = (
             args.impl_context.read_text(encoding="utf-8")
             if args.impl_context
             else None
         )
-        arms = plan_arms(record, impl, args.ctx, args.impl_ctx, args.seed)
+        return plan_arms(record, impl, args.ctx, args.impl_ctx, args.seed)
+    files = {
+        name: read_lf(Path(path))
+        for name, _, path in (e.partition("=") for e in args.evidence)
+    }
+    plan = json.loads(args.plan.read_text(encoding="utf-8"))
+    steps = [e for e in plan if e.get("op") != "unload"]
+    unknown = sorted(
+        {e["evidence"] for e in steps} - {"captured", *files}
+        | {e.get("adapter", "generate") for e in steps} - set(BUILDERS)
+    )
+    ids = [e.get("arm_id") for e in plan if e.get("arm_id")]
+    if unknown or len(ids) != len(set(ids)):
+        print(f"invalid plan: unknown {unknown} or duplicate arm_id", file=sys.stderr)
+        return None
+    return plan_from_file(record, plan, files)
+
+
+def run(args: argparse.Namespace) -> int:
+    record = json.loads(args.capture.read_text(encoding="utf-8"))
+    gate = fidelity_gate(record)
+    arms = build_arms(args, record)
+    if arms is None:
+        return 2
     ollama_env = record["environment"].get("ollama") or {}
     expected_digest = (ollama_env.get("tag") or {}).get("digest")
     plan = {
         "gate": gate,
         "expected_digest": expected_digest,
         "arms": [
-            {
+            {"arm_id": a["arm_id"], "op": "unload"}
+            if a.get("op") == "unload"
+            else {
                 "arm_id": a["arm_id"],
                 "evidence": a["evidence"],
                 "adapter": a.get("adapter", "generate"),
@@ -488,7 +536,11 @@ def run(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 4
-        for arm in arms:
+        for index, arm in enumerate(arms):
+            if arm.get("op") == "unload":
+                record_unload(client, api_base, model, arm, index, args.out_dir)
+                continue
+            ps_before = loaded(client, api_base, model)
             started = time.monotonic()
             when = datetime.now(timezone.utc).isoformat()
             error = None
@@ -505,6 +557,9 @@ def run(args: argparse.Namespace) -> int:
             result = {
                 "schema": SCHEMA,
                 "arm_id": arm["arm_id"],
+                "step_index": index,
+                "previous_step": arms[index - 1]["arm_id"] if index else None,
+                "ps_before_call": ps_before,
                 "sent_at": when,
                 "source_capture_id": record.get("capture_id"),
                 "evidence": arm["evidence"],
@@ -540,7 +595,7 @@ def summarize(args: argparse.Namespace) -> int:
     rows = []
     for path in sorted(args.dir.glob("*.json")):
         rec = json.loads(path.read_text(encoding="utf-8"))
-        if rec.get("schema") != SCHEMA:
+        if rec.get("schema") != SCHEMA or rec.get("op") == "unload":
             continue
         r = rec.get("response") or {}
         context, query = split_user_message(user_message_of(rec["request_body_text"]))

@@ -99,6 +99,27 @@
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
       "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
+    "2026-11-12-345-retrieval-candidates-run2.json": {
+      "bytes": 1046334,
+      "sha256": "4d23b16b08df8933edef72c1b5b0c9d07383f9a93d86eab22a693b483b6c35c0",
+      "produced_by": "scripts/retrieval_candidates_345.py (local orchestrator, stubbed generation, read-only services), 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-retrieval-candidates-run3.json": {
+      "bytes": 1060742,
+      "sha256": "f56a662c2299db440c6101873d287676494da333785a0b63953aa689e0f45585",
+      "produced_by": "scripts/retrieval_candidates_345.py (local orchestrator, stubbed generation, read-only services), 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-retrieval-candidates.json": {
+      "bytes": 1020053,
+      "sha256": "3c99357808689e54d3539bbc23b63af6b02ac67e41ceeee9a16c401c9f8120dc",
+      "produced_by": "scripts/retrieval_candidates_345.py (local orchestrator, stubbed generation, read-only services), 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": "run1 predates the exact-score fields; run3 adds the full retrieval_plan"
+    },
     "2026-11-12-345-round2-summary.json": {
       "bytes": 10660,
       "sha256": "6c4a3c09df2c5c90246f32cb9378c7ef85a754636d8e72ab053565e0153b1b8e",
@@ -176,11 +197,102 @@
       "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
       "notes": ""
     },
+    "2026-11-12-345-round3-repro-summary.json": {
+      "bytes": 9688,
+      "sha256": "7e5bdf7fc94df0f79e7589b3458d0b0dc1f87d5c3f5357e11a54ab64cf2d6bfb",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-01-unload.json": {
+      "bytes": 229,
+      "sha256": "c1d863eea44f646f88ace6bade62be4cedb1b24d50c9181aadf3a05e87e12ae6",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-02-T-after-unload.json": {
+      "bytes": 131598,
+      "sha256": "89fa96d67c35ace8514bd90a75c646c006c894c549bf351ca59fa70eafc3041e",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-03-unload.json": {
+      "bytes": 466,
+      "sha256": "9834088f51302536103e4780c217b8ec603d879eb2a6b9a138e1eb2a936af029",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-04-T-after-unload.json": {
+      "bytes": 131713,
+      "sha256": "4ab1a5b287e02075231f86595bb0669a9994a48bd9b7b92c8b22052ddd8b908c",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-05-unload.json": {
+      "bytes": 466,
+      "sha256": "de1e71d7cdf2897712ddcecb1281d74aa0e7e860f048414834df8a65a520e308",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-06-T-after-unload.json": {
+      "bytes": 131713,
+      "sha256": "e05e77219eb18786614bc28cb60beb08c22b6f55b62e21592edfb9994c0405b3",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-07-T-same-prompt-cached.json": {
+      "bytes": 161757,
+      "sha256": "f1bc53e793b3686315a00ee05396750b771c0d589b35e72426d2505cfb763b3c",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-08-T-same-prompt-cached.json": {
+      "bytes": 161763,
+      "sha256": "e1966ba823b1e1780e0402534dcfcdcb2e3e1280f42108f4ec06e04b319f6623",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-09-prime-mixed-impl-first.json": {
+      "bytes": 73154,
+      "sha256": "d4b93d6ebba59710d97d8a481ea696c21a4d6551c41ce4792cea93a0804744fc",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-10-T-after-prefix-prime.json": {
+      "bytes": 140447,
+      "sha256": "148968610a594b4ca70d12ff7dd71386d11d280c347f672ef519230ee81c0283",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-11-prime-mixed-impl-first.json": {
+      "bytes": 73156,
+      "sha256": "3e0c9e3eb6f606308b504b886feacb8cf5a7fbce8ddf791390e4204d47628ddf",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round3-repro/r3-12-T-after-prefix-prime.json": {
+      "bytes": 140448,
+      "sha256": "4377313d33c13db7a818e6c3ba31e22e41b1d4a3938ac77fc75dad06883c2720",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round3-repro-plan.json / summarize, owner-authorized, 2026-11-12",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
+      "notes": ""
+    },
     "2026-11-12-345-step0/659139bc01fd464589a8972e50f72412.json": {
       "bytes": 96677,
       "sha256": "97174987c241bb9a6ee2241c1a0b8e2755be56a28c8b55371f27b36347e246f7",
       "produced_by": "llm_service provider capture (#344) on production, 2026-11-12; Step 0 per DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md",
-      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md; DOCS/test_results/2026-11-12-345-round2.md",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md; DOCS/test_results/2026-11-12-345-round2.md; DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
       "notes": ""
     },
     "20261104-status-update-307-hatch-reingest.md": {

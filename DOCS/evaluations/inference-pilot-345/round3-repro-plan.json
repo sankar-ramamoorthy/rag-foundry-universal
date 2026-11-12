@@ -1,0 +1,79 @@
+[
+ {
+  "op": "unload",
+  "arm_id": "r3-01-unload"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-02-T-after-unload"
+ },
+ {
+  "op": "unload",
+  "arm_id": "r3-03-unload"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-04-T-after-unload"
+ },
+ {
+  "op": "unload",
+  "arm_id": "r3-05-unload"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-06-T-after-unload"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-07-T-same-prompt-cached"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-08-T-same-prompt-cached"
+ },
+ {
+  "evidence": "mixed_impl_first",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "num_predict": 1,
+  "arm_id": "r3-09-prime-mixed-impl-first"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-10-T-after-prefix-prime"
+ },
+ {
+  "evidence": "mixed_impl_first",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "num_predict": 1,
+  "arm_id": "r3-11-prime-mixed-impl-first"
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11,
+  "arm_id": "r3-12-T-after-prefix-prime"
+ }
+]
