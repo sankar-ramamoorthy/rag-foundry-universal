@@ -1,0 +1,435 @@
+[Source: rag_orchestrator/src/api/v1/routes.py#rag_endpoint]
+@router.post("/rag", response_model=RAGResponse)
+async def rag_endpoint(rag_query: RAGQuery):
+    logger.debug(f"Received RAG query: {rag_query}")
+
+    try:
+        result = await run_rag(
+            query=rag_query.query,
+            repo_id=rag_query.repo_id,
+            top_k=rag_query.top_k,
+            provider=rag_query.provider,
+            model=rag_query.model,
+            language=rag_query.language,
+            rerank=rag_query.rerank,
+            claim_type=rag_query.claim_type,
+            repository_overview_claim_selection_enabled=(
+                rag_query.repository_overview_claim_selection_enabled
+            ),
+            repository_overview_structured_answers_enabled=(
+                rag_query.repository_overview_structured_answers_enabled
+            ),
+            repository_overview_canonical_selection_enabled=(
+                rag_query.repository_overview_canonical_selection_enabled
+            ),
+            trace_canonical_ids=(
+                set(rag_query.trace_canonical_ids)
+                if rag_query.trace_canonical_ids
+                else None
+            ),
+        )
+        return result
+
+    except HTTPException:
+        # Preserve service-layer status codes (e.g. 404 unknown repo_id)
+        raise
+    except Exception as e:
+        logger.error(f"Error occurred during the RAG process: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An error occurred while processing the RAG request.",
+        )
+
+[Source: rag_orchestrator/src/core/service.py#run_rag]
+async def run_rag(
+    query: str,
+    repo_id: Optional[str] = None,
+    top_k: int = 20,
+    max_chunks_per_doc: int = 5,
+    max_total_tokens: int = 4096,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
+    language: Optional[str] = None,
+    trace_canonical_ids: Optional[Set[str]] = None,
+    rerank: Optional[bool] = None,
+    claim_type: Optional[ClaimType] = None,
+    repository_overview_claim_selection_enabled: Optional[bool] = None,
+    repository_overview_structured_answers_enabled: Optional[bool] = None,
+    repository_overview_canonical_selection_enabled: Optional[bool] = None,
+) -> RAGResult:
+    settings = get_settings()
+    claim_selection = (
+        settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
+        if repository_overview_claim_selection_enabled is None
+        else repository_overview_claim_selection_enabled
+    )
+    structured_answers = (
+        settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
+        if repository_overview_structured_answers_enabled is None
+        else repository_overview_structured_answers_enabled
+    )
+    canonical_selection = (
+        settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED
+        if repository_overview_canonical_selection_enabled is None
+        else repository_overview_canonical_selection_enabled
+    )
+    trace_id = _new_trace_id()
+    _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
+
+    resolved_repo_id = await resolve_repo_id_http(repo_id)
+
+    embedder = get_embedder(
+        provider=settings.EMBEDDING_PROVIDER,
+        ollama_base_url=settings.OLLAMA_BASE_URL,
+        ollama_model=settings.OLLAMA_EMBED_MODEL,
+        ollama_batch_size=settings.OLLAMA_BATCH_SIZE,
+    )
+    # #170 (WP-R7): embed_query -> OllamaEmbedder.embed makes a synchronous
+    # requests.post; off the event loop.
+    query_embedding = await asyncio.to_thread(embed_query, query, embedder)
+
+    retrieved_chunks_by_document, retrieval_plan_dict = await hybrid_retrieve(
+        query,
+        resolved_repo_id,
+        query_embedding,
+        top_k,
+        language=language,
+        trace_canonical_ids=trace_canonical_ids,
+        trace_id=trace_id,
+    )
+
+[Source: rag_orchestrator/src/core/service.py#resolve_repo_id_http]
+async def resolve_repo_id_http(repo_id: Optional[str]) -> str:
+    """
+    Resolve repo_id using ingestion_service /v1/repos endpoint.
+    """
+    settings = get_settings()
+    repos_url = f"{settings.INGESTION_SERVICE_URL}/v1/repos"
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.get(repos_url)
+        if resp.status_code != 200:
+            raise HTTPException(500, "Failed to fetch repositories")
+
+        repos = resp.json()
+
+        # If repo explicitly provided → validate
+        if repo_id:
+            if any(r["id"] == repo_id for r in repos):
+                logger.info(f"Using explicit repo_id: {repo_id[:8]}...")
+                return repo_id
+            raise HTTPException(404, "Repository not found")
+
+        # Otherwise use first complete repo
+        complete = [r for r in repos if r.get("status") == "completed"]
+        if complete:
+            selected = complete[0]["id"]
+            logger.info(f"Using first complete repo: {selected[:8]}...")
+            return selected
+
+    raise HTTPException(400, "No complete repositories available")
+
+[Source: shared/embedders/query.py#embed_query]
+def embed_query(query: str, embedder: BaseEmbedder) -> List[float]:
+    """
+    Embed a single query string using the provided embedder.
+
+    This is a thin helper that:
+    - Wraps the query in a temporary Chunk
+    - Uses the given embedder
+    - Returns a single embedding vector
+
+    No persistence, no chunking, no side effects.
+    """
+    query_chunk = Chunk(
+        chunk_id=f"query:{uuid.uuid4()}",
+        content=query,
+        metadata={"type": "query"},
+    )
+
+    embeddings = embedder.embed([query_chunk])
+
+    if not embeddings or len(embeddings) != 1:
+        raise RuntimeError(f"Expected 1 embedding for query, got {len(embeddings)}")
+
+    return embeddings[0]
+
+[Source: shared/embedders/ollama.py#OllamaEmbedder.embed]
+def embed(self, chunks: List[Chunk]) -> List[List[float]]:
+    logging.debug(
+        "OllamaEmbedder received %d items",
+        len(chunks),
+    )
+
+    texts = [_truncate(chunk.content) for chunk in chunks]
+    if not texts:
+        return []
+
+    embeddings: List[List[float]] = []
+    try:
+        for start in range(0, len(texts), self.batch_size):
+            batch = texts[start:start + self.batch_size]
+            payload = {"model": self.model, "input": batch}
+
+            # Finite connect/read deadlines; provider hangs must surface as
+            # ingestion failure. This is per HTTP batch, not a job deadline.
+            response = requests.post(
+                f"{self.base_url}/api/embed", json=payload, timeout=(10, 120)
+            )
+
+            if response.status_code != 200:
+                raise RuntimeError(
+                    f"Ollama embedding failed "
+                    f"(status={response.status_code}): {response.text}"
+                )
+
+            embeddings.extend(response.json()["embeddings"])
+
+    except Exception as e:
+        raise RuntimeError(f"Ollama embedder error: {e}") from e
+
+    if len(embeddings) != len(texts):
+        raise RuntimeError(
+            f"Ollama returned {len(embeddings)} embeddings "
+            f"for {len(texts)} inputs"
+        )
+    return embeddings
+
+[Source: rag_orchestrator/src/core/service.py#hybrid_retrieve]
+async def hybrid_retrieve(
+    query: str,
+    repo_id: str,
+    query_embedding: List[float],
+    top_k: int = 20,
+    language: Optional[str] = None,
+    trace_canonical_ids: Optional[Set[str]] = None,
+    trace_id: Optional[str] = None,
+) -> tuple[Dict[str, List[RetrievedChunk]], Dict[str, Any]]:
+    """
+    Implements ADR-045 hybrid retrieval pipeline.
+
+    `trace_id` (WP-T1b) identifies this request across every stage-event
+    log line hybrid_retrieve emits; generated if omitted, so callers that
+    invoke hybrid_retrieve directly (e.g. tests, notebooks) still get one.
+
+    `trace_canonical_ids` (issue #89) is an optional evaluation/debug hook:
+    when given, the returned retrieval_plan_dict carries a
+    "_evidence_trace_partial" entry recording, for each of those canonical
+    IDs, whether it was found by vector search, found by graph expansion (and
+    at what rank), survived the MAX_EXPANDED_DOCS cap, and had a chunk
+    fetched. It costs nothing when omitted (the default, used by every
+    production call) and does not affect retrieval behavior either way.
+
+    `language` (WP-L6a, #85) optionally scopes the seed search to one
+    language (python/typescript/javascript); omitted, retrieval is
+    unfiltered by language exactly as before this feature existed. The
+    scope survives the source_type-relaxation fallback below the same way
+    repo_id already does (issue #30 Part 1) — graph-traversal expansion
+    needs no separate language filter, since it only ever expands from an
+    already-scoped seed set.
+
+    Returns:
+        retrieved_chunks_by_document,
+        retrieval_plan_dict
+    """
+    settings = get_settings()
+    trace_id = trace_id or _new_trace_id()
+    logger.info(f"🔄 Hybrid retrieval | repo={repo_id[:8]} | q='{query[:50]}...'")
+
+    search_url = f"{settings.VECTOR_STORE_URL}/v1/vectors/search"
+    generation_id = await _query_generation(repo_id)
+    seed_filter: Dict[str, Any] = {
+        "source_type": "code",
+        "repo_id": repo_id,
+        "ingestion_id": generation_id,
+    }
+    if language:
+        seed_filter["language"] = language
+    seed_k = _seed_search_k(top_k, settings)
+    payload = {
+        "query_vector": query_embedding,
+        "k": seed_k,
+        "metadata_filter": seed_filter,
+    }
+
+    async with httpx.AsyncClient(timeout=200) as client:
+        resp = await client.post(search_url, json=payload)
+        if resp.status_code != 200 or not resp.json().get("results"):
+            logger.info("No code chunks found. Falling back to repo-scoped search.")
+            # Relax only source_type — the fallback must never leave the
+            # repo or the requested language, or queries against a
+            # sparsely-populated scope silently answer from outside it
+            # (issue #30 Part 1; WP-L6a extends the same reasoning to
+            # language).
+            fallback_filter: Dict[str, Any] = {
+                "repo_id": repo_id,
+                "ingestion_id": generation_id,
+            }
+            if language:
+                fallback_filter["language"] = language
+            payload["metadata_filter"] = fallback_filter
+            resp = await client.post(search_url, json=payload)
+        resp.raise_for_status()
+        raw_results = resp.json().get("results", [])
+
+[Source: rag_orchestrator/src/core/service.py#_query_generation]
+async def _query_generation(repo_id: str) -> str:
+    settings = get_settings()
+    url = f"{settings.INGESTION_SERVICE_URL}/v1/repos/{repo_id}/generation"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+    except httpx.HTTPError as exc:
+        raise HTTPException(503, "Repository generation unavailable; retry") from exc
+    generation = data.get("ingestion_id")
+    if data.get("generation_status") != "ready" or not generation:
+        raise HTTPException(503, "Repository is not ready; retry")
+    return str(generation)
+
+[Source: vector_store_service/src/api/v1/vectors.py#similarity_search]
+@router.post("/search")
+async def similarity_search(
+    request: VectorSearchRequest, store: PgVectorStore = Depends(get_vector_store)
+):
+    """Search for similar vectors - MS6 RAG compatible."""
+    try:
+        logger.debug("similarity_search: searching vector store")
+        # #170 (WP-R7): off the event loop (see add_vectors above).
+        results = await asyncio.to_thread(
+            store.similarity_search,
+            request.query_vector,
+            request.k,
+            metadata_filter=request.metadata_filter,
+        )
+
+        return {
+            "results": [
+                {
+                    "chunk_id": r.metadata.chunk_id,
+                    "text": r.metadata.chunk_text,
+                    "document_id": r.metadata.document_id,
+                    "score": r.metadata.score,          # real cosine similarity score
+                    "metadata": {
+                        "ingestion_id": r.metadata.ingestion_id,
+                        "chunk_index": r.metadata.chunk_index,
+                        "chunk_strategy": r.metadata.chunk_strategy,
+                        "source_metadata": r.metadata.source_metadata,
+                        "provider": r.metadata.provider,
+                    },
+                }
+                for r in results
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error searching vectors: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+[Source: vector_store_service/src/core/vectorstore/pgvector_store.py#PgVectorStore.similarity_search]
+def similarity_search(
+    self,
+    query_vector: Sequence[float],
+    k: int,
+    metadata_filter: Optional[Dict[str, Any]] = None,
+) -> List[VectorRecord]:
+    """
+    Search vector_chunks with optional metadata filtering.
+    Uses cosine distance (<=>)  — correct for mxbai-embed-large and
+    nomic-embed-text which both produce cosine-optimised embeddings.
+    Score is returned as 1 - cosine_distance, range 0–1 (higher = more similar).
+
+    metadata_filter supports:
+        {"source_type": "code"}              → equality
+        {"source_type": {"ne": "code"}}      → not equal (also matches NULL)
+        {"doc_type": {"in": ["file","pdf"]}} → IN list
+
+    repo_id / doc_type / source_type filter on their typed columns
+    (WP-S4B, extended by issue #64); every other key filters on the
+    source_metadata JSONB as before.
+    """
+    if metadata_filter:
+        conditions, filter_values = self._build_filter_conditions(
+            metadata_filter
+        )
+        where_clause = sql.SQL(" AND ").join(conditions)
+        search_sql = sql.SQL("""
+            WITH query AS (SELECT {qvec}::vector AS qvec)
+            SELECT vc.vector, vc.ingestion_id, vc.chunk_id,
+                   vc.chunk_index, vc.chunk_strategy,
+                   vc.chunk_text, vc.source_metadata, vc.provider, vc.document_id,
+                   1 - (vc.vector <=> query.qvec) AS score
+            FROM {schema}.vector_chunks vc, query
+            WHERE {where}
+            ORDER BY vc.vector <=> query.qvec
+            LIMIT {limit}
+        """).format(
+            schema=sql.Identifier(self.SCHEMA),
+            where=where_clause,
+            qvec=sql.Placeholder(),
+            limit=sql.Placeholder(),
+        )
+        params = [query_vector] + filter_values + [k]
+        use_iterative_scan = True
+
+    else:
+        use_iterative_scan = False
+        search_sql = sql.SQL("""
+            WITH query AS (SELECT {qvec}::vector AS qvec)
+            SELECT vc.vector, vc.ingestion_id, vc.chunk_id,
+                   vc.chunk_index, vc.chunk_strategy,
+                   vc.chunk_text, vc.source_metadata, vc.provider, vc.document_id,
+                   1 - (vc.vector <=> query.qvec) AS score
+            FROM {schema}.vector_chunks vc, query
+            ORDER BY vc.vector <=> query.qvec
+            LIMIT {limit}
+        """).format(
+            schema=sql.Identifier(self.SCHEMA),
+            qvec=sql.Placeholder(),
+            limit=sql.Placeholder(),
+        )
+        params = [query_vector, k]
+
+    results: List[VectorRecord] = []
+    with psycopg.connect(self._dsn) as conn:
+        with conn.cursor() as cur:
+            # Transaction-scoped: applies only to this search.
+            cur.execute(
+                sql.SQL("SET LOCAL hnsw.ef_search = {ef}").format(
+                    ef=sql.Literal(self.HNSW_EF_SEARCH)
+                )
+            )
+            if use_iterative_scan:
+                # Issue #150: only a filtered search can under-recall
+                # this way -- an unfiltered scan has nothing to reject
+                # mid-traversal, so it's unaffected and left alone.
+                cur.execute(
+                    sql.SQL("SET LOCAL hnsw.iterative_scan = {mode}").format(
+                        mode=sql.Literal(self.HNSW_ITERATIVE_SCAN)
+                    )
+                )
+                cur.execute(
+                    sql.SQL(
+                        "SET LOCAL hnsw.max_scan_tuples = {tuples}"
+                    ).format(tuples=sql.Literal(self.HNSW_MAX_SCAN_TUPLES))
+                )
+            cur.execute(search_sql, params)
+            for row in cur.fetchall():
+                (vector, row_ingestion_id, chunk_id, chunk_index, chunk_strategy,
+                 chunk_text, source_metadata, provider, document_id, score) = row
+                metadata = VectorMetadata(
+                    ingestion_id=row_ingestion_id,
+                    chunk_id=chunk_id,
+                    chunk_index=chunk_index,
+                    chunk_strategy=chunk_strategy,
+                    chunk_text=chunk_text,
+                    source_metadata=source_metadata,
+                    provider=provider,
+                    document_id=document_id,
+                    score=score,
+                )
+                results.append(VectorRecord(vector=vector, metadata=metadata))
+    # relaxed_order HNSW does not guarantee distance order.
+    results.sort(key=lambda r: (-r.metadata.score, str(r.metadata.chunk_id)))
+    return results
