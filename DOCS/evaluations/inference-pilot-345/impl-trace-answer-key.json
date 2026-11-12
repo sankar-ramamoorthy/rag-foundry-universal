@@ -11,14 +11,44 @@
   "similarity_search"
  ],
  "reviewed_sequence": [
-  {"step": "rag_endpoint (rag_orchestrator/src/api/v1/routes.py) handles POST /v1/rag", "kind": "entry"},
-  {"step": "rag_endpoint -> run_rag (rag_orchestrator/src/core/service.py)", "kind": "direct"},
-  {"step": "run_rag -> resolve_repo_id_http -> GET {INGESTION_SERVICE_URL}/v1/repos", "kind": "direct then HTTP"},
-  {"step": "run_rag -> embed_query (shared/embedders/query.py) via asyncio.to_thread -> OllamaEmbedder.embed -> POST {base_url}/api/embed", "kind": "direct then HTTP (Ollama)"},
-  {"step": "run_rag -> hybrid_retrieve", "kind": "direct"},
-  {"step": "hybrid_retrieve -> _query_generation -> GET {INGESTION_SERVICE_URL}/v1/repos/{repo_id}/generation", "kind": "direct then HTTP"},
-  {"step": "hybrid_retrieve -> POST {VECTOR_STORE_URL}/v1/vectors/search (fallback: same call with source_type relaxed)", "kind": "HTTP"},
-  {"step": "vector_store_service similarity_search endpoint (vectors.py) -> PgVectorStore.similarity_search via asyncio.to_thread -> pgvector SQL ORDER BY cosine distance", "kind": "direct (inside vector_store_service)"}
+  {
+   "step": "rag_endpoint (rag_orchestrator/src/api/v1/routes.py) handles POST /v1/rag",
+   "kind": "entry"
+  },
+  {
+   "step": "rag_endpoint -> run_rag (rag_orchestrator/src/core/service.py)",
+   "kind": "direct"
+  },
+  {
+   "step": "run_rag -> resolve_repo_id_http -> GET {INGESTION_SERVICE_URL}/v1/repos",
+   "kind": "direct then HTTP"
+  },
+  {
+   "step": "run_rag -> embed_query (shared/embedders/query.py) via asyncio.to_thread -> OllamaEmbedder.embed -> POST {base_url}/api/embed",
+   "kind": "direct then HTTP (Ollama)"
+  },
+  {
+   "step": "run_rag -> hybrid_retrieve",
+   "kind": "direct"
+  },
+  {
+   "step": "hybrid_retrieve -> _query_generation -> GET {INGESTION_SERVICE_URL}/v1/repos/{repo_id}/generation",
+   "kind": "direct then HTTP"
+  },
+  {
+   "step": "hybrid_retrieve -> POST {VECTOR_STORE_URL}/v1/vectors/search (fallback: same call with source_type relaxed)",
+   "kind": "HTTP"
+  },
+  {
+   "step": "vector_store_service similarity_search endpoint (vectors.py) -> PgVectorStore.similarity_search via asyncio.to_thread -> pgvector SQL ORDER BY cosine distance",
+   "kind": "direct (inside vector_store_service)"
+  }
  ],
- "manual_grading": "correct = names the entry, run_rag, hybrid_retrieve and the /v1/vectors/search HTTP call in order, classifies at least run_rag->hybrid_retrieve as direct and the vector search as HTTP, and invents no file or function. partial = correct order but misses or misclassifies an HTTP boundary. incorrect = wrong order, invented components, or claims evidence is missing when it is present."
+ "manual_grading": "correct = names the entry, run_rag, hybrid_retrieve and the /v1/vectors/search HTTP call in order, classifies at least run_rag->hybrid_retrieve as direct and the vector search as HTTP, and invents no file or function. partial = correct order but misses or misclassifies an HTTP boundary. incorrect = wrong order, invented components, or claims evidence is missing when it is present.",
+ "probe_terms": [
+  "/api/embed",
+  "OllamaEmbedder",
+  "get_embedder",
+  "requests.post"
+ ]
 }

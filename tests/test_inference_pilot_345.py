@@ -126,6 +126,13 @@ class _Stub(BaseHTTPRequestHandler):
                 {"done_reason": "stop", "response": "`f`",
                  "prompt_eval_count": 9, "eval_count": 3}
             )
+        elif self.path == "/api/chat":
+            type(self).posts.append({"path": self.path, **json.loads(body)})
+            self._send(
+                {"done_reason": "stop", "prompt_eval_count": 9, "eval_count": 3,
+                 "message": {"role": "assistant", "content": "`f`",
+                             "thinking": "uses /api/embed"}}
+            )
         else:
             self._send({"parameters": "temperature 0.6"})
 
@@ -179,8 +186,113 @@ def test_authorized_run_records_and_summarizes(tmp_path, stub, capsys):
     assert rows[0]["done_reason"] == "stop" and rows[0]["key_named_of_present"] == 1
 
 
+def _plan_argv(tmp_path, base, plan, *extra):
+    cap = tmp_path / "cap.json"
+    cap.write_text(json.dumps(make_record()), encoding="utf-8")
+    impl = tmp_path / "impl.txt"
+    impl.write_bytes(b"line /api/embed\r\nnext")  # CRLF checkout on purpose
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    return ["run", str(cap), "--api-base", base, "--out-dir", str(tmp_path / "out"),
+            "--plan", str(plan_path), "--evidence", f"impl={impl}", *extra]
+
+
+def test_plan_run_chat_end_to_end(tmp_path, stub, capsys):
+    plan = [{"evidence": "impl", "adapter": "chat", "num_ctx": 16384, "seed": 11}]
+    assert pilot.main(_plan_argv(tmp_path, stub, plan, "--authorized")) == 0
+    sent = _Stub.posts[0]
+    assert sent["path"] == "/api/chat"
+    assert sent["messages"][1]["content"].startswith("Context:\nline /api/embed\nnext")
+    rec = json.loads(
+        (tmp_path / "out" / "impl-chat-ctx16384-seed11.json").read_text("utf-8")
+    )
+    assert rec["adapter"] == "chat"
+    key = tmp_path / "key.json"
+    key.write_text(
+        json.dumps({"required_identifiers": ["f"], "probe_terms": ["/api/embed"]}),
+        encoding="utf-8",
+    )
+    capsys.readouterr()
+    argv = ["summarize", str(tmp_path / "out"), "--answer-key", str(key)]
+    assert pilot.main(argv) == 0
+    row = json.loads(capsys.readouterr().out)[0]
+    assert row["adapter"] == "chat" and row["answer_chars"] == 3
+    assert row["probes"]["/api/embed"] == {
+        "in_context": True, "in_thinking": True, "in_answer": False
+    }
+
+
+def test_plan_dry_run_shows_real_fields_and_unknown_evidence_fails_cleanly(
+    tmp_path, stub, capsys
+):
+    plan = [{"evidence": "impl", "num_ctx": 16384, "seed": 11}]
+    assert pilot.main(_plan_argv(tmp_path, stub, plan, "--dry-run")) == 0
+    arm = json.loads(capsys.readouterr().out)["arms"][0]
+    assert arm["adapter"] == "generate" and arm["evidence"] == "impl"
+    assert arm["context_bytes"] == len(b"line /api/embed\nnext")
+    bad = [{"evidence": "nope", "num_ctx": 16384, "seed": 11}]
+    assert pilot.main(_plan_argv(tmp_path, stub, bad, "--dry-run")) == 2
+    assert _Stub.posts == []
+
+
 def test_score_accepts_settings_urls_and_question_names():
     context = 'url = f"{settings.STORE_URL}/v1/search"'
     answer = "POST `/v1/rag`, then `settings.STORE_URL/v1/search`."
     s = pilot.score(answer, context, {"required_identifiers": []}, "Trace /v1/rag.")
     assert s["named_without_evidence"] == []
+
+
+# Bodies LiteLLM 1.109.1 sent to a stub for system "SYS — x" and user
+# "Context:\nC\n\nQuestion:\nQ" (ollama/ and ollama_chat/ routes).
+LITELLM_GENERATE = (
+    r'{"model": "Qwen3:4b", "prompt": "### System:\nSYS \u2014 x\n\n### User:\n'
+    r'Context:\nC\n\nQuestion:\nQ\n\n", "options": {}, "stream": false, '
+    r'"images": []}'
+)
+LITELLM_CHAT = (
+    r'{"model": "Qwen3:4b", "messages": [{"role": "system", "content": '
+    r'"SYS \u2014 x", "images": []}, {"role": "user", "content": '
+    r'"Context:\nC\n\nQuestion:\nQ", "images": []}], "options": {}, '
+    r'"stream": false}'
+)
+
+
+def test_builders_match_litellm_1_109_1_bytes():
+    user = "Context:\nC\n\nQuestion:\nQ"
+    sys_ = "SYS — x"
+    gen = pilot.ollama_generate_body("Qwen3:4b", sys_, user, {})
+    chat = pilot.ollama_chat_body("Qwen3:4b", sys_, user, {})
+    assert gen.decode() == LITELLM_GENERATE
+    assert chat.decode() == LITELLM_CHAT
+
+
+def test_plan_arms_switch_adapter_and_evidence_only():
+    record = make_record()
+    plan = [
+        {"evidence": "captured", "adapter": "generate", "num_ctx": 16384, "seed": 11},
+        {"evidence": "impl", "adapter": "chat", "num_ctx": 16384, "seed": 11},
+    ]
+    gen, chat = pilot.plan_from_file(record, plan, {"impl": "IMPL"})
+    assert gen["path"] == "/api/generate" and chat["path"] == "/api/chat"
+    body = json.loads(chat["body"])
+    assert body["messages"][0]["content"] == SYSTEM
+    assert body["messages"][1]["content"] == f"Context:\nIMPL\n\nQuestion:\n{QUERY}"
+    assert body["options"] == {"num_ctx": 16384, "seed": 11}
+    captured = json.loads(record["wire"]["exchanges"][0]["request"]["body_text"])
+    assert json.loads(gen["body"])["prompt"] == captured["prompt"]
+    assert pilot.user_message_of(chat["body"].decode()).startswith("Context:\nIMPL")
+    assert pilot.user_message_of(gen["body"].decode()).endswith(QUERY)
+
+
+def test_response_parts_handles_both_routes():
+    assert pilot.response_parts({"response": "a", "thinking": "t"}) == ("a", "t")
+    chat = {"message": {"role": "assistant", "content": "a", "thinking": "t"}}
+    assert pilot.response_parts(chat) == ("a", "t")
+
+
+def test_mixed_and_factory_variant():
+    assert pilot.build_mixed("D", "I", "docs-first") == "D\n\nI"
+    assert pilot.build_mixed("D", "I", "impl-first") == "I\n\nD"
+    names = [e[1] for e in pilot.excerpts_for("factory")]
+    assert names.index("get_embedder") == names.index("embed_query") - 1
+    assert len(names) == len(pilot.excerpts_for("v1")) + 1

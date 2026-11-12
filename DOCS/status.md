@@ -149,8 +149,14 @@ production retrieved, it correctly declined in 6/6 runs. So the failing
 query is an **evidence-selection failure (#342), not a model-capability
 failure**. The correct evidence (17 KB, 3,959 prompt tokens) does not fit
 today's 4 KB evidence budget or the 4K context. At 8K the context overflows
-silently with `done_reason: stop`; 16K fits, using 4.75 GiB of VRAM. No
-production default has changed. The next steps (distractors, adapter) need
+silently with `done_reason: stop`; 16K fits, using 4.75 GiB of VRAM.
+[Round 2](/DOCS/test_results/2026-11-12-345-round2.md), at 16K, found the
+following. Distracting documentation did not stop the trace. The `ollama/`
+and `ollama_chat/` adapters showed no demonstrable difference. The omitted
+`/api/embed` step is inconsistent salience, not missing evidence. Seeded runs
+are not reproducible across sessions, probably because of the prompt-cache
+state. Overflow diagnostics are tracked separately in #349. No production
+default has changed, and no tuning has been proposed. Further runs need
 authorization, and the
 [draft protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md)
 is not frozen. Resume from the

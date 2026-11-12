@@ -27,83 +27,160 @@
       "sha256": "89b66815dfd0027d3506937effd38b88f3f588fad2b3d14c7742608050a0aef3",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/captured-ctx16384-seed11.json": {
       "bytes": 50160,
       "sha256": "f683ce2bb146e55be3e6173a9ae688686cd83a554ab3f476bdf448bb649e5a06",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/captured-ctx16384-seed23.json": {
       "bytes": 56569,
       "sha256": "29f07bbee6f3208966579a10d2a19f7815d22c6fc6677148688c2b2b46b28a97",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/captured-ctx4096-seed11.json": {
       "bytes": 50756,
       "sha256": "fc94c663341fb4d69345f2d333a84af0398e4fac3400d52bf1285f27acfabbc6",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/captured-ctx4096-seed23.json": {
       "bytes": 39623,
       "sha256": "df6c2b216c193482e9ee80f41354258dc2c1fe08cba1a6e094797ee2ccab6677",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/captured-ctx8192-seed11.json": {
       "bytes": 50157,
       "sha256": "6f10fd3c9e0671a710566a79fdf032658f28975b5130023ac9fa169af8f2cebb",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/captured-ctx8192-seed23.json": {
       "bytes": 56565,
       "sha256": "655cc445ae04f49e23c669889966bfcae5ddde0f92dd67e70a748f477927dcf4",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/implementation-ctx16384-seed11.json": {
       "bytes": 117577,
       "sha256": "a558451be4d28f099be4ee0ba633b8013dc043f4b850b300f048d567c3e7a09a",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/implementation-ctx16384-seed23.json": {
       "bytes": 96466,
       "sha256": "a0c76ab61aab22ca4cbd796c95a61c59b3a253ea0de4cc9034b447b9b2869676",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/implementation-ctx8192-seed11.json": {
       "bytes": 117301,
       "sha256": "8ca3fdb84d0ce5b7b30ddb71676c1207cd8b53300eb9f57c7eeac906ea6257c1",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
-      "notes": ""
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
     },
     "2026-11-12-345-pilot/implementation-ctx8192-seed23.json": {
       "bytes": 121090,
       "sha256": "b0c650c0ef4c521f4116e8b9bccdceb4e94f9e056c3e4b095ae063405f6a1064",
       "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": "File deleted locally 2026-11-12 (removed with a temporary git worktree); summary values survive in the cited report."
+    },
+    "2026-11-12-345-round2-summary.json": {
+      "bytes": 10660,
+      "sha256": "6c4a3c09df2c5c90246f32cb9378c7ef85a754636d8e72ab053565e0153b1b8e",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/implementation-chat-ctx16384-seed11.json": {
+      "bytes": 32439,
+      "sha256": "5a202ea498012f38efc7dfd476d6a547714d83b97e0703696ce41dcdb3e40d4e",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/implementation-chat-ctx16384-seed23.json": {
+      "bytes": 47088,
+      "sha256": "1fe18db7fcaf57973ca8689f2d4572f63dd36a96145c117572365a1f09776899",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/implementation-generate-ctx16384-seed11.json": {
+      "bytes": 138069,
+      "sha256": "9618ed1373c35e9f3d51842031382032d6f588c5217523e1969741cc1d5b83bd",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/implementation-generate-ctx16384-seed23.json": {
+      "bytes": 106079,
+      "sha256": "f6ef287e24a7306a245bca0c596834cc9fd03c075a1b790bfbfd1fbafd9251e6",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/implementation_factory-generate-ctx16384-seed11.json": {
+      "bytes": 105851,
+      "sha256": "9c261d6a3b08b2e87f5d640eed767953ad7bd5da1d9e4d2ca0a0a96b6665f796",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/implementation_factory-generate-ctx16384-seed23.json": {
+      "bytes": 153911,
+      "sha256": "c97457f643dc447ca215eb84bf5e0043c308283056fe8738f66379d3631a51d7",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/mixed_docs_first-generate-ctx16384-seed11.json": {
+      "bytes": 131978,
+      "sha256": "4e58a2d80bb9433bc7f0bb12e8b541ffb93b87180d5c541cbf58da65a10c224e",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/mixed_docs_first-generate-ctx16384-seed23.json": {
+      "bytes": 155961,
+      "sha256": "897b049bc003f335d08b1034815782cdf77239c1f4a24262a204b4ddf35ee374",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/mixed_impl_first-generate-ctx16384-seed11.json": {
+      "bytes": 127081,
+      "sha256": "99e801e76704d2c7f0c42c04236eccea9a8716ed878f174e28173f19130c65c9",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
+      "notes": ""
+    },
+    "2026-11-12-345-round2/mixed_impl_first-generate-ctx16384-seed23.json": {
+      "bytes": 148226,
+      "sha256": "db9af30d1a7308df589a1490de155e8236ec5026b7fb271d7bfb427dfb8a2b69",
+      "produced_by": "scripts/inference_pilot_345.py run --plan round2-plan.json / summarize, 2026-11-12, owner-authorized GPU round 2",
+      "cited_by": "DOCS/test_results/2026-11-12-345-round2.md",
       "notes": ""
     },
     "2026-11-12-345-step0/659139bc01fd464589a8972e50f72412.json": {
       "bytes": 96677,
       "sha256": "97174987c241bb9a6ee2241c1a0b8e2755be56a28c8b55371f27b36347e246f7",
       "produced_by": "llm_service provider capture (#344) on production, 2026-11-12; Step 0 per DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md",
-      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md; DOCS/test_results/2026-11-12-345-round2.md",
       "notes": ""
     },
     "20261104-status-update-307-hatch-reingest.md": {
