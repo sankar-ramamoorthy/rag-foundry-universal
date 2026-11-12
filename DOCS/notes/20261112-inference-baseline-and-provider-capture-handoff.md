@@ -62,17 +62,49 @@ None of these is established yet.
 
 ## State of the work
 
-- **#344 (capture):** implemented in PR #346, awaiting owner review. It is off
-  by default (`LLM_PROVIDER_CAPTURE_DIR`), and the replay tool is
-  `scripts/replay_llm_capture.py`. It was verified with stub-server unit tests
-  and a local container run, but **not yet against the deployed stack**.
-- **#345 (experiment):** not started; it depends on #346 being deployed with
-  capture enabled. It varies one factor at a time with evidence frozen to
-  captured bytes: Step 0, observe the current setup; Step 1, `num_ctx` ∈ {4k,
-  8k, 16k, 32k}; Step 2, `ollama/` vs `ollama_chat/` vs direct `/api/chat`;
-  Step 3, thinking unset/on/off. It then hands off to #194, the evidence-byte
-  budget sweep.
-- **No production configuration has changed.**
+- **#344 (capture): done.** PR #346 was merged on 2026-11-12 as
+  `215d095ee0ac851d0215a6ebc6fe4f4b7cad7d61`, and #344 is closed. Capture is
+  off by default (`LLM_PROVIDER_CAPTURE_DIR`); the replay tool is
+  `scripts/replay_llm_capture.py`. Before merge, a security review fixed path
+  traversal through `X-Trace-Id`, capture delaying responses, setup failures
+  failing generation, credential echo, file permissions, size and total caps,
+  and retention (see the PR #346 review comment). It was verified with stub
+  tests and a Linux container. **It is not yet deployed** (production runs
+  `8bc0ed2`).
+- **#345 Step 0 (observe the current setup):** next. Follow the
+  [deployment and Step 0 runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md):
+  deploy `215d095` with capture enabled, and let the refresh script's own
+  smoke query produce the Step 0 record. Read the record's environment
+  summary, then disable capture.
+- **#345 Steps 1-3:** the [draft inference-baseline protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md)
+  describes them. It is not frozen and not authorized; the GPU arms need the
+  owner's explicit approval.
+- **No production configuration has changed.** Production defaults stay as
+  they are throughout #345. Experiment arms vary settings only in replayed
+  provider requests.
+
+### Deployment facts verified for the runbook (2026-11-12)
+
+- The rendered production Compose config (`docker-compose.yml` +
+  `docker-compose.prod.yml`) at `215d095` passes `LLM_PROVIDER_CAPTURE_DIR`
+  from `.env` to llm_service (`env_file`). llm_service's only production mount
+  is `./volumes/llm-runtime` → `/runtime` (read-write). The container runs as
+  root (the image sets no `USER`), so records are root-owned `0600` on the
+  host: read and copy them with `docker exec` and `docker cp`, not `sudo`.
+- `.env` and `volumes/` are gitignored, so enabling capture does not trip
+  `prod-refresh.sh`'s clean-tree check.
+- `prod-refresh.sh --deploy` runs a `/v1/rag` smoke query against repo
+  `f7641840-…` (generation `ready` at ingested commit `8e063350`, checked
+  2026-11-12). With capture enabled, that query is the Step 0 capture. Its
+  curl timeout is 60 s; if it times out, the generation still finishes and
+  the record is still written.
+- `docker-compose.prod.yml` requires `GIT_SHA` and `BUILD_DATE` to be set
+  even for `up --no-build`; the runbook sets them for the single-service
+  recreate that disables capture.
+- Of the six E1 fixed contexts (4,096 bytes), three contain **none** of their
+  case's answer-key identifiers (L1, L2, F3) and only F1 and L3 contain all of
+  theirs. Fixed 4 KB inputs can therefore test eviction and the adapter, but
+  not whether more evidence helps (see the protocol).
 
 ## Operating boundaries for agents
 
@@ -91,21 +123,9 @@ None of these is established yet.
 
 ## Pending operator action
 
-This is one consolidated step: the read-only part first, then a config change
-once #346 is deployed.
-
-```bash
-# read-only
-nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv
-nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
-systemctl show ollama -p Environment 2>/dev/null; cat /etc/systemd/system/ollama.service.d/*.conf 2>/dev/null
-# or, if Ollama runs in Docker: docker inspect <ollama-container> --format '{{json .Config.Env}}' | tr ',' '\n' | grep OLLAMA
-docker compose exec llm_service uv run --directory /app/llm_service python -c "import importlib.metadata as m; print(m.version('litellm'))"
-
-# after deploying #346: enable capture (config change)
-echo 'LLM_PROVIDER_CAPTURE_DIR=/runtime/provider-captures' >> .env
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d llm_service
-```
+Follow the [deployment and Step 0 runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md).
+It replaces the earlier command block that was here. The LiteLLM version no
+longer needs a separate command, because every capture records it.
 
 ## Known local test noise
 

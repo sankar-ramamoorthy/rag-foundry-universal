@@ -17,6 +17,10 @@ which moves agent working memory (verified facts, open hypotheses, access
 boundaries and the pending operator action) into the KB so that Claude Code
 and Codex resume from the same record. It is linked from `DOCS/status.md`.
 
+Added the [#346 deployment and #345 Step 0 runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md)
+and the [draft #345 inference-baseline protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md).
+Updated the handoff note: #346 merged, #344 closed, deployment facts verified.
+
 ## 2026-11-11
 
 Accepted [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) (owner) and

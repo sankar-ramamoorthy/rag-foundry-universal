@@ -143,8 +143,12 @@ the model had never been inspected. LiteLLM's `ollama/` route flattens the
 system and user messages into one prompt and sends no `num_ctx`, seed or
 other options, and the effective Ollama context length is unverified. Qwen3:4b
 completions reach 5,223 tokens, mostly reasoning. Opt-in provider-request
-capture and replay is in PR #346 (not merged or deployed). The controlled
-inference-baseline experiment (#345) depends on it. Do not attribute answer
+capture and replay was merged in PR #346 (#344 closed) and is not yet
+deployed. #345 Step 0 is next: deploy with capture enabled for the smoke query
+only ([runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md)).
+The context-size and adapter experiments are in a
+[draft protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md);
+it is not frozen, and its GPU runs need the owner's authorization. Do not attribute answer
 failures to retrieval alone until #345 reports. Resume from the
 [inference-side handoff](/DOCS/notes/20261112-inference-baseline-and-provider-capture-handoff.md).
 
