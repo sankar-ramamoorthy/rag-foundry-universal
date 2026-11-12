@@ -22,6 +22,90 @@
       "cited_by": "DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md",
       "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
     },
+    "2026-11-12-345-pilot-summary.json": {
+      "bytes": 6386,
+      "sha256": "89b66815dfd0027d3506937effd38b88f3f588fad2b3d14c7742608050a0aef3",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/captured-ctx16384-seed11.json": {
+      "bytes": 50160,
+      "sha256": "f683ce2bb146e55be3e6173a9ae688686cd83a554ab3f476bdf448bb649e5a06",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/captured-ctx16384-seed23.json": {
+      "bytes": 56569,
+      "sha256": "29f07bbee6f3208966579a10d2a19f7815d22c6fc6677148688c2b2b46b28a97",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/captured-ctx4096-seed11.json": {
+      "bytes": 50756,
+      "sha256": "fc94c663341fb4d69345f2d333a84af0398e4fac3400d52bf1285f27acfabbc6",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/captured-ctx4096-seed23.json": {
+      "bytes": 39623,
+      "sha256": "df6c2b216c193482e9ee80f41354258dc2c1fe08cba1a6e094797ee2ccab6677",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/captured-ctx8192-seed11.json": {
+      "bytes": 50157,
+      "sha256": "6f10fd3c9e0671a710566a79fdf032658f28975b5130023ac9fa169af8f2cebb",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/captured-ctx8192-seed23.json": {
+      "bytes": 56565,
+      "sha256": "655cc445ae04f49e23c669889966bfcae5ddde0f92dd67e70a748f477927dcf4",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/implementation-ctx16384-seed11.json": {
+      "bytes": 117577,
+      "sha256": "a558451be4d28f099be4ee0ba633b8013dc043f4b850b300f048d567c3e7a09a",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/implementation-ctx16384-seed23.json": {
+      "bytes": 96466,
+      "sha256": "a0c76ab61aab22ca4cbd796c95a61c59b3a253ea0de4cc9034b447b9b2869676",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/implementation-ctx8192-seed11.json": {
+      "bytes": 117301,
+      "sha256": "8ca3fdb84d0ce5b7b30ddb71676c1207cd8b53300eb9f57c7eeac906ea6257c1",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-pilot/implementation-ctx8192-seed23.json": {
+      "bytes": 121090,
+      "sha256": "b0c650c0ef4c521f4116e8b9bccdceb4e94f9e056c3e4b095ae063405f6a1064",
+      "produced_by": "scripts/inference_pilot_345.py run/summarize, 2026-11-12, owner-authorized GPU pilot",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
+    "2026-11-12-345-step0/659139bc01fd464589a8972e50f72412.json": {
+      "bytes": 96677,
+      "sha256": "97174987c241bb9a6ee2241c1a0b8e2755be56a28c8b55371f27b36347e246f7",
+      "produced_by": "llm_service provider capture (#344) on production, 2026-11-12; Step 0 per DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md",
+      "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md",
+      "notes": ""
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
