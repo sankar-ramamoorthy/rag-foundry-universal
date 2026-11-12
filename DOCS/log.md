@@ -8,6 +8,11 @@ governed.
 
 ## 2026-11-12
 
+Added the [#345 inference pilot results](/DOCS/test_results/2026-11-12-345-inference-pilot.md)
+and its reviewed inputs under `DOCS/evaluations/inference-pilot-345/`
+(the implementation context and answer key). The raw records are indexed in
+`raw-index.json`.
+
 Added [LLM Provider-Request Capture and Replay](/DOCS/deployment/llm-provider-request-capture.md)
 (#344): an opt-in, off-by-default diagnostic for the step from llm_service
 to the provider, plus a replay tool. It does not change generation;

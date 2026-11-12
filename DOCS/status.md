@@ -138,18 +138,22 @@ Historical measurements, not current accuracy/performance guarantees:
 
 ## RAG quality
 
-**Inference side (2026-11-12, #344/#345):** the request llm_service sends to
-the model had never been inspected. LiteLLM's `ollama/` route flattens the
-system and user messages into one prompt and sends no `num_ctx`, seed or
-other options, and the effective Ollama context length is unverified. Qwen3:4b
-completions reach 5,223 tokens, mostly reasoning. Opt-in provider-request
-capture and replay was merged in PR #346 (#344 closed) and is not yet
-deployed. #345 Step 0 is next: deploy with capture enabled for the smoke query
-only ([runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md)).
-The context-size and adapter experiments are in a
-[draft protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md);
-it is not frozen, and its GPU runs need the owner's authorization. Do not attribute answer
-failures to retrieval alone until #345 reports. Resume from the
+**Inference side (2026-11-12, #344/#345):** provider-request capture (#344,
+PR #346) is deployed and off by default. The #345 Step 0 capture showed
+production running Qwen3:4b at an **effective `num_ctx` of 4,096** through
+LiteLLM 1.109.1's `ollama/` route (flattened prompt, `options: {}`). A
+[10-generation pilot](/DOCS/test_results/2026-11-12-345-inference-pilot.md)
+found the following. With reviewed implementation evidence, the model
+produced a correct `/v1/rag` execution trace in 4/4 runs. With the evidence
+production retrieved, it correctly declined in 6/6 runs. So the failing
+query is an **evidence-selection failure (#342), not a model-capability
+failure**. The correct evidence (17 KB, 3,959 prompt tokens) does not fit
+today's 4 KB evidence budget or the 4K context. At 8K the context overflows
+silently with `done_reason: stop`; 16K fits, using 4.75 GiB of VRAM. No
+production default has changed. The next steps (distractors, adapter) need
+authorization, and the
+[draft protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md)
+is not frozen. Resume from the
 [inference-side handoff](/DOCS/notes/20261112-inference-baseline-and-provider-capture-handoff.md).
 
 **Decision, 2026-10-14:** the

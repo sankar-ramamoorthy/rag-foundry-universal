@@ -36,7 +36,7 @@ inspection.
 
 | Item | Value |
 |---|---|
-| Deployed runtime | All four services at `8bc0ed2` (`prod-2026-11-11-0300pm`) |
+| Deployed runtime | llm_service at `82b70cd` per the Step 0 capture (2026-11-12); previously `8bc0ed2` (`prod-2026-11-11-0300pm`) |
 | Ollama | 0.32.1 |
 | Model | `Qwen3:4b`, digest `359d7dd4bcdab3d8…`, Q4_K_M, 4.0B; model maximum context 262,144; reasoning ("thinking") capable |
 | Modelfile parameters | temperature 0.6, top_k 20, top_p 0.95, repeat_penalty 1; **no `num_ctx`, no seed** (unseeded runs are not reproducible) |
@@ -45,14 +45,15 @@ inspection.
 | Raw response | For `ollama/`, LiteLLM discards `thinking` and `done_reason`; only the wire capture (#344) keeps them |
 | Deployed evidence budget | `context_budget` = 4,096 **UTF-8 bytes** (about 1,000-1,150 real tokens). The `max_total_tokens` default is the binding limit; `CONTEXT_WINDOW_TOKENS` 8192 is not. The #342 questions had 26-37 KB of candidates before the cut (85-89% dropped). |
 | E1 token usage | 969-1,154 prompt tokens; 1,476-5,223 completion tokens (mostly reasoning); totals up to 6,346 |
-| LiteLLM version | Root `uv.lock` pins 1.93.0, but `llm_service/uv.lock` has no `litellm` entry. A fresh container built from current code resolved **1.109.1** (fresh resolution at start, #41). The deployed version is unknown until a capture or the operator reports it. |
+| LiteLLM version | Root `uv.lock` pins 1.93.0, but `llm_service/uv.lock` has no `litellm` entry. A fresh container built from current code resolved **1.109.1** (fresh resolution at start, #41). **Deployed: 1.109.1** (Step 0 capture). |
 | Also on the host | `qwen3.5:4b` (out of scope) |
 
 ## Open hypotheses
 
-None of these is established yet.
+The first one is now settled; the second is still open.
 
-- **Effective `num_ctx` may be smaller than the 6,346-token totals**, in which
+- **Settled 2026-11-12: the effective `num_ctx` is 4,096.** It was smaller than
+  E1's 6,346-token totals. Original hypothesis: **the effective `num_ctx` may be smaller than the 6,346-token totals**, in which
   case Ollama would drop the oldest tokens during long reasoning output and
   could lose the evidence. This depends on Ollama's default and the host's
   `OLLAMA_CONTEXT_LENGTH`. With capture enabled, each record's
@@ -69,13 +70,20 @@ None of these is established yet.
   traversal through `X-Trace-Id`, capture delaying responses, setup failures
   failing generation, credential echo, file permissions, size and total caps,
   and retention (see the PR #346 review comment). It was verified with stub
-  tests and a Linux container. **It is not yet deployed** (production runs
-  `8bc0ed2`).
-- **#345 Step 0 (observe the current setup):** next. Follow the
-  [deployment and Step 0 runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md):
-  deploy `215d095` with capture enabled, and let the refresh script's own
-  smoke query produce the Step 0 record. Read the record's environment
-  summary, then disable capture.
+  tests and a Linux container. It is deployed (2026-11-12) and off.
+- **#345 Step 0: done (2026-11-12).** Production was deployed at `82b70cd`
+  with capture enabled for one query and then disabled again. Findings:
+  effective `num_ctx` 4,096; LiteLLM 1.109.1; prompt 1,112 and completion
+  1,827 tokens; `done_reason: stop`. The query's context was historical
+  documentation, not implementation. The record is indexed in
+  `raw-index.json` (`2026-11-12-345-step0/`).
+- **#345 pilot: done (2026-11-12, owner-authorized GPU).** See
+  [results](/DOCS/test_results/2026-11-12-345-inference-pilot.md). Reviewed
+  implementation evidence gave a correct trace 4/4; the captured evidence
+  gave a correct refusal 6/6 at 4K, 8K and 16K. 8K overflows silently with
+  the larger evidence; 16K fits in 4.75 GiB. The runner is
+  `scripts/inference_pilot_345.py` (fidelity gate, `--dry-run`,
+  `--authorized`).
 - **#345 Steps 1-3:** the [draft inference-baseline protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md)
   describes them. It is not frozen and not authorized; the GPU arms need the
   owner's explicit approval.
@@ -121,11 +129,17 @@ None of these is established yet.
 - Enabling capture on the host, deploying, and changing `.env` are operator
   actions ([Agent Execution Boundaries](/DOCS/deployment/agent-execution-and-verification.md)).
 
-## Pending operator action
+## Pending owner decisions
 
-Follow the [deployment and Step 0 runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md).
-It replaces the earlier command block that was here. The LiteLLM version no
-longer needs a separate command, because every capture records it.
+- Whether to authorize the next pilot steps: implementation evidence with
+  distractors at 16K, and the `ollama/` versus `ollama_chat/` adapter
+  comparison. Both are listed in the pilot results.
+- Whether to file a separate issue for an overflow guard in llm_service
+  (flag `prompt_eval_count + eval_count >= context_length`).
+
+Capture is disabled on production. Use the
+[runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md)
+pattern again if another capture is needed.
 
 ## Known local test noise
 
