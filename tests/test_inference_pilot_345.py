@@ -126,6 +126,13 @@ class _Stub(BaseHTTPRequestHandler):
                 {"done_reason": "stop", "response": "`f`",
                  "prompt_eval_count": 9, "eval_count": 3}
             )
+        elif self.path == "/api/chat":
+            type(self).posts.append({"path": self.path, **json.loads(body)})
+            self._send(
+                {"done_reason": "stop", "prompt_eval_count": 9, "eval_count": 3,
+                 "message": {"role": "assistant", "content": "`f`",
+                             "thinking": "uses /api/embed"}}
+            )
         else:
             self._send({"parameters": "temperature 0.6"})
 
@@ -177,6 +184,55 @@ def test_authorized_run_records_and_summarizes(tmp_path, stub, capsys):
     assert pilot.main(argv) == 0
     rows = json.loads(capsys.readouterr().out)
     assert rows[0]["done_reason"] == "stop" and rows[0]["key_named_of_present"] == 1
+
+
+def _plan_argv(tmp_path, base, plan, *extra):
+    cap = tmp_path / "cap.json"
+    cap.write_text(json.dumps(make_record()), encoding="utf-8")
+    impl = tmp_path / "impl.txt"
+    impl.write_bytes(b"line /api/embed\r\nnext")  # CRLF checkout on purpose
+    plan_path = tmp_path / "plan.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    return ["run", str(cap), "--api-base", base, "--out-dir", str(tmp_path / "out"),
+            "--plan", str(plan_path), "--evidence", f"impl={impl}", *extra]
+
+
+def test_plan_run_chat_end_to_end(tmp_path, stub, capsys):
+    plan = [{"evidence": "impl", "adapter": "chat", "num_ctx": 16384, "seed": 11}]
+    assert pilot.main(_plan_argv(tmp_path, stub, plan, "--authorized")) == 0
+    sent = _Stub.posts[0]
+    assert sent["path"] == "/api/chat"
+    assert sent["messages"][1]["content"].startswith("Context:\nline /api/embed\nnext")
+    rec = json.loads(
+        (tmp_path / "out" / "impl-chat-ctx16384-seed11.json").read_text("utf-8")
+    )
+    assert rec["adapter"] == "chat"
+    key = tmp_path / "key.json"
+    key.write_text(
+        json.dumps({"required_identifiers": ["f"], "probe_terms": ["/api/embed"]}),
+        encoding="utf-8",
+    )
+    capsys.readouterr()
+    argv = ["summarize", str(tmp_path / "out"), "--answer-key", str(key)]
+    assert pilot.main(argv) == 0
+    row = json.loads(capsys.readouterr().out)[0]
+    assert row["adapter"] == "chat" and row["answer_chars"] == 3
+    assert row["probes"]["/api/embed"] == {
+        "in_context": True, "in_thinking": True, "in_answer": False
+    }
+
+
+def test_plan_dry_run_shows_real_fields_and_unknown_evidence_fails_cleanly(
+    tmp_path, stub, capsys
+):
+    plan = [{"evidence": "impl", "num_ctx": 16384, "seed": 11}]
+    assert pilot.main(_plan_argv(tmp_path, stub, plan, "--dry-run")) == 0
+    arm = json.loads(capsys.readouterr().out)["arms"][0]
+    assert arm["adapter"] == "generate" and arm["evidence"] == "impl"
+    assert arm["context_bytes"] == len(b"line /api/embed\nnext")
+    bad = [{"evidence": "nope", "num_ctx": 16384, "seed": 11}]
+    assert pilot.main(_plan_argv(tmp_path, stub, bad, "--dry-run")) == 2
+    assert _Stub.posts == []
 
 
 def test_score_accepts_settings_urls_and_question_names():

@@ -109,7 +109,9 @@ ADMISSION_RE = re.compile(
 
 
 def read_lf(path: Path) -> str:
-    """Evidence is hashed byte-for-byte; never let a CRLF checkout in."""
+    """Evidence text with LF line endings. Text-mode reads already translate
+    CRLF; this makes the guarantee explicit. On-disk hashes rely on the
+    evidence directory's .gitattributes (eol=lf)."""
     return path.read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
@@ -200,7 +202,10 @@ def ollama_generate_body(
 
 def ollama_chat_body(model: str, system: str, user: str, options: dict) -> bytes:
     """The /api/chat body LiteLLM 1.109.1's ``ollama_chat/`` route builds:
-    roles kept, an empty ``images`` list per message, no ``think`` key."""
+    roles kept, an empty ``images`` list per message, no ``think`` key.
+    Byte-identical for empty options (production). With options, LiteLLM
+    orders them as passed (e.g. ``seed`` before ``num_ctx``); we keep the
+    caller's order, which is equivalent JSON but not identical bytes."""
     body = {
         "model": model,
         "messages": [
@@ -425,11 +430,17 @@ def run(args: argparse.Namespace) -> int:
     gate = fidelity_gate(record)
     if args.plan:
         files = {
-            # Evidence is hashed byte-for-byte; never let a CRLF checkout in.
             name: read_lf(Path(path))
             for name, _, path in (e.partition("=") for e in args.evidence)
         }
         plan = json.loads(args.plan.read_text(encoding="utf-8"))
+        unknown = sorted(
+            {e["evidence"] for e in plan} - {"captured", *files}
+            | {e.get("adapter", "generate") for e in plan} - set(BUILDERS)
+        )
+        if unknown:
+            print(f"unknown evidence or adapter in plan: {unknown}", file=sys.stderr)
+            return 2
         arms = plan_from_file(record, plan, files)
     else:
         impl = (
@@ -445,8 +456,11 @@ def run(args: argparse.Namespace) -> int:
         "expected_digest": expected_digest,
         "arms": [
             {
-                k: a.get(k, "generate")
-                for k in ("arm_id", "evidence", "adapter", "context_bytes", "options")
+                "arm_id": a["arm_id"],
+                "evidence": a["evidence"],
+                "adapter": a.get("adapter", "generate"),
+                "context_bytes": a["context_bytes"],
+                "options": a["options"],
             }
             for a in arms
         ],
