@@ -138,6 +138,16 @@ Historical measurements, not current accuracy/performance guarantees:
 
 ## RAG quality
 
+**Inference side (2026-11-12, #344/#345):** the request llm_service sends to
+the model had never been inspected. LiteLLM's `ollama/` route flattens the
+system and user messages into one prompt and sends no `num_ctx`, seed or
+other options, and the effective Ollama context length is unverified. Qwen3:4b
+completions reach 5,223 tokens, mostly reasoning. Opt-in provider-request
+capture and replay is in PR #346 (not merged or deployed). The controlled
+inference-baseline experiment (#345) depends on it. Do not attribute answer
+failures to retrieval alone until #345 reports. Resume from the
+[inference-side handoff](/DOCS/notes/20261112-inference-baseline-and-provider-capture-handoff.md).
+
 **Decision, 2026-10-14:** the
 [code-evidence experiment protocol](/DOCS/evaluations/2026-10-14-code-evidence-experiment-decisions.md)
 is agreed for experiment design, baseline capture and local prototypes only.
