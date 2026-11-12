@@ -250,13 +250,18 @@ def _evidenced(name: str, context: str) -> bool:
     identifier if its last component does."""
     if name in context:
         return True
+    if "/" in name and not name.endswith(".py"):
+        # URL built from a settings variable: the path part must appear.
+        return name[name.find("/") :] in context
     if name.endswith(".py"):
         return name.rsplit("/", 1)[-1] in context
     return name.rsplit(".", 1)[-1] in context
 
 
-def score(answer: str, context: str, key: dict) -> dict:
+def score(answer: str, context: str, key: dict, query: str = "") -> dict:
+    """Names from the question count as given, not invented."""
     named = named_identifiers(answer)
+    given = f"{context}\n{query}"
     required = key["required_identifiers"]
     present = [k for k in required if k in context]
     return {
@@ -265,7 +270,7 @@ def score(answer: str, context: str, key: dict) -> dict:
         "key_named_total": sum(1 for k in required if k in answer),
         "key_missing_from_answer": [k for k in required if k not in answer],
         "named_without_evidence": sorted(
-            n for n in named if not _evidenced(n, context)
+            n for n in named if not _evidenced(n, given)
         ),
         "admits_insufficient": bool(ADMISSION_RE.search(answer)),
     }
@@ -392,7 +397,7 @@ def summarize(args: argparse.Namespace) -> int:
             continue
         r = rec.get("response") or {}
         body = json.loads(rec["request_body_text"])
-        context, _q = split_user_message(
+        context, query = split_user_message(
             body["prompt"].split("\n\n### User:\n", 1)[1].removesuffix("\n\n")
         )
         answer = r.get("response") or ""
@@ -412,7 +417,7 @@ def summarize(args: argparse.Namespace) -> int:
                 "total_s": round((r.get("total_duration") or 0) / 1e9, 1),
                 "thinking_chars": len(r.get("thinking") or ""),
                 "answer_chars": len(answer),
-                **score(answer, context, key),
+                **score(answer, context, key, query),
             }
         )
     print(json.dumps(rows, indent=1))

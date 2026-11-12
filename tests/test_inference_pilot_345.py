@@ -177,3 +177,10 @@ def test_authorized_run_records_and_summarizes(tmp_path, stub, capsys):
     assert pilot.main(argv) == 0
     rows = json.loads(capsys.readouterr().out)
     assert rows[0]["done_reason"] == "stop" and rows[0]["key_named_of_present"] == 1
+
+
+def test_score_accepts_settings_urls_and_question_names():
+    context = 'url = f"{settings.STORE_URL}/v1/search"'
+    answer = "POST `/v1/rag`, then `settings.STORE_URL/v1/search`."
+    s = pilot.score(answer, context, {"required_identifiers": []}, "Trace /v1/rag.")
+    assert s["named_without_evidence"] == []
