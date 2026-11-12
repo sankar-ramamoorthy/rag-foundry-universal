@@ -6,6 +6,17 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-12
+
+Added [LLM Provider-Request Capture and Replay](/DOCS/deployment/llm-provider-request-capture.md)
+(#344): an opt-in, off-by-default diagnostic for the step from llm_service
+to the provider, plus a replay tool. It does not change generation;
+inference-configuration experiments are tracked separately in #345.
+Added the [inference-side handoff](/DOCS/notes/20261112-inference-baseline-and-provider-capture-handoff.md),
+which moves agent working memory (verified facts, open hypotheses, access
+boundaries and the pending operator action) into the KB so that Claude Code
+and Codex resume from the same record. It is linked from `DOCS/status.md`.
+
 ## 2026-11-11
 
 Accepted [ADR-056](/DOCS/adr/ADR-056-embedding-input-contract.md) (owner) and

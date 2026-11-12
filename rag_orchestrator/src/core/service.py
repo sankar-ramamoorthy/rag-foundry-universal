@@ -92,6 +92,19 @@ def _new_trace_id() -> str:
     return uuid.uuid4().hex
 
 
+def _llm_correlation_headers(
+    trace_id: str, repo_id: Optional[str], generation_id: Optional[Any]
+) -> Dict[str, str]:
+    """Issue #344: correlation headers for llm_service's opt-in provider
+    capture. They never change the /generate body or generation."""
+    headers = {"X-Trace-Id": trace_id}
+    if repo_id:
+        headers["X-Repo-Id"] = str(repo_id)
+    if generation_id:
+        headers["X-Generation-Id"] = str(generation_id)
+    return headers
+
+
 def _log_stage(trace_id: str, stage: str, **fields: Any) -> None:
     """
     WP-T1b: one structured-ish log line per retrieval-pipeline checkpoint,
@@ -1522,9 +1535,15 @@ async def run_rag(
     if model:
         params["model"] = model
 
+    llm_headers = _llm_correlation_headers(
+        trace_id, resolved_repo_id, retrieval_plan_dict.get("generation_id")
+    )
+
     llm_url = f"{settings.LLM_SERVICE_URL}/generate"
     async with httpx.AsyncClient(timeout=200) as client:
-        resp = await client.post(llm_url, json=llm_payload, params=params)
+        resp = await client.post(
+            llm_url, json=llm_payload, params=params, headers=llm_headers
+        )
         resp.raise_for_status()
         result = resp.json()
     _log_stage(

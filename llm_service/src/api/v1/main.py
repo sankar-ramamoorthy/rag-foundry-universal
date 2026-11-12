@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Header, Query
 from fastapi.responses import JSONResponse
 from shared.runtime_provenance import install_version_route
 
@@ -13,7 +13,7 @@ from src.core.config import (
     DEFAULT_LLM_PROVIDER,
     OLLAMA_MODEL,
 )
-from src.core import model_catalog
+from src.core import model_catalog, provider_capture
 from src.core.llm_client import AllProvidersFailedError, generate_completion
 from src.core.model_registry import (
     DEFAULT_ALIAS,
@@ -33,7 +33,15 @@ async def generate(
     request: GenerateRequest,
     provider: str | None = Query(None),
     model: str | None = Query(None),
+    x_trace_id: str | None = Header(None),
+    x_repo_id: str | None = Header(None),
+    x_generation_id: str | None = Header(None),
 ) -> dict:
+    # Issue #344: correlation for opt-in provider-request capture only;
+    # has no effect on generation and nothing is recorded when disabled.
+    provider_capture.set_request_meta(
+        trace_id=x_trace_id, repo_id=x_repo_id, generation_id=x_generation_id
+    )
     try:
         return await generate_completion(
             context=request.context,

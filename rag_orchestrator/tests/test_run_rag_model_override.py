@@ -116,3 +116,18 @@ def test_run_rag_forwards_provider_alongside_model(monkeypatch):
 
     assert request.url.params["provider"] == "groq"
     assert request.url.params["model"] == "groq/openai/gpt-oss-120b"
+
+
+def test_run_rag_sends_trace_correlation_headers(monkeypatch):
+    """Issue #344: /generate carries the request's trace_id and repo_id as
+    headers so llm_service's opt-in provider capture can be joined to the
+    retrieval plan; the JSON body stays exactly {context, query}."""
+    result, request = _run_rag_capturing_generate_request(
+        monkeypatch, repo_id="repo-x"
+    )
+
+    assert request.headers["X-Trace-Id"] == result.trace_id
+    assert request.headers["X-Repo-Id"] == "repo-x"
+    import json
+
+    assert set(json.loads(request.content)) == {"context", "query"}
