@@ -29,6 +29,62 @@
       "cited_by": "",
       "notes": ""
     },
+    "20261111-code-intelligence-control/lightrag_long.json": {
+      "bytes": 23067,
+      "sha256": "02625d6e26ba0342af531dfc21cc26786cb2ee853f41b32e202f7a9e10dcd70c",
+      "produced_by": "POST /v1/rag, LightRAG repo 4f76a36f, long trace query (2026-11-11)",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Full response incl. retrieval_plan"
+    },
+    "20261111-code-intelligence-control/lightrag_short.json": {
+      "bytes": 19653,
+      "sha256": "bf07dd7e2ee0ada7a934c8e80f78f23aa99c5642eff6981da39c6b920b2518a3",
+      "produced_by": "POST /v1/rag, LightRAG repo 4f76a36f, short trace query (2026-11-11)",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Full response incl. retrieval_plan"
+    },
+    "20261111-code-intelligence-control/q1.sql": {
+      "bytes": 850,
+      "sha256": "edfd71c7a4945a19afdce8324bb6162d4b03844ddabcf009e192a892a1d97722",
+      "produced_by": "read-only SQL used by sql_probe.py",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Schema, doc_type counts, expected-symbol presence"
+    },
+    "20261111-code-intelligence-control/q2.sql": {
+      "bytes": 1074,
+      "sha256": "74ce2d3460208098b2d41b1acc4e3b83b05630bac4c52ad2d2b0df70af1fc25f",
+      "produced_by": "read-only SQL used by sql_probe.py",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "CALL edges along the LightRAG query path; external vs resolved CALL counts"
+    },
+    "20261111-code-intelligence-control/rag_query.py": {
+      "bytes": 1869,
+      "sha256": "0967809bcb4f0f2f96ceedb1db1393557530d982f8b72ee636152bf7f9c3691f",
+      "produced_by": "probe script",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Host read from git-ignored .env at run time; no address stored"
+    },
+    "20261111-code-intelligence-control/rank_probe.py": {
+      "bytes": 2078,
+      "sha256": "96e6f4ffd3fecaecf63cf83b01d366f143a0fce2bcb3ea759d718d424d41cd2d",
+      "produced_by": "probe script",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Embeds query with mxbai-embed-large via Ollama; read-only SQL"
+    },
+    "20261111-code-intelligence-control/ranks2.txt": {
+      "bytes": 7358,
+      "sha256": "a0fff61c3972c45ece16255fa24e0fec77c4210ac83bfa709de1d9f6c6e1f64b",
+      "produced_by": "rank_probe.py: exact cosine ranks over all repo chunks, short query",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Top-25 plus every chunk of the expected symbols"
+    },
+    "20261111-code-intelligence-control/sql_probe.py": {
+      "bytes": 1312,
+      "sha256": "d6ec0fef77227ec068f0b15729fc498054afef8522ff4c7424073d57a4c0218e",
+      "produced_by": "probe script",
+      "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
+      "notes": "Read-only connection; host from git-ignored .env; credentials are docker-compose defaults"
+    },
     "ci06/coverage-foundry.json": {
       "bytes": 4724,
       "sha256": "dade63221429f7e41a410a5a1317b1b62439707d2c2cb2eca8718b622da006e6",
