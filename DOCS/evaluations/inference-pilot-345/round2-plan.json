@@ -1,0 +1,62 @@
+[
+ {
+  "evidence": "mixed_docs_first",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11
+ },
+ {
+  "evidence": "mixed_docs_first",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 23
+ },
+ {
+  "evidence": "mixed_impl_first",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11
+ },
+ {
+  "evidence": "mixed_impl_first",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 23
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 23
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "chat",
+  "num_ctx": 16384,
+  "seed": 11
+ },
+ {
+  "evidence": "implementation",
+  "adapter": "chat",
+  "num_ctx": 16384,
+  "seed": 23
+ },
+ {
+  "evidence": "implementation_factory",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 11
+ },
+ {
+  "evidence": "implementation_factory",
+  "adapter": "generate",
+  "num_ctx": 16384,
+  "seed": 23
+ }
+]

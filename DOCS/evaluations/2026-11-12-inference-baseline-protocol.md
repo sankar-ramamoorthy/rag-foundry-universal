@@ -78,6 +78,13 @@ record's `application_input.messages` and match its captured wire bytes
 exactly. It must also match LiteLLM's `ollama_chat/` body produced against a
 stub. If either check fails, nothing runs.
 
+**Cache control (added after round 2):** same-seed requests gave
+different outputs depending on whether the prompt prefix was cached
+([round 2](/DOCS/test_results/2026-11-12-345-round2.md), finding 4). Before
+the protocol is frozen, decide how each arm starts. One option is
+unload-between-arms (`keep_alive: 0`). Record the cache state per arm
+(`prompt_eval_duration` near 0 indicates a hit).
+
 ## Fixed settings in every arm
 
 These are sent explicitly, so "explicit versus default" cannot confound the

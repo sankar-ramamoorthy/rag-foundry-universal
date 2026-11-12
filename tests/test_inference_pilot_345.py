@@ -184,3 +184,59 @@ def test_score_accepts_settings_urls_and_question_names():
     answer = "POST `/v1/rag`, then `settings.STORE_URL/v1/search`."
     s = pilot.score(answer, context, {"required_identifiers": []}, "Trace /v1/rag.")
     assert s["named_without_evidence"] == []
+
+
+# Bodies LiteLLM 1.109.1 sent to a stub for system "SYS — x" and user
+# "Context:\nC\n\nQuestion:\nQ" (ollama/ and ollama_chat/ routes).
+LITELLM_GENERATE = (
+    r'{"model": "Qwen3:4b", "prompt": "### System:\nSYS \u2014 x\n\n### User:\n'
+    r'Context:\nC\n\nQuestion:\nQ\n\n", "options": {}, "stream": false, '
+    r'"images": []}'
+)
+LITELLM_CHAT = (
+    r'{"model": "Qwen3:4b", "messages": [{"role": "system", "content": '
+    r'"SYS \u2014 x", "images": []}, {"role": "user", "content": '
+    r'"Context:\nC\n\nQuestion:\nQ", "images": []}], "options": {}, '
+    r'"stream": false}'
+)
+
+
+def test_builders_match_litellm_1_109_1_bytes():
+    user = "Context:\nC\n\nQuestion:\nQ"
+    sys_ = "SYS — x"
+    gen = pilot.ollama_generate_body("Qwen3:4b", sys_, user, {})
+    chat = pilot.ollama_chat_body("Qwen3:4b", sys_, user, {})
+    assert gen.decode() == LITELLM_GENERATE
+    assert chat.decode() == LITELLM_CHAT
+
+
+def test_plan_arms_switch_adapter_and_evidence_only():
+    record = make_record()
+    plan = [
+        {"evidence": "captured", "adapter": "generate", "num_ctx": 16384, "seed": 11},
+        {"evidence": "impl", "adapter": "chat", "num_ctx": 16384, "seed": 11},
+    ]
+    gen, chat = pilot.plan_from_file(record, plan, {"impl": "IMPL"})
+    assert gen["path"] == "/api/generate" and chat["path"] == "/api/chat"
+    body = json.loads(chat["body"])
+    assert body["messages"][0]["content"] == SYSTEM
+    assert body["messages"][1]["content"] == f"Context:\nIMPL\n\nQuestion:\n{QUERY}"
+    assert body["options"] == {"num_ctx": 16384, "seed": 11}
+    captured = json.loads(record["wire"]["exchanges"][0]["request"]["body_text"])
+    assert json.loads(gen["body"])["prompt"] == captured["prompt"]
+    assert pilot.user_message_of(chat["body"].decode()).startswith("Context:\nIMPL")
+    assert pilot.user_message_of(gen["body"].decode()).endswith(QUERY)
+
+
+def test_response_parts_handles_both_routes():
+    assert pilot.response_parts({"response": "a", "thinking": "t"}) == ("a", "t")
+    chat = {"message": {"role": "assistant", "content": "a", "thinking": "t"}}
+    assert pilot.response_parts(chat) == ("a", "t")
+
+
+def test_mixed_and_factory_variant():
+    assert pilot.build_mixed("D", "I", "docs-first") == "D\n\nI"
+    assert pilot.build_mixed("D", "I", "impl-first") == "I\n\nD"
+    names = [e[1] for e in pilot.excerpts_for("factory")]
+    assert names.index("get_embedder") == names.index("embed_query") - 1
+    assert len(names) == len(pilot.excerpts_for("v1")) + 1

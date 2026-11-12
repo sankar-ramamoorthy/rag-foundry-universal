@@ -25,6 +25,13 @@ This uses the provider's GPU. ``run`` refuses without ``--authorized`` and
         --impl-context CONTEXT.txt --answer-key KEY.json --out-dir DIR \
         [--dry-run | --authorized]
     python scripts/inference_pilot_345.py summarize DIR --answer-key KEY.json
+
+Second round (plan-driven): ``build-context --variant factory`` adds the
+embedder factory excerpt; ``build-mixed`` concatenates the Step 0 context and
+an implementation context in a given order; ``run --plan PLAN.json
+--evidence NAME=PATH`` sends arms that may also switch the adapter
+(``generate`` = LiteLLM ``ollama/`` body, ``chat`` = LiteLLM ``ollama_chat/``
+body, both verified against LiteLLM 1.109.1 with a stub).
 """
 
 from __future__ import annotations
@@ -73,6 +80,25 @@ IMPLEMENTATION_EXCERPTS: list[tuple[str, str, str | None]] = [
     ),
 ]
 
+# Variant "factory": the same excerpts plus the embedder factory, which is
+# what binds run_rag's embedder to OllamaEmbedder (the /api/embed witness).
+FACTORY_EXCERPT: tuple[str, str, str | None] = (
+    "shared/embedders/factory.py",
+    "get_embedder",
+    None,
+)
+
+
+def excerpts_for(variant: str) -> list[tuple[str, str, str | None]]:
+    if variant == "v1":
+        return list(IMPLEMENTATION_EXCERPTS)
+    if variant == "factory":
+        out = list(IMPLEMENTATION_EXCERPTS)
+        at = [e[1] for e in out].index("embed_query")
+        return out[:at] + [FACTORY_EXCERPT] + out[at:]
+    raise ValueError(f"unknown variant {variant!r}")
+
+
 ADMISSION_RE = re.compile(
     r"(does not|doesn't|do not) (contain|include|provide|show)|"
     r"cannot (trace|determine|answer|identify|give|provide)|"
@@ -80,6 +106,11 @@ ADMISSION_RE = re.compile(
     r"insufficient",
     re.IGNORECASE,
 )
+
+
+def read_lf(path: Path) -> str:
+    """Evidence is hashed byte-for-byte; never let a CRLF checkout in."""
+    return path.read_text(encoding="utf-8").replace("\r\n", "\n")
 
 
 def sha256(data: bytes | str) -> str:
@@ -167,6 +198,27 @@ def ollama_generate_body(
     return json.dumps(body).encode("utf-8")
 
 
+def ollama_chat_body(model: str, system: str, user: str, options: dict) -> bytes:
+    """The /api/chat body LiteLLM 1.109.1's ``ollama_chat/`` route builds:
+    roles kept, an empty ``images`` list per message, no ``think`` key."""
+    body = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system, "images": []},
+            {"role": "user", "content": user, "images": []},
+        ],
+        "options": options,
+        "stream": False,
+    }
+    return json.dumps(body).encode("utf-8")
+
+
+BUILDERS = {
+    "generate": ("/api/generate", ollama_generate_body),
+    "chat": ("/api/chat", ollama_chat_body),
+}
+
+
 def fidelity_gate(record: dict) -> dict:
     """Rebuild the captured wire body from the record's messages; every
     arm is built by the same function, so a match means arms differ from
@@ -227,6 +279,70 @@ def plan_arms(
         key=lambda a: (a["options"]["num_ctx"], a["evidence"], a["options"]["seed"])
     )
     return arms
+
+
+def plan_from_file(
+    record: dict, plan: list[dict], evidence_files: dict[str, str]
+) -> list[dict]:
+    """Arms from an explicit plan: each entry names its evidence ("captured"
+    or a ``--evidence`` name), adapter, num_ctx and seed."""
+    messages = record["application_input"]["messages"]
+    system, user = messages[0]["content"], messages[1]["content"]
+    captured_context, query = split_user_message(user)
+    model = json.loads(record["wire"]["exchanges"][-1]["request"]["body_text"])[
+        "model"
+    ]
+    evidence = {"captured": captured_context, **evidence_files}
+    arms = []
+    for entry in plan:
+        context = evidence[entry["evidence"]]
+        adapter = entry.get("adapter", "generate")
+        path, build = BUILDERS[adapter]
+        options = {"num_ctx": entry["num_ctx"], "seed": entry["seed"]}
+        user_msg = f"Context:\n{context}\n\nQuestion:\n{query}"
+        arms.append(
+            {
+                "arm_id": entry.get("arm_id")
+                or f"{entry['evidence']}-{adapter}-ctx{entry['num_ctx']}"
+                f"-seed{entry['seed']}",
+                "evidence": entry["evidence"],
+                "adapter": adapter,
+                "path": path,
+                "context_bytes": len(context.encode("utf-8")),
+                "context_sha256": sha256(context),
+                "options": options,
+                "body": build(model, system, user_msg, options),
+            }
+        )
+    return arms
+
+
+def build_mixed(captured_context: str, impl_context: str, order: str) -> str:
+    """Production-shaped mix: the retrieved documentation chunks and the
+    reviewed implementation blocks, joined the way the orchestrator joins
+    blocks."""
+    parts = [captured_context, impl_context]
+    if order == "impl-first":
+        parts.reverse()
+    elif order != "docs-first":
+        raise ValueError(order)
+    return "\n\n".join(parts)
+
+
+def response_parts(body_json: dict | None) -> tuple[str, str]:
+    """(answer, thinking) for both /api/generate and /api/chat responses."""
+    r = body_json or {}
+    if isinstance(r.get("message"), dict):
+        m = r["message"]
+        return m.get("content") or "", m.get("thinking") or ""
+    return r.get("response") or "", r.get("thinking") or ""
+
+
+def user_message_of(request_body_text: str) -> str:
+    body = json.loads(request_body_text)
+    if "messages" in body:
+        return body["messages"][-1]["content"]
+    return body["prompt"].split("\n\n### User:\n", 1)[1].removesuffix("\n\n")
 
 
 # ---------------------------------------------------------------- scoring
@@ -307,15 +423,31 @@ def write_private(path: Path, data: dict) -> None:
 def run(args: argparse.Namespace) -> int:
     record = json.loads(args.capture.read_text(encoding="utf-8"))
     gate = fidelity_gate(record)
-    impl = args.impl_context.read_text(encoding="utf-8") if args.impl_context else None
-    arms = plan_arms(record, impl, args.ctx, args.impl_ctx, args.seed)
+    if args.plan:
+        files = {
+            # Evidence is hashed byte-for-byte; never let a CRLF checkout in.
+            name: read_lf(Path(path))
+            for name, _, path in (e.partition("=") for e in args.evidence)
+        }
+        plan = json.loads(args.plan.read_text(encoding="utf-8"))
+        arms = plan_from_file(record, plan, files)
+    else:
+        impl = (
+            args.impl_context.read_text(encoding="utf-8")
+            if args.impl_context
+            else None
+        )
+        arms = plan_arms(record, impl, args.ctx, args.impl_ctx, args.seed)
     ollama_env = record["environment"].get("ollama") or {}
     expected_digest = (ollama_env.get("tag") or {}).get("digest")
     plan = {
         "gate": gate,
         "expected_digest": expected_digest,
         "arms": [
-            {k: a[k] for k in ("arm_id", "evidence", "context_bytes", "options")}
+            {
+                k: a.get(k, "generate")
+                for k in ("arm_id", "evidence", "adapter", "context_bytes", "options")
+            }
             for a in arms
         ],
     }
@@ -348,7 +480,7 @@ def run(args: argparse.Namespace) -> int:
             error = None
             try:
                 resp = client.post(
-                    f"{api_base}/api/generate",
+                    api_base + arm.get("path", "/api/generate"),
                     content=arm["body"],
                     headers={"Content-Type": "application/json"},
                 )
@@ -362,6 +494,7 @@ def run(args: argparse.Namespace) -> int:
                 "sent_at": when,
                 "source_capture_id": record.get("capture_id"),
                 "evidence": arm["evidence"],
+                "adapter": arm.get("adapter", "generate"),
                 "context_bytes": arm["context_bytes"],
                 "context_sha256": arm["context_sha256"],
                 "options": arm["options"],
@@ -396,11 +529,8 @@ def summarize(args: argparse.Namespace) -> int:
         if rec.get("schema") != SCHEMA:
             continue
         r = rec.get("response") or {}
-        body = json.loads(rec["request_body_text"])
-        context, query = split_user_message(
-            body["prompt"].split("\n\n### User:\n", 1)[1].removesuffix("\n\n")
-        )
-        answer = r.get("response") or ""
+        context, query = split_user_message(user_message_of(rec["request_body_text"]))
+        answer, thinking = response_parts(r)
         ps = (rec.get("ps_after_call") or [{}])[0]
         rows.append(
             {
@@ -415,7 +545,17 @@ def summarize(args: argparse.Namespace) -> int:
                 "prompt_eval_s": round((r.get("prompt_eval_duration") or 0) / 1e9, 1),
                 "eval_s": round((r.get("eval_duration") or 0) / 1e9, 1),
                 "total_s": round((r.get("total_duration") or 0) / 1e9, 1),
-                "thinking_chars": len(r.get("thinking") or ""),
+                "adapter": rec.get("adapter", "generate"),
+                "evidence": rec.get("evidence"),
+                "thinking_chars": len(thinking),
+                "probes": {
+                    term: {
+                        "in_context": term in context,
+                        "in_thinking": term in thinking,
+                        "in_answer": term in answer,
+                    }
+                    for term in key.get("probe_terms", [])
+                },
                 "answer_chars": len(answer),
                 **score(answer, context, key, query),
             }
@@ -431,6 +571,13 @@ def main(argv: list[str] | None = None) -> int:
     b = sub.add_parser("build-context")
     b.add_argument("--commit", default=INGESTED_COMMIT)
     b.add_argument("--out", type=Path, required=True)
+    b.add_argument("--variant", default="v1", choices=["v1", "factory"])
+
+    m = sub.add_parser("build-mixed")
+    m.add_argument("capture", type=Path)
+    m.add_argument("--impl", type=Path, required=True)
+    m.add_argument("--order", choices=["docs-first", "impl-first"], required=True)
+    m.add_argument("--out", type=Path, required=True)
 
     r = sub.add_parser("run")
     r.add_argument("capture", type=Path)
@@ -443,6 +590,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--timeout", type=float, default=900)
     r.add_argument("--dry-run", action="store_true")
     r.add_argument("--authorized", action="store_true")
+    r.add_argument("--plan", type=Path, help="JSON list of arms")
+    r.add_argument("--evidence", action="append", default=[], metavar="NAME=PATH")
 
     s = sub.add_parser("summarize")
     s.add_argument("dir", type=Path)
@@ -450,7 +599,17 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.cmd == "build-context":
-        text = build_context(args.commit)
+        text = build_context(args.commit, excerpts_for(args.variant))
+        args.out.write_text(text, encoding="utf-8", newline="\n")
+        print(json.dumps({"bytes": len(text.encode("utf-8")), "sha256": sha256(text)}))
+        return 0
+    if args.cmd == "build-mixed":
+        record = json.loads(args.capture.read_text(encoding="utf-8"))
+        captured, _ = split_user_message(
+            record["application_input"]["messages"][1]["content"]
+        )
+        impl = read_lf(args.impl)
+        text = build_mixed(captured, impl, args.order)
         args.out.write_text(text, encoding="utf-8", newline="\n")
         print(json.dumps({"bytes": len(text.encode("utf-8")), "sha256": sha256(text)}))
         return 0

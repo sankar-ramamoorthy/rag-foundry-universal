@@ -8,6 +8,11 @@ governed.
 
 ## 2026-11-12
 
+Added the [#345 round 2 results](/DOCS/test_results/2026-11-12-345-round2.md)
+and round-2 evidence files and plan under `DOCS/evaluations/inference-pilot-345/`,
+whose `.gitattributes` pins LF so the hashes are stable. In `raw-index.json`,
+round 1's raw entries are marked deleted locally.
+
 Added the [#345 inference pilot results](/DOCS/test_results/2026-11-12-345-inference-pilot.md)
 and its reviewed inputs under `DOCS/evaluations/inference-pilot-345/`
 (the implementation context and answer key). The raw records are indexed in

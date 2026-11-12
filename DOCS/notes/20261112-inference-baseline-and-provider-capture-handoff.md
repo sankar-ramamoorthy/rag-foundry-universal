@@ -83,7 +83,22 @@ The first one is now settled; the second is still open.
   gave a correct refusal 6/6 at 4K, 8K and 16K. 8K overflows silently with
   the larger evidence; 16K fits in 4.75 GiB. The runner is
   `scripts/inference_pilot_345.py` (fidelity gate, `--dry-run`,
-  `--authorized`).
+  `--authorized`). Round 1's raw records were deleted locally along with a
+  temporary worktree, but the summary values survive in the report.
+- **#345 round 2: done (2026-11-12, owner-authorized GPU).** See
+  [results](/DOCS/test_results/2026-11-12-345-round2.md). At 16K:
+  - Distracting documentation did not stop the trace (4/4 built it from the
+    implementation; 2 correct, 2 partial).
+  - `ollama/` versus `ollama_chat/` showed no demonstrable difference.
+  - The `/api/embed` omission is inconsistent salience, not missing
+    evidence: the witness was present and, with the factory variant,
+    complete.
+  - **Seeded runs are not reproducible across sessions.** Prompt-cache
+    state is the likely confound, so future runs must control and record it.
+- **#349 (context-pressure and overflow diagnostics):** filed and refined
+  after owner review. It separates prompt overflow from generation-time
+  pressure, and context sensitivity from verified truncation. It is
+  observational and not started.
 - **#345 Steps 1-3:** the [draft inference-baseline protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md)
   describes them. It is not frozen and not authorized; the GPU arms need the
   owner's explicit approval.
@@ -131,11 +146,13 @@ The first one is now settled; the second is still open.
 
 ## Pending owner decisions
 
-- Whether to authorize the next pilot steps: implementation evidence with
-  distractors at 16K, and the `ollama/` versus `ollama_chat/` adapter
-  comparison. Both are listed in the pilot results.
-- Whether to file a separate issue for an overflow guard in llm_service
-  (flag `prompt_eval_count + eval_count >= context_length`).
+- What comes after round 2. Its suggestions, all needing authorization:
+  cache-controlled runs with a small determinism check, then a
+  realistic-evidence arm (the orchestrator's actual candidates at a 16 or 32
+  KB budget, linking #194 and #342). The adapter question is open but
+  deprioritized.
+- When to start #349 (no GPU needed for the classifier itself).
+- No production tuning has been proposed.
 
 Capture is disabled on production. Use the
 [runbook](/DOCS/deployment/2026-11-12-capture-deploy-and-step0-runbook.md)
