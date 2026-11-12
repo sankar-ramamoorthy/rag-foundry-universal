@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -194,7 +195,7 @@ def replay(
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
     parser.add_argument("capture", type=Path)
     parser.add_argument("--api-base", help="send to this base URL instead")
     parser.add_argument(
@@ -213,9 +214,13 @@ def main(argv: list[str] | None = None) -> None:
     result = replay(record, args.set_option, args.api_base, args.timeout)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out = args.out or args.capture.with_name(f"{args.capture.stem}.replay-{stamp}.json")
-    if out.exists():
-        raise SystemExit(f"refusing to overwrite {out}")
-    out.write_text(json.dumps(result, ensure_ascii=False, indent=1), encoding="utf-8")
+    # Owner-only, never overwrite: replay output is as sensitive as the capture.
+    try:
+        fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    except FileExistsError:
+        raise SystemExit(f"refusing to overwrite {out}") from None
+    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        handle.write(json.dumps(result, ensure_ascii=False, indent=1))
     print(
         json.dumps(
             {

@@ -128,21 +128,29 @@ async def _complete_captured(
     candidate (transient same-candidate retries appear as separate wire
     exchanges inside it). Capture never alters the request beyond
     supplying an equivalent HTTP client for Ollama routes, and never fails
-    the generation."""
-    provider_capture.install_litellm_hook(litellm)
-    attempt = provider_capture.Attempt.start(
-        model=resolved.model,
-        model_alias=resolved.alias,
-        api_base=resolved.api_base,
-        messages=kwargs["messages"],
-        prompt_template=PROMPT_TEMPLATE_VERSION,
-        context=context,
-        query=query,
-    )
+    or delays the generation: any capture-setup failure falls back to the
+    plain call, and the record is written in a background task."""
+    try:
+        provider_capture.install_litellm_hook(litellm)
+        attempt = provider_capture.Attempt.start(
+            model=resolved.model,
+            model_alias=resolved.alias,
+            api_base=resolved.api_base,
+            messages=kwargs["messages"],
+            prompt_template=PROMPT_TEMPLATE_VERSION,
+            context=context,
+            query=query,
+        )
+        client = (
+            provider_capture.wire_client(resolved.timeout)
+            if attempt.wants_wire
+            else None
+        )
+    except Exception as e:  # noqa: BLE001 - capture must not fail generation
+        logger.warning("provider capture setup failed, not capturing: %s", e)
+        return await _acompletion_with_backoff(kwargs)
+
     call_kwargs = dict(kwargs)
-    client = (
-        provider_capture.wire_client(resolved.timeout) if attempt.wants_wire else None
-    )
     if client is not None:
         call_kwargs["client"] = client
     try:
@@ -150,7 +158,7 @@ async def _complete_captured(
             response = await _acompletion_with_backoff(call_kwargs)
     except Exception as e:
         attempt.finish_error(e)
-        await attempt.write()
+        attempt.schedule()
         raise
     finally:
         if client is not None:
@@ -159,7 +167,7 @@ async def _complete_captured(
             except Exception:  # noqa: BLE001 - diagnostic client cleanup
                 pass
     attempt.finish_ok(response)
-    await attempt.write()
+    attempt.schedule()
     return response
 
 

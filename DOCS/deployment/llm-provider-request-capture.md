@@ -41,8 +41,10 @@ already mounted at `/runtime`, so you only need to add one line to `.env`:
 
 ```
 LLM_PROVIDER_CAPTURE_DIR=/runtime/provider-captures
-# optional, default 8000000: larger records drop bodies but keep hashes
-LLM_PROVIDER_CAPTURE_MAX_BYTES=8000000
+# optional settings, shown with their defaults:
+LLM_PROVIDER_CAPTURE_MAX_BYTES=8000000          # hard per-record bound
+LLM_PROVIDER_CAPTURE_MAX_TOTAL_BYTES=1000000000 # capture stops when the directory would exceed this
+LLM_PROVIDER_CAPTURE_RETENTION_DAYS=7           # day directories older than this are deleted; 0 = keep
 ```
 
 Then recreate llm_service (`docker compose ... up -d llm_service`). On the
@@ -50,17 +52,46 @@ production host this is an operator action and changes the running release's
 configuration. See [Agent Execution Boundaries](/DOCS/deployment/agent-execution-and-verification.md).
 To disable capture, remove the line and recreate the container.
 
-**Sensitivity:** records contain the full prompt, including repository source
-text. Authorization and API-key headers are redacted. Treat the capture
-directory like raw evaluation captures: keep it out of git, and copy records
-you need as evidence into `DOCS/test_results/_raw/`, indexed in
-`raw-index.json`. Delete records when the investigation ends; there is no
-automatic retention.
+## Safety properties
+
+- **Off by default.** Nothing is recorded unless `LLM_PROVIDER_CAPTURE_DIR`
+  is set.
+- **Never interrupts or delays generation.** If capture setup fails, the
+  normal call runs uncaptured. The record is completed and written in a
+  background task, so a slow or unreachable Ollama metadata endpoint cannot
+  delay the `/generate` response. Write errors are logged and dropped.
+  Records still pending when the container stops are lost.
+- **Source code at rest.** Records contain the full prompt, including
+  repository source text, in plaintext. Files are created owner-only (`0600`,
+  directories `0700`) with exclusive create, so nothing is overwritten. Keep
+  the directory out of git. If you need a record as evidence, copy it into
+  `DOCS/test_results/_raw/` and index it in `raw-index.json`; retention will
+  otherwise delete it. Records also contain the provider's `api_base` host:
+  do not paste them into tracked docs.
+- **Credentials.** Sensitive headers (`Authorization`, API-key headers,
+  cookies) and credential-like URL query parameters (`key`, `api_key`,
+  `token` and similar) are redacted. Values of credential-like environment
+  variables (names containing KEY, TOKEN, SECRET, PASSWORD or CREDENTIAL,
+  8+ characters) are scrubbed from the whole record. That covers a provider
+  echoing a key in an error body or exception message.
+- **Caller headers are data, never paths.** `X-Trace-Id` and the other
+  correlation headers are recorded as field values only. File names come
+  solely from the server-generated `capture_id`.
+- **Bounded disk use.** `LLM_PROVIDER_CAPTURE_MAX_BYTES` is a hard bound on
+  each record. Over it, bodies are dropped and replaced by their sha256. If
+  the record is still too large, only ids, sizes and hashes are kept. The
+  total cap stops capturing, never generation, and day directories past the
+  retention period are deleted. Only `YYYY-MM-DD` directories are pruned;
+  anything else in the capture directory is left alone.
+- **Not covered:** llm_service's port is unauthenticated (this predates the
+  capture). While capture is enabled, any caller that can reach `/generate`
+  can cause records to be written, within the caps above. Enable capture
+  only for an investigation, and disable it afterwards.
 
 ## What a record contains (`llm_provider_capture.v1`)
 
 There is one JSON file per fallback candidate:
-`<dir>/<UTC date>/<trace_id>-<capture_id>.json`.
+`<dir>/<UTC date>/<capture_id>.json`.
 
 | Field | Meaning |
 |---|---|
@@ -106,3 +137,21 @@ GPU time, so run it deliberately.
   not the root lock's 1.93.0. The container resolves dependencies fresh at
   start (#41), so the running LiteLLM version must be read from records, not
   assumed.
+- Security review of PR #346 (same day): nine defects were confirmed with
+  tests that failed before the fixes:
+  - caller-controlled path traversal through `X-Trace-Id`
+  - capture metadata calls delaying the response
+  - capture-setup failures failing generation
+  - a per-record size limit that was not a hard bound
+  - credentials echoed in error bodies
+  - no owner-only permissions
+  - no total cap
+  - no retention
+  - URL query credentials
+
+  All are fixed and covered by tests. A Linux container re-check sent a
+  hostile `X-Trace-Id` of `../../../tmp/pwn`, set a real API key in the
+  environment, and slowed the stub's metadata endpoints to 2 s. Results:
+  `/generate` answered in 0.72 s; no file was created outside the capture
+  directory; records were `600` and directories `700`; the key was sent,
+  recorded as `<redacted>`, and absent from every file.

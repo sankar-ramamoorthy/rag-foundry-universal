@@ -8,7 +8,9 @@ No real model is called.
 """
 
 import json
+import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -64,6 +66,8 @@ class _Stub:
     def __init__(self):
         self.received = []  # (path, headers, raw bytes)
         self.fail_inference = False
+        self.fail_body = {"error": "boom"}
+        self.metadata_delay = 0.0
         stub = self
 
         class Handler(BaseHTTPRequestHandler):
@@ -76,6 +80,7 @@ class _Stub:
                 self.wfile.write(body)
 
             def do_GET(self):
+                time.sleep(stub.metadata_delay)
                 payload = _GET_ROUTES.get(self.path)
                 self._send(200 if payload else 404, payload or {})
 
@@ -83,7 +88,7 @@ class _Stub:
                 raw = self.rfile.read(int(self.headers["Content-Length"]))
                 stub.received.append((self.path, dict(self.headers), raw))
                 if stub.fail_inference and self.path in _INFERENCE:
-                    self._send(500, {"error": "boom"})
+                    self._send(500, stub.fail_body)
                     return
                 payload = _POST_ROUTES.get(self.path)
                 self._send(200 if payload else 404, payload or {})
@@ -104,6 +109,7 @@ def stub():
     s = _Stub()
     yield s
     s.server.shutdown()
+    s.server.server_close()
 
 
 @pytest.fixture()
@@ -163,6 +169,7 @@ async def test_wire_bytes_match_capture(stub, capture_dir, route, path):
     )
     assert result["response"] == "ANSWER"
 
+    await provider_capture.drain()
     [record] = _records(capture_dir)
     [(received_path, _, received_bytes)] = stub.inference()
     assert received_path == path
@@ -211,6 +218,7 @@ async def test_provider_failure_is_captured_and_still_raises(stub, capture_dir):
             _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
         )
 
+    await provider_capture.drain()
     [record] = _records(capture_dir)
     assert record["result"]["status"] == "error"
     # one exchange per transient retry, each with the 500 response
@@ -227,6 +235,7 @@ async def test_credentials_are_redacted(stub, capture_dir, monkeypatch):
 
     [(_, headers, _)] = stub.inference()
     sent_auth = {k.lower(): v for k, v in headers.items()}.get("authorization", "")
+    await provider_capture.drain()
     text = "".join(p.read_text(encoding="utf-8") for p in capture_dir.rglob("*.json"))
     assert SECRET in sent_auth  # the key really went over the wire...
     assert SECRET not in text  # ...and never reaches the capture record
@@ -237,18 +246,19 @@ async def test_credentials_are_redacted(stub, capture_dir, monkeypatch):
 
 
 async def test_size_limit_omits_bodies_explicitly(stub, capture_dir, monkeypatch):
-    monkeypatch.setenv("LLM_PROVIDER_CAPTURE_MAX_BYTES", "2000")
+    monkeypatch.setenv("LLM_PROVIDER_CAPTURE_MAX_BYTES", "8000")
     await llm_client._complete(
-        _resolved(stub, "ollama/Qwen3:4b"), context="E" * 5000, query="q"
+        _resolved(stub, "ollama/Qwen3:4b"), context="E" * 20000, query="q"
     )
 
+    await provider_capture.drain()
     [record] = _records(capture_dir)
     assert record["provider_request"]["body"] is None
     assert record["application_input"]["messages"] is None
     omitted = record["omitted"]
     assert "provider_request.body_sha256" in omitted
     assert "wire.exchanges[0].request.body_sha256" in omitted
-    assert record["application_input"]["context_bytes"] == 5000
+    assert record["application_input"]["context_bytes"] == 20000
 
 
 async def test_capture_write_failure_never_fails_generation(
@@ -275,11 +285,17 @@ def test_generate_endpoint_records_correlation_headers(stub, capture_dir, monkey
             return [primary]
 
     monkeypatch.setattr(llm_client, "get_registry", lambda: _Registry())
-    response = TestClient(app).post(
-        "/generate",
-        json={"context": "c", "query": "q"},
-        headers={"X-Trace-Id": "t-42", "X-Repo-Id": "r-1", "X-Generation-Id": "g-9"},
-    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/generate",
+            json={"context": "c", "query": "q"},
+            headers={
+                "X-Trace-Id": "t-42",
+                "X-Repo-Id": "r-1",
+                "X-Generation-Id": "g-9",
+            },
+        )
+        client.portal.call(provider_capture.drain)
     assert response.status_code == 200
     # capture never adds prompt/body data to the public response
     assert not {"context", "messages", "prompt", "capture"} & set(response.json())
@@ -290,3 +306,142 @@ def test_generate_endpoint_records_correlation_headers(stub, capture_dir, monkey
         "r-1",
         "g-9",
     )
+
+
+# --------------------------------------------------------------------------
+# PR #346 review regressions: security, retention, failure isolation.
+
+
+async def _drain():
+    await provider_capture.drain()
+
+
+async def test_trace_id_cannot_escape_capture_dir(stub, tmp_path, monkeypatch):
+    """X-Trace-Id is caller-controlled; it must never become a path."""
+    captures = tmp_path / "captures"
+    monkeypatch.setenv("LLM_PROVIDER_CAPTURE_DIR", str(captures))
+    provider_capture.set_request_meta(trace_id="../../escaped")
+    await llm_client._complete(
+        _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
+    )
+    await _drain()
+
+    written = list(tmp_path.rglob("*.json"))
+    assert written, "a record should still be written"
+    for path in written:
+        assert path.resolve().is_relative_to(captures.resolve())
+    [record] = _records(captures)
+    assert record["trace_id"] == "../../escaped"  # value kept as data only
+
+
+async def test_slow_provider_metadata_does_not_delay_generation(stub, capture_dir):
+    stub.metadata_delay = 2.0
+    started = time.monotonic()
+    result = await llm_client._complete(
+        _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
+    )
+    elapsed = time.monotonic() - started
+    assert result["response"] == "ANSWER"
+    assert elapsed < 1.5, f"generation waited {elapsed:.1f}s on capture metadata"
+    await _drain()
+    assert _records(capture_dir)
+
+
+@pytest.mark.parametrize("broken", ["wire_client", "install_litellm_hook"])
+async def test_capture_setup_failure_falls_back_to_plain_generation(
+    stub, capture_dir, monkeypatch, broken
+):
+    def boom(*args, **kwargs):
+        raise RuntimeError("capture setup broke")
+
+    monkeypatch.setattr(provider_capture, broken, boom)
+    result = await llm_client._complete(
+        _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
+    )
+    assert result["response"] == "ANSWER"
+
+
+async def test_size_limit_is_a_hard_bound(stub, capture_dir, monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER_CAPTURE_MAX_BYTES", "1500")
+    await llm_client._complete(
+        _resolved(stub, "ollama/Qwen3:4b"), context="E" * 5000, query="q"
+    )
+    await _drain()
+    [path] = list(capture_dir.rglob("*.json"))
+    assert path.stat().st_size <= 1500
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert record["omitted"]
+    assert record["application_input"]["context_bytes"] == 5000
+
+
+async def test_secret_values_are_scrubbed_everywhere(stub, capture_dir, monkeypatch):
+    """A provider echoing a credential (error body, exception text) must not
+    leak it into the record, not only the Authorization header."""
+    monkeypatch.setenv("OLLAMA_API_KEY", SECRET)
+    stub.fail_inference = True
+    stub.fail_body = {"error": f"invalid key {SECRET}"}
+    with pytest.raises(Exception):
+        await llm_client._complete(
+            _resolved(stub, "ollama_chat/Qwen3:4b"), context="c", query="q"
+        )
+    await _drain()
+    text = "".join(p.read_text(encoding="utf-8") for p in capture_dir.rglob("*.json"))
+    assert text
+    assert SECRET not in text
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX permissions")
+async def test_records_are_owner_only(stub, capture_dir):
+    await llm_client._complete(
+        _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
+    )
+    await _drain()
+    [path] = list(capture_dir.rglob("*.json"))
+    assert path.stat().st_mode & 0o077 == 0
+    assert path.parent.stat().st_mode & 0o077 == 0
+
+
+async def test_total_size_cap_stops_capture_not_generation(
+    stub, capture_dir, monkeypatch
+):
+    async def run():
+        result = await llm_client._complete(
+            _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
+        )
+        assert result["response"] == "ANSWER"
+        await _drain()
+
+    await run()
+    [first] = list(capture_dir.rglob("*.json"))
+    # room for one record, not two: the second capture is skipped
+    monkeypatch.setenv(
+        "LLM_PROVIDER_CAPTURE_MAX_TOTAL_BYTES", str(first.stat().st_size + 100)
+    )
+    await run()
+    assert len(list(capture_dir.rglob("*.json"))) == 1
+
+
+async def test_retention_prunes_only_old_day_directories(
+    stub, capture_dir, monkeypatch
+):
+    monkeypatch.setenv("LLM_PROVIDER_CAPTURE_RETENTION_DAYS", "1")
+    old = capture_dir / "2000-01-01"
+    old.mkdir()
+    (old / "old.json").write_text("{}", encoding="utf-8")
+    unrelated = capture_dir / "keep-me"
+    unrelated.mkdir()
+    (unrelated / "note.txt").write_text("x", encoding="utf-8")
+
+    await llm_client._complete(
+        _resolved(stub, "ollama/Qwen3:4b"), context="c", query="q"
+    )
+    await _drain()
+    assert not old.exists()
+    assert (unrelated / "note.txt").exists()
+
+
+def test_url_query_credentials_are_redacted():
+    redact = getattr(provider_capture, "redact_url", None)
+    assert redact is not None
+    url = redact("https://h/v1/x?key=abc123&alt=sse&api_key=zz")
+    assert "abc123" not in url and "zz" not in url and "alt=sse" in url

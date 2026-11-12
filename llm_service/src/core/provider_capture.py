@@ -25,8 +25,22 @@ What this cannot see: Ollama's own chat-template rendering and
 tokenization happen inside the server. The record names that boundary
 rather than claiming visibility past it.
 
-Capture must never change or fail generation: every capture step is
-best-effort and swallows its own errors.
+Safety contract (PR #346 review):
+
+- Off unless LLM_PROVIDER_CAPTURE_DIR is set; nothing is recorded otherwise.
+- Never changes or fails generation: setup failures fall back to the plain
+  call, and the record is finished and written in a background task, so a
+  slow or unreachable provider-metadata endpoint cannot delay the response.
+- Records hold full prompts (repository source): files are created
+  owner-only (0600, directories 0700), named only from server-generated
+  ids (caller headers are data, never paths), capped per record
+  (LLM_PROVIDER_CAPTURE_MAX_BYTES, a hard bound) and in total
+  (LLM_PROVIDER_CAPTURE_MAX_TOTAL_BYTES: capture stops, generation does
+  not), and day directories older than LLM_PROVIDER_CAPTURE_RETENTION_DAYS
+  are pruned.
+- Credentials: sensitive headers and URL query parameters are redacted,
+  and the values of credential-like environment variables are scrubbed
+  from the whole record (covers providers echoing a key in an error).
 """
 
 from __future__ import annotations
@@ -40,11 +54,14 @@ import importlib.metadata
 import json
 import logging
 import os
+import re
+import shutil
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional, Set
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import httpx
 from litellm.integrations.custom_logger import CustomLogger
@@ -53,6 +70,29 @@ logger = logging.getLogger(__name__)
 
 SCHEMA = "llm_provider_capture.v1"
 DEFAULT_MAX_BYTES = 8_000_000
+DEFAULT_MAX_TOTAL_BYTES = 1_000_000_000
+DEFAULT_RETENTION_DAYS = 7
+_MINIMAL_RECORD_KEYS = (
+    "schema",
+    "capture_id",
+    "captured_at",
+    "trace_id",
+    "repo_id",
+    "generation_id",
+    "attempt",
+)
+_SENSITIVE_QUERY_PARAMS = {
+    "key",
+    "api_key",
+    "apikey",
+    "access_token",
+    "token",
+    "sig",
+    "signature",
+}
+_SECRET_ENV_NAME = re.compile(r"(KEY|TOKEN|SECRET|PASSWORD|CREDENTIAL)", re.I)
+_SAFE_NAME = re.compile(r"[^A-Za-z0-9_-]")
+_DAY_DIR = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _REDACTED = "<redacted>"
 _SENSITIVE_HEADERS = {
     "authorization",
@@ -93,11 +133,24 @@ def is_enabled() -> bool:
     return capture_dir() is not None
 
 
-def max_bytes() -> int:
+def _int_env(name: str, default: int) -> int:
     try:
-        return int(os.getenv("LLM_PROVIDER_CAPTURE_MAX_BYTES", DEFAULT_MAX_BYTES))
+        return int(os.getenv(name, default))
     except ValueError:
-        return DEFAULT_MAX_BYTES
+        return default
+
+
+def max_bytes() -> int:
+    return _int_env("LLM_PROVIDER_CAPTURE_MAX_BYTES", DEFAULT_MAX_BYTES)
+
+
+def max_total_bytes() -> int:
+    return _int_env("LLM_PROVIDER_CAPTURE_MAX_TOTAL_BYTES", DEFAULT_MAX_TOTAL_BYTES)
+
+
+def retention_days() -> int:
+    """0 disables pruning."""
+    return _int_env("LLM_PROVIDER_CAPTURE_RETENTION_DAYS", DEFAULT_RETENTION_DAYS)
 
 
 def set_request_meta(
@@ -126,6 +179,42 @@ def redact_headers(headers: Any) -> Dict[str, str]:
     return out
 
 
+def redact_url(url: str) -> str:
+    """Redact credential-like query parameters (some providers authenticate
+    with ``?key=``); path and other parameters are kept."""
+    try:
+        parts = urlsplit(url)
+        if not parts.query:
+            return url
+        query = [
+            (k, _REDACTED if k.lower() in _SENSITIVE_QUERY_PARAMS else v)
+            for k, v in parse_qsl(parts.query, keep_blank_values=True)
+        ]
+        return urlunsplit(parts._replace(query=urlencode(query, safe="<>")))
+    except Exception:  # noqa: BLE001
+        return _REDACTED
+
+
+def _secret_values() -> List[str]:
+    """Values of credential-like env vars, longest first so a secret that
+    contains another is replaced whole."""
+    values = {
+        v
+        for k, v in os.environ.items()
+        if _SECRET_ENV_NAME.search(k) and v and len(v) >= 8
+    }
+    return sorted(values, key=len, reverse=True)
+
+
+def scrub_secrets(text: str) -> str:
+    for value in _secret_values():
+        text = text.replace(value, _REDACTED)
+        escaped = json.dumps(value)[1:-1]
+        if escaped != value:
+            text = text.replace(escaped, _REDACTED)
+    return text
+
+
 def route_of(model: str) -> str:
     return model.split("/", 1)[0] if "/" in model else model
 
@@ -148,7 +237,7 @@ class ProviderRequestLogger(CustomLogger):
             additional = kwargs.get("additional_args") or {}
             record["provider_request"] = {
                 "source": "litellm.log_pre_api_call",
-                "url": str(additional.get("api_base") or ""),
+                "url": redact_url(str(additional.get("api_base") or "")),
                 "headers": redact_headers(additional.get("headers")),
                 "body": copy.deepcopy(additional.get("complete_input_dict")),
                 "litellm_call_id": kwargs.get("litellm_call_id"),
@@ -182,7 +271,7 @@ async def _on_request(request: httpx.Request) -> None:
             {
                 "request": {
                     "method": request.method,
-                    "url": str(request.url),
+                    "url": redact_url(str(request.url)),
                     "headers": redact_headers(request.headers),
                     "body_text": body.decode("utf-8", errors="replace"),
                     "body_sha256": sha256(body),
@@ -234,15 +323,11 @@ def wire_client(timeout: float) -> Any:
 
 # ------------------------------------------------------------ environment
 
-_ENV_CACHE: Dict[str, Dict[str, Any]] = {}
-
 
 async def _ollama_environment(api_base: str, model_name: str) -> Dict[str, Any]:
-    """Static model/server facts, cached per (api_base, model). Read-only
-    Ollama endpoints only; never triggers inference."""
-    key = f"{api_base}|{model_name}"
-    if key in _ENV_CACHE:
-        return copy.deepcopy(_ENV_CACHE[key])
+    """Model/server facts at capture time (deliberately not cached: a
+    re-pulled model must show its new digest). Read-only Ollama endpoints
+    only; never triggers inference. Runs in the background write task."""
     env: Dict[str, Any] = {}
     async with httpx.AsyncClient(timeout=3) as client:
         with contextlib.suppress(Exception):
@@ -280,8 +365,7 @@ async def _ollama_environment(api_base: str, model_name: str) -> Dict[str, Any]:
                     None,
                 ),
             }
-    _ENV_CACHE[key] = env
-    return copy.deepcopy(env)
+    return env
 
 
 async def _ollama_ps(api_base: str, model_name: str) -> Optional[List[Dict[str, Any]]]:
@@ -406,12 +490,26 @@ class Attempt:
             }
 
     def finish_error(self, exc: BaseException) -> None:
+        with contextlib.suppress(Exception):
+            self._finish_error(exc)
+
+    def _finish_error(self, exc: BaseException) -> None:
         self.record["result"] = {
             "status": "error",
             "latency_ms": round((time.monotonic() - self._t0) * 1000, 1),
             "error_type": type(exc).__name__,
             "error": str(exc)[:4000],
         }
+
+    def schedule(self) -> None:
+        """Finish and write the record in the background so capture can
+        never delay the generation response. Never raises."""
+        try:
+            task = asyncio.get_running_loop().create_task(self.write())
+            _PENDING.add(task)
+            task.add_done_callback(_PENDING.discard)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("provider capture scheduling failed: %s", e)
 
     async def write(self) -> Optional[Path]:
         """Best-effort: never raises."""
@@ -432,22 +530,93 @@ class Attempt:
             return None
 
 
+_PENDING: Set["asyncio.Task[Any]"] = set()
+
+
+async def drain() -> None:
+    """Await outstanding background writes (tests, graceful shutdown)."""
+    while _PENDING:
+        await asyncio.gather(*list(_PENDING), return_exceptions=True)
+
+
+def _serialize(record: Dict[str, Any]) -> str:
+    return scrub_secrets(json.dumps(record, ensure_ascii=False, indent=1, default=str))
+
+
+def _bounded_payload(record: Dict[str, Any], limit: int) -> str:
+    """The per-record limit is a hard bound: drop bodies first, then fall
+    back to a minimal record of ids, sizes and hashes."""
+    payload = _serialize(record)
+    if len(payload.encode("utf-8")) <= limit:
+        return payload
+    slim = _omit_bodies(record, limit)
+    payload = _serialize(slim)
+    if len(payload.encode("utf-8")) <= limit:
+        return payload
+    minimal: Dict[str, Any] = {k: slim.get(k) for k in _MINIMAL_RECORD_KEYS}
+    minimal["application_input"] = {
+        k: (slim.get("application_input") or {}).get(k)
+        for k in ("context_bytes", "context_sha256", "query_sha256")
+    }
+    minimal["result_status"] = (slim.get("result") or {}).get("status")
+    minimal["omitted"] = {
+        "reason": f"record exceeded {limit} bytes even without bodies",
+        "full_record_sha256": sha256(_serialize(record)),
+    }
+    return _serialize(minimal)
+
+
+def _directory_bytes(directory: Path) -> int:
+    total = 0
+    for root, _dirs, files in os.walk(directory):
+        for name in files:
+            with contextlib.suppress(OSError):
+                total += os.path.getsize(os.path.join(root, name))
+    return total
+
+
+def _prune(directory: Path, days: int) -> None:
+    """Delete day directories (YYYY-MM-DD names only) older than ``days``."""
+    if days <= 0:
+        return
+    cutoff = datetime.now(timezone.utc).date() - timedelta(days=days)
+    for child in directory.iterdir():
+        if not (child.is_dir() and _DAY_DIR.match(child.name)):
+            continue
+        with contextlib.suppress(ValueError, OSError):
+            if date.fromisoformat(child.name) < cutoff:
+                shutil.rmtree(child)
+
+
+def _private_dir(path: Path) -> None:
+    path.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with contextlib.suppress(OSError):
+        os.chmod(path, 0o700)
+
+
 def _write_record(record: Dict[str, Any]) -> Optional[Path]:
     directory = capture_dir()
     if directory is None:
         return None
-    payload = json.dumps(record, ensure_ascii=False, indent=1, default=str)
-    limit = max_bytes()
-    if len(payload.encode("utf-8")) > limit:
-        payload = json.dumps(
-            _omit_bodies(record, limit), ensure_ascii=False, indent=1, default=str
+    _private_dir(directory)
+    _prune(directory, retention_days())
+    payload = _bounded_payload(record, max_bytes()).encode("utf-8")
+    if _directory_bytes(directory) + len(payload) > max_total_bytes():
+        logger.warning(
+            "provider capture skipped: capture directory over "
+            "LLM_PROVIDER_CAPTURE_MAX_TOTAL_BYTES (generation unaffected)"
         )
-    day = record["captured_at"][:10]
-    target_dir = directory / day
-    target_dir.mkdir(parents=True, exist_ok=True)
-    name = f"{record.get('trace_id') or 'no-trace'}-{record['capture_id']}.json"
-    path = target_dir / name
-    path.write_text(payload, encoding="utf-8")
+        return None
+    target_dir = directory / str(record["captured_at"])[:10]
+    _private_dir(target_dir)
+    # Only the server-generated id forms the name; caller headers stay data.
+    capture_id = _SAFE_NAME.sub("", str(record["capture_id"]))[:64]
+    path = target_dir / f"{capture_id}.json"
+    if not path.resolve().is_relative_to(directory.resolve()):
+        raise ValueError("capture path escaped the capture directory")
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, "wb") as handle:
+        handle.write(payload)
     return path
 
 
@@ -478,6 +647,11 @@ def _omit_bodies(record: Dict[str, Any], limit: int) -> Dict[str, Any]:
                 )
                 part["body_text"] = None
                 part.pop("body_json", None)
+    result = slim.get("result") or {}
+    for key in ("content", "reasoning_content", "error"):
+        if result.get(key):
+            omitted[f"result.{key}_sha256"] = sha256(str(result[key]))
+            result[key] = None
     slim["omitted"] = omitted
     return slim
 
