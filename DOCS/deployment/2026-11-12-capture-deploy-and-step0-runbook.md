@@ -24,7 +24,7 @@ host from the production checkout. It uses the existing
   observability blocker, because #345 cannot proceed without it. That is the
   operator's judgment ([release guide](/DOCS/deployment/production-docker-compose.md),
   "Deployment cadence"). The suggested label is `prod-hotfix-2026-11-12-344`.
-- **Runtime effect:** a new llm_service and orchestrator image, with capture
+- **Runtime effect:** all images are rebuilt; the code changes affect llm_service and rag_orchestrator, with capture
   enabled only for the deploy's own smoke query and then disabled. No
   production default changes. No migration; the script never runs one, and
   #346 adds none.
@@ -39,7 +39,7 @@ git status --short; git log --oneline -1         # expect: clean, 8bc0ed2
 grep -c '^LLM_PROVIDER_CAPTURE' .env              # expect: 0
 nvidia-smi --query-gpu=name,memory.total,memory.used --format=csv,noheader
 # Ollama server settings (num_ctx default, parallelism, keep-alive):
-systemctl show ollama -p Environment 2>/dev/null | tr ' ' '\n' | grep -i '^ollama_'
+systemctl show ollama -p Environment --value 2>/dev/null | tr ' ' '\n' | grep -i '^ollama_'
 cat /etc/systemd/system/ollama.service.d/*.conf 2>/dev/null | grep -i ollama_
 # if Ollama runs in Docker instead of systemd:
 # docker inspect <ollama-container> --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -i '^ollama_'
@@ -59,7 +59,13 @@ scripts/prod-refresh.sh --ref 215d095ee0ac851d0215a6ebc6fe4f4b7cad7d61 \
 The script builds the images, verifies provenance and mounts, deploys, checks
 health, and runs its RAG smoke query. That query is the "one normal RAG
 query" for Step 0 and is captured. If the smoke step reports a timeout (the
-curl limit is 60 s), the deploy itself has still completed. Wait about two
+curl limit is 60 s), the deploy itself has still completed.
+
+**If the deploy fails for any reason, remove the capture line right away**
+(`sed -i '/^LLM_PROVIDER_CAPTURE_DIR=/d' .env`). Otherwise capture would
+silently turn on at the next container recreate. Capture also records any
+other `/generate` call made while it is on, not only the smoke query; Part 3
+shows the record count. Wait about two
 minutes so the generation finishes and its record is written, then continue.
 
 ## Part 3: read the Step 0 record (read-only)
@@ -71,7 +77,10 @@ docker exec -i llm-service python3 - <<'EOF'
 import glob, json, os
 paths = sorted(glob.glob("/runtime/provider-captures/*/*.json"), key=os.path.getmtime)
 print("records:", len(paths))
-r = json.load(open(paths[-1]))
+if not paths:
+    raise SystemExit("no capture records yet: wait for the smoke generation to finish")
+smoke = [p for p in paths if json.load(open(p)).get("repo_id") == "f7641840-ba13-5f9d-9ae6-87e1f924709d"]
+r = json.load(open((smoke or paths)[-1]))
 env, ex = r["environment"], (r.get("wire") or {}).get("exchanges") or [{}]
 body = (r.get("provider_request") or {}).get("body") or {}
 resp = ((ex[-1].get("response") or {}).get("body_json")) or {}
@@ -106,7 +115,7 @@ docker cp llm-service:/runtime/provider-captures ~/rag-foundry-captures/2026-11-
 sed -i '/^LLM_PROVIDER_CAPTURE_DIR=/d' .env
 GIT_SHA=$(git rev-parse HEAD) BUILD_DATE=unused-no-build RELEASE_VERSION=prod-hotfix-2026-11-12-344 \
   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --no-build --no-deps llm_service
-docker exec llm-service sh -c 'test -z "$LLM_PROVIDER_CAPTURE_DIR" && echo capture-disabled'
+docker exec llm-service sh -c 'test -z "$LLM_PROVIDER_CAPTURE_DIR" && echo capture-disabled || echo CAPTURE-STILL-ENABLED'
 curl -s localhost:8003/version; echo
 docker exec llm-service rm -rf /runtime/provider-captures
 ```

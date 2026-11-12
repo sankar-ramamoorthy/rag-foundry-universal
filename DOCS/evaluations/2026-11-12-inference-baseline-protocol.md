@@ -131,8 +131,9 @@ requested. The runner has a `--dry-run` that sends nothing, and a
 - **Answer key hits:**
   - Among the case's key identifiers that are present in that arm's context,
     how many the answer names.
-  - **Fabrication:** key identifiers absent from the context but named in the
-    answer.
+  - **Named without evidence:** key identifiers absent from the context but
+    named in the answer. This is not necessarily fabrication: LightRAG may be in
+    the model's training data. It is reported, not scored as an error.
   - **Admission:** when no key identifier is present, whether the answer says
     the context is insufficient. The regex list is frozen with the protocol.
 - Every request and response is stored as an `llm_provider_capture`-style
@@ -153,6 +154,9 @@ refers to Set A.
 | F2 | `get_repo_generation`, `CodebaseGraph`, `load_graph_for_repo`, `popitem`, `move_to_end` | `load_graph_for_repo` |
 | F3 | `conservative_token_count`, `assemble_context`, `build_final_context_manifest` | none |
 
+`popitem` and `move_to_end` (F2) are generic dict methods; whether they stay in
+the key is decided at freeze time.
+
 So at the current 4 KB budget, three of six cases cannot be answered from the
 evidence. Set A therefore tests truncation, the adapter and honesty; Set B
 tests whether more evidence helps. The #342 questions' keys are added at
@@ -162,7 +166,7 @@ freeze time.
 
 - **Adapter:** recommend `ollama_chat/` if, on Set A, chat has at least as
   many key hits as generate in every case and seed pair and strictly more in
-  total, or equal hits with fewer fabrications. Otherwise, no change.
+  total, or equal hits with fewer identifiers named without evidence. Otherwise, no change.
 - **`num_ctx`:** recommend an explicit `num_ctx` of N if the default arm shows
   prompt truncation or `done_reason: "length"` where N shows none, with
   `size_vram` under 80% of total GPU memory.
