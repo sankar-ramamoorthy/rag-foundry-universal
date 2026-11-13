@@ -22,6 +22,13 @@
       "cited_by": "DOCS/test_results/2026-10-13-lightrag-implementation-forensics.md",
       "notes": "Unredacted: contains the capture environment's tailnet host strings; keep local."
     },
+    "2026-11-12-342-abc-discovery.json": {
+      "bytes": 43442,
+      "sha256": "06908c7e819f514d4f4775137df2cf7b388ee28043509aed051cb756b0a1e94f",
+      "produced_by": "scripts/discovery_diagnostic_342.py (read-only HTTP: graph export, deployed /trace, vector search-by-doc; inputs: Step 0 capture and 2026-11-12-345-retrieval-candidates-run3.json)",
+      "cited_by": "DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md",
+      "notes": "Generation e423d1bb (commit 8e06335) unchanged before/after; deployed services 82b70cd. No generation, SQL or writes. No private endpoints recorded."
+    },
     "2026-11-12-345-pilot-summary.json": {
       "bytes": 6386,
       "sha256": "89b66815dfd0027d3506937effd38b88f3f588fad2b3d14c7742608050a0aef3",

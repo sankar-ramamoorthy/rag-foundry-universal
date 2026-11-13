@@ -209,6 +209,12 @@ and self-repository failure corpora, verify structural navigation, and study
 external implementations. They supersede product positioning as the immediate
 investigation focus; no replacement architecture is selected.
 
+The [#342 A/B/C discovery diagnostic](/DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md)
+tests vector, question-derived lexical/symbol and route-anchored graph discovery
+on the unchanged POST /v1/rag trace question. Only the route anchor finds the
+entry point. Traversal stops at hop 2 on unresolved service-local (`src.`)
+imports, and a service-root import-resolution rule is the smallest next change.
+
 The [graph export benchmark](/DOCS/test_results/2026-10-28-graph-export-benchmark.md) (issue #273) records how `GET /v1/graph/repos/{repo_id}` behaves under 1/2/4 simultaneous exports before and after PR #272 (latency, `/version` responsiveness, memory, response equivalence). Local and synthetic; it does not explain the E1 control-replay timeout (#270).
 
 [WP-R4 evidence delivery](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)
