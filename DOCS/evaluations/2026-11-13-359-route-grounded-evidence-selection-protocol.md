@@ -3,7 +3,7 @@ title: "Protocol: route-grounded evidence-selection diagnostic with overfitting 
 date: 2026-11-13
 type: evaluation-protocol
 status: draft
-summary: "Pre-registered protocol for testing whether route-grounded traversal plus source fetching can select sufficient evidence for the POST /v1/rag trace question at 4 KB and 16 KB. It separates discovery, selection and survival, and binds the work to overfitting controls under ADR-054. Not frozen until merged and the two owner decisions are recorded."
+summary: "Pre-registered protocol for testing whether route-grounded traversal plus source fetching can select sufficient evidence for the POST /v1/rag trace question at 4 KB and 16 KB. It separates discovery, selection and survival, and binds the work to overfitting controls under ADR-054, including explicit handling of ambiguous and unresolved calls. Owner decisions are recorded: Codex writes sealed C7 ground truth, and the held-out repository is mealie @ 1624c22. Freezes on merge."
 tags: [evaluation, protocol, code-intelligence, evidence-selection, overfitting, issue-359, issue-342, issue-194]
 authority: "Draft protocol; no execution authorized until frozen"
 related:
@@ -142,6 +142,54 @@ which identifies the file.
 Passages enter `assemble_context` in function-selection order, then chunk
 order. There are 1 + 4 × 2 = 9 arms, each run at 2 budgets.
 
+### 5a. Ambiguous and unresolved call relationships
+
+These rules bind every arm, the scoring, and the C7 and C10 runs.
+
+1. **Placeholders are never resolved by guessing.** Traversal never follows an
+   `EXTERNAL_*` placeholder, and no rule resolves a placeholder by name lookup
+   (for example, `embedder.embed` → "the only non-test `embed`"). Suppressed
+   placeholders are counted per arm.
+2. **Ambiguity is recorded, never chosen.** A single call site or reference is
+   *ambiguous* when it has more than one candidate target. That includes:
+   - abstract dispatch with several overriding implementations;
+   - duplicate symbol names;
+   - a URL literal matching several route nodes;
+   - a question route matching several route nodes.
+
+   The rule then adds **none** of the candidates on that basis. It records
+   `ambiguous` with the full candidate set. The route anchor stops with
+   `ambiguous_route` (section 5).
+3. **Indirect references are not followed in this version.** That covers a
+   function passed as a value (`asyncio.to_thread(f, …)`, callbacks) and a
+   method of an injected or untyped receiver. Such a relationship can be
+   supported only *source-only*: by delivering the caller's passage that
+   contains the reference.
+4. **Every expected relationship carries a resolution class** in the ground
+   truth: `static_direct`, `indirect_reference`, `dynamic_dispatch`
+   (ambiguous), `cross_service_http`, `external_http`, `sql`, or `route`.
+   In the primary case: R7 and R16 are `indirect_reference`; R8 is
+   `dynamic_dispatch` (candidates `OllamaEmbedder.embed`, `MockEmbedder.embed`;
+   the configured provider is established by R6); R4, R10, R13 and R14 are
+   HTTP; R17 is `sql`; R1 and R15 are `route`; the rest are `static_direct`.
+5. **Each relationship is scored into exactly one support category:**
+
+   | Category | Meaning |
+   |---|---|
+   | `graph_and_source` | callee discovered through a graph edge, and the witness delivered |
+   | `source_only` | witness delivered in the caller's passage, callee not graph-discovered |
+   | `unresolved` | witness not delivered |
+   | `unwarranted_disambiguation` | an arm treated one candidate of a `dynamic_dispatch` relationship as *the* callee without the configuring evidence (for R8, R6's witness). This is an **error**, not support. |
+
+   Results are reported per class and per category, so the report shows how
+   much of a pass rests on source-only evidence.
+6. **Unresolved route paths.** If a route node's full public path is
+   unresolved (`resolved_path` empty; the node carries the router-local path),
+   the anchor matches only an exact `METHOD path` suffix. A question naming the
+   public path then yields `unresolved_route`, which is reported as an
+   anchoring failure. The protocol does not rewrite the question or add
+   path-guessing (see section 9, held-out eligibility).
+
 ## 6. Measurements
 
 For every arm and budget:
@@ -203,18 +251,115 @@ For every arm and budget:
 | **C4** | Scoring separation | Ground truth is loaded only by the scoring step, after selection output is written and hashed. |
 | **C5** | Disclosure of designer knowledge | G2's execution-order idea and G3's URL-literal rule were conceived knowing this question's gaps (H7, H13). This is stated in the report, and their value counts only through C6 and C7. |
 | **C6** | Corpus self-description | Generation `8cbedbb9` contains our own reports, which name the chain's functions. Graph arms fetch only function passages, but A0 and any text-ranked step are contaminated; this is reported per arm. |
-| **C7** | Within-repo overfitting check | The same frozen rules (no changes) run on **at least 3 additional entry-point routes** in this repository. Their expected relationships are written **before the run, by someone other than the rule designer** (owner decision 1) and committed as a separate file. The report shows per-route results. A pass on `POST /v1/rag` alone is reported as a single-case result. |
+| **C7** | Within-repo overfitting check | The same frozen rules (no changes) run on **at least 3 additional entry-point routes** in this repository. Their expected relationships are written **before the run, by Codex from implementation source** and sealed by hash (section 9.1). The report shows per-route results. A pass on `POST /v1/rag` alone is reported as a single-case result. |
 | **C8** | Primary arm and multiple comparisons | G2 is the declared primary hypothesis. All arms are reported, and the best-scoring arm is never presented as the finding unless it is G2. A non-primary arm that outperforms is reported as a hypothesis for the next protocol version. |
 | **C9** | No tuning between stages | Rules are not changed between the self-repo run, the C7 routes and the held-out run. Any change starts a new protocol version, and previously held-out data is reclassified as development data (ADR-054 §6). |
-| **C10** | Held-out gate | No `/v1/rag` change may be described as general, and no default may change, until the frozen rules pass on an **unseen repository** frozen per ADR-054 §5. That means freezing the commit, ready generation, questions, expected evidence, scoring, budgets and runtime. Its answers are never inspected during development (owner decision 2). The repository needs extractable routes (FastAPI-style decorators and a compose file). That requirement is itself a scope limit: route grounding only applies where routes are extracted. |
+| **C10** | Held-out gate | No `/v1/rag` change may be described as general, and no default may change, until the frozen rules pass on an **unseen repository** frozen per ADR-054 §5. That means freezing the commit, ready generation, questions, expected evidence, scoring, budgets and runtime. Its answers are never inspected during development. Chosen: `mealie-recipes/mealie` @ `1624c22` (section 9.2). The repository needs extractable routes (FastAPI-style decorators and a compose file). That requirement is itself a scope limit: route grounding only applies where routes are extracted. |
 | **C11** | Scope statement | A positive result supports route grounding **only for questions that name an identifiable entry point**. It is not a solution for all codebase questions. LightRAG's untyped-receiver failure is a different failure mode and is out of scope. |
 
-## 9. Owner decisions required before freezing
+## 9. Owner decisions (recorded 2026-11-13)
 
-1. **Who writes the C7 expected relationships?** The recommendation is the
-   owner or Codex, from the list of route nodes in the generation.
-2. **Which held-out repository for C10?** It should be chosen now, before any
-   result, and recorded with its commit.
+### 9.1 Independent ground truth for C7: Codex
+
+**Decision.** Codex independently writes the expected execution chains for
+**at least three previously unstudied routes** in this repository.
+
+**Constraints on the routes and chains:**
+- Codex works **from implementation source, not from existing diagnostic
+  reports**.
+- *Unstudied* excludes `POST /v1/rag`, `POST /v1/vectors/search`, and any route
+  named in an earlier #342/#345/#354/#359 report.
+- Each chain uses the section 4 format: caller canonical ID, relationship,
+  witness regex, verified source line, tier, and the resolution class from 5a.
+
+**Sealing procedure** (keeps the answers isolated from Claude's predictions):
+
+1. **Codex publishes the questions file:** routes and question text only. Its
+   sha256 is recorded on #359. Claude may read this, because selection needs
+   the questions.
+2. **Codex writes the expected-chains file,** never shown to Claude. Only its
+   sha256 is posted on #359 before any selection run. The file stays out of
+   the repository and out of Claude's reach until step 4.
+3. **Claude runs selection** for all arms on the C7 questions with the frozen
+   rules. The selection outputs, with their sha256, are posted on #359. These
+   are the frozen predictions.
+4. **Codex then adds the expected-chains file** to the repository. The
+   scoring step verifies its sha256 against step 2 and refuses to score on a
+   mismatch.
+5. **Codex does not see the selection outputs before step 2.** Claude does not
+   see the expected chains before step 3.
+
+The owner confirms each step on #359. Any break in this order is reported, and
+the affected route is reclassified as development data.
+
+### 9.2 Held-out repository for C10: `mealie-recipes/mealie` at `1624c22bf70988c7fe404ad586e2f9689f77748d`
+
+**Decision.** Use a separate repository, unseen and within the supported
+FastAPI/Compose domain. **Do not** use the already-examined `code-graph-rag`
+questions as pristine held-out tests. Portability to other architectures is a
+**separate evaluation dimension**, not part of this gate.
+
+**Exclusions** (already examined or already reserved):
+- `sankar-ramamoorthy/rag-foundry-universal`, `py-coding-agent`;
+- `HKUDS/LightRAG`, `vitali87/code-graph-rag`, `paulxiep/code-rag`;
+- `pallets/werkzeug`;
+- `pypa/hatch` and `pdfminer/pdfminer.six` (the E1 held-out set);
+- `Tencent-Hunyuan/RepoProbe`, `SoftWiser-group/RepoET`.
+
+**Candidates and how they were checked.** Candidates came from a web search for
+FastAPI + Compose repositories plus well-known FastAPI projects. They were
+shallow-cloned into an isolated scratch directory and checked with
+`scripts/heldout_eligibility_359.py`. That script runs this repository's own
+ingestion extraction (structural inventory, service topology, and
+`RepoGraphBuilder` with #354) in memory and prints **counts only**. No source
+text, function names or chains were viewed, so no evaluation answer was seen
+(ADR-054 §3).
+
+Results on 2026-11-13 (handler reach = repository functions reached over
+resolved CALL edges, depth ≤ 6):
+
+| Candidate @ commit | Python files | Compose services | Route nodes (with handler) | Routes with resolved full path | Cross-service calls | Handlers reaching ≥ 3 functions (median / max reach) |
+|---|---:|---:|---:|---:|---:|---|
+| `GavriloviciEduard/fastapi-microservices` @ `a275614` | 21 | 4 | 10 (10) | 0 | 0 | 0 (0 / 0) |
+| `fastapi/full-stack-fastapi-template` @ `aabb901` | 43 | 14 | 18 (18) | 0 | 0 | 5 (1 / 7) |
+| `marttp/fastapi-microservice` @ `0aa80fe` | 11 | 5 | 0 | 0 | 0 | 0 |
+| `pvfarooq/fastapi-simple-ecommerce-microservice` @ `12d6e14` | 39 | 6 | 4 (4) | 0 | 0 | 0 (0 / 1) |
+| **`mealie-recipes/mealie` @ `1624c22`** | **718** | **6** | **30 (30)** | **0** | **0** | **15 (2.5 / 15)** |
+
+Two further candidates were dropped. `letta-ai/letta`'s shallow clone checked
+out incompletely (189 KB). `polarsource/polar` produced 0 extracted Python
+files, an anomaly that was not investigated. Both are also far larger than the
+development corpus.
+
+**Selection rule (structural only).**
+1. Require routes extracted with handler nodes, and **≥ 3 handlers with
+   non-trivial chains** (reach ≥ 3), so that held-out questions can test
+   selection rather than a single function.
+2. Among those, prefer the candidate with more non-trivial chains.
+
+`mealie` (15) wins over `full-stack-fastapi-template` (5). `mealie` is an
+actively maintained application (FastAPI backend with Compose), not a
+template, and its size is comparable to or larger than the development corpus.
+
+**Held-out still pending, with owner approval required.**
+- Ingesting `mealie` at the pinned commit on the Linux host.
+- Freezing the questions, expected evidence and scoring per ADR-054 §5. The
+  default is for Codex to author these under the same sealing procedure as
+  9.1, unless the owner decides otherwise.
+
+**Eligibility finding (an overfitting signal, recorded before any run).** Not
+one of the analysable candidates has a route whose **full public path**
+resolved. Their router prefixes come from settings variables or non-literal
+include chains, so route nodes carry router-local paths. The self-repository's
+literal-prefix style is the exception. Under 5a.6, a held-out question that
+names a public path will give `unresolved_route`. The C10 result will measure
+this as-is. Route-path resolution is a separate engineering question, and it
+must not be tuned on `mealie` (C9).
+
+Route extraction also covers only part of `mealie`: 30 route nodes, against
+the many more endpoints a project that size typically exposes (not counted
+here). This too will be reported rather than corrected before the held-out
+run.
 
 ## 10. Boundaries
 
