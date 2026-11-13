@@ -155,7 +155,13 @@ following. Distracting documentation did not stop the trace. The `ollama/`
 and `ollama_chat/` adapters showed no demonstrable difference. The omitted
 `/api/embed` step is inconsistent salience, not missing evidence. Seeded runs
 are not reproducible across sessions, probably because of the prompt-cache
-state. Overflow diagnostics are tracked separately in #349. No production
+state. [Round 3](/DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md) confirmed in a controlled test that the same
+request gives byte-identical output only when the cache state is the same.
+It also found that the Step 0 retrieval pool contains no implementation code
+at all: 38 Markdown chunks. The implementation witnesses rank 676 to beyond
+2,000 by vector similarity, and graph expansion added nothing. That is a
+#342 ranking failure, which a larger #194 budget alone cannot fix.
+Overflow diagnostics are tracked separately in #349. No production
 default has changed, and no tuning has been proposed. Further runs need
 authorization, and the
 [draft protocol](/DOCS/evaluations/2026-11-12-inference-baseline-protocol.md)

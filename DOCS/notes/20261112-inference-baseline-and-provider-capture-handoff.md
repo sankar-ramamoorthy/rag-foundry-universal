@@ -95,6 +95,23 @@ The first one is now settled; the second is still open.
     complete.
   - **Seeded runs are not reproducible across sessions.** Prompt-cache
     state is the likely confound, so future runs must control and record it.
+- **#345 round 3: done (2026-11-12, owner-authorized).** See
+  [results](/DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md).
+  - **Reproducibility:** with the cache condition fixed, output is
+    byte-identical. With only the cache state changed, the same request
+    gives different answers, including whether `/api/embed` is named.
+  - **Arm state:** future arms must start from a verified cold cache. Check
+    `prompt_eval_duration` (a full re-evaluation); `/api/ps` after an unload
+    request is unreliable.
+  - **Retrieval (#342):** the Step 0 pool is 38 Markdown chunks with no
+    Python. Graph expansion added 0 documents. The implementation witnesses
+    rank 676 to beyond 2,000 by vector similarity, so this is a ranking
+    failure, not truncation.
+  - **Budgeting (#194):** a larger budget would add only more documentation
+    for this query.
+  - The local reproduction matches production's first 3,950 bytes, but adds
+    a 3-byte chunk. Production pool or budget settings would explain it;
+    the operator can check them read-only.
 - **#349 (context-pressure and overflow diagnostics):** filed and refined
   after owner review. It separates prompt overflow from generation-time
   pressure, and context sensitivity from verified truncation. It is
@@ -146,11 +163,14 @@ The first one is now settled; the second is still open.
 
 ## Pending owner decisions
 
-- What comes after round 2. Its suggestions, all needing authorization:
-  cache-controlled runs with a small determinism check, then a
-  realistic-evidence arm (the orchestrator's actual candidates at a 16 or 32
-  KB budget, linking #194 and #342). The adapter question is open but
-  deprioritized.
+- Steps 3-4 (16 KB and 32 KB evidence packages graded on the full call path)
+  have not started. Round 3 shows that the actual candidates contain no
+  witnesses, so the packages would have to be constructed. Defining a
+  realistic construction is a design decision for the owner; see
+  [round 3](/DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md).
+- Optional read-only operator check: `MAX_TOTAL_CHUNKS`,
+  `CONTEXT_WINDOW_TOKENS`, `PROMPT_RESERVE_TOKENS` and `OUTPUT_RESERVE_TOKENS`
+  in the production `.env`, to explain the 3-byte fidelity gap.
 - When to start #349 (no GPU needed for the classifier itself).
 - No production tuning has been proposed.
 

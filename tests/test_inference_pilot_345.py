@@ -102,6 +102,7 @@ def test_score_flags_unevidenced_names_and_admission():
 class _Stub(BaseHTTPRequestHandler):
     posts: list = []
     digest = DIGEST
+    is_loaded = True
 
     def _send(self, obj):
         data = json.dumps(obj).encode()
@@ -116,11 +117,16 @@ class _Stub(BaseHTTPRequestHandler):
             self._send({"models": [{"name": "Qwen3:4b", "digest": self.digest}]})
         else:
             model = {"name": "Qwen3:4b", "context_length": 8192, "size_vram": 1}
-            self._send({"models": [model]})
+            self._send({"models": [model] if type(self).is_loaded else []})
 
     def do_POST(self):
         body = self.rfile.read(int(self.headers["Content-Length"]))
-        if self.path == "/api/generate":
+        if self.path == "/api/generate" and "prompt" not in json.loads(body):
+            type(self).is_loaded = json.loads(body).get("keep_alive") != 0
+            type(self).posts.append({"unload": True, **json.loads(body)})
+            self._send({"done": True, "done_reason": "unload"})
+        elif self.path == "/api/generate":
+            type(self).is_loaded = True
             type(self).posts.append(json.loads(body))
             self._send(
                 {"done_reason": "stop", "response": "`f`",
@@ -144,6 +150,7 @@ class _Stub(BaseHTTPRequestHandler):
 def stub():
     _Stub.posts = []
     _Stub.digest = DIGEST
+    _Stub.is_loaded = True
     server = HTTPServer(("127.0.0.1", 0), _Stub)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -296,3 +303,36 @@ def test_mixed_and_factory_variant():
     names = [e[1] for e in pilot.excerpts_for("factory")]
     assert names.index("get_embedder") == names.index("embed_query") - 1
     assert len(names) == len(pilot.excerpts_for("v1")) + 1
+
+
+def test_unload_and_prime_steps(tmp_path, stub, capsys):
+    plan = [
+        {"op": "unload", "arm_id": "u1"},
+        {"arm_id": "a1", "evidence": "impl", "num_ctx": 16384, "seed": 11},
+        {"arm_id": "p1", "evidence": "captured", "num_ctx": 16384, "seed": 11,
+         "num_predict": 1},
+        {"arm_id": "a2", "evidence": "impl", "num_ctx": 16384, "seed": 11},
+    ]
+    assert pilot.main(_plan_argv(tmp_path, stub, plan, "--authorized")) == 0
+    assert _Stub.posts[0] == {"unload": True, "model": "Qwen3:4b", "keep_alive": 0}
+    assert _Stub.posts[2]["options"] == {"num_ctx": 16384, "seed": 11, "num_predict": 1}
+    out = tmp_path / "out"
+    u1 = json.loads((out / "u1.json").read_text("utf-8"))
+    assert u1["op"] == "unload" and u1["unloaded"] and u1["ps_before"]
+    a1 = json.loads((out / "a1.json").read_text("utf-8"))
+    assert a1["ps_before_call"] == [] and a1["previous_step"] == "u1"
+    a2 = json.loads((out / "a2.json").read_text("utf-8"))
+    assert a2["ps_before_call"] and a2["previous_step"] == "p1"
+    assert a1["request_body_text"] == a2["request_body_text"]
+    key = tmp_path / "key.json"
+    key.write_text(json.dumps({"required_identifiers": ["f"]}), encoding="utf-8")
+    capsys.readouterr()
+    assert pilot.main(["summarize", str(out), "--answer-key", str(key)]) == 0
+    assert {r["arm_id"] for r in json.loads(capsys.readouterr().out)} == {
+        "a1", "p1", "a2"
+    }
+
+
+def test_duplicate_arm_ids_rejected(tmp_path, stub):
+    plan = [{"arm_id": "x", "evidence": "impl", "num_ctx": 16384, "seed": 11}] * 2
+    assert pilot.main(_plan_argv(tmp_path, stub, plan, "--dry-run")) == 2

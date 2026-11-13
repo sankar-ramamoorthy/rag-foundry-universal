@@ -8,6 +8,11 @@ governed.
 
 ## 2026-11-12
 
+Added the [#345 round 3 results](/DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md): cache-controlled reproducibility, and
+the Step 0 retrieval candidates captured with stubbed generation
+(`scripts/retrieval_candidates_345.py`). The raw records are indexed in
+`raw-index.json`.
+
 Added the [#345 round 2 results](/DOCS/test_results/2026-11-12-345-round2.md)
 and round-2 evidence files and plan under `DOCS/evaluations/inference-pilot-345/`,
 whose `.gitattributes` pins LF so the hashes are stable. In `raw-index.json`,
