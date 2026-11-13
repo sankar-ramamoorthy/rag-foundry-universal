@@ -3,7 +3,7 @@ title: "Protocol: route-grounded evidence-selection diagnostic with overfitting 
 date: 2026-11-13
 type: evaluation-protocol
 status: draft
-summary: "Pre-registered protocol for testing whether route-grounded traversal plus source fetching can select sufficient evidence for the POST /v1/rag trace question at 4 KB and 16 KB. It separates discovery, selection and survival, and binds the work to overfitting controls under ADR-054, including explicit handling of ambiguous and unresolved calls. Owner decisions are recorded: Codex writes sealed C7 ground truth, and the held-out repository is mealie @ 1624c22. Freezes on merge."
+summary: "Pre-registered protocol for testing whether route-grounded traversal plus source fetching can select sufficient evidence for the POST /v1/rag trace question at 4 KB and 16 KB. It separates discovery, selection and survival, and binds the work to overfitting controls under ADR-054, including explicit handling of ambiguous and unresolved calls. Owner decisions are recorded: Codex writes sealed C7 ground truth, and the held-out repository is mealie @ 1624c22. Route identification and evidence selection are separate stages; an ORACLE-ENTRY condition never counts as end-to-end. Freezes on merge."
 tags: [evaluation, protocol, code-intelligence, evidence-selection, overfitting, issue-359, issue-342, issue-194]
 authority: "Draft protocol; no execution authorized until frozen"
 related:
@@ -190,9 +190,60 @@ These rules bind every arm, the scoring, and the C7 and C10 runs.
    anchoring failure. The protocol does not rewrite the question or add
    path-guessing (see section 9, held-out eligibility).
 
+### 5b. Two stages, and the oracle-assisted entry-point condition
+
+Route identification and evidence selection are **separate stages**, run and
+reported separately, so a failure in one cannot hide or inflate the other.
+
+**Stage RI: route identification.** This is the route anchor of section 5
+applied to the unchanged question. Its only output is the entry-point handler
+canonical ID, or exactly one failure code:
+
+| Code | Meaning |
+|---|---|
+| `resolved` | exactly one route node matched, and its handler is a real node |
+| `unresolved_route` | no route node matches the question's `METHOD path`, for example because the prefix is unresolved (5a.6) |
+| `ambiguous_route` | more than one route node matches |
+| `no_route_node` | the question names a route the extractor produced no node for (partial route extraction) |
+| `handler_missing` | the route node has no `HANDLED_BY` target in the graph |
+
+**Stage ES: evidence selection.** Arms G0–G3 with both passage units and both
+budgets, starting from **a given entry-point handler**. This stage runs under
+two conditions that are never pooled:
+
+| Condition | Entry point given to ES | Counts as end-to-end? |
+|---|---|---|
+| **E2E** (end-to-end) | the handler produced by Stage RI. If RI did not return `resolved`, ES does not run, and the case is an end-to-end failure at RI. | **Yes.** This is the only condition that can produce an end-to-end success. |
+| **ORACLE-ENTRY** (oracle-assisted) | the handler canonical ID supplied by the independent ground-truth author (9.1). Nothing else from the ground truth is supplied: no chain, functions or witnesses. | **No, never.** It measures evidence selection *given* a correct entry point. It is labelled `ORACLE-ENTRY` in every table, row and raw record. |
+
+**Reporting rules for the two conditions:**
+
+- **End-to-end success** requires Stage RI = `resolved` **and** a section 6
+  sufficiency PASS under E2E. Nothing else may be reported as end-to-end
+  success.
+- **ORACLE-ENTRY results** are reported in their own table or column. They
+  are excluded from every end-to-end count, rate or headline. They are not
+  averaged with E2E results.
+- **When RI resolves,** ORACLE-ENTRY still runs. If the RI handler equals the
+  oracle handler, the two ES results must be identical, which is a consistency
+  check. If they differ, RI picked the wrong handler; that is reported as an RI
+  error, even though RI reported `resolved`.
+- **The ORACLE-ENTRY handler comes from a separately sealed file** (9.1), which
+  is revealed to the selection run only **after** the RI and E2E outputs are
+  frozen. Seeing the oracle entry points therefore cannot influence RI or E2E.
+- **ORACLE-ENTRY is not a tuning signal.** Rules are not changed in response
+  to ORACLE-ENTRY results on C7 routes or on `mealie` (C9). Any idea it
+  suggests goes into a new protocol version.
+- **A0 (the current vector path) is not part of this split.** It takes the
+  question directly, with no entry-point input. It is reported only as an
+  end-to-end reference.
+
 ## 6. Measurements
 
-For every arm and budget:
+**Per question, Stage RI:** the result code (5b), the matched route node(s),
+and the handler produced.
+
+**For every arm, budget and ES condition (E2E, ORACLE-ENTRY):**
 
 - **Discovery:**
   - the ordered set of functions reached;
@@ -233,13 +284,23 @@ For every arm and budget:
    - confirm every witness in section 4 is present in the caller's stored
      text. A missing witness aborts the run; the protocol is never edited to
      fit.
-2. **Run selection for all arms.** Write the selection output (ordered
-   functions, passages, delivered context and manifest) to the raw record,
-   with its sha256, **before** loading the ground truth.
-3. **Score.** Scoring loads the ground truth and reads only the written
-   selection output.
-4. **Re-check and index.** Re-check that the generation is unchanged, then
+2. **Run Stage RI, then ES under E2E, for every question.** Write the RI codes
+   and the E2E selection output (ordered functions, passages, delivered
+   context and manifest) to the raw record, with its sha256. These are frozen
+   **before** the oracle entry points or the ground truth are loaded.
+3. **Load the sealed oracle entry points** (verifying their hash), then run ES
+   under ORACLE-ENTRY. Write that output, labelled `ORACLE-ENTRY`, to a
+   separate raw record, with its sha256.
+4. **Score.** Scoring loads the expected chains (verifying their hash) and
+   reads only the written outputs from steps 2–3.
+5. **Re-check and index.** Re-check that the generation is unchanged, then
    index the raw records in `raw-index.json`.
+
+For the primary `POST /v1/rag` case, the protocol author supplies the
+ORACLE-ENTRY handler (`rag_orchestrator/src/api/v1/routes.py#rag_endpoint`),
+since section 4 is already public. This is disclosed. For C7 routes and
+`mealie`, the oracle entry points come only from the independent author's
+sealed file.
 
 ## 8. Overfitting controls
 
@@ -256,6 +317,7 @@ For every arm and budget:
 | **C9** | No tuning between stages | Rules are not changed between the self-repo run, the C7 routes and the held-out run. Any change starts a new protocol version, and previously held-out data is reclassified as development data (ADR-054 §6). |
 | **C10** | Held-out gate | No `/v1/rag` change may be described as general, and no default may change, until the frozen rules pass on an **unseen repository** frozen per ADR-054 §5. That means freezing the commit, ready generation, questions, expected evidence, scoring, budgets and runtime. Its answers are never inspected during development. Chosen: `mealie-recipes/mealie` @ `1624c22` (section 9.2). The repository needs extractable routes (FastAPI-style decorators and a compose file). That requirement is itself a scope limit: route grounding only applies where routes are extracted. |
 | **C11** | Scope statement | A positive result supports route grounding **only for questions that name an identifiable entry point**. It is not a solution for all codebase questions. LightRAG's untyped-receiver failure is a different failure mode and is out of scope. |
+| **C12** | Oracle labelling | ORACLE-ENTRY results (5b) are labelled in every table, row and raw record. They are never counted, rated or averaged as end-to-end results, and never used to tune rules. End-to-end success requires Stage RI = `resolved` plus an E2E sufficiency PASS. |
 
 ## 9. Owner decisions (recorded 2026-11-13)
 
@@ -277,17 +339,26 @@ For every arm and budget:
 1. **Codex publishes the questions file:** routes and question text only. Its
    sha256 is recorded on #359. Claude may read this, because selection needs
    the questions.
-2. **Codex writes the expected-chains file,** never shown to Claude. Only its
-   sha256 is posted on #359 before any selection run. The file stays out of
-   the repository and out of Claude's reach until step 4.
-3. **Claude runs selection** for all arms on the C7 questions with the frozen
-   rules. The selection outputs, with their sha256, are posted on #359. These
-   are the frozen predictions.
-4. **Codex then adds the expected-chains file** to the repository. The
+2. **Codex writes two sealed files,** neither shown to Claude:
+   - the **oracle entry-points file**: one handler canonical ID per question,
+     and nothing else;
+   - the **expected-chains file**.
+
+   Only their two sha256 values are posted on #359 before any selection run.
+   Both files stay out of the repository and out of Claude's reach until
+   their reveal step.
+3. **Claude runs Stage RI and ES under E2E** for all arms on the C7 questions
+   with the frozen rules. The outputs, with their sha256, are posted on #359.
+   These are the frozen end-to-end predictions.
+4. **Codex reveals the oracle entry-points file.** Claude verifies its hash and
+   runs ES under ORACLE-ENTRY. Those outputs, with their sha256, are posted on
+   #359 as the frozen oracle-assisted predictions.
+5. **Codex then adds the expected-chains file** to the repository. The
    scoring step verifies its sha256 against step 2 and refuses to score on a
    mismatch.
-5. **Codex does not see the selection outputs before step 2.** Claude does not
-   see the expected chains before step 3.
+6. **Isolation.** Codex does not see any selection output before step 2.
+   Claude does not see the oracle entry points before step 4, or the expected
+   chains before step 5.
 
 The owner confirms each step on #359. Any break in this order is reported, and
 the affected route is reclassified as development data.
@@ -341,11 +412,17 @@ development corpus.
 actively maintained application (FastAPI backend with Compose), not a
 template, and its size is comparable to or larger than the development corpus.
 
+**Owner confirmation (2026-11-13).** Keep `mealie` @ `1624c22`. It is **not
+replaced** because its configuration-derived route prefixes expose a
+limitation. That exposure is part of what the held-out test is for. Stage RI
+measures it, and ORACLE-ENTRY (5b) measures evidence selection independently,
+without counting as end-to-end success.
+
 **Held-out still pending, with owner approval required.**
 - Ingesting `mealie` at the pinned commit on the Linux host.
-- Freezing the questions, expected evidence and scoring per ADR-054 §5. The
-  default is for Codex to author these under the same sealing procedure as
-  9.1, unless the owner decides otherwise.
+- Freezing the questions, oracle entry points, expected evidence and scoring
+  per ADR-054 §5. The default is for Codex to author these under the same
+  two-file sealing procedure as 9.1, unless the owner decides otherwise.
 
 **Eligibility finding (an overfitting signal, recorded before any run).** Not
 one of the analysable candidates has a route whose **full public path**
