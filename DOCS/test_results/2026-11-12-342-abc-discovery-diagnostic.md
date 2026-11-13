@@ -3,7 +3,7 @@ title: "#342 A/B/C discovery diagnostic: can existing mechanisms find the POST /
 date: 2026-11-12
 type: test-result
 status: complete
-summary: "Vector and identifier discovery find none of the chain; the route anchor works but graph traversal stops at hop 2 on an unresolved service-local import. One ingestion-side import-resolution rule would connect 8 of 13 chain nodes."
+summary: "Vector, identifier and source full-text discovery find at most 2 of 11 implementation functions in the top 20; the route anchor works but graph traversal stops at hop 2 on an unresolved service-local import (#354). One ingestion-side import-resolution rule would connect 8 of 13 chain nodes."
 tags: [code-intelligence, retrieval, diagnostics, graph-navigation, import-resolution]
 authority: "Observed read-only diagnostic on one known development question; no implementation authorization"
 related:
@@ -107,12 +107,8 @@ results are tests, documentation sections and import nodes. The embedding chain
 (`embed_query`, `get_embedder`, `OllamaEmbedder`) shares no token with the
 question at all. Answerable: no.
 
-**Not run: body-text full-text search with automatic terms.** It needs read-only
-SQL against the development host's Postgres, and the session's permission
-classifier refused it. The earlier
-[mechanism diagnostics](/DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md)
-ran FTS with hand-picked terms. Re-running it with terms taken automatically from
-the question is still open.
+**Source full-text search** is reported separately below. It ran later, once
+the owner authorized read-only SQL.
 
 ## C: graph-first from the route named in the question
 
@@ -132,6 +128,93 @@ supplied function name.**
 Graph traversal never reaches `embed_query`, `OllamaEmbedder.embed` or
 `PgVectorStore.similarity_search` (H7, H8, H15), even under the counterfactual
 rule.
+
+## B2: source full-text search (owner-authorized, read-only SQL)
+
+**Method.** `scripts/fulltext_diagnostic_342.py` ran against the Linux
+development database (port 5434) on a read-only connection, issuing only
+`SELECT` and `EXPLAIN` without `ANALYZE`. The raw record is
+`2026-11-12-342-fulltext-discovery.json`. The generation had 24,081 chunks
+before and after.
+
+- **Terms:** every lexeme of `to_tsvector('english', <question>)`, combined with
+  OR. That gives 29 lexemes, from `actual` through `vector`, including
+  `/v1/rag`, `orchestr`, `retriev` and `http`. None were chosen by hand.
+- **Ranking:** `ts_rank_cd` with the same weighting as the
+  [earlier study](/DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md),
+  where the canonical ID counts at weight A and the body at weight B.
+- **Vector channel:** exact cosine with the Step 0 query vector over the whole
+  generation. It reproduces #351's chunk rank of 1,777 for `rag_endpoint`.
+- **Fusion:** RRF with k = 60 over the first 100 chunks per channel, as in that
+  study.
+- **Ranks** are artifact ranks: each artifact's best chunk.
+
+**Selectivity.** The OR query matches 18,884 of 24,081 chunks (78%), because the
+question's vocabulary is generic. `EXPLAIN` shows a bitmap heap scan on the
+repository and generation indexes. `to_tsvector` is computed per row because no
+full-text index exists. The estimated cost is 1,875 to 14,551; no timing was
+measured.
+
+### Comparison across all arms (11 implementation functions; routes have no text)
+
+| Mechanism | Scope | Recall @20 / @50 / @100 | Best ranks |
+|---|---|---|---|
+| A: vector, current seed path | all | 0 / 0 / 0 | `hybrid_retrieve` 381, `run_rag` 448, `rag_endpoint` 834 |
+| Vector | source + path-role | 0 / 0.18 / 0.27 | `hybrid_retrieve` 33, `run_rag` 45, `rag_endpoint` 94 |
+| B: identifier tokens | source + path-role | 0 / 0 / 0 | `resolve_repo_id_http` 126, `similarity_search` 347 |
+| B2: full-text | all | 0 / 0 / 0 | `run_rag` 170, `hybrid_retrieve` 234 |
+| B2: full-text | source | 0 / 0 / 0.18 | `run_rag` 66, `hybrid_retrieve` 94 |
+| B2: full-text | source + path-role | 0 / 0.18 / 0.18 | `run_rag` 26, `hybrid_retrieve` 38, `PgVectorStore.similarity_search` 194 |
+| B2: RRF of vector and full-text | source + path-role | **0.18** / 0.18 / 0.18 | `run_rag` **10**, `hybrid_retrieve` **12** |
+| C: route → deployed `/trace` | graph | 1 of 11 (`rag_endpoint`) | stops at hop 2 |
+| C counterfactual: service-root rule | graph | 7 of 11; 8 with service edges | depth ≤ 4 (≤ 6 with service edges) |
+
+Across all text-based mechanisms, the best result is 2 of 11 implementation
+functions in the top 20 (`run_rag` and `hybrid_retrieve`). That needs both the
+path-role filter and fusion. In every text channel, the embedding chain
+(`embed_query`, `get_embedder`, `OllamaEmbedder*`) ranks 500 to 6,000, and the
+vector-store side ranks 194 to 2,250. The full-text top results are
+structured-answer and service-topology code, whose text is dense in the
+question's generic words ("service", "http", "call", "path").
+
+**Scope of this negative result.** It applies to the formulation tested: one
+broad OR over every lexeme of the question, ranked by `ts_rank_cd` with the
+identifier-A / body-B weighting. It does **not** show that lexical retrieval in
+general fails on this question. The following were not tested:
+
+- term selection or weighting (for example, dropping instruction words or
+  favouring code identifiers);
+- AND or phrase queries;
+- BM25;
+- identifier-aware tokenization of code bodies;
+- per-field or per-chunk-type indexes.
+
+Any of these could rank differently.
+
+### Do candidates carry the cross-service evidence?
+
+Each row below is the best rank of the specific caller **chunk** whose stored
+text contains the transition. This is the passage that would have to reach the
+context.
+
+| Hop | Transition | Full-text: all / path-role | Vector: all / path-role |
+|---|---|---|---|
+| H4 | `resolve_repo_id_http` → ingestion `/v1/repos` | 8,254 / 1,074 | 3,844 / 416 |
+| H7 + H10 | `run_rag` chunk calling `embed_query` and `hybrid_retrieve` | 592 / **82** | 8,447 / 1,173 |
+| H9 | `OllamaEmbedder.embed` → `/api/embed` | 15,491 / 2,267 | 14,090 / 2,210 |
+| H12 | `_query_generation` → ingestion `/generation` | 18,115 / 2,639 | 8,067 / 1,118 |
+| H13 | `hybrid_retrieve` → `/v1/vectors/search` | 847 / **113** | 1,368 / 129 |
+| H15 | `similarity_search` → `store.similarity_search` | 4,760 / 648 | 4,507 / 516 |
+| H16 | `PgVectorStore.similarity_search` → pgvector `<=>` | 6,347 / 859 | 11,446 / 1,713 |
+
+The source evidence for every cross-service transition exists in the index, but
+**no text channel brings any of it within the 20-chunk seed bound.** The nearest
+are the `run_rag` call chunk at 82 and the `/v1/vectors/search` chunk at 113,
+both requiring path-role filtering. Fusion ranks artifacts, not chunks: it
+places `run_rag` and `hybrid_retrieve` in the top 12. Whether their witness
+chunks would then be fetched depends on per-document chunk selection, which is
+not measured here. The `embed_query` chunk that calls `embedder.embed` (H8)
+matches none of the question's lexemes.
 
 ## Root cause of the hop-2 break
 
@@ -153,9 +236,11 @@ because `shared.*` is importable from the repository root.
 
 ## Conclusions
 
-1. **No arm, as it stands, makes this question answerable.** A and B do not
-   discover the implementation. C discovers the entry point but cannot connect
-   past it.
+1. **No arm, as it stands, makes this question answerable.** A and B, including
+   source full-text with question-derived terms, find at most 2 of 11 functions
+   in the top 20, and only with path-role filtering plus fusion. None of them
+   brings a cross-service witness chunk within the seed bound. C discovers the
+   entry point but cannot connect past it.
 2. **The graph holds the needed structure, cut by one resolution gap.** That gap
    is a graph-construction defect, not missing extraction. The chain's direct
    calls (H3, H5, H6, H10, H11) are already exact edges.
@@ -173,7 +258,7 @@ because `shared.*` is importable from the repository root.
 
 ## Smallest defensible next change
 
-1. **Ingestion: resolve service-root Python imports.** In the Python module
+1. **Ingestion: resolve service-root Python imports** (issue #354). In the Python module
    convention or `GraphAssembler`, mirror `service_topology`'s existing
    convention. This change must follow ADR-031 and ADR-032. It requires a
    re-ingestion, and the result should be judged by re-running this diagnostic:
@@ -202,3 +287,8 @@ was not assessed. The 88 to 155 reachable nodes would still need selection.
   record. The ingestion issue must re-derive them.
 - The raw record's `git_head` is the `main` commit the script ran from. The
   script was committed afterwards; only formatting changed.
+- The full-text arm tests one declared term policy: all question lexemes,
+  combined with OR, ranked by `ts_rank_cd`. It is not BM25, and no other term
+  policy or weighting was tried. The fusion uses the earlier study's settings
+  unchanged. The full-text raw record's `git_head` is the #353 merge commit; the
+  full-text script itself was committed afterwards, unchanged.
