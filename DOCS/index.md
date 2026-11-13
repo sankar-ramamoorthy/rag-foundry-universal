@@ -209,6 +209,12 @@ and self-repository failure corpora, verify structural navigation, and study
 external implementations. They supersede product positioning as the immediate
 investigation focus; no replacement architecture is selected.
 
+The [#359 route-grounded evidence-selection protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
+is a draft and not frozen. It pre-registers the next #342/#194 diagnostic and
+binds it to explicit overfitting controls under ADR-054: generic-rule
+enforcement, scoring separation, a declared primary arm, a within-repo route
+check by an independent author, and a held-out repository gate.
+
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.
 `rag_endpoint → run_rag` now resolves, and the trace reaches 7 of 13 chain nodes.
