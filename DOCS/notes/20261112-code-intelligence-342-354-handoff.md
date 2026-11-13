@@ -71,7 +71,15 @@ All of these are visible in the stored source text.
    merged and the owner has decided who writes the C7 route ground truth and
    which repository is held out. Use the existing graph, route mapping and indexed source.
    Do **not** introduce another retrieval framework.
-4. **Out of scope until separately approved:** retrieval ranking, query
+4. **Separate, diagnostic-first: #361** covers exact-file source retrieval
+   and completeness-aware summarization, for example "read
+   `ingestion_service/src/api/v1/repos.py` and summarize". By code reading,
+   `/v1/rag` never fetches a named file. `prioritize_exact_sources` only
+   reorders already-retrieved chunks, and only for repository-overview claims.
+   A 10.4 KB file cannot fit the 4 KB budget, and nothing signals partial
+   coverage. The issue keeps file discovery, document fetching and budget
+   limitations separate.
+5. **Out of scope until separately approved:** retrieval ranking, query
    planning, context budgets, generation settings and generation experiments.
 
 ## Environment and boundaries
