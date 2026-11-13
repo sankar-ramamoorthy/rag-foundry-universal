@@ -198,8 +198,10 @@ class RepoGraphBuilder:
         python_roots = self._discover_python_project_roots()
         if crate_roots or python_roots:
             conventions = dict(_STATIC_MODULE_CONVENTIONS)
-            if crate_roots:
-                conventions[".rs"] = RustModuleConvention(crate_roots)
+            # _STATIC_MODULE_CONVENTIONS has no ".rs" entry: always set it,
+            # with the crate-less default when no Cargo.toml exists, exactly
+            # as _MODULE_CONVENTIONS does.
+            conventions[".rs"] = RustModuleConvention(crate_roots or None)
             if python_roots:
                 conventions[".py"] = PythonModuleConvention(python_roots)
             module_convention = CompositeModuleConvention(conventions)

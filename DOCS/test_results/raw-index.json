@@ -311,7 +311,7 @@
     },
     "2026-11-12-354-import-resolution-validation.json": {
       "bytes": 26810,
-      "sha256": "de0f67755543933dc5fff6c7ba0ca9ceea23d232b2d367d86f3b25af8036b19f",
+      "sha256": "9c3080bdbd00c8315bd31ef1c47738da3a6fe3435bb7bf7b3fd3fcd1f8ef0e22",
       "produced_by": "scripts/validate_354_import_resolution.py on a git-archive corpus of 8e06335 (in-memory builds, roots disabled vs enabled; no database or service contacted)",
       "cited_by": "DOCS/test_results/2026-11-12-354-import-resolution-validation.md",
       "notes": "36-edge stratified sample with call, binding and definition lines. No private endpoints recorded."

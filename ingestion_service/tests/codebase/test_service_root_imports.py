@@ -216,6 +216,35 @@ def test_repository_root_interpretation_keeps_precedence(repo):
     )
 
 
+def test_rust_without_cargo_toml_keeps_its_convention(tmp_path, monkeypatch):
+    """Review fix: Python markers must not drop the default Rust convention
+    for a repository with `.rs` files but no Cargo.toml."""
+    _w(tmp_path, "svc/pytest.ini", "[pytest]\n")
+    _w(tmp_path, "util.rs", "pub fn helper() -> i32 { 1 }\n")
+    # A `use crate::` import cannot fall back to unique-global-name lookup,
+    # so it only resolves if the Rust convention is present.
+    _w(
+        tmp_path,
+        "main.rs",
+        "mod util;\nuse crate::util::helper;\nfn run() -> i32 { helper() }\n",
+    )
+    graph = _build(tmp_path)
+    with monkeypatch.context() as m:
+        before = _build(tmp_path, python_roots=False, monkeypatch=m)
+
+    def rust_edges(g):
+        return {
+            (r["from_canonical_id"], r["to_canonical_id"], r["relation_type"])
+            for r in g.relationships
+            if r["from_canonical_id"].endswith(".rs")
+            or ".rs#" in r["from_canonical_id"]
+        }
+
+    assert rust_edges(graph) == rust_edges(before)
+    assert ("main.rs#run", "util.rs#helper", "CALL") in rust_edges(graph)
+    assert ("main.rs", "util.rs", "IMPORTS") in rust_edges(graph)
+
+
 def test_ids_stable_and_no_existing_edge_lost_or_retargeted(repo, monkeypatch):
     graph = _build(repo)
     with monkeypatch.context() as m:

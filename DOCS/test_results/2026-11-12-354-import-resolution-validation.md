@@ -153,3 +153,17 @@ abstract dispatch, which is out of scope here.
 - The disposable corpus is a `git archive`, which contains exactly the tracked
   files an ingestion clone would see. Untracked or ignored local files were not
   part of it.
+
+## Review fix (re-validated)
+
+The #356 review found a regression in the first version. When a repository
+had Python project markers but no `Cargo.toml`, the per-build convention map
+lost its default Rust entry, so `use crate::…` imports fell to `EXTERNAL`. The
+fix always sets the Rust convention: crate-aware when crate roots exist, the
+default otherwise. A regression test now covers this case.
+
+The validation was re-run with the fixed code. Every figure above is
+unchanged, including the 36-edge sample. The raw record and its hash in the
+index are from the re-run. The corpus could not exercise the defect: its 5
+`.rs` files belong to a fixture with two `Cargo.toml` crates, so crate roots
+were always found and the Rust convention was always set.
