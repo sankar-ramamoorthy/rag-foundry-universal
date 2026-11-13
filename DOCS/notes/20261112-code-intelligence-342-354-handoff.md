@@ -36,7 +36,7 @@ It is asked against self-repo generation `e423d1bb` (commit `8e06335`).
 | #352 | Mechanism diagnostics, with hand-picked lexical terms, plus strategy notes | [diagnostics](/DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md) |
 | #353 | A/B/C discovery: vector and identifier search find 0 of 11 functions. The route anchor (`POST /v1/rag` → `HANDLED_BY` → `rag_endpoint`) works, but the trace stops at hop 2. | [A/B/C report](/DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md) |
 | #355 | Source full-text search with terms derived from the question: the best text result is 2 of 11 in the top 20 (path-role filter plus fusion). This applies only to the broad OR formulation tested. | same report, "B2" section |
-| #354 / #356 | Service-local `src.` imports are now resolved at ingestion (ADR-032 amendment). Validated in memory only; **no database re-ingested**. | [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md) |
+| #356 (part of #354) | **Merged 2026-11-12 (`c0feae2`).** Service-local `src.` imports are now resolved at ingestion (ADR-032 amendment). Validated in memory only; **no database re-ingested**. #354 stays open until its criterion 4 (re-ingestion plus trace) is verified. | [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md) |
 
 **Root cause fixed by #354.** Services import from their own root
 (`from src.core.service import run_rag`), but module names were dotted from the
@@ -56,9 +56,10 @@ All of these are visible in the stored source text.
 
 ## Agreed next steps (owner decisions, 2026-11-12)
 
-1. **Review and merge #356**, then the owner authorizes a **controlled
-   re-ingestion** of the self-repo on the Linux host. This is not authorized
-   yet.
+1. **#356 is merged** (the review fixed a Rust-convention regression before
+   merge). Next, the owner authorizes a **controlled re-ingestion** of the
+   self-repo on the Linux host. This is not authorized yet. The Linux services
+   must first run a release containing `c0feae2`; deployment is operator-owned.
 2. **Re-run the original graph trace.** Use `scripts/discovery_diagnostic_342.py`
    against the new generation. Expected result: H2 becomes `exact`, and the trace
    from the route reaches `run_rag`, `hybrid_retrieve`, `resolve_repo_id_http`,
@@ -105,6 +106,10 @@ All of these are visible in the stored source text.
   source** (it holds `query_vector`). The first run's file does not.
 - **`/v1/vectors/search-by-doc` caps `k` at 100.** A larger `k` returns 422;
   the scripts raise on that so it cannot read as "no evidence".
+- **CI note:** `vector_store_service`'s `test_ann_index_usage.py` (ANN
+  result counts) failed once on 2026-11-12 and passed on re-run, with no
+  related code change. Treat a single failure there as possibly intermittent;
+  re-run once before investigating.
 - **For a disposable corpus,** `git archive <sha> | tar -x -C <scratch dir>`
   gives exactly the tracked files an ingestion clone sees.
 

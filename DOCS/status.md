@@ -180,8 +180,10 @@ is not frozen. Resume from the
   - the route named in the question anchors correctly, but the graph trace
     stopped at hop 2.
 - **Cause.** Service-local `src.` imports were never resolved: 1,245 CALL edges
-  stayed placeholders. #354 fixes this at ingestion (ADR-032 amendment: nearest
-  project-root marker; the repository-root reading always wins).
+  stayed placeholders. #354 fixes this at ingestion (PR #356, merged
+  2026-11-12; ADR-032 amendment: nearest project-root marker; the
+  repository-root reading always wins). #354 stays open until the
+  re-ingestion check.
 - **Validation.** On a disposable `8e06335` corpus,
   [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md)
   shows 1,245 placeholders fall to 18, with no real node ID changed, no real
