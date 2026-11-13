@@ -132,6 +132,12 @@ def is_ignored_dir(parent: str | os.PathLike, name: str) -> bool:
     )
 
 
+# Issue #354: files that make a directory a Python project / test root, i.e.
+# a directory whose own path is the import root its code runs under.
+PYTHON_PROJECT_MARKERS = frozenset(
+    {"pyproject.toml", "setup.py", "setup.cfg", "pytest.ini", "tox.ini"}
+)
+
 _CARGO_NAME_RE = re.compile(r'^\s*name\s*=\s*"([^"]+)"', re.MULTILINE)
 
 
@@ -189,13 +195,41 @@ class RepoGraphBuilder:
         self.repo_root = repo_root
         self.ingestion_id = ingestion_id
         crate_roots = self._discover_crate_roots()
-        if crate_roots:
+        python_roots = self._discover_python_project_roots()
+        if crate_roots or python_roots:
             conventions = dict(_STATIC_MODULE_CONVENTIONS)
-            conventions[".rs"] = RustModuleConvention(crate_roots)
+            # _STATIC_MODULE_CONVENTIONS has no ".rs" entry: always set it,
+            # with the crate-less default when no Cargo.toml exists, exactly
+            # as _MODULE_CONVENTIONS does.
+            conventions[".rs"] = RustModuleConvention(crate_roots or None)
+            if python_roots:
+                conventions[".py"] = PythonModuleConvention(python_roots)
             module_convention = CompositeModuleConvention(conventions)
         else:
             module_convention = _MODULE_CONVENTIONS
         self.assembler = GraphAssembler(module_convention=module_convention)
+
+    def _discover_python_project_roots(self) -> tuple[str, ...]:
+        """Issue #354 (ADR-032 amendment 2026-11-12): repo-relative
+        directories, excluding the repository root itself, that contain a
+        Python project marker (PYTHON_PROJECT_MARKERS). Walked with the
+        same ignore rules as ingestion, so ignored trees contribute none.
+        The repository root is excluded because repo-root dotted names
+        are already the primary module identity."""
+        roots: list[str] = []
+        for dirpath, dirnames, filenames in os.walk(self.repo_root):
+            dirnames[:] = sorted(
+                d for d in dirnames if not is_ignored_dir(dirpath, d)
+            )
+            if not PYTHON_PROJECT_MARKERS.intersection(filenames):
+                continue
+            try:
+                rel_dir = Path(dirpath).relative_to(self.repo_root).as_posix()
+            except Exception:
+                continue
+            if rel_dir not in ("", "."):
+                roots.append(rel_dir)
+        return tuple(sorted(roots))
 
     def _discover_crate_roots(self) -> dict:
         """WP-L3: {crate_root_relative_dir: crate_name} for every

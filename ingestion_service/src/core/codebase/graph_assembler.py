@@ -332,11 +332,21 @@ class GraphAssembler:
         name = imp.get("name", "")
         rel = imp.get("relative_path", "")
 
+        # Issue #354 (ADR-032 amendment 2026-11-12): the repository-root
+        # interpretation is always tried first and wins whenever it
+        # resolves, so no previously resolved import can change. Only on a
+        # miss is an absolute import re-anchored at the importing file's
+        # own Python project root (never a sibling project's).
+        local = self._local_import_prefix(rel)
+
         if "module" not in meta:  # `import X[.Y]`
             if name in module_map:
                 return module_map[name], {
                     "kind": "module", "module_cid": module_map[name],
                 }
+            if local and f"{local}.{name}" in module_map:
+                cid = module_map[f"{local}.{name}"]
+                return cid, {"kind": "module", "module_cid": cid}
             root = name.split(".")[0]
             return self._external_module_node(graph, root), {
                 "kind": "external_module", "dotted": name,
@@ -359,10 +369,30 @@ class GraphAssembler:
                 "module_cid": module_map[dotted_base],
                 "symbol": name,
             }
+        # Relative imports (level > 0) are already anchored at the file's
+        # own package by absolute_import_base; only absolute ones re-anchor.
+        if local and dotted_base and not (meta.get("level", 0) or 0):
+            local_module = f"{local}.{as_module}"
+            local_base = f"{local}.{dotted_base}"
+            if local_module in module_map:
+                cid = module_map[local_module]
+                return cid, {"kind": "module", "module_cid": cid}
+            if local_base in module_map:
+                return module_map[local_base], {
+                    "kind": "symbol",
+                    "module_cid": module_map[local_base],
+                    "symbol": name,
+                }
         root = (dotted_base or name).split(".")[0]
         return self._external_module_node(graph, root), {
             "kind": "external_symbol", "dotted": as_module,
         }
+
+    def _local_import_prefix(self, relative_path: str) -> Optional[str]:
+        """Issue #354: optional on the convention (duck-typed, like
+        implicit_bindings); None for every non-Python convention."""
+        fn = getattr(self.module_convention, "local_import_prefix", None)
+        return fn(relative_path) if fn else None
 
     def _external_module_node(self, graph: RepoGraph, root: str) -> str:
         """Get or create the single EXTERNAL_MODULE node for an external

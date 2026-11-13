@@ -45,6 +45,30 @@ class ModulePathConvention(Protocol):
 
 
 class PythonModuleConvention:
+    """Issue #354 (ADR-032 amendment 2026-11-12): `project_roots` are the
+    repo-relative directories, other than the repository root, that hold a
+    Python project marker (see repo_graph_builder.PYTHON_PROJECT_MARKERS).
+    A file's nearest such ancestor is the root its absolute imports are
+    written against at run time (`from src.core.x import y` inside
+    `svc/src/...`). Module identity is unchanged: `dotted_path` stays
+    repo-root based, so canonical ids and the module map are identical;
+    the project root only supplies a fallback lookup prefix."""
+
+    def __init__(self, project_roots: Tuple[str, ...] | List[str] = ()):
+        self._project_roots = frozenset(r for r in project_roots if r)
+
+    def local_import_prefix(self, relative_path: str) -> Optional[str]:
+        """Dotted prefix of the nearest project root strictly containing
+        `relative_path`, or None. Never a sibling root, so an import can
+        only ever be re-anchored inside its own project."""
+        parts = relative_path.split("/")[:-1]
+        while parts:
+            candidate = "/".join(parts)
+            if candidate in self._project_roots:
+                return ".".join(parts)
+            parts.pop()
+        return None
+
     def dotted_path(self, relative_path: str) -> Optional[str]:
         if not relative_path.endswith(".py"):
             return None
@@ -300,3 +324,10 @@ class CompositeModuleConvention:
             return {}
         fn = getattr(convention, "implicit_bindings", None)
         return fn(relative_path, module_map) if fn else {}
+
+    def local_import_prefix(self, relative_path: str) -> Optional[str]:
+        """Issue #354: optional, duck-typed like implicit_bindings; only
+        PythonModuleConvention implements it today."""
+        convention = self._convention_for(relative_path)
+        fn = getattr(convention, "local_import_prefix", None)
+        return fn(relative_path) if fn else None

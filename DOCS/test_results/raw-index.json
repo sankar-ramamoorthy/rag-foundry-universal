@@ -309,6 +309,13 @@
       "cited_by": "DOCS/test_results/2026-11-12-345-inference-pilot.md; DOCS/test_results/2026-11-12-345-round2.md; DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md",
       "notes": ""
     },
+    "2026-11-12-354-import-resolution-validation.json": {
+      "bytes": 26810,
+      "sha256": "9c3080bdbd00c8315bd31ef1c47738da3a6fe3435bb7bf7b3fd3fcd1f8ef0e22",
+      "produced_by": "scripts/validate_354_import_resolution.py on a git-archive corpus of 8e06335 (in-memory builds, roots disabled vs enabled; no database or service contacted)",
+      "cited_by": "DOCS/test_results/2026-11-12-354-import-resolution-validation.md",
+      "notes": "36-edge stratified sample with call, binding and definition lines. No private endpoints recorded."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
