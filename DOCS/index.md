@@ -307,6 +307,11 @@ this-repo decision records):
 
 `DOCS/notes/` — ad hoc working notes.
 
+The [retrieval-side handoff](/DOCS/notes/20261112-code-intelligence-342-354-handoff.md)
+lets a person, Claude Code or Codex resume #342/#354. It covers current state,
+agreed next steps, Linux-host access boundaries (a development machine despite
+"production" naming) and script gotchas.
+
 The [November 12 strategy discussion index](/DOCS/notes/2026-11-12-strategy-notes/00-Strategy-Discussion-Index.md)
 routes to retrieval and investigation strategy notes, including the SCIP semantic
 enrichment and graph evidence addendum. These are discussion notes, not accepted
