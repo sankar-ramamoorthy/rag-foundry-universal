@@ -188,10 +188,17 @@ is not frozen. Resume from the
   [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md)
   shows 1,245 placeholders fall to 18, with no real node ID changed, no real
   edge lost, and 36 of 36 sampled edges verified against source.
-- **Not done yet.** No database has been re-ingested. A controlled Linux
-  re-ingestion and a rerun of the graph trace need owner approval. After that,
-  #342 continues with route-grounded graph discovery plus source-evidence
-  fetching; ranking, budget and generation changes are not authorized.
+- **Re-ingested and re-measured (2026-11-13).** The owner deployed #354 and
+  incrementally re-ingested the self-repo (generation `8cbedbb9`, commit
+  `9f039c4`). The [trace rerun](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
+  shows `rag_endpoint → run_rag` is now an exact edge, and the trace from
+  `POST /v1/rag` reaches 7 of 13 chain nodes (1 before). The live graph matches
+  an in-memory fix-on build at the same commit exactly.
+- **Remaining gaps, outside #354:** functions passed to `asyncio.to_thread`,
+  abstract dispatch, route-level HTTP, and the 300-node trace cap.
+- **Next:** #342 continues with route-grounded graph discovery plus
+  source-evidence fetching. Ranking, budget and generation changes are not
+  authorized.
 - Resume from the
   [retrieval-side handoff](/DOCS/notes/20261112-code-intelligence-342-354-handoff.md).
 

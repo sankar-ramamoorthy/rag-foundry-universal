@@ -36,7 +36,8 @@ It is asked against self-repo generation `e423d1bb` (commit `8e06335`).
 | #352 | Mechanism diagnostics, with hand-picked lexical terms, plus strategy notes | [diagnostics](/DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md) |
 | #353 | A/B/C discovery: vector and identifier search find 0 of 11 functions. The route anchor (`POST /v1/rag` → `HANDLED_BY` → `rag_endpoint`) works, but the trace stops at hop 2. | [A/B/C report](/DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md) |
 | #355 | Source full-text search with terms derived from the question: the best text result is 2 of 11 in the top 20 (path-role filter plus fusion). This applies only to the broad OR formulation tested. | same report, "B2" section |
-| #356 (part of #354) | **Merged 2026-11-12 (`c0feae2`).** Service-local `src.` imports are now resolved at ingestion (ADR-032 amendment). Validated in memory only; **no database re-ingested**. #354 stays open until its criterion 4 (re-ingestion plus trace) is verified. | [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md) |
+| #356 (part of #354) | **Merged 2026-11-12 (`c0feae2`).** Service-local `src.` imports are now resolved at ingestion (ADR-032 amendment). Validated in memory only; **no database re-ingested**. Criterion 4 was verified on 2026-11-13 after the owner's re-ingestion. | [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md) |
+| Rerun (2026-11-13) | Generation `8cbedbb9` (commit `9f039c4`): H2 is exact, and the trace reaches 7 of 13 chain nodes (1 before). The live graph matches the in-memory fix-on build exactly. | [trace rerun](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md) |
 
 **Root cause fixed by #354.** Services import from their own root
 (`from src.core.service import run_rag`), but module names were dotted from the
@@ -56,14 +57,13 @@ All of these are visible in the stored source text.
 
 ## Agreed next steps (owner decisions, 2026-11-12)
 
-1. **#356 is merged** (the review fixed a Rust-convention regression before
-   merge). Next, the owner authorizes a **controlled re-ingestion** of the
-   self-repo on the Linux host. This is not authorized yet. The Linux services
-   must first run a release containing `c0feae2`; deployment is operator-owned.
-2. **Re-run the original graph trace.** Use `scripts/discovery_diagnostic_342.py`
-   against the new generation. Expected result: H2 becomes `exact`, and the trace
-   from the route reaches `run_rag`, `hybrid_retrieve`, `resolve_repo_id_http`,
-   `get_embedder` and `_query_generation`.
+1. **Done.** #356 was merged, deployed, and the self-repo re-ingested by the
+   owner (generation `8cbedbb9`).
+2. **Done (2026-11-13).** The graph-trace rerun met the expected result. Pass
+   `--expected-generation` to target any generation other than Step 0's.
+   Remaining graph gaps: `to_thread` arguments, abstract dispatch, route-level
+   HTTP, and the 300-node `/trace` cap. The `/api/embed` request now lives in
+   `OllamaEmbedder._post`; the script's H9 ground truth still names `embed`.
 3. **Then return to #342** with *route-grounded graph discovery plus source
    evidence fetching*. Use the existing graph, route mapping and indexed source.
    Do **not** introduce another retrieval framework.

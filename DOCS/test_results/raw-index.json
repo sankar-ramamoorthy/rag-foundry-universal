@@ -316,6 +316,20 @@
       "cited_by": "DOCS/test_results/2026-11-12-354-import-resolution-validation.md",
       "notes": "36-edge stratified sample with call, binding and definition lines. No private endpoints recorded."
     },
+    "2026-11-13-342-post-354-discovery.json": {
+      "bytes": 40240,
+      "sha256": "f35fcdab669fa461f47c01a884471c9557cf208da4d16b836c3e063bd7c683f4",
+      "produced_by": "scripts/discovery_diagnostic_342.py --expected-generation 8cbedbb9-9ad6-4c63-83f7-2b7d7659f7e5 (read-only HTTP: graph export, /trace, search-by-doc)",
+      "cited_by": "DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md",
+      "notes": "Generation 8cbedbb9 (commit 9f039c4) unchanged before/after; services 9f039c4. Arm A reused from the #351 capture of e423d1bb. No private endpoints recorded."
+    },
+    "2026-11-13-354-validation-at-9f039c4.json": {
+      "bytes": 29562,
+      "sha256": "439a4b3380355360d25cd85df75caca1f3d21b598ca45b45a374bd92287f4934",
+      "produced_by": "scripts/validate_354_import_resolution.py on a git-archive corpus of 9f039c4 (in-memory builds, fix off vs on; no database or service contacted)",
+      "cited_by": "DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md",
+      "notes": "Same-revision control for the live 8cbedbb9 generation. No private endpoints recorded."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",

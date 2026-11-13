@@ -209,6 +209,12 @@ and self-repository failure corpora, verify structural navigation, and study
 external implementations. They supersede product positioning as the immediate
 investigation focus; no replacement architecture is selected.
 
+The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
+re-measures the graph trace on the re-ingested generation `8cbedbb9`.
+`rag_endpoint → run_rag` now resolves, and the trace reaches 7 of 13 chain nodes.
+The live graph matches the in-memory fix-on build, and the remaining gaps are
+listed.
+
 The [#354 import-resolution validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md)
 rebuilds the pinned self-repo revision with and without service-root import
 resolution (ADR-032 amendment). `src.` placeholders fall from 1,245 to 18. No

@@ -477,7 +477,10 @@ def run(args) -> dict:
     cand = json.loads(args.candidates.read_text(encoding="utf-8"))
     content = step0["application_input"]["messages"][1]["content"]
     query = content.rsplit("Question:\n", 1)[1].strip()
-    repo_id, generation = step0["repo_id"], step0["generation_id"]
+    repo_id = step0["repo_id"]
+    # Default: the Step 0 generation. A later generation of the same repo
+    # (e.g. after the #354 re-ingestion) must be named explicitly.
+    generation = args.expected_generation or step0["generation_id"]
     host = args.host or host_from_env()
     cq, esp, nsf, ti, ts = import_orchestrator()
 
@@ -570,7 +573,13 @@ def run(args) -> dict:
         },
         "query": query,
         "targets": TARGETS,
-        "A_vector": arm_a(cand),
+        "A_vector": {
+            **arm_a(cand),
+            "generation_note": (
+                "reused from the #351 capture of generation "
+                f"{step0['generation_id']}; not recomputed for {generation}"
+            ),
+        },
         "B_lexical_symbol": arm_b(query, data, graph, esp, nsf, ts),
         "C_graph": {
             "route_anchors": anchors,
@@ -597,6 +606,10 @@ def main(argv: list[str] | None = None) -> int:
         "--host", help="scheme://host; default from REMOTE_OLLAMA_BASE_URL in .env"
     )
     p.add_argument("--max-expanded-docs", type=int, default=20)
+    p.add_argument(
+        "--expected-generation",
+        help="generation to require (default: the Step 0 capture's generation)",
+    )
     p.add_argument("--out", type=Path, required=True)
     args = p.parse_args(argv)
     data = run(args)
