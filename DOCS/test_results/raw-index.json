@@ -29,6 +29,13 @@
       "cited_by": "DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md",
       "notes": "Generation e423d1bb (commit 8e06335) unchanged before/after; deployed services 82b70cd. No generation, SQL or writes. No private endpoints recorded."
     },
+    "2026-11-12-342-fulltext-discovery.json": {
+      "bytes": 28127,
+      "sha256": "931f4cd62b134aebca24999a64bfbc1113478876cd9cc02d9a82b670dc2f1bc3",
+      "produced_by": "scripts/fulltext_diagnostic_342.py (read-only connection; SELECT and EXPLAIN without ANALYZE only; owner-authorized 2026-11-12; inputs: Step 0 capture and 2026-11-12-345-retrieval-candidates-run3.json query vector)",
+      "cited_by": "DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md",
+      "notes": "Generation e423d1bb chunk count 24,081 before and after. Terms derived automatically from the question. No private endpoints recorded."
+    },
     "2026-11-12-345-pilot-summary.json": {
       "bytes": 6386,
       "sha256": "89b66815dfd0027d3506937effd38b88f3f588fad2b3d14c7742608050a0aef3",
