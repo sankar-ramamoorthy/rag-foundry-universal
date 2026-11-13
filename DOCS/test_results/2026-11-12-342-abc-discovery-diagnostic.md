@@ -177,6 +177,20 @@ vector-store side ranks 194 to 2,250. The full-text top results are
 structured-answer and service-topology code, whose text is dense in the
 question's generic words ("service", "http", "call", "path").
 
+**Scope of this negative result.** It applies to the formulation tested: one
+broad OR over every lexeme of the question, ranked by `ts_rank_cd` with the
+identifier-A / body-B weighting. It does **not** show that lexical retrieval in
+general fails on this question. The following were not tested:
+
+- term selection or weighting (for example, dropping instruction words or
+  favouring code identifiers);
+- AND or phrase queries;
+- BM25;
+- identifier-aware tokenization of code bodies;
+- per-field or per-chunk-type indexes.
+
+Any of these could rank differently.
+
 ### Do candidates carry the cross-service evidence?
 
 Each row below is the best rank of the specific caller **chunk** whose stored
