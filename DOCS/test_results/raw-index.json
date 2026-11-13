@@ -246,6 +246,13 @@
       "cited_by": "DOCS/notes/20261111-code-intelligence-retrieval-failure-evidence.md",
       "notes": "Read-only connection; host from git-ignored .env; credentials are docker-compose defaults"
     },
+    "20261112-retrieval-mechanisms/rank-comparison.json": {
+      "bytes": 841504,
+      "sha256": "d6d3bbcb9ae946c09982bc5d1f044dd94c09de4adaf1a22d7dcb8e1e4c56787b",
+      "produced_by": "2026-11-12 ad hoc read-only generation-scoped exact cosine / PostgreSQL FTS queries, local artifact RRF, and graph lookups; model and method parameters in capture and report",
+      "cited_by": "DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md",
+      "notes": "Known development queries; no answer-generation test. No private endpoints recorded. Corpus source commit and original ingest-time embedding digest unverified."
+    },
     "ci06/coverage-foundry.json": {
       "bytes": 4724,
       "sha256": "dade63221429f7e41a410a5a1317b1b62439707d2c2cb2eca8718b622da006e6",

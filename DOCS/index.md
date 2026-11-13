@@ -203,6 +203,12 @@ binding: [[proposals/sdd-spec-kit-adoption]],
 
 ## Evidence / Test Results
 
+The [November 12 retrieval-mechanism diagnostics](/DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md)
+compare vector, lexical, filtered and fused discovery on the existing LightRAG
+and self-repository failure corpora, verify structural navigation, and study
+external implementations. They supersede product positioning as the immediate
+investigation focus; no replacement architecture is selected.
+
 The [graph export benchmark](/DOCS/test_results/2026-10-28-graph-export-benchmark.md) (issue #273) records how `GET /v1/graph/repos/{repo_id}` behaves under 1/2/4 simultaneous exports before and after PR #272 (latency, `/version` responsiveness, memory, response equivalence). Local and synthetic; it does not explain the E1 control-replay timeout (#270).
 
 [WP-R4 evidence delivery](/DOCS/test_results/2026-09-17-wp-r4-evidence-delivery.md)
@@ -288,6 +294,17 @@ this-repo decision records):
 ## Notes
 
 `DOCS/notes/` — ad hoc working notes.
+
+The [November 12 strategy discussion index](/DOCS/notes/2026-11-12-strategy-notes/00-Strategy-Discussion-Index.md)
+routes to retrieval and investigation strategy notes, including the SCIP semantic
+enrichment and graph evidence addendum. These are discussion notes, not accepted
+architecture decisions or implementation authorization.
+
+The [repository intelligence architectural challenge](/DOCS/notes/2026-11-12-strategy-notes/2026-11-12-repository-intelligence-architecture-challenge.md)
+compares fixed retrieval, adaptive investigation and agent-oriented tools against
+the owner's priority of coding-agent task completion. Its
+[proposed experiment protocol](/DOCS/evaluations/2026-11-12-repository-intelligence-strategy-experiments.md)
+defines falsification tests; no architecture choice or experiment execution is approved.
 
 ## Historical (non-authoritative)
 
