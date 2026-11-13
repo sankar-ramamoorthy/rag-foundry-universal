@@ -162,6 +162,58 @@ This phased approach balances correctness, simplicity, and incremental growth.
 
 ---
 
+## Amendment 2026-11-12: Python project-root import resolution (#354)
+
+**Problem.** Layer 3's "resolve through file imports" matched an import only
+against module names dotted from the **repository root**
+(`rag_orchestrator/src/core/service.py` → `rag_orchestrator.src.core.service`).
+Services in a monorepo run with their **own directory** as the import root, so
+`from src.core.service import run_rag` never matched. Every call through such an
+import fell through to `EXTERNAL`. At commit `8e06335` this left 1,245 CALL edges
+as `EXTERNAL_SYMBOL:src.…` placeholders. Evidence:
+[#342 A/B/C diagnostic](/DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md).
+
+**Decision 1: how project roots are identified.** A *Python project root* is any
+directory, other than the repository root, that contains one of
+`pyproject.toml`, `setup.py`, `setup.cfg`, `pytest.ini` or `tox.ini`. These are
+the standard files that make a directory the root its code and tests run from.
+
+- Roots are discovered once per build by walking the snapshot with ingestion's
+  own ignore rules (`RepoGraphBuilder._discover_python_project_roots`), the same
+  way Rust crate roots are discovered from `Cargo.toml`.
+- A file's project root is its **nearest** ancestor root. A sibling root is never
+  consulted, so no import can resolve across services. A file with no ancestor
+  root is unaffected.
+- No directory or service name is hard-coded.
+
+**Decision 2: precedence when both interpretations could resolve.**
+
+- The repository-root interpretation is tried first, exactly as before, and
+  **always wins when it resolves**.
+- Only when every repository-root lookup misses is an absolute (`level == 0`)
+  import re-anchored at the file's project root, by prefixing the root's dotted
+  path.
+- Consequently, no previously resolved import, edge or identity can change. A
+  project-root module shadowed by a different repository-root module stays
+  shadowed, and this is reported by the validation harness: 0 cases at
+  `8e06335`.
+- Relative imports are already anchored at the file's package, so they are not
+  re-anchored.
+- Non-Python conventions do not implement the hook and are unaffected.
+
+**What does not change.** Module identity (`dotted_path`) and every canonical ID
+(ADR-031) stay as they are. The project root is only a fallback lookup prefix
+into the existing module map. Imports that resolve to a module without the
+called member still produce `EXTERNAL_SYMBOL` placeholders. Those placeholders
+are then spelled with the module's repository-root dotted path, consistent with
+imports that already resolved.
+
+**Not addressed.** Functions passed as values (`asyncio.to_thread(fn, …)`),
+calls through abstract-typed parameters, and HTTP or route resolution all remain
+open, separate questions.
+
+Validation: [#354 import-resolution validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md).
+
 ## References
 
 * [ADR-030 — Unified Artifact Graph](https://github.com/sankar-ramamoorthy/rag-foundry-coderag/blob/main/DOCS/adr/ADR-030-unified-artifact-graph.md)

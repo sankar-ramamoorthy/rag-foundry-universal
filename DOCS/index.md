@@ -209,6 +209,12 @@ and self-repository failure corpora, verify structural navigation, and study
 external implementations. They supersede product positioning as the immediate
 investigation focus; no replacement architecture is selected.
 
+The [#354 import-resolution validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md)
+rebuilds the pinned self-repo revision with and without service-root import
+resolution (ADR-032 amendment). `src.` placeholders fall from 1,245 to 18. No
+real node ID changes and no real edge is lost; 36 of 36 sampled edges were
+verified against source.
+
 The [#342 A/B/C discovery diagnostic](/DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md)
 tests vector, question-derived lexical/symbol and route-anchored graph discovery
 on the unchanged POST /v1/rag trace question. Only the route anchor finds the
