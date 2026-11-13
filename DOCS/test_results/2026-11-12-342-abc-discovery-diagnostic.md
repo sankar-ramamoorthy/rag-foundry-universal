@@ -194,5 +194,11 @@ was not assessed. The 88 to 155 reachable nodes would still need selection.
 - The counterfactual rule was applied at query time over the exported graph. It
   estimates, and does not demonstrate, what re-ingestion with the fix would
   produce.
+- The repo-wide counts in "Root cause" (1,245 `src.`-prefixed placeholders, 1,205
+  resolvable) came from a separate ad hoc pass over the same graph export, not
+  from the script. That pass used a broader rule than the script's
+  counterfactual: the caller's first path component is taken as the service
+  root, and tests are included. Neither the counts nor that rule are in the raw
+  record. The ingestion issue must re-derive them.
 - The raw record's `git_head` is the `main` commit the script ran from. The
   script was committed afterwards; only formatting changed.
