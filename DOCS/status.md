@@ -168,6 +168,31 @@ authorization, and the
 is not frozen. Resume from the
 [inference-side handoff](/DOCS/notes/20261112-inference-baseline-and-provider-capture-handoff.md).
 
+**Retrieval side (2026-11-12, #342/#354):**
+
+- **Discovery.** The read-only
+  [A/B/C discovery diagnostic](/DOCS/test_results/2026-11-12-342-abc-discovery-diagnostic.md)
+  (#353, #355) found the following on the Step 0 question:
+  - vector and identifier search find 0 of 11 implementation functions in the
+    top 20;
+  - source full-text, with a broad OR over the question's terms, finds at best
+    2 of 11, and only with a path-role filter plus fusion;
+  - the route named in the question anchors correctly, but the graph trace
+    stopped at hop 2.
+- **Cause.** Service-local `src.` imports were never resolved: 1,245 CALL edges
+  stayed placeholders. #354 fixes this at ingestion (ADR-032 amendment: nearest
+  project-root marker; the repository-root reading always wins).
+- **Validation.** On a disposable `8e06335` corpus,
+  [validation](/DOCS/test_results/2026-11-12-354-import-resolution-validation.md)
+  shows 1,245 placeholders fall to 18, with no real node ID changed, no real
+  edge lost, and 36 of 36 sampled edges verified against source.
+- **Not done yet.** No database has been re-ingested. A controlled Linux
+  re-ingestion and a rerun of the graph trace need owner approval. After that,
+  #342 continues with route-grounded graph discovery plus source-evidence
+  fetching; ranking, budget and generation changes are not authorized.
+- Resume from the
+  [retrieval-side handoff](/DOCS/notes/20261112-code-intelligence-342-354-handoff.md).
+
 **Decision, 2026-10-14:** the
 [code-evidence experiment protocol](/DOCS/evaluations/2026-10-14-code-evidence-experiment-decisions.md)
 is agreed for experiment design, baseline capture and local prototypes only.
