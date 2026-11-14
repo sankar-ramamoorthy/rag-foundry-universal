@@ -1,0 +1,8 @@
+{
+  "set": "C7",
+  "entry_points": {
+    "C7-1": "rag_orchestrator/src/api/v1/routes.py#simple_rag_endpoint",
+    "C7-2": "llm_service/src/api/v1/main.py#list_models",
+    "C7-3": "llm_service/src/api/v1/summarize.py#generate_summary"
+  }
+}

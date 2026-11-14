@@ -330,6 +330,34 @@
       "cited_by": "DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md",
       "notes": "Same-revision control for the live 8cbedbb9 generation. No private endpoints recorded."
     },
+    "2026-11-14-359-C7-e2e.json": {
+      "bytes": 347203,
+      "sha256": "e925ad171e914e1711747c971a0682722717401d7ce6ccbf7ae2c3c391a9bfb7",
+      "produced_by": "python scripts/evidence_selection_359.py run-e2e (harness main @ c6dd8a0)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md",
+      "notes": "#359 C7 frozen Stage RI + ES under E2E (sealing step 3), harness c6dd8a0. Hash posted on #359 before the oracle reveal. No private endpoints recorded."
+    },
+    "2026-11-14-359-C7-oracle-entry.json": {
+      "bytes": 402697,
+      "sha256": "90b390dc5f2852d753bdc945dfaad770ba81325431d59baff752bfa4d9c348fc",
+      "produced_by": "python scripts/evidence_selection_359.py run-oracle (harness main @ c6dd8a0)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md",
+      "notes": "#359 C7 ORACLE-ENTRY (sealing step 4); never an end-to-end result. Hash posted on #359 before the chains reveal."
+    },
+    "2026-11-14-359-C7-preflight.json": {
+      "bytes": 4869,
+      "sha256": "da9e3d41bba3528130f55b091822cbc7eb01eaa21bd17240d922c0ea53b37d8e",
+      "produced_by": "python scripts/evidence_selection_359.py preflight (harness main @ c6dd8a0)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md",
+      "notes": "#359 C7 preflight (step 3): generation 8cbedbb9 ready, service SHAs 9f039c4, protocol/rules hashes, C3 scan clean. Hash posted on #359."
+    },
+    "2026-11-14-359-C7-score.json": {
+      "bytes": 345416,
+      "sha256": "6ee9ce4c35ec20fafc0d3559b60d7320c55dfd1df78c6554bf9a02f13922a9b1",
+      "produced_by": "python scripts/evidence_selection_359.py score (harness main @ c6dd8a0)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md",
+      "notes": "#359 C7 scoring (sealing step 5) against the revealed expected chains 0e8b22ec...; C3 rescan flagged 4 generic terms (see report)."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",

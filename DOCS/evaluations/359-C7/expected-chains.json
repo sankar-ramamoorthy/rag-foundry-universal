@@ -1,0 +1,589 @@
+{
+  "set": "C7",
+  "source_commit": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+  "protocol": {
+    "commit": "45f34e1",
+    "sha256": "ca1d1ed5f192910c78ad7a179fb75f3131a6f796f2b3d27244698212c5049535"
+  },
+  "counts": {
+    "C7-1": {"core": 17, "supporting": 1},
+    "C7-2": {"core": 13, "supporting": 1},
+    "C7-3": {"core": 19, "supporting": 0}
+  },
+  "verification": {
+    "source": {
+      "status": "all_51_verified",
+      "method": "Python re.search against AST-bounded caller source, including decorators, read directly from the pinned Git commit. Lines are one-based source-file lines."
+    },
+    "stored_corpus": {
+      "repo_id": "f7641840-ba13-5f9d-9ae6-87e1f924709d",
+      "ingestion_id": "8cbedbb9-9ad6-4c63-83f7-2b7d7659f7e5",
+      "generation_status_before": "ready",
+      "generation_status_after": "ready",
+      "generation_unchanged": true,
+      "source_commit": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+      "ingestion_service_git_sha_before_and_after": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+      "vector_store_service_git_sha_before_and_after": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+      "runtime_provenance_limit": "Service SHAs are HTTP self-reports, not independent image attestations.",
+      "method": "Source-defined caller canonical IDs were resolved through the canonical-ID lookup endpoint. Stored passages were fetched with search-by-doc, fenced by repository and ingestion IDs, k=100, using only the frozen Step 0 query_vector field from the prescribed capture. No graph traversal, selection output, generation, embedding call, or SQL was used.",
+      "witness_test": "Python re.search must match an individual stored passage belonging to the expected caller.",
+      "present_relationships": {
+        "C7-1": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R16", "R17", "R18"],
+        "C7-2": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14"],
+        "C7-3": ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19"]
+      },
+      "present_count": 49,
+      "missing_count": 2,
+      "maximum_returned_passages_per_caller": 14,
+      "callers_reaching_100_passage_limit": [],
+      "preflight": {
+        "C7-1": "failed_missing_caller_scoped_evidence",
+        "C7-2": "passed_witness_availability",
+        "C7-3": "passed_witness_availability"
+      }
+    }
+  },
+  "missing_indexed_evidence": [
+    {
+      "qid": "C7-1",
+      "relationship_ids": ["R14", "R15"],
+      "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag._list_outgoing",
+      "reason": "Canonical-ID lookup returned no node for this source-defined nested function. No caller-scoped stored passages could be fetched.",
+      "disposition": "Retain the source-grounded relationships unchanged. C7-1 fails witness preflight; do not count it as an eligible sufficiency run or silently substitute enclosing-function passages."
+    }
+  ],
+  "scope_notes": [
+    "Relationship IDs are scoped to each question.",
+    "Core relationships cover the named execution path. Supporting relationships provide setup context.",
+    "Conditional branches describe source behavior, not an assertion that every branch executes in one request.",
+    "The catalog question covers each supported provider-fetch branch. It does not assume a particular runtime provider.",
+    "HTTP URL-construction witnesses and request-invocation witnesses may be separate rows so the destination and operation can be independently checked.",
+    "External provider execution ends at the repository's client or SDK boundary.",
+    "No missing witness was removed or weakened after corpus inspection."
+  ],
+  "chains": {
+    "C7-1": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/api/v1/routes.py#simple_rag_endpoint",
+        "relationship": "Handles the public route; /v1 is supplied by app.include_router.",
+        "callee": "POST /v1/rag/simple",
+        "witness_regex": "@router\\.post\\(\"/rag/simple\"",
+        "lines": [242],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R2",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/api/v1/routes.py#simple_rag_endpoint",
+        "relationship": "Calls the document RAG pipeline.",
+        "callee": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "witness_regex": "await run_simple_rag\\(",
+        "lines": [248],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R3",
+        "tier": "supporting",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Constructs the configured query embedder.",
+        "callee": "shared/embedders/factory.py#get_embedder",
+        "witness_regex": "get_embedder\\(",
+        "lines": [76],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R4",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Runs query embedding in a worker thread.",
+        "callee": "shared/embedders/query.py#embed_query",
+        "witness_regex": "to_thread\\(embed_query,",
+        "lines": [84],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R5",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Builds the vector-search URL; subsequent client.post sends the query vector and excludes code chunks.",
+        "callee": "POST /v1/vectors/search",
+        "witness_regex": "search_url = .*?/v1/vectors/search",
+        "lines": [89],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R6",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Sends the document vector search request.",
+        "callee": "POST /v1/vectors/search",
+        "witness_regex": "resp = await client.post\\(search_url,",
+        "lines": [98],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Passes the expansion function to asyncio.to_thread.",
+        "callee": "rag_orchestrator/src/retrieval/traversal_planner.py#expand_retrieval_plan",
+        "witness_regex": "expand_retrieval_plan,",
+        "lines": [168],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Supplies the outgoing-relationships callback for DEFINES expansion.",
+        "callee": "rag_orchestrator/src/core/simple_service.py#run_simple_rag._list_outgoing",
+        "witness_regex": "list_outgoing_relationships=_list_outgoing,",
+        "lines": [170],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R9",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Fetches passages for seed and capped expanded documents.",
+        "callee": "rag_orchestrator/src/core/service.py#_fetch_expanded_doc_chunks",
+        "witness_regex": "await _fetch_expanded_doc_chunks\\(",
+        "lines": [190],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Executes the retrieval plan.",
+        "callee": "rag_orchestrator/src/retrieval/execute_plan.py#execute_retrieval_plan",
+        "witness_regex": "execute_retrieval_plan\\(",
+        "lines": [203],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Prepares passages under document and total chunk limits.",
+        "callee": "rag_orchestrator/src/retrieval/agent_adapter.py#prepare_chunks_for_agent",
+        "witness_regex": "prepare_chunks_for_agent\\(",
+        "lines": [213],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R12",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Assembles the budgeted context.",
+        "callee": "rag_orchestrator/src/retrieval/agent_adapter.py#assemble_context",
+        "witness_regex": "assemble_context\\(",
+        "lines": [248],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R13",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag",
+        "relationship": "Sends assembled context and query to the LLM service.",
+        "callee": "POST /generate",
+        "witness_regex": "f\"\\{settings.LLM_SERVICE_URL\\}/generate\"",
+        "lines": [265],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R14",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag._list_outgoing",
+        "relationship": "Builds the ingestion HTTP URL for outgoing document relationships.",
+        "callee": "GET /v1/graph/docs/{document_id}/relationships",
+        "witness_regex": "f\"/v1/graph/docs/\\{document_id\\}/relationships\"",
+        "lines": [154],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R15",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/simple_service.py#run_simple_rag._list_outgoing",
+        "relationship": "Calls ingestion synchronously inside the threaded expansion callback.",
+        "callee": "GET /v1/graph/docs/{document_id}/relationships",
+        "witness_regex": "r = req_lib.get\\(url,",
+        "lines": [156],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R16",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/service.py#_fetch_expanded_doc_chunks",
+        "relationship": "Builds the passage-fetch HTTP URL used by its nested fetch coroutine.",
+        "callee": "POST /v1/vectors/search-by-doc",
+        "witness_regex": "doc_url = .*?/v1/vectors/search-by-doc",
+        "lines": [350],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R17",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#generate",
+        "relationship": "Handles answer-generation HTTP requests.",
+        "callee": "POST /generate",
+        "witness_regex": "@app\\.post\\(\"/generate\"",
+        "lines": [31],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R18",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#generate",
+        "relationship": "Delegates answer generation to the shared completion pipeline.",
+        "callee": "llm_service/src/core/llm_client.py#generate_completion",
+        "witness_regex": "return await generate_completion\\(",
+        "lines": [46],
+        "resolution_class": "static_direct"
+      }
+    ],
+    "C7-2": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Handles the public model-inventory route.",
+        "callee": "GET /v1/models",
+        "witness_regex": "@app\\.get\\(\"/v1/models\"",
+        "lines": [107],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R2",
+        "tier": "supporting",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Obtains the model registry.",
+        "callee": "llm_service/src/core/model_registry.py#get_registry",
+        "witness_regex": "registry = get_registry\\(",
+        "lines": [115],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R3",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Reads registry describe_endpoints inventory.",
+        "callee": "llm_service/src/core/model_registry.py#ModelRegistry.describe_endpoints",
+        "witness_regex": "registry\\.describe_endpoints\\(",
+        "lines": [118],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R4",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Reads registry describe_providers inventory.",
+        "callee": "llm_service/src/core/model_registry.py#ModelRegistry.describe_providers",
+        "witness_regex": "registry\\.describe_providers\\(",
+        "lines": [123],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R5",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Reads registry describe inventory.",
+        "callee": "llm_service/src/core/model_registry.py#ModelRegistry.describe",
+        "witness_regex": "registry\\.describe\\(",
+        "lines": [128],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R6",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Builds inventory coroutines executed by asyncio.gather.",
+        "callee": "llm_service/src/api/v1/main.py#_endpoint_inventory",
+        "witness_regex": "_endpoint_inventory\\(",
+        "lines": [118],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#list_models",
+        "relationship": "Builds inventory coroutines executed by asyncio.gather.",
+        "callee": "llm_service/src/api/v1/main.py#_provider_inventory",
+        "witness_regex": "_provider_inventory\\(",
+        "lines": [122],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#_endpoint_inventory",
+        "relationship": "Requests the cached or live provider catalog.",
+        "callee": "llm_service/src/core/model_catalog.py#get_catalog",
+        "witness_regex": "await model_catalog.get_catalog\\(",
+        "lines": [81],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R9",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/main.py#_provider_inventory",
+        "relationship": "Requests the cached or live provider catalog.",
+        "callee": "llm_service/src/core/model_catalog.py#get_catalog",
+        "witness_regex": "await model_catalog.get_catalog\\(",
+        "lines": [94],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "llm_service/src/core/model_catalog.py#get_catalog",
+        "relationship": "Looks up the provider-specific callback; an unknown provider does not fetch.",
+        "callee": "_FETCHERS[provider]",
+        "witness_regex": "fetcher = _FETCHERS.get\\(provider\\)",
+        "lines": [84],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "llm_service/src/core/model_catalog.py#get_catalog",
+        "relationship": "Invokes the selected fetch callback only after credential and cache checks.",
+        "callee": "provider-selected callback",
+        "witness_regex": "models = await fetcher\\(entry\\)",
+        "lines": [89],
+        "resolution_class": "dynamic_dispatch",
+        "dispatch_candidates": [
+          "llm_service/src/core/model_catalog.py#_fetch_openrouter",
+          "llm_service/src/core/model_catalog.py#_fetch_openai_compatible",
+          "llm_service/src/core/model_catalog.py#_fetch_ollama"
+        ],
+        "configured_by": "R10",
+        "note": "The module-level _FETCHERS mapping selects _fetch_openrouter for openrouter, _fetch_openai_compatible for groq/nvidia_nim, and _fetch_ollama for ollama. R10 selects by runtime provider; no concrete provider is fixed by the question. All candidate branches require evidence."
+      },
+      {
+        "id": "R12",
+        "tier": "core",
+        "caller": "llm_service/src/core/model_catalog.py#_fetch_openrouter",
+        "relationship": "Fetches the provider catalog when this callback is selected.",
+        "callee": "GET configured catalog_url",
+        "witness_regex": "resp = await client.get\\(entry\\[\"catalog_url\"\\]",
+        "lines": [110],
+        "resolution_class": "external_http"
+      },
+      {
+        "id": "R13",
+        "tier": "core",
+        "caller": "llm_service/src/core/model_catalog.py#_fetch_openai_compatible",
+        "relationship": "Fetches the provider catalog when this callback is selected.",
+        "callee": "GET configured catalog_url",
+        "witness_regex": "resp = await client.get\\(entry\\[\"catalog_url\"\\]",
+        "lines": [130],
+        "resolution_class": "external_http"
+      },
+      {
+        "id": "R14",
+        "tier": "core",
+        "caller": "llm_service/src/core/model_catalog.py#_fetch_ollama",
+        "relationship": "Fetches the Ollama model catalog when this callback is selected.",
+        "callee": "GET configured api_base/api/tags",
+        "witness_regex": "resp = await client.get\\(",
+        "lines": [141],
+        "resolution_class": "external_http"
+      }
+    ],
+    "C7-3": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#generate_summary",
+        "relationship": "Handles the public summary route; router prefix is /v1/summarize.",
+        "callee": "POST /v1/summarize/{ingestion_id}",
+        "witness_regex": "@router\\.post\\(\"/\\{ingestion_id\\}\"",
+        "lines": [60],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R2",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#generate_summary",
+        "relationship": "Fetches document chunks.",
+        "callee": "llm_service/src/api/v1/summarize.py#fetch_chunks",
+        "witness_regex": "await fetch_chunks\\(",
+        "lines": [81],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R3",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#generate_summary",
+        "relationship": "Persists the generated summary through ingestion service.",
+        "callee": "llm_service/src/api/v1/summarize.py#update_document_summary",
+        "witness_regex": "await update_document_summary\\(",
+        "lines": [113],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R4",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#generate_summary",
+        "relationship": "Calls summary generation with the constructed context and query.",
+        "callee": "llm_service/src/core/llm_client.py#generate_completion",
+        "witness_regex": "result = await generate_completion\\(",
+        "lines": [102],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R5",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#fetch_chunks",
+        "relationship": "Builds the ingestion-service chunk URL.",
+        "callee": "GET /v1/chunks/{ingestion_id}",
+        "witness_regex": "url = .*?/v1/chunks/",
+        "lines": [26],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R6",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#fetch_chunks",
+        "relationship": "Retrieves chunks over HTTP.",
+        "callee": "GET /v1/chunks/{ingestion_id}",
+        "witness_regex": "resp = await client.get\\(url\\)",
+        "lines": [29],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "llm_service/src/api/v1/summarize.py#update_document_summary",
+        "relationship": "Posts ingestion_id and summary to ingestion service.",
+        "callee": "POST /v1/summary",
+        "witness_regex": "ingestion_service_url = .*?/v1/summary",
+        "lines": [42],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "llm_service/src/core/llm_client.py#generate_completion",
+        "relationship": "Attempts each resolved fallback candidate until success.",
+        "callee": "llm_service/src/core/llm_client.py#_complete",
+        "witness_regex": "result = await _complete\\(",
+        "lines": [73],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R9",
+        "tier": "core",
+        "caller": "llm_service/src/core/llm_client.py#_complete",
+        "relationship": "Calls the retry wrapper when request capture is disabled.",
+        "callee": "llm_service/src/core/llm_client.py#_acompletion_with_backoff",
+        "witness_regex": "response = await _acompletion_with_backoff\\(",
+        "lines": [189],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "llm_service/src/core/llm_client.py#_complete",
+        "relationship": "Uses the capture wrapper when enabled.",
+        "callee": "llm_service/src/core/llm_client.py#_complete_captured",
+        "witness_regex": "response = await _complete_captured\\(",
+        "lines": [187],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "llm_service/src/core/llm_client.py#_complete_captured",
+        "relationship": "Calls the same retry wrapper in capture and capture-setup-failure paths.",
+        "callee": "llm_service/src/core/llm_client.py#_acompletion_with_backoff",
+        "witness_regex": "await _acompletion_with_backoff\\(",
+        "lines": [151, 158],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R12",
+        "tier": "core",
+        "caller": "llm_service/src/core/llm_client.py#_acompletion_with_backoff",
+        "relationship": "Delegates generation to LiteLLM, retrying transient provider errors.",
+        "callee": "LiteLLM configured model provider",
+        "witness_regex": "return await litellm.acompletion\\(",
+        "lines": [106],
+        "resolution_class": "external_http"
+      },
+      {
+        "id": "R13",
+        "tier": "core",
+        "caller": "ingestion_service/src/api/v1/chunks.py#get_chunks_by_ingestion",
+        "relationship": "Handles the chunk lookup HTTP request.",
+        "callee": "GET /v1/chunks/{ingestion_id}",
+        "witness_regex": "@router\\.get\\(\"/chunks/",
+        "lines": [26],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R14",
+        "tier": "core",
+        "caller": "ingestion_service/src/api/v1/chunks.py#get_chunks_by_ingestion",
+        "relationship": "Looks up stored document chunks.",
+        "callee": "ingestion_service/src/core/db_utils.py#get_chunk_texts_by_ingestion_id",
+        "witness_regex": "chunks = db_utils.get_chunk_texts_by_ingestion_id\\(",
+        "lines": [38],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R15",
+        "tier": "core",
+        "caller": "ingestion_service/src/core/db_utils.py#get_chunk_texts_by_ingestion_id",
+        "relationship": "Queries stored chunk text through SQLAlchemy.",
+        "callee": "VectorChunk rows filtered by ingestion_id",
+        "witness_regex": "session.query\\(VectorChunk.chunk_text\\)",
+        "lines": [93],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R16",
+        "tier": "core",
+        "caller": "ingestion_service/src/api/v1/summary.py#save_summary",
+        "relationship": "Handles the summary persistence request.",
+        "callee": "POST /v1/summary",
+        "witness_regex": "@router\\.post\\(\"/summary\"",
+        "lines": [22],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R17",
+        "tier": "core",
+        "caller": "ingestion_service/src/api/v1/summary.py#save_summary",
+        "relationship": "Looks up the target document through SQLAlchemy.",
+        "callee": "DocumentNode identified by source=file_document_{ingestion_id}",
+        "witness_regex": "doc = session.query\\(DocumentNode\\).filter_by\\(",
+        "lines": [30],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R18",
+        "tier": "core",
+        "caller": "ingestion_service/src/api/v1/summary.py#save_summary",
+        "relationship": "Updates the document summary.",
+        "callee": "DocumentNode.summary",
+        "witness_regex": "doc.summary = payload.summary",
+        "lines": [37],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R19",
+        "tier": "core",
+        "caller": "ingestion_service/src/api/v1/summary.py#save_summary",
+        "relationship": "Commits the stored summary.",
+        "callee": "database transaction commit",
+        "witness_regex": "session.commit\\(",
+        "lines": [38],
+        "resolution_class": "sql"
+      }
+    ]
+  }
+}
