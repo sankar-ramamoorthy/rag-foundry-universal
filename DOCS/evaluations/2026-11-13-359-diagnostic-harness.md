@@ -76,7 +76,8 @@ record. Changing one creates a new protocol version (C2).
 8. **P3 (owner decision, 2026-11-13).** A witness missing from the caller's
    stored text is scored `source_valid_index_missing`. That category is not
    support and not a selector miss. Sufficiency stays strict: every core
-   relationship must be supported.
+   relationship must be supported. See also the question-level preflight
+   failure below.
 9. **C3 scan.** Paths, IDs and other terms containing punctuation are searched
    anywhere in the module. Plain words are searched in string literals,
    comments and whole identifiers, but not in standard-type method names
@@ -85,6 +86,56 @@ record. Changing one creates a new protocol version (C2).
 10. **Passage text** is fetched with `search-by-doc` (k = 100) using the
     stored Step 0 vector (§3). Any node that returns 100 chunks is listed in
     `search_by_doc_full_pages` (P5).
+
+## Question-level preflight failure (owner decision, 2026-11-14)
+
+This lives entirely in scoring and reporting. The rules, traversal order,
+budgets, ground truth and protocol are unchanged.
+
+- **When.** At scoring, after the reveal, every expected witness is rechecked
+  against the caller's stored text and at its recorded lines in the pinned
+  source. `--source-repo` is mandatory, so "source-verified" always means it
+  was checked. If any witness is missing from the index, the question is
+  `preflight_failure`:
+  - reason `source_valid_index_missing` when the pinned source confirms that
+    witness;
+  - reason `witness_not_source_valid` when it does not. That is a
+    ground-truth problem, reported and never edited.
+- **What is kept.** The question stays in the set. It is run under E2E and
+  ORACLE-ENTRY like every other question, and its raw records are unchanged.
+  Every per-relationship finding is kept, including the
+  `source_valid_index_missing` category of the affected relationship.
+- **What changes in the report.**
+  - Official `sufficiency` in every arm, unit and budget becomes
+    `NOT_EVALUABLE`. The computed value is kept as `sufficiency_diagnostic`.
+  - `end_to_end_success` cells become `not_evaluable`.
+  - `official_summary` counts only evaluable questions, and lists
+    not-evaluable questions with their reasons beside the counts. Such a
+    question counts neither as a failure nor as a success.
+  - An evaluable question whose Stage RI did not resolve stays in the
+    denominator as a non-pass.
+- **Valid questions** are scored exactly as before. A test checks this
+  alongside a not-evaluable question in the same set.
+- **C7-1** stays in the evaluation set. Codex's sealing check found two
+  nested-callback witnesses that have no canonical ID, so scoring is expected
+  to classify C7-1 as `preflight_failure` /
+  `source_valid_index_missing`. The harness derives this mechanically from
+  the recheck; nothing about C7-1 is hard-coded.
+
+**Relation to the frozen protocol.** §7.1's abort rule is written for the §4
+witnesses, that is, the primary set. The harness still applies it there: a
+missing §4 witness fails `preflight`, and no run starts. The protocol has no
+stored-text rule for sealed sets; P3 and this decision supply one. Two
+points are flagged on #359 for the owner rather than settled here:
+
+1. Read by analogy, §7.1 would abort the **whole** C7 run. The owner's
+   per-question classification is narrower: the other questions stay
+   evaluable.
+2. C7 requires the frozen rules to run on **at least 3** additional routes.
+   They still run on all three, but with C7-1 not evaluable only two C7 routes
+   can be scored. If three scored routes are required, a further route must
+   be sealed before Step 3, because adding one after the E2E freeze would
+   break the sealing order.
 
 ## Observations, no change made
 

@@ -640,6 +640,15 @@ def _score_es(rels, es, chunks, extra_edges, index_has) -> dict:
     return out
 
 
+def _mark_es(scores: dict | None) -> None:
+    """Not-evaluable question: official sufficiency in every arm, unit and
+    budget becomes NOT_EVALUABLE; the computed value and all findings stay."""
+    for arm in (scores or {}).values():
+        for unit in arm["units"].values():
+            for b in BUDGETS:
+                unit[str(b)] = scoring.mark_not_evaluable(unit[str(b)])
+
+
 def cmd_score(args) -> int:  # noqa: C901 - one linear scoring pass
     set_dir = Path(args.set)
     set_name, questions, qsha = load_set(set_dir, args.questions_sha256)
@@ -677,7 +686,7 @@ def cmd_score(args) -> int:  # noqa: C901 - one linear scoring pass
             for r in rels
         }
         source_check = {}
-        if args.source_repo:
+        if args.source_repo:  # required by the parser; checked again here
             for r in rels:
                 path = r["caller"].split("#", 1)[0]
                 text = subprocess.run(
@@ -693,6 +702,7 @@ def cmd_score(args) -> int:  # noqa: C901 - one linear scoring pass
                     encoding="utf-8",
                 ).stdout
                 source_check[r["id"]] = scoring.source_has_witness(r, text)
+        status = scoring.question_status(rels, index_has, source_check)
         e_q, o_q = e2e["results"][qid], orc["results"][qid]
         oracle_entry = o_q["entry"]
         ri = e_q["ri"]
@@ -740,7 +750,16 @@ def cmd_score(args) -> int:  # noqa: C901 - one linear scoring pass
                         rels, delivered, pool, a0["functions"], [], index_has
                     ),
                 }
+        if status["status"] == scoring.PREFLIGHT_FAILURE:
+            _mark_es(e2e_scores)
+            _mark_es(orc_scores)
+            if a0_scores:
+                a0_scores = {
+                    b: scoring.mark_not_evaluable(v) for b, v in a0_scores.items()
+                }
+            end_to_end = dict.fromkeys(end_to_end, "not_evaluable")
         per_q[qid] = {
+            "status": status,
             "ri": ri_eval,
             "witness_recheck": {
                 "stored_text": index_has,
@@ -760,6 +779,7 @@ def cmd_score(args) -> int:  # noqa: C901 - one linear scoring pass
             ],
         }
     record["results"] = per_q
+    record["official_summary"] = scoring.official_summary(per_q)
     write_record(Path(args.out), record)
     return 0 if record["c3_rescan_with_revealed_terms"]["clean"] else 4
 
@@ -802,7 +822,9 @@ def main(argv: list[str] | None = None) -> int:
     sp.add_argument("--oracle-record", required=True)
     sp.add_argument("--oracle-record-sha256", required=True)
     sp.add_argument(
-        "--source-repo", help="git checkout holding the pinned source commit"
+        "--source-repo",
+        required=True,
+        help="git checkout holding the pinned source commit (P3 source check)",
     )
     sp.set_defaults(fn=cmd_score)
     args = p.parse_args(argv)

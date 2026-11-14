@@ -517,14 +517,14 @@ def _write(path, obj):
 
 
 def _rels():
-    def rel(rid, caller, callee, rx, cls, **kw):
+    def rel(rid, caller, callee, rx, cls, lines, **kw):
         return {
             "id": rid,
             "tier": "core",
             "caller": caller,
             "callee": callee,
             "witness_regex": rx,
-            "lines": [1],
+            "lines": lines,
             "resolution_class": cls,
             **kw,
         }
@@ -536,12 +536,47 @@ def _rels():
             None,
             r'@router\.get\("/v1/items"\)',
             "route",
+            [1],
             route_node=SVC_ROUTE,
         ),
-        rel("R2", ENTRY, WORK, r"\bwork\(", "static_direct"),
-        rel("R3", WORK, STORE, r"\bstore\(", "static_direct"),
-        rel("R4", WORK, OTHER_ROUTE, "/v1/other", "cross_service_http"),
+        rel("R2", ENTRY, WORK, r"\bwork\(", "static_direct", [3]),
+        rel("R3", WORK, STORE, r"\bstore\(", "static_direct", [3]),
+        rel("R4", WORK, OTHER_ROUTE, "/v1/other", "cross_service_http", [2]),
     ]
+
+
+# A nested callback: valid in the pinned source, but the extractor gives it
+# no canonical ID, so its witness is not in the indexed corpus.
+NESTED = {
+    "id": "R5",
+    "tier": "core",
+    "caller": "a.py#work.<locals>.cb",
+    "callee": None,
+    "witness_regex": r"\bcb_target\(",
+    "lines": [5],
+    "resolution_class": "indirect_reference",
+}
+
+SOURCE = {
+    "h.py": '@router.get("/v1/items")\ndef entry():\n    return work()\n',
+    "a.py": (
+        'def work():\n    url = f"{base}/v1/other"\n    store()\n'
+        "    def cb():\n        cb_target()\n"
+    ),
+}
+
+
+def _source_repo(path):
+    path.mkdir()
+    for name, text in SOURCE.items():
+        (path / name).write_text(text, encoding="utf-8", newline="\n")
+    git = ["git", "-C", str(path), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run([*git, "init", "-q"], check=True)
+    subprocess.run([*git, "add", "."], check=True)
+    subprocess.run([*git, "commit", "-q", "-m", "pinned"], check=True)
+    return subprocess.run(
+        [*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+    ).stdout.strip()
 
 
 @pytest.mark.skipif(
@@ -552,20 +587,29 @@ def test_sealed_pipeline_end_to_end_on_a_fake_stack(tmp_path, monkeypatch):
     set_dir, sealed, raw = tmp_path / "set", tmp_path / "sealed", tmp_path / "raw"
     for d in (set_dir, sealed, raw):
         d.mkdir()
-    question = {
-        "qid": "C7-1",
-        "route": "GET /v1/items",
-        "question": "Trace the execution path from GET /v1/items.",
-    }
+    src = tmp_path / "src"
+    commit = _source_repo(src)
+    text = "Trace the execution path from GET /v1/items."
+    questions = [
+        {"qid": q, "route": "GET /v1/items", "question": text} for q in ("C7-1", "C7-2")
+    ]
     proto = {"commit": runner.PROTOCOL_COMMIT, "sha256": runner.PROTOCOL_SHA256}
     qsha = _write(
         set_dir / "questions.json",
-        {"set": "C7", "protocol": proto, "source_commit": "x", "questions": [question]},
+        {
+            "set": "C7",
+            "protocol": proto,
+            "source_commit": commit,
+            "questions": questions,
+        },
     )
     oracle = sealed / "oracle.json"
-    osha = _write(oracle, {"set": "C7", "entry_points": {"C7-1": ENTRY}})
+    osha = _write(oracle, {"set": "C7", "entry_points": {"C7-1": ENTRY, "C7-2": ENTRY}})
     chains = sealed / "chains.json"
-    csha = _write(chains, {"set": "C7", "chains": {"C7-1": _rels()}})
+    csha = _write(
+        chains,
+        {"set": "C7", "chains": {"C7-1": [*_rels(), NESTED], "C7-2": _rels()}},
+    )
     qv = tmp_path / "qv.json"
     qv.write_text('{"query_vector": [0.0]}', encoding="utf-8")
     base = [
@@ -594,23 +638,31 @@ def test_sealed_pipeline_end_to_end_on_a_fake_stack(tmp_path, monkeypatch):
         "--oracle-record-sha256", scoring.sha256_file(orc),
         "--out", str(raw / "score.json"),
     ]  # fmt: skip
-    assert runner.main(score) == 0
+    with pytest.raises(SystemExit):  # the pinned-source check is mandatory
+        runner.main(score)
+    assert runner.main([*score, "--source-repo", str(src)]) == 0
 
-    q = json.loads(e2e.read_text(encoding="utf-8"))["results"]["C7-1"]
+    rec = json.loads(e2e.read_text(encoding="utf-8"))["results"]
+    q = rec["C7-2"]
     assert q["ri"]["code"] == "resolved" and q["a0"]["status"].startswith("not run")
     assert q["es"]["G3"]["discovery"]["functions"] == [ENTRY, WORK, STORE, SERVE]
     assert q["es"]["G2"]["discovery"]["functions"] == [ENTRY, WORK, STORE]
+    # The not-evaluable question is still run and its raw output kept.
+    assert rec["C7-1"]["es"] == q["es"]
     o = json.loads(orc.read_text(encoding="utf-8"))
     assert o["label"].startswith("ORACLE-ENTRY")
-    assert o["results"]["C7-1"]["consistency"] == {
+    assert o["results"]["C7-2"]["consistency"] == {
         "ri_handler_equals_oracle": True,
         "es_identical": True,
     }
-    s = json.loads((raw / "score.json").read_text(encoding="utf-8"))["results"]
-    s = s["C7-1"]
+    record = json.loads((raw / "score.json").read_text(encoding="utf-8"))
+
+    # Valid question: the existing scoring behaviour, unchanged.
+    s = record["results"]["C7-2"]
+    assert s["status"] == {"status": "evaluable"}
     g3 = s["E2E"]["G3"]["units"]["P-whole"]["4096"]
     g2 = s["E2E"]["G2"]["units"]["P-whole"]["4096"]
-    assert g3["sufficiency"] == "PASS"
+    assert g3["sufficiency"] == "PASS" and "sufficiency_diagnostic" not in g3
     assert g3["relationships"]["R4"]["category"] == "graph_and_source"
     assert g2["relationships"]["R4"]["category"] == "source_only"
     assert g3["relationships"]["R1"]["basis"] == "structural_handled_by"
@@ -618,3 +670,74 @@ def test_sealed_pipeline_end_to_end_on_a_fake_stack(tmp_path, monkeypatch):
     assert s["ORACLE-ENTRY"]["label"].startswith("ORACLE-ENTRY")
     assert s["ri"]["ri_error_wrong_handler"] is False
     assert s["minimum_evidence_bound"][0]["label"].startswith("ORACLE BOUND")
+
+    # Preflight failure: visible, findings preserved, not evaluable.
+    f = record["results"]["C7-1"]
+    assert f["status"]["status"] == "preflight_failure"
+    assert f["status"]["reasons"] == ["source_valid_index_missing"]
+    assert f["status"]["index_missing_relationships"] == ["R5"]
+    assert f["witness_recheck"]["pinned_source"]["R5"]["valid"] is True
+    for cond in (f["E2E"], f["ORACLE-ENTRY"]["scores"]):
+        for arm in cond.values():
+            for unit in arm["units"].values():
+                for b in ("4096", "16384"):
+                    assert unit[b]["sufficiency"] == "NOT_EVALUABLE"
+                    assert unit[b]["sufficiency_diagnostic"] in ("PASS", "FAIL")
+    fg3 = f["E2E"]["G3"]["units"]["P-whole"]["4096"]
+    assert fg3["sufficiency_diagnostic"] == "FAIL"
+    assert fg3["relationships"]["R5"]["category"] == "source_valid_index_missing"
+    assert fg3["relationships"]["R4"] == g3["relationships"]["R4"]
+    assert set(f["end_to_end_success"].values()) == {"not_evaluable"}
+
+    summary = record["official_summary"]
+    assert summary["evaluable_questions"] == ["C7-2"]
+    assert summary["not_evaluable_questions"] == {
+        "C7-1": ["source_valid_index_missing"]
+    }
+    assert summary["end_to_end_pass_counts"]["G3/P-whole/4096"] == {
+        "pass": 1,
+        "of": 1,
+    }
+
+
+def test_question_status_classification():
+    rels = [{"id": "R1"}, {"id": "R2"}]
+    ok = {"R1": {"valid": True}, "R2": {"valid": True}}
+    assert scoring.question_status(rels, {"R1": True, "R2": True}, ok) == {
+        "status": "evaluable"
+    }
+    st = scoring.question_status(rels, {"R1": True, "R2": False}, ok)
+    assert st["status"] == "preflight_failure"
+    assert st["reasons"] == ["source_valid_index_missing"]
+    assert st["official_sufficiency"] == "NOT_EVALUABLE"
+    bad = scoring.question_status(
+        rels, {"R1": False, "R2": False}, {"R1": {"valid": True}}
+    )
+    assert bad["reasons"] == ["source_valid_index_missing", "witness_not_source_valid"]
+    assert bad["source_not_verified"] == ["R2"]
+
+
+def test_mark_not_evaluable_keeps_findings():
+    cell = {"sufficiency": "FAIL", "relationships": {"R1": {"category": "unresolved"}}}
+    out = scoring.mark_not_evaluable(cell)
+    assert out["sufficiency"] == "NOT_EVALUABLE"
+    assert out["sufficiency_diagnostic"] == "FAIL"
+    assert out["relationships"] == cell["relationships"]
+    assert cell["sufficiency"] == "FAIL"  # input untouched
+
+
+def test_official_summary_excludes_not_evaluable_and_counts_ri_failures():
+    per_q = {
+        "A": {"status": {"status": "evaluable"}, "ri": {"code": "resolved"},
+              "end_to_end_success": {"G2/P-call/4096": True}},
+        "B": {"status": {"status": "evaluable"}, "ri": {"code": "unresolved_route"},
+              "end_to_end_success": {}},
+        "C": {"status": {"status": "preflight_failure",
+                         "reasons": ["source_valid_index_missing"]},
+              "ri": {"code": "resolved"},
+              "end_to_end_success": {"G2/P-call/4096": "not_evaluable"}},
+    }  # fmt: skip
+    s = scoring.official_summary(per_q)
+    assert s["denominator"] == 2 and s["ri_not_resolved"] == ["B"]
+    assert s["end_to_end_pass_counts"] == {"G2/P-call/4096": {"pass": 1, "of": 2}}
+    assert s["not_evaluable_questions"] == {"C": ["source_valid_index_missing"]}

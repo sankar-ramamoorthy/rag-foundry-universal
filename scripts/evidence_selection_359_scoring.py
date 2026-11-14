@@ -264,6 +264,91 @@ def budget_attribution(small: dict, large: dict, s_surv: dict, l_surv: dict) -> 
     }
 
 
+# ----------------------------------------------------------------- question status
+
+# Owner decision 2026-11-13 (P3 follow-up): a question with a source-verified
+# expected witness that is not in the indexed corpus stays in the results with
+# every finding preserved, but is not evaluable for official sufficiency. It
+# counts neither as a retrieval failure nor as a success.
+EVALUABLE = "evaluable"
+PREFLIGHT_FAILURE = "preflight_failure"
+NOT_EVALUABLE = "NOT_EVALUABLE"
+
+
+def question_status(
+    rels: list[dict],
+    index_has: Mapping[str, bool | None],
+    source_check: Mapping[str, dict],
+) -> dict:
+    """Classify one question from the scoring-time witness recheck.
+
+    Every expected witness absent from the caller's stored text makes the
+    question a preflight failure. The reason is `source_valid_index_missing`
+    when each such witness is verified at its recorded lines in the pinned
+    source; a missing witness that the pinned source does not confirm is
+    reported as `witness_not_source_valid` (a ground-truth problem, never
+    edited here)."""
+    missing = [r["id"] for r in rels if index_has.get(r["id"]) is False]
+    if not missing:
+        return {"status": EVALUABLE}
+    valid = [i for i in missing if (source_check.get(i) or {}).get("valid")]
+    invalid = [i for i in missing if i not in valid]
+    reasons = []
+    if valid:
+        reasons.append("source_valid_index_missing")
+    if invalid:
+        reasons.append("witness_not_source_valid")
+    return {
+        "status": PREFLIGHT_FAILURE,
+        "reasons": reasons,
+        "index_missing_relationships": missing,
+        "source_verified": valid,
+        "source_not_verified": invalid,
+        "official_sufficiency": NOT_EVALUABLE,
+    }
+
+
+def mark_not_evaluable(delivery_score: dict) -> dict:
+    """Keep every per-relationship finding; move the computed sufficiency to
+    `sufficiency_diagnostic` and set the official field to NOT_EVALUABLE."""
+    out = dict(delivery_score)
+    out["sufficiency_diagnostic"] = out.get("sufficiency")
+    out["sufficiency"] = NOT_EVALUABLE
+    return out
+
+
+def official_summary(per_question: dict) -> dict:
+    """Official counts over evaluable questions only. End-to-end PASS needs
+    Stage RI resolved and an E2E sufficiency PASS (§5b); ORACLE-ENTRY and
+    not-evaluable questions are reported beside, never inside, these counts."""
+    evaluable = [
+        q for q, r in per_question.items() if r["status"]["status"] == EVALUABLE
+    ]
+    excluded = {
+        q: r["status"]["reasons"]
+        for q, r in per_question.items()
+        if r["status"]["status"] == PREFLIGHT_FAILURE
+    }
+    passes: dict[str, int] = {}
+    for q in evaluable:
+        for cell, ok in per_question[q]["end_to_end_success"].items():
+            passes[cell] = passes.get(cell, 0) + (ok is True)
+    return {
+        "evaluable_questions": evaluable,
+        "not_evaluable_questions": excluded,
+        "denominator": len(evaluable),
+        # An evaluable question whose Stage RI did not resolve has no cells
+        # and counts as a non-pass in every denominator.
+        "ri_not_resolved": [
+            q for q in evaluable if per_question[q]["ri"]["code"] != "resolved"
+        ],
+        "end_to_end_pass_counts": {
+            cell: {"pass": n, "of": len(evaluable)}
+            for cell, n in sorted(passes.items())
+        },
+    }
+
+
 # ----------------------------------------------------------------- oracle bound
 
 
