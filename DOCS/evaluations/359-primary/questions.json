@@ -1,0 +1,18 @@
+{
+  "set": "primary",
+  "protocol": {
+    "commit": "45f34e1",
+    "sha256": "ca1d1ed5f192910c78ad7a179fb75f3131a6f796f2b3d27244698212c5049535"
+  },
+  "repository": "sankar-ramamoorthy/rag-foundry-universal",
+  "source_commit": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+  "author": "protocol author (public; protocol section 4)",
+  "provenance": "Step 0 question, verbatim, from DOCS/test_results/_raw/2026-11-12-345-step0/659139bc01fd464589a8972e50f72412.json after 'Question:'",
+  "questions": [
+    {
+      "qid": "P0",
+      "route": "POST /v1/rag",
+      "question": "Trace the execution path from POST /v1/rag through the orchestrator to vector retrieval. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct function calls from HTTP service calls. Base the answer on implementation code rather than documentation or historical reports."
+    }
+  ]
+}
