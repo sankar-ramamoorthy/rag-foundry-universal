@@ -65,11 +65,13 @@ All of these are visible in the stored source text.
    HTTP, and the 300-node `/trace` cap. The `/api/embed` request now lives in
    `OllamaEmbedder._post`; the script's H9 ground truth still names `embed`.
 3. **Then return to #342** with *route-grounded graph discovery plus source
-   evidence fetching*. This is now issue #359, with a draft
+   evidence fetching*. This is now issue #359. Its
    [protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
-   carrying overfitting controls C1–C11. It must not run until the protocol is
-   merged and the owner has decided who writes the C7 route ground truth and
-   which repository is held out. Use the existing graph, route mapping and indexed source.
+   (controls C1–C12) was **frozen on merge at `45f34e1`** (PR #360). Codex
+   writes the sealed C7 and `mealie` ground truth by following the
+   [Codex handoff](/DOCS/notes/20261113-359-codex-independent-evaluation-handoff.md),
+   which also lists the prerequisites before any ingestion or run. The
+   diagnostic has not started. Use the existing graph, route mapping and indexed source.
    Do **not** introduce another retrieval framework.
 4. **Separate, diagnostic-first: #361** covers exact-file source retrieval
    and completeness-aware summarization, for example "read
