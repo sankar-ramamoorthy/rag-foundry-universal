@@ -1,0 +1,27 @@
+{
+  "set": "C7",
+  "protocol": {
+    "commit": "45f34e1",
+    "sha256": "ca1d1ed5f192910c78ad7a179fb75f3131a6f796f2b3d27244698212c5049535"
+  },
+  "repository": "sankar-ramamoorthy/rag-foundry-universal",
+  "source_commit": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+  "author": "codex",
+  "questions": [
+    {
+      "qid": "C7-1",
+      "route": "POST /v1/rag/simple",
+      "question": "Trace the execution path from POST /v1/rag/simple through document retrieval and context assembly to answer generation. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct function calls from HTTP service calls. Base the answer on implementation code rather than documentation or historical reports."
+    },
+    {
+      "qid": "C7-2",
+      "route": "GET /v1/models",
+      "question": "Trace the execution path from GET /v1/models through model inventory construction to provider catalog discovery. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct function calls from HTTP service calls. Base the answer on implementation code rather than documentation or historical reports."
+    },
+    {
+      "qid": "C7-3",
+      "route": "POST /v1/summarize/{ingestion_id}",
+      "question": "Trace the execution path from POST /v1/summarize/{ingestion_id} through document chunk fetching and summary generation to summary persistence. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct function calls from HTTP service calls. Base the answer on implementation code rather than documentation or historical reports."
+    }
+  ]
+}
