@@ -74,7 +74,8 @@ All of these are visible in the stored source text.
    [harness](/DOCS/evaluations/2026-11-13-359-diagnostic-harness.md) is
    built (owner-authorized, P7). The C7 sealed run is complete; see the
    [C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md).
-   The owner must rule on the C3 rescan flags. The primary-case and `mealie`
+   The C3 scanner returned exit code 4; the owner adjudicated the four terms as
+   false positives (#359). The primary-case and `mealie`
    runs have not started. Use the existing graph, route mapping and indexed source.
    Do **not** introduce another retrieval framework.
 4. **Separate, diagnostic-first: #361** covers exact-file source retrieval

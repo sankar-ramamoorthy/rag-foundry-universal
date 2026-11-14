@@ -207,8 +207,9 @@ is not frozen. Resume from the
   - `GET /v1/models` is ambiguous across two services;
   - a nested-function indexing gap is recorded separately.
 
-  This is development evidence. Owner rulings are pending on the C3 rescan
-  flags, and the held-out `mealie` run is still required.
+  These are protocol-valid development diagnostics. The C3 scanner returned
+  exit code 4 on four generic terms, and the owner ruled them false positives
+  on #359. The held-out `mealie` run is still required.
 - **Next:** the owner decides after these measurements. Ranking, budget and
   generation changes are not authorized.
 - Resume from the

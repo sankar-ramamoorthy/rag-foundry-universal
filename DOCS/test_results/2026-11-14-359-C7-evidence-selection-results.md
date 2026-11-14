@@ -2,8 +2,8 @@
 title: "#359 C7 results: route-grounded evidence selection on three independently sealed routes"
 date: 2026-11-14
 type: test-results
-status: provisional
-summary: "PROVISIONAL pending the owner's review of the C3 rescan (exit code 4). Frozen #359 protocol on three Codex-sealed C7 routes in the self-repository. Of 3 attempted questions, 2 are evaluable and 0 pass end to end in any arm, unit or budget. The primary arm G2 fails at both 4 KB and 16 KB. For both evaluable routes the minimum evidence needed exceeds 4 KB, so the 4 KB budget cannot hold the required trace whatever the traversal. At 16 KB the binding losses are discovery gaps: cross-service hops and handlers not reached through CALL edges. Development evidence only."
+status: current
+summary: "Protocol-valid development diagnostics (ADR-054); the C3 scanner returned exit code 4 for four generic terms, which owner adjudication ruled not to be C3 violations. Frozen #359 protocol on three Codex-sealed C7 routes in the self-repository. Of 3 attempted questions, 2 are evaluable and 0 pass end to end in any arm, unit or budget. The primary arm G2 fails at both 4 KB and 16 KB. For both evaluable routes the minimum evidence needed exceeds 4 KB, so the 4 KB budget cannot hold the required trace whatever the traversal. At 16 KB the binding losses are discovery gaps: cross-service hops and handlers not reached through CALL edges. Development evidence only."
 tags: [evaluation, results, code-intelligence, evidence-selection, overfitting, issue-359, issue-342, issue-194]
 related:
   - "[Issue #359](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/359)"
@@ -15,12 +15,10 @@ related:
 
 # #359 C7 results: route-grounded evidence selection
 
-> **PROVISIONAL.** The scoring step exited with code 4: the C3 rescan with the
-> revealed terms flagged `return`, `result`, `chunk` and `simple` in the
-> selection-rules module (§1). Until the owner reviews these matches, every
-> result below is provisional. If any match is ruled a protocol violation,
-> the results remain as exploratory development diagnostics, not
-> protocol-valid results.
+> **Classification: protocol-valid development diagnostics (ADR-054).** The C3
+> scanner returned exit code 4 for four generic terms. Owner adjudication
+> determined that none violated the frozen C3 requirements. The scanner and
+> experimental outputs remained unchanged (§1; #359, 2026-11-14).
 
 **Evidence class: development evidence (ADR-054); not a generalization
 result.** C7 is the within-repository overfitting check (C7). Generalization
@@ -49,27 +47,35 @@ The revealed files are committed under `DOCS/evaluations/359-C7/` byte for
 byte. They are marked `-text`, so line-ending normalization cannot change the
 hashed bytes.
 
-### C3 rescan with the revealed terms: flagged, owner ruling needed
+### C3 rescan with the revealed terms: exit code 4, adjudicated
 
-The score command exited with code 4: the C3 rescan of the selection-rules
-module found four ground-truth terms. Per the harness contract, a hit would
-invalidate the outputs, so the results below stand **pending the owner's
-ruling** on these hits. Evidence for each:
+**The C3 scanner returned exit code 4 for four generic terms. Owner
+adjudication determined that none violated the frozen C3 requirements. The
+scanner and experimental outputs remained unchanged.** The automated scan did
+**not** pass. C3 compliance (adjudicated) and the scanner result (exit code 4)
+are recorded separately.
 
-| Term | Source in the revealed files | Occurrence in the rules module |
-|---|---|---|
-| `return` | witness regexes C7-1/R18 and C7-3/R12 | the Python keyword in `return` statements |
-| `result` | witness regexes C7-3/R4 and C7-3/R8 | a local variable in Stage RI |
-| `chunk` | a question word that also occurs in an identifier | docstring and comment text ("chunk order"), the frozen protocol's own term (§3, §5) |
-| `simple` | the C7-1 route `/v1/rag/simple` | "simple name" in interpretation strings, the frozen protocol's wording (§5: "child simple name") |
+| Term | Occurrence in the frozen rules module | Type | Source in the revealed files | Owner ruling |
+|---|---|---|---|---|
+| `return` | 23 `return` statements | Python keyword | Match-pattern fragments C7-1/R18 and C7-3/R12 | False positive |
+| `result` | Local variable in Stage RI (lines 164–201) | Generic local variable | Match-pattern fragments C7-3/R4 and C7-3/R8 (a local variable in the answer code, not a graph symbol) | False positive |
+| `chunk` | Docstrings, lines 11 and 423 | Vocabulary the frozen protocol uses explicitly (§3, §5; C3's own "chunk text" allowed signal) | C7-3 question word that also appears in answer identifiers | False positive |
+| `simple` | Strings in `INTERPRETATIONS`, lines 65 and 82 ("simple name") | Generic terminology from the frozen protocol (§5, "child simple name"); no route-specific matching | C7-1 route `/v1/rag/simple` and `simple_rag_endpoint` | False positive |
 
-- None of the four is a ground-truth canonical ID, symbol name or file path.
-- The rules file has not changed since its first commit (`49fde85`).
-- I did not read the C7 questions until after that commit, and the chains
-  until step 5.
-- The scanner does not exclude Python keywords that appear outside attribute
-  position. That limitation explains `return`.
-- The scanner was **not** changed after the reveal.
+**Basis.**
+- These occurrences come from Python syntax or from terminology that was
+  already in the protocol (`45f34e1`) before the evaluation questions were
+  created.
+- None is a canonical ID, graph symbol name, file path or route path.
+- None is used to match question text, chunk text or routes.
+- The scan's term list is broader than C3's four categories. It adds
+  match-pattern fragments and question words that also appear in answer
+  identifiers, and all four hits come from those additions.
+
+**Supporting but not decisive.** The rules file has been byte-identical since
+its first commit (`49fde85`) and across Steps 3–5. Timing alone cannot
+establish independence: that commit came 3½ minutes after the C7 questions
+merged (#363).
 
 ## 2. Question status
 
@@ -257,7 +263,8 @@ a selector miss. It has not been investigated further in this run.
 - Development evidence, self-repository only, with **2 scored routes**.
 - The primary `POST /v1/rag` case has not been run under this harness.
   It needs a separate authorization.
-- The C3 rescan flags in §1 need an owner ruling.
+- The C3 scanner returned exit code 4. Compliance rests on the owner's
+  adjudication (§1), not on the automated scan.
 - A0 (the current `/v1/rag` path) was not run for these questions (P4), so
   there is no same-question comparison with today's retrieval.
 - The ground truth reflects one independent author's reading of the
