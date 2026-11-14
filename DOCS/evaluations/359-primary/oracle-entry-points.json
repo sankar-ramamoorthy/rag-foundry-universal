@@ -1,0 +1,6 @@
+{
+  "set": "primary",
+  "entry_points": {
+    "P0": "rag_orchestrator/src/api/v1/routes.py#rag_endpoint"
+  }
+}

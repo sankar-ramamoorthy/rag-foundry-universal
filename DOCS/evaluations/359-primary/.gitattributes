@@ -1,0 +1,2 @@
+# Ground-truth and question files are hashed byte-for-byte: keep LF.
+*.json text eol=lf

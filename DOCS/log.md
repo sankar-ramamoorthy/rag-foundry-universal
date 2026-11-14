@@ -10,7 +10,9 @@ governed.
 
 Froze the [#359 evidence-selection protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
 on merge at `45f34e1` and added the [Codex handoff](/DOCS/notes/20261113-359-codex-independent-evaluation-handoff.md)
-for the sealed C7 and held-out (`mealie`) ground truth.
+for the sealed C7 and held-out (`mealie`) ground truth. Added the
+[#359 diagnostic harness](/DOCS/evaluations/2026-11-13-359-diagnostic-harness.md)
+and the public primary-case files under `DOCS/evaluations/359-primary/`.
 
 ## 2026-11-12
 

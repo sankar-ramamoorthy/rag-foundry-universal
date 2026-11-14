@@ -215,6 +215,8 @@ binds it to explicit overfitting controls under ADR-054: generic-rule
 enforcement, scoring separation, a declared primary arm, a within-repo route
 check by an independent author, and a held-out repository gate. The [Codex handoff](/DOCS/notes/20261113-359-codex-independent-evaluation-handoff.md)
 sets out the sealed ground-truth procedure and the prerequisites before any run.
+The [#359 diagnostic harness](/DOCS/evaluations/2026-11-13-359-diagnostic-harness.md)
+executes it stage by stage with hash checks; its fixed interpretations are listed there.
 
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.

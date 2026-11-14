@@ -1,0 +1,233 @@
+{
+  "set": "primary",
+  "source": "protocol section 4 and 5a.4 (frozen at 45f34e1), transcribed",
+  "chains": {
+    "P0": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/api/v1/routes.py#rag_endpoint",
+        "relationship": "POST /v1/rag handled by rag_endpoint",
+        "callee": null,
+        "witness_regex": "@router\\.post\\(\"/rag\"",
+        "lines": [
+          62
+        ],
+        "resolution_class": "route",
+        "route_node": "route:rag_orchestrator:POST:/v1/rag"
+      },
+      {
+        "id": "R2",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/api/v1/routes.py#rag_endpoint",
+        "relationship": "calls run_rag",
+        "callee": "rag_orchestrator/src/core/service.py#run_rag",
+        "witness_regex": "\\brun_rag\\(",
+        "lines": [
+          67
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R3",
+        "tier": "supporting",
+        "caller": "rag_orchestrator/src/core/service.py#run_rag",
+        "relationship": "calls resolve_repo_id_http",
+        "callee": "rag_orchestrator/src/core/service.py#resolve_repo_id_http",
+        "witness_regex": "resolve_repo_id_http\\(",
+        "lines": [
+          1249
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R4",
+        "tier": "supporting",
+        "caller": "rag_orchestrator/src/core/service.py#resolve_repo_id_http",
+        "relationship": "HTTP to ingestion /v1/repos",
+        "callee": "ingestion_service /v1/repos",
+        "witness_regex": "/v1/repos",
+        "lines": [
+          152
+        ],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R5",
+        "tier": "supporting",
+        "caller": "rag_orchestrator/src/core/service.py#run_rag",
+        "relationship": "calls get_embedder",
+        "callee": "shared/embedders/factory.py#get_embedder",
+        "witness_regex": "get_embedder\\(",
+        "lines": [
+          1251
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R6",
+        "tier": "supporting",
+        "caller": "shared/embedders/factory.py#get_embedder",
+        "relationship": "constructs OllamaEmbedder",
+        "callee": "shared/embedders/ollama.py#OllamaEmbedder",
+        "witness_regex": "OllamaEmbedder\\(",
+        "lines": [
+          19
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/service.py#run_rag",
+        "relationship": "runs embed_query via asyncio.to_thread",
+        "callee": "shared/embedders/query.py#embed_query",
+        "witness_regex": "to_thread\\(\\s*embed_query",
+        "lines": [
+          1259
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "shared/embedders/query.py#embed_query",
+        "relationship": "calls embedder.embed (abstract)",
+        "callee": null,
+        "witness_regex": "embedder\\.embed\\(",
+        "lines": [
+          32
+        ],
+        "resolution_class": "dynamic_dispatch",
+        "dispatch_candidates": [
+          "shared/embedders/ollama.py#OllamaEmbedder.embed",
+          "shared/embedders/mock.py#MockEmbedder.embed"
+        ],
+        "configured_by": "R6"
+      },
+      {
+        "id": "R9a",
+        "tier": "core",
+        "caller": "shared/embedders/ollama.py#OllamaEmbedder.embed",
+        "relationship": "calls _strict",
+        "callee": "shared/embedders/ollama.py#OllamaEmbedder._strict",
+        "witness_regex": "self\\._strict\\(",
+        "lines": [
+          107
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R9b",
+        "tier": "core",
+        "caller": "shared/embedders/ollama.py#OllamaEmbedder._strict",
+        "relationship": "calls _post",
+        "callee": "shared/embedders/ollama.py#OllamaEmbedder._post",
+        "witness_regex": "self\\._post\\(",
+        "lines": [
+          80
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "shared/embedders/ollama.py#OllamaEmbedder._post",
+        "relationship": "HTTP to Ollama /api/embed",
+        "callee": "Ollama /api/embed",
+        "witness_regex": "/api/embed",
+        "lines": [
+          51
+        ],
+        "resolution_class": "external_http"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/service.py#run_rag",
+        "relationship": "calls hybrid_retrieve",
+        "callee": "rag_orchestrator/src/core/service.py#hybrid_retrieve",
+        "witness_regex": "hybrid_retrieve\\(",
+        "lines": [
+          1261
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R12",
+        "tier": "supporting",
+        "caller": "rag_orchestrator/src/core/service.py#hybrid_retrieve",
+        "relationship": "calls _query_generation",
+        "callee": "rag_orchestrator/src/core/service.py#_query_generation",
+        "witness_regex": "_query_generation\\(",
+        "lines": [
+          933
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R13",
+        "tier": "supporting",
+        "caller": "rag_orchestrator/src/core/service.py#_query_generation",
+        "relationship": "HTTP to ingestion .../generation",
+        "callee": "ingestion_service /v1/repos/{repo_id}/generation",
+        "witness_regex": "/generation",
+        "lines": [
+          520
+        ],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R14",
+        "tier": "core",
+        "caller": "rag_orchestrator/src/core/service.py#hybrid_retrieve",
+        "relationship": "HTTP to vector store /v1/vectors/search",
+        "callee": "route:vector_store_service:POST:/v1/vectors/search",
+        "witness_regex": "/v1/vectors/search",
+        "lines": [
+          932
+        ],
+        "resolution_class": "cross_service_http"
+      },
+      {
+        "id": "R15",
+        "tier": "core",
+        "caller": "vector_store_service/src/api/v1/vectors.py#similarity_search",
+        "relationship": "handles POST /v1/vectors/search (router prefix /v1/vectors)",
+        "callee": null,
+        "witness_regex": "@router\\.post\\(\"/search\"\\)",
+        "lines": [
+          92
+        ],
+        "resolution_class": "route",
+        "route_node": "route:vector_store_service:POST:/v1/vectors/search"
+      },
+      {
+        "id": "R16",
+        "tier": "core",
+        "caller": "vector_store_service/src/api/v1/vectors.py#similarity_search",
+        "relationship": "runs store.similarity_search via asyncio.to_thread",
+        "callee": "vector_store_service/src/core/vectorstore/pgvector_store.py#PgVectorStore.similarity_search",
+        "witness_regex": "store\\.similarity_search",
+        "lines": [
+          101
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R17",
+        "tier": "core",
+        "caller": "vector_store_service/src/core/vectorstore/pgvector_store.py#PgVectorStore.similarity_search",
+        "relationship": "pgvector cosine SQL",
+        "callee": "pgvector <=> operator",
+        "witness_regex": "vector <=> ",
+        "lines": [
+          187,
+          190
+        ],
+        "resolution_class": "sql",
+        "note": "excludes the docstring at 164"
+      }
+    ]
+  }
+}
