@@ -2,8 +2,8 @@
 title: "#359 C7 results: route-grounded evidence selection on three independently sealed routes"
 date: 2026-11-14
 type: test-results
-status: current
-summary: "Frozen #359 protocol on three Codex-sealed C7 routes in the self-repository. Of 3 attempted questions, 2 are evaluable and 0 pass end to end in any arm, unit or budget. The primary arm G2 fails at both 4 KB and 16 KB. For both evaluable routes the minimum evidence needed exceeds 4 KB, so the 4 KB budget cannot hold the required trace whatever the traversal. At 16 KB the binding losses are discovery gaps: cross-service hops and handlers not reached through CALL edges. Development evidence only."
+status: provisional
+summary: "PROVISIONAL pending the owner's review of the C3 rescan (exit code 4). Frozen #359 protocol on three Codex-sealed C7 routes in the self-repository. Of 3 attempted questions, 2 are evaluable and 0 pass end to end in any arm, unit or budget. The primary arm G2 fails at both 4 KB and 16 KB. For both evaluable routes the minimum evidence needed exceeds 4 KB, so the 4 KB budget cannot hold the required trace whatever the traversal. At 16 KB the binding losses are discovery gaps: cross-service hops and handlers not reached through CALL edges. Development evidence only."
 tags: [evaluation, results, code-intelligence, evidence-selection, overfitting, issue-359, issue-342, issue-194]
 related:
   - "[Issue #359](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/359)"
@@ -14,6 +14,13 @@ related:
 ---
 
 # #359 C7 results: route-grounded evidence selection
+
+> **PROVISIONAL.** The scoring step exited with code 4: the C3 rescan with the
+> revealed terms flagged `return`, `result`, `chunk` and `simple` in the
+> selection-rules module (§1). Until the owner reviews these matches, every
+> result below is provisional. If any match is ruled a protocol violation,
+> the results remain as exploratory development diagnostics, not
+> protocol-valid results.
 
 **Evidence class: development evidence (ADR-054); not a generalization
 result.** C7 is the within-repository overfitting check (C7). Generalization
