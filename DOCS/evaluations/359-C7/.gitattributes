@@ -1,2 +1,5 @@
 *.json text eol=lf
 .gitattributes text eol=lf
+# Revealed sealed files (#359 steps 4-5): keep the exact bytes whose hashes were posted.
+oracle-entry-points.json -text
+expected-chains.json -text

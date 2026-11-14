@@ -217,6 +217,9 @@ check by an independent author, and a held-out repository gate. The [Codex hando
 sets out the sealed ground-truth procedure and the prerequisites before any run.
 The [#359 diagnostic harness](/DOCS/evaluations/2026-11-13-359-diagnostic-harness.md)
 executes it stage by stage with hash checks; its fixed interpretations are listed there.
+The [#359 C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md)
+report the first sealed run: 3 routes attempted, 2 evaluable, and 0 end-to-end
+passes. 4 KB is structurally too small for these traces.
 
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.

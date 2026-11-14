@@ -72,7 +72,10 @@ All of these are visible in the stored source text.
    [Codex handoff](/DOCS/notes/20261113-359-codex-independent-evaluation-handoff.md),
    which also lists the prerequisites before any ingestion or run. The
    [harness](/DOCS/evaluations/2026-11-13-359-diagnostic-harness.md) is
-   built (owner-authorized, P7). The diagnostic has not started. Use the existing graph, route mapping and indexed source.
+   built (owner-authorized, P7). The C7 sealed run is complete; see the
+   [C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md).
+   The owner must rule on the C3 rescan flags. The primary-case and `mealie`
+   runs have not started. Use the existing graph, route mapping and indexed source.
    Do **not** introduce another retrieval framework.
 4. **Separate, diagnostic-first: #361** covers exact-file source retrieval
    and completeness-aware summarization, for example "read

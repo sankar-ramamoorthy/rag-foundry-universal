@@ -196,9 +196,21 @@ is not frozen. Resume from the
   an in-memory fix-on build at the same commit exactly.
 - **Remaining gaps, outside #354:** functions passed to `asyncio.to_thread`,
   abstract dispatch, route-level HTTP, and the 300-node trace cap.
-- **Next:** #342 continues with route-grounded graph discovery plus
-  source-evidence fetching. Ranking, budget and generation changes are not
-  authorized.
+- **#359 C7 results (2026-11-14).** The frozen protocol ran on three routes
+  that Codex sealed independently
+  ([results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md)):
+  - 3 attempted, 2 evaluable, and 0 pass end to end in any arm or budget;
+  - the primary arm G2 fails at 4 KB and at 16 KB;
+  - the minimum evidence for both evaluable routes exceeds 4 KB, so the 4 KB
+    budget cannot hold these traces;
+  - at 16 KB, the main loss is discovery across service hops;
+  - `GET /v1/models` is ambiguous across two services;
+  - a nested-function indexing gap is recorded separately.
+
+  This is development evidence. Owner rulings are pending on the C3 rescan
+  flags, and the held-out `mealie` run is still required.
+- **Next:** the owner decides after these measurements. Ranking, budget and
+  generation changes are not authorized.
 - Resume from the
   [retrieval-side handoff](/DOCS/notes/20261112-code-intelligence-342-354-handoff.md).
 

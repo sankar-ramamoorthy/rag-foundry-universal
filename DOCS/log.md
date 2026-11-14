@@ -6,6 +6,12 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-14
+
+Added the [#359 C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md)
+and the revealed sealed files under `DOCS/evaluations/359-C7/` (byte-identical, marked `-text`).
+The raw records are indexed in `raw-index.json`.
+
 ## 2026-11-13
 
 Froze the [#359 evidence-selection protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
