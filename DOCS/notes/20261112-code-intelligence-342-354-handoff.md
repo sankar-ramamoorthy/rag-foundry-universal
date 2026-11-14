@@ -65,9 +65,21 @@ All of these are visible in the stored source text.
    HTTP, and the 300-node `/trace` cap. The `/api/embed` request now lives in
    `OllamaEmbedder._post`; the script's H9 ground truth still names `embed`.
 3. **Then return to #342** with *route-grounded graph discovery plus source
-   evidence fetching*. Use the existing graph, route mapping and indexed source.
+   evidence fetching*. This is now issue #359, with a draft
+   [protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
+   carrying overfitting controls C1–C11. It must not run until the protocol is
+   merged and the owner has decided who writes the C7 route ground truth and
+   which repository is held out. Use the existing graph, route mapping and indexed source.
    Do **not** introduce another retrieval framework.
-4. **Out of scope until separately approved:** retrieval ranking, query
+4. **Separate, diagnostic-first: #361** covers exact-file source retrieval
+   and completeness-aware summarization, for example "read
+   `ingestion_service/src/api/v1/repos.py` and summarize". By code reading,
+   `/v1/rag` never fetches a named file. `prioritize_exact_sources` only
+   reorders already-retrieved chunks, and only for repository-overview claims.
+   A 10.4 KB file cannot fit the 4 KB budget, and nothing signals partial
+   coverage. The issue keeps file discovery, document fetching and budget
+   limitations separate.
+5. **Out of scope until separately approved:** retrieval ranking, query
    planning, context budgets, generation settings and generation experiments.
 
 ## Environment and boundaries
