@@ -210,10 +210,11 @@ external implementations. They supersede product positioning as the immediate
 investigation focus; no replacement architecture is selected.
 
 The [#359 route-grounded evidence-selection protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
-is a draft and not frozen. It pre-registers the next #342/#194 diagnostic and
+was frozen on merge at `45f34e1` (PR #360). It pre-registers the next #342/#194 diagnostic and
 binds it to explicit overfitting controls under ADR-054: generic-rule
 enforcement, scoring separation, a declared primary arm, a within-repo route
-check by an independent author, and a held-out repository gate.
+check by an independent author, and a held-out repository gate. The [Codex handoff](/DOCS/notes/20261113-359-codex-independent-evaluation-handoff.md)
+sets out the sealed ground-truth procedure and the prerequisites before any run.
 
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.

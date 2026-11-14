@@ -6,6 +6,12 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-13
+
+Froze the [#359 evidence-selection protocol](/DOCS/evaluations/2026-11-13-359-route-grounded-evidence-selection-protocol.md)
+on merge at `45f34e1` and added the [Codex handoff](/DOCS/notes/20261113-359-codex-independent-evaluation-handoff.md)
+for the sealed C7 and held-out (`mealie`) ground truth.
+
 ## 2026-11-12
 
 Added the [#345 round 3 results](/DOCS/test_results/2026-11-12-345-round3-repro-and-retrieval.md): cache-controlled reproducibility, and
