@@ -690,10 +690,12 @@ def test_sealed_pipeline_end_to_end_on_a_fake_stack(tmp_path, monkeypatch):
     assert set(f["end_to_end_success"].values()) == {"not_evaluable"}
 
     summary = record["official_summary"]
+    assert summary["attempted_questions"] == ["C7-1", "C7-2"]
     assert summary["evaluable_questions"] == ["C7-2"]
-    assert summary["not_evaluable_questions"] == {
-        "C7-1": ["source_valid_index_missing"]
-    }
+    assert summary["preflight_failure"] == {"C7-1": ["source_valid_index_missing"]}
+    assert summary["ground_truth_invalid"] == {}
+    # The index gap stays visible as its own diagnostic finding.
+    assert summary["index_evidence_gaps"] == {"C7-1": ["R5"]}
     assert summary["end_to_end_pass_counts"]["G3/P-whole/4096"] == {
         "pass": 1,
         "of": 1,
@@ -709,12 +711,22 @@ def test_question_status_classification():
     st = scoring.question_status(rels, {"R1": True, "R2": False}, ok)
     assert st["status"] == "preflight_failure"
     assert st["reasons"] == ["source_valid_index_missing"]
+    assert st["index_missing_relationships"] == ["R2"]
     assert st["official_sufficiency"] == "NOT_EVALUABLE"
-    bad = scoring.question_status(
-        rels, {"R1": False, "R2": False}, {"R1": {"valid": True}}
-    )
-    assert bad["reasons"] == ["source_valid_index_missing", "witness_not_source_valid"]
-    assert bad["source_not_verified"] == ["R2"]
+
+
+def test_unverifiable_ground_truth_is_invalid_and_reported_separately():
+    rels = [{"id": "R1"}, {"id": "R2"}]
+    only_r1 = {"R1": {"valid": True}, "R2": {"valid": False}}
+    # Indexed but not confirmed in the pinned source: still invalid.
+    st = scoring.question_status(rels, {"R1": True, "R2": True}, only_r1)
+    assert st["status"] == "ground_truth_invalid"
+    assert st["reasons"] == ["witness_not_source_valid"]
+    assert st["source_not_verified"] == ["R2"]
+    assert st["official_sufficiency"] == "NOT_EVALUABLE"
+    both = scoring.question_status(rels, {"R1": False, "R2": False}, only_r1)
+    assert both["status"] == "ground_truth_invalid"
+    assert both["index_missing_relationships"] == ["R1", "R2"]
 
 
 def test_mark_not_evaluable_keeps_findings():
@@ -726,18 +738,28 @@ def test_mark_not_evaluable_keeps_findings():
     assert cell["sufficiency"] == "FAIL"  # input untouched
 
 
-def test_official_summary_excludes_not_evaluable_and_counts_ri_failures():
+def test_official_summary_separates_attempted_evaluable_and_failures():
     per_q = {
         "A": {"status": {"status": "evaluable"}, "ri": {"code": "resolved"},
               "end_to_end_success": {"G2/P-call/4096": True}},
         "B": {"status": {"status": "evaluable"}, "ri": {"code": "unresolved_route"},
               "end_to_end_success": {}},
         "C": {"status": {"status": "preflight_failure",
-                         "reasons": ["source_valid_index_missing"]},
+                         "reasons": ["source_valid_index_missing"],
+                         "index_missing_relationships": ["R3"]},
+              "ri": {"code": "resolved"},
+              "end_to_end_success": {"G2/P-call/4096": "not_evaluable"}},
+        "D": {"status": {"status": "ground_truth_invalid",
+                         "reasons": ["witness_not_source_valid"],
+                         "source_not_verified": ["R1"],
+                         "index_missing_relationships": []},
               "ri": {"code": "resolved"},
               "end_to_end_success": {"G2/P-call/4096": "not_evaluable"}},
     }  # fmt: skip
     s = scoring.official_summary(per_q)
+    assert s["attempted_questions"] == ["A", "B", "C", "D"]
     assert s["denominator"] == 2 and s["ri_not_resolved"] == ["B"]
     assert s["end_to_end_pass_counts"] == {"G2/P-call/4096": {"pass": 1, "of": 2}}
-    assert s["not_evaluable_questions"] == {"C": ["source_valid_index_missing"]}
+    assert s["preflight_failure"] == {"C": ["source_valid_index_missing"]}
+    assert s["ground_truth_invalid"] == {"D": ["R1"]}
+    assert s["index_evidence_gaps"] == {"C": ["R3"]}

@@ -750,7 +750,7 @@ def cmd_score(args) -> int:  # noqa: C901 - one linear scoring pass
                         rels, delivered, pool, a0["functions"], [], index_has
                     ),
                 }
-        if status["status"] == scoring.PREFLIGHT_FAILURE:
+        if status["status"] != scoring.EVALUABLE:
             _mark_es(e2e_scores)
             _mark_es(orc_scores)
             if a0_scores:

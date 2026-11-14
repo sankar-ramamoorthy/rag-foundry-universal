@@ -76,8 +76,8 @@ record. Changing one creates a new protocol version (C2).
 8. **P3 (owner decision, 2026-11-13).** A witness missing from the caller's
    stored text is scored `source_valid_index_missing`. That category is not
    support and not a selector miss. Sufficiency stays strict: every core
-   relationship must be supported. See also the question-level preflight
-   failure below.
+   relationship must be supported. See also the question-level classification
+   below.
 9. **C3 scan.** Paths, IDs and other terms containing punctuation are searched
    anywhere in the module. Plain words are searched in string literals,
    comments and whole identifiers, but not in standard-type method names
@@ -87,55 +87,65 @@ record. Changing one creates a new protocol version (C2).
     stored Step 0 vector (§3). Any node that returns 100 chunks is listed in
     `search_by_doc_full_pages` (P5).
 
-## Question-level preflight failure (owner decision, 2026-11-14)
+## Question-level classification (owner decisions on #359, 2026-11-14)
 
 This lives entirely in scoring and reporting. The rules, traversal order,
-budgets, ground truth and protocol are unchanged.
+budgets, ground truth and protocol file are unchanged. The owner recorded
+these as **interpretations of the frozen protocol**, not as text it always
+contained.
 
-- **When.** At scoring, after the reveal, every expected witness is rechecked
+| Situation | Harness action |
+|---|---|
+| A primary-set (§4) witness is missing from stored text | `preflight` fails and no run starts (§7.1, unchanged) |
+| A sealed-set expected witness is valid in the pinned source but missing from the index | Question `preflight_failure`, reason `source_valid_index_missing`, `NOT_EVALUABLE` |
+| A sealed-set expected witness cannot be confirmed at its recorded lines in the pinned source | Question `ground_truth_invalid`, reason `witness_not_source_valid`, `NOT_EVALUABLE`, reported separately |
+| Every witness is valid and indexed | Scored normally, with no change from before |
+
+- **Recheck.** At scoring, after the reveal, every expected witness is checked
   against the caller's stored text and at its recorded lines in the pinned
-  source. `--source-repo` is mandatory, so "source-verified" always means it
-  was checked. If any witness is missing from the index, the question is
-  `preflight_failure`:
-  - reason `source_valid_index_missing` when the pinned source confirms that
-    witness;
-  - reason `witness_not_source_valid` when it does not. That is a
-    ground-truth problem, reported and never edited.
-- **What is kept.** The question stays in the set. It is run under E2E and
-  ORACLE-ENTRY like every other question, and its raw records are unchanged.
-  Every per-relationship finding is kept, including the
-  `source_valid_index_missing` category of the affected relationship.
+  source. `--source-repo` is mandatory.
+- **What is kept.** A not-evaluable question stays in the set. It is run
+  under E2E and ORACLE-ENTRY like the others, and its raw records are
+  unchanged. Every per-relationship finding is kept.
 - **What changes in the report.**
-  - Official `sufficiency` in every arm, unit and budget becomes
-    `NOT_EVALUABLE`. The computed value is kept as `sufficiency_diagnostic`.
-  - `end_to_end_success` cells become `not_evaluable`.
-  - `official_summary` counts only evaluable questions, and lists
-    not-evaluable questions with their reasons beside the counts. Such a
-    question counts neither as a failure nor as a success.
-  - An evaluable question whose Stage RI did not resolve stays in the
-    denominator as a non-pass.
-- **Valid questions** are scored exactly as before. A test checks this
-  alongside a not-evaluable question in the same set.
-- **C7-1** stays in the evaluation set. Codex's sealing check found two
-  nested-callback witnesses that have no canonical ID, so scoring is expected
-  to classify C7-1 as `preflight_failure` /
-  `source_valid_index_missing`. The harness derives this mechanically from
-  the recheck; nothing about C7-1 is hard-coded.
+  - Official `sufficiency` becomes `NOT_EVALUABLE` in every arm, unit and
+    budget; the computed value is kept as `sufficiency_diagnostic`.
+  - End-to-end cells read `not_evaluable`. Such a question counts neither as
+    a failure nor as a success.
+- **`official_summary`** lists the following separately:
+  - `attempted_questions`;
+  - `evaluable_questions`, the only questions counted, with `denominator`;
+  - `preflight_failure`;
+  - `ground_truth_invalid`;
+  - `index_evidence_gaps`, which is kept as its own diagnostic finding;
+  - `ri_not_resolved`: evaluable questions whose Stage RI did not resolve.
+    They stay in the denominator as non-passes.
+- **Valid questions** are scored exactly as before. A test scores a valid
+  question and a not-evaluable one side by side in the same set.
 
-**Relation to the frozen protocol.** §7.1's abort rule is written for the §4
-witnesses, that is, the primary set. The harness still applies it there: a
-missing §4 witness fails `preflight`, and no run starts. The protocol has no
-stored-text rule for sealed sets; P3 and this decision supply one. Two
-points are flagged on #359 for the owner rather than settled here:
+**C7 composition.** All three frozen C7 questions stay unchanged, and no
+fourth route is added: adding one because C7-1 cannot be scored would be
+adaptive set selection. The report must state:
 
-1. Read by analogy, §7.1 would abort the **whole** C7 run. The owner's
-   per-question classification is narrower: the other questions stay
-   evaluable.
-2. C7 requires the frozen rules to run on **at least 3** additional routes.
-   They still run on all three, but with C7-1 not evaluable only two C7 routes
-   can be scored. If three scored routes are required, a further route must
-   be sealed before Step 3, because adding one after the E2E freeze would
-   break the sealing order.
+- that **3** routes were attempted and how many were **evaluable and
+  scored**, expected to be 2 (C7-1 is expected to be a preflight failure);
+- that the within-repository check (C7) has **not** met a
+  three-scored-route standard;
+- that the smaller scored sample **weakens** that check.
+
+Any further routes belong to a new, pre-registered set under a new protocol
+version. C7 stays development evidence (ADR-054). Generalization still
+requires the held-out `mealie` run.
+
+**Separate diagnostic finding: nested-callback evidence gap.** At sealing,
+Codex found that two expected C7-1 witnesses are in nested callbacks and
+cannot be retrieved by canonical ID from the indexed corpus. That points to
+a possible limit in nested-function extraction, canonical identity, or
+stored-chunk lookup. It is **not** to be attributed to retrieval selection,
+and it must not disappear from the report because C7-1 is not evaluable.
+Scoring records it in `index_evidence_gaps`. The specific callers are sealed
+until the expected-chains reveal (step 5); the finding is investigated after
+that.
 
 ## Observations, no change made
 

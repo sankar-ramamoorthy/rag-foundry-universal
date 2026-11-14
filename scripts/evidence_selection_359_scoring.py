@@ -272,6 +272,7 @@ def budget_attribution(small: dict, large: dict, s_surv: dict, l_surv: dict) -> 
 # counts neither as a retrieval failure nor as a success.
 EVALUABLE = "evaluable"
 PREFLIGHT_FAILURE = "preflight_failure"
+GROUND_TRUTH_INVALID = "ground_truth_invalid"
 NOT_EVALUABLE = "NOT_EVALUABLE"
 
 
@@ -280,32 +281,36 @@ def question_status(
     index_has: Mapping[str, bool | None],
     source_check: Mapping[str, dict],
 ) -> dict:
-    """Classify one question from the scoring-time witness recheck.
+    """Classify one question from the scoring-time witness recheck (owner
+    decisions on #359, 2026-11-14). Both failure classes are NOT_EVALUABLE
+    and are reported separately:
 
-    Every expected witness absent from the caller's stored text makes the
-    question a preflight failure. The reason is `source_valid_index_missing`
-    when each such witness is verified at its recorded lines in the pinned
-    source; a missing witness that the pinned source does not confirm is
-    reported as `witness_not_source_valid` (a ground-truth problem, never
-    edited here)."""
+    - `ground_truth_invalid`: some expected witness is not confirmed at its
+      recorded lines in the pinned source (reason `witness_not_source_valid`).
+      A ground-truth problem; reported, never edited.
+    - `preflight_failure`: every witness is source-valid, but some are absent
+      from the indexed corpus (reason `source_valid_index_missing`).
+    """
     missing = [r["id"] for r in rels if index_has.get(r["id"]) is False]
-    if not missing:
-        return {"status": EVALUABLE}
-    valid = [i for i in missing if (source_check.get(i) or {}).get("valid")]
-    invalid = [i for i in missing if i not in valid]
-    reasons = []
-    if valid:
-        reasons.append("source_valid_index_missing")
+    invalid = [
+        r["id"] for r in rels if not (source_check.get(r["id"]) or {}).get("valid")
+    ]
     if invalid:
-        reasons.append("witness_not_source_valid")
-    return {
-        "status": PREFLIGHT_FAILURE,
-        "reasons": reasons,
-        "index_missing_relationships": missing,
-        "source_verified": valid,
-        "source_not_verified": invalid,
-        "official_sufficiency": NOT_EVALUABLE,
-    }
+        return {
+            "status": GROUND_TRUTH_INVALID,
+            "reasons": ["witness_not_source_valid"],
+            "source_not_verified": invalid,
+            "index_missing_relationships": missing,
+            "official_sufficiency": NOT_EVALUABLE,
+        }
+    if missing:
+        return {
+            "status": PREFLIGHT_FAILURE,
+            "reasons": ["source_valid_index_missing"],
+            "index_missing_relationships": missing,
+            "official_sufficiency": NOT_EVALUABLE,
+        }
+    return {"status": EVALUABLE}
 
 
 def mark_not_evaluable(delivery_score: dict) -> dict:
@@ -319,23 +324,38 @@ def mark_not_evaluable(delivery_score: dict) -> dict:
 
 def official_summary(per_question: dict) -> dict:
     """Official counts over evaluable questions only. End-to-end PASS needs
-    Stage RI resolved and an E2E sufficiency PASS (§5b); ORACLE-ENTRY and
-    not-evaluable questions are reported beside, never inside, these counts."""
-    evaluable = [
-        q for q, r in per_question.items() if r["status"]["status"] == EVALUABLE
-    ]
-    excluded = {
-        q: r["status"]["reasons"]
-        for q, r in per_question.items()
-        if r["status"]["status"] == PREFLIGHT_FAILURE
-    }
+    Stage RI resolved and an E2E sufficiency PASS (§5b). Attempted questions,
+    preflight failures and ground-truth-invalid questions are reported beside,
+    never inside, these counts; index evidence gaps are kept as a separate
+    diagnostic finding (not a retrieval-selection result)."""
+
+    def with_status(status: str) -> dict:
+        return {
+            q: r["status"]
+            for q, r in per_question.items()
+            if r["status"]["status"] == status
+        }
+
+    evaluable = list(with_status(EVALUABLE))
     passes: dict[str, int] = {}
     for q in evaluable:
         for cell, ok in per_question[q]["end_to_end_success"].items():
             passes[cell] = passes.get(cell, 0) + (ok is True)
     return {
+        "attempted_questions": list(per_question),
         "evaluable_questions": evaluable,
-        "not_evaluable_questions": excluded,
+        "preflight_failure": {
+            q: st["reasons"] for q, st in with_status(PREFLIGHT_FAILURE).items()
+        },
+        "ground_truth_invalid": {
+            q: st["source_not_verified"]
+            for q, st in with_status(GROUND_TRUTH_INVALID).items()
+        },
+        "index_evidence_gaps": {
+            q: r["status"]["index_missing_relationships"]
+            for q, r in per_question.items()
+            if r["status"].get("index_missing_relationships")
+        },
         "denominator": len(evaluable),
         # An evaluable question whose Stage RI did not resolve has no cells
         # and counts as a non-pass in every denominator.
