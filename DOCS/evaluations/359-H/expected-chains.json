@@ -1,0 +1,1154 @@
+{
+  "set": "H",
+  "chains": {
+    "H-1": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "mealie/routes/users/forgot_password.py#forgot_password",
+        "relationship": "Handles the public password-reset initiation route",
+        "callee": "POST /api/users/forgot-password",
+        "witness_regex": "@router\\.post\\(\"/forgot\\-password\"\\)",
+        "lines": [
+          19
+        ],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R2",
+        "tier": "core",
+        "caller": "mealie/routes/users/forgot_password.py#forgot_password",
+        "relationship": "Schedules background callback after response",
+        "callee": "mealie/routes/users/forgot_password.py#_send_reset_email",
+        "witness_regex": "bg_tasks\\.add_task\\(_send_reset_email",
+        "lines": [
+          28
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R3",
+        "tier": "supporting",
+        "caller": "mealie/routes/users/forgot_password.py#_send_reset_email",
+        "relationship": "Opens a fresh task-owned database session",
+        "callee": "mealie/db/db_setup.py#session_context",
+        "witness_regex": "with\\ session_context\\(\\)\\ as\\ session:",
+        "lines": [
+          15
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R4",
+        "tier": "core",
+        "caller": "mealie/routes/users/forgot_password.py#_send_reset_email",
+        "relationship": "Calls password reset service in background",
+        "callee": "mealie/services/user_services/password_reset_service.py#PasswordResetService.send_reset_email",
+        "witness_regex": "PasswordResetService\\(session\\)\\.send_reset_email",
+        "lines": [
+          16
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R5",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.send_reset_email",
+        "relationship": "Generates token; no email if account is absent or LDAP-managed",
+        "callee": "mealie/services/user_services/password_reset_service.py#PasswordResetService.generate_reset_token",
+        "witness_regex": "self\\.generate_reset_token\\(email\\)",
+        "lines": [
+          60
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R6",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.generate_reset_token",
+        "relationship": "Loads user case-insensitively through configured repository",
+        "callee": "mealie/repos/repository_generic.py#RepositoryGeneric.get_one",
+        "witness_regex": "self\\.db\\.users\\.get_one\\(email",
+        "lines": [
+          23
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.generate_reset_token",
+        "relationship": "Deletes prior reset tokens for eligible user",
+        "callee": "mealie/services/user_services/password_reset_service.py#PasswordResetService._delete_user_tokens",
+        "witness_regex": "self\\._delete_user_tokens\\(user\\.id\\)",
+        "lines": [
+          33
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.generate_reset_token",
+        "relationship": "Generates cryptographic reset token",
+        "callee": "mealie/core/security/security.py#url_safe_token",
+        "witness_regex": "token\\ =\\ url_safe_token\\(\\)",
+        "lines": [
+          36
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R9",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.generate_reset_token",
+        "relationship": "Persists reset token through configured generic repository",
+        "callee": "mealie/repos/repository_generic.py#RepositoryGeneric.create",
+        "witness_regex": "self\\.db\\.tokens_pw_reset\\.create\\(save_token\\)",
+        "lines": [
+          40
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService._delete_user_tokens",
+        "relationship": "Deletes user reset tokens",
+        "callee": "SQL DELETE password-reset tokens",
+        "witness_regex": "self\\.db\\.session\\.execute\\(delete\\(PasswordResetModel\\)",
+        "lines": [
+          43
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService._delete_user_tokens",
+        "relationship": "Commits token deletion",
+        "callee": "SQL COMMIT",
+        "witness_regex": "self\\.db\\.session\\.commit\\(\\)",
+        "lines": [
+          44
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R12",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.send_reset_email",
+        "relationship": "Passes configured base-URL reset link to email service",
+        "callee": "mealie/services/email/email_service.py#EmailService.send_forgot_password",
+        "witness_regex": "email_service\\.send_forgot_password\\(email,\\ reset_url\\)",
+        "lines": [
+          66
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R13",
+        "tier": "core",
+        "caller": "mealie/services/email/email_service.py#EmailService.send_forgot_password",
+        "relationship": "Delegates localized reset email delivery",
+        "callee": "mealie/services/email/email_service.py#EmailService.send_email",
+        "witness_regex": "return\\ self\\.send_email\\(address,\\ forgot_password\\)",
+        "lines": [
+          56
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R14",
+        "tier": "supporting",
+        "caller": "mealie/services/email/email_service.py#EmailService.__init__",
+        "relationship": "Configures default sender when none injected",
+        "callee": "mealie/services/email/email_senders.py#DefaultEmailSender",
+        "witness_regex": "sender\\ or\\ DefaultEmailSender\\(\\)",
+        "lines": [
+          36
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R15",
+        "tier": "core",
+        "caller": "mealie/services/email/email_service.py#EmailService.send_email",
+        "relationship": "Renders HTML email when SMTP enabled",
+        "callee": "mealie/services/email/email_service.py#EmailTemplate.render_html",
+        "witness_regex": "data\\.render_html\\(self\\.default_template\\)",
+        "lines": [
+          45
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R16",
+        "tier": "core",
+        "caller": "mealie/services/email/email_service.py#EmailService.send_email",
+        "relationship": "Dispatches to configured email sender",
+        "callee": "mealie/services/email/email_senders.py#DefaultEmailSender.send",
+        "witness_regex": "self\\.sender\\.send\\(email_to",
+        "lines": [
+          45
+        ],
+        "resolution_class": "dynamic_dispatch",
+        "dispatch_candidates": [
+          "mealie/services/email/email_senders.py#DefaultEmailSender.send"
+        ],
+        "configured_by": "R14",
+        "note": "Production source contains one concrete ABCEmailSender subclass; injected implementations remain open-world. This route injects no custom sender. SMTP disabled returns False without sending."
+      },
+      {
+        "id": "R17",
+        "tier": "core",
+        "caller": "mealie/services/email/email_senders.py#DefaultEmailSender.send",
+        "relationship": "Constructs SMTP settings and sends message",
+        "callee": "mealie/services/email/email_senders.py#Message.send",
+        "witness_regex": "message\\.send\\(to=email_to,\\ smtp=smtp_options\\)",
+        "lines": [
+          159
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R18",
+        "tier": "core",
+        "caller": "mealie/services/email/email_senders.py#Message.send",
+        "relationship": "Crosses external SMTP boundary under SSL or non-SSL branch",
+        "callee": "stdlib smtplib SMTP/SMTP_SSL send_message",
+        "witness_regex": "server\\.send_message\\(msg\\)",
+        "lines": [
+          109,
+          116
+        ],
+        "resolution_class": "indirect_reference",
+        "note": "SMTP is not HTTP. Frozen enum has no SMTP class; untyped server method is an indirect_reference under section 5a.3. No service graph edge is inferred."
+      },
+      {
+        "id": "R19",
+        "tier": "supporting",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.__init__",
+        "relationship": "Configures unscoped account/token repositories",
+        "callee": "mealie/repos/all_repositories.py#get_repositories",
+        "witness_regex": "get_repositories\\(session,\\ group_id=None,\\ household_id=None\\)",
+        "lines": [
+          19
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R20",
+        "tier": "supporting",
+        "caller": "mealie/repos/repository_factory.py#AllRepositories.users",
+        "relationship": "Binds user repository concrete class",
+        "callee": "mealie/repos/repository_users.py#RepositoryUsers",
+        "witness_regex": "return\\ RepositoryUsers\\(",
+        "lines": [
+          338
+        ],
+        "resolution_class": "static_direct"
+      }
+    ],
+    "H-2": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "mealie/routes/users/forgot_password.py#reset_password",
+        "relationship": "Handles reset completion",
+        "callee": "POST /api/users/reset-password",
+        "witness_regex": "@router\\.post\\(\"/reset\\-password\"\\)",
+        "lines": [
+          31
+        ],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R2",
+        "tier": "core",
+        "caller": "mealie/routes/users/forgot_password.py#reset_password",
+        "relationship": "Delegates token and new password",
+        "callee": "mealie/services/user_services/password_reset_service.py#PasswordResetService.reset_password",
+        "witness_regex": "f_service\\.reset_password\\(reset_password\\.token,\\ reset_password\\.password\\)",
+        "lines": [
+          35
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R3",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.reset_password",
+        "relationship": "Checks stored token and expiration",
+        "callee": "mealie/services/user_services/password_reset_service.py#PasswordResetService._get_valid_token",
+        "witness_regex": "self\\._get_valid_token\\(token\\)",
+        "lines": [
+          72
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R4",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService._get_valid_token",
+        "relationship": "Looks up supplied token",
+        "callee": "SQL SELECT password-reset token",
+        "witness_regex": "select\\(PasswordResetModel\\)\\.where\\(PasswordResetModel\\.token\\ ==\\ token\\)",
+        "lines": [
+          48
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R5",
+        "tier": "supporting",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService._get_valid_token",
+        "relationship": "Rejects absent or expired tokens",
+        "callee": "configured token lifetime",
+        "witness_regex": "datetime\\.now\\(UTC\\)\\ \\-\\ token_row\\.created_at\\ >\\ lifetime",
+        "lines": [
+          52
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R6",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.reset_password",
+        "relationship": "Retrieves account through configured user repository",
+        "callee": "mealie/repos/repository_generic.py#RepositoryGeneric.get_one",
+        "witness_regex": "self\\.db\\.users\\.get_one\\(token_entry\\.user_id\\)",
+        "lines": [
+          78
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.reset_password",
+        "relationship": "Hashes new password",
+        "callee": "mealie/core/security/security.py#hash_password",
+        "witness_regex": "hash_password\\(new_password\\)",
+        "lines": [
+          80
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "mealie/core/security/security.py#hash_password",
+        "relationship": "Selects configured hasher",
+        "callee": "mealie/core/security/hasher.py#get_hasher",
+        "witness_regex": "get_hasher\\(\\)",
+        "lines": [
+          46
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R9",
+        "tier": "core",
+        "caller": "mealie/core/security/security.py#hash_password",
+        "relationship": "Dispatches password hashing",
+        "callee": "mealie/core/security/hasher.py#BcryptHasher.hash",
+        "witness_regex": "\\.hash\\(password\\)",
+        "lines": [
+          46
+        ],
+        "resolution_class": "dynamic_dispatch",
+        "dispatch_candidates": [
+          "mealie/core/security/hasher.py#BcryptHasher.hash",
+          "mealie/core/security/hasher.py#FakeHasher.hash"
+        ],
+        "configured_by": "R8",
+        "note": "get_hasher selects FakeHasher only with TESTING; production scenario uses BcryptHasher, not an inferred deployed setting."
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "mealie/core/security/hasher.py#BcryptHasher.hash",
+        "relationship": "Converts and limits bcrypt input to 72 UTF-8 bytes",
+        "callee": "mealie/core/security/hasher.py#BcryptHasher._get_password_bytes",
+        "witness_regex": "self\\._get_password_bytes\\(password\\)",
+        "lines": [
+          28
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "mealie/core/security/hasher.py#BcryptHasher.hash",
+        "relationship": "Hashes with bcrypt and generated salt",
+        "callee": "external bcrypt.hashpw",
+        "witness_regex": "bcrypt\\.hashpw\\(password_bytes,\\ bcrypt\\.gensalt\\(\\)\\)",
+        "lines": [
+          29
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R12",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.reset_password",
+        "relationship": "Delegates password persistence",
+        "callee": "mealie/repos/repository_users.py#RepositoryUsers.update_password",
+        "witness_regex": "self\\.db\\.users\\.update_password\\(user\\.id,\\ password_hash\\)",
+        "lines": [
+          82
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R13",
+        "tier": "core",
+        "caller": "mealie/repos/repository_users.py#RepositoryUsers.update_password",
+        "relationship": "Updates password and token invalidation watermark",
+        "callee": "mealie/db/models/users/users.py#User.update_password",
+        "witness_regex": "entry\\.update_password\\(password\\)",
+        "lines": [
+          27
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R14",
+        "tier": "core",
+        "caller": "mealie/db/models/users/users.py#User.update_password",
+        "relationship": "Invalidates earlier authentication tokens",
+        "callee": "user token invalidation watermark",
+        "witness_regex": "self\\.tokens_valid_after\\ =\\ datetime\\.now\\(UTC\\)\\.replace\\(microsecond=0\\)",
+        "lines": [
+          217
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R15",
+        "tier": "core",
+        "caller": "mealie/repos/repository_users.py#RepositoryUsers.update_password",
+        "relationship": "Commits user update",
+        "callee": "SQL COMMIT",
+        "witness_regex": "self\\.session\\.commit\\(\\)",
+        "lines": [
+          28
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R16",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.reset_password",
+        "relationship": "Removes reset tokens after confirmed password update",
+        "callee": "mealie/services/user_services/password_reset_service.py#PasswordResetService._delete_user_tokens",
+        "witness_regex": "self\\._delete_user_tokens\\(user\\.id\\)",
+        "lines": [
+          88
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R17",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService._delete_user_tokens",
+        "relationship": "Deletes all reset tokens for user",
+        "callee": "SQL DELETE password-reset tokens",
+        "witness_regex": "self\\.db\\.session\\.execute\\(delete\\(PasswordResetModel\\)",
+        "lines": [
+          43
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R18",
+        "tier": "core",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService._delete_user_tokens",
+        "relationship": "Commits reset-token removal",
+        "callee": "SQL COMMIT",
+        "witness_regex": "self\\.db\\.session\\.commit\\(\\)",
+        "lines": [
+          44
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R19",
+        "tier": "supporting",
+        "caller": "mealie/services/user_services/password_reset_service.py#PasswordResetService.__init__",
+        "relationship": "Configures unscoped account/token repositories",
+        "callee": "mealie/repos/all_repositories.py#get_repositories",
+        "witness_regex": "get_repositories\\(session,\\ group_id=None,\\ household_id=None\\)",
+        "lines": [
+          19
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R20",
+        "tier": "supporting",
+        "caller": "mealie/repos/repository_factory.py#AllRepositories.users",
+        "relationship": "Binds user repository concrete class",
+        "callee": "mealie/repos/repository_users.py#RepositoryUsers",
+        "witness_regex": "return\\ RepositoryUsers\\(",
+        "lines": [
+          338
+        ],
+        "resolution_class": "static_direct"
+      }
+    ],
+    "H-3": [
+      {
+        "id": "R1",
+        "tier": "core",
+        "caller": "mealie/routes/recipe/exports.py#RecipeExportController.get_recipe_as_format",
+        "relationship": "Handles recipe export",
+        "callee": "GET /api/recipes/{slug}/exports",
+        "witness_regex": "@router\\.get\\(\"/\\{slug\\}/exports\",",
+        "lines": [
+          27
+        ],
+        "resolution_class": "route"
+      },
+      {
+        "id": "R2",
+        "tier": "core",
+        "caller": "mealie/routes/recipe/exports.py#RecipeExportController.get_recipe_as_format",
+        "relationship": "Allocates temporary output directory",
+        "callee": "mealie/core/dependencies/dependencies.py#get_temporary_path",
+        "witness_regex": "get_temporary_path\\(auto_unlink=False\\)",
+        "lines": [
+          36
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R3",
+        "tier": "core",
+        "caller": "mealie/routes/recipe/exports.py#RecipeExportController.get_recipe_as_format",
+        "relationship": "Loads recipe by slug through configured HTTP repository",
+        "callee": "mealie/routes/_base/mixins.py#HttpRepo.get_one",
+        "witness_regex": "self\\.mixins\\.get_one\\(slug\\)",
+        "lines": [
+          37
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R4",
+        "tier": "core",
+        "caller": "mealie/routes/_base/mixins.py#HttpRepo.get_one",
+        "relationship": "Retrieves recipe from configured repository",
+        "callee": "mealie/repos/repository_generic.py#RepositoryGeneric.get_one",
+        "witness_regex": "self\\.repo\\.get_one\\(item_id,\\ key\\)",
+        "lines": [
+          108
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R5",
+        "tier": "core",
+        "caller": "mealie/repos/repository_generic.py#RepositoryGeneric.get_one",
+        "relationship": "Executes scoped recipe query",
+        "callee": "SQL SELECT scoped recipe",
+        "witness_regex": "self\\.session\\.execute\\(q\\)\\.unique\\(\\)\\.scalars\\(\\)\\.one_or_none\\(\\)",
+        "lines": [
+          179
+        ],
+        "resolution_class": "sql"
+      },
+      {
+        "id": "R6",
+        "tier": "core",
+        "caller": "mealie/routes/recipe/exports.py#RecipeExportController.get_recipe_as_format",
+        "relationship": "Delegates template rendering",
+        "callee": "mealie/services/recipe/recipe_service.py#RecipeService.render_template",
+        "witness_regex": "self\\.service\\.render_template\\(recipe,\\ temp_path,\\ template_name\\)",
+        "lines": [
+          38
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R7",
+        "tier": "core",
+        "caller": "mealie/services/recipe/recipe_service.py#RecipeService.render_template",
+        "relationship": "Invokes concrete template service",
+        "callee": "mealie/services/recipe/template_service.py#TemplateService.render",
+        "witness_regex": "t_service\\.render\\(recipe,\\ template\\)",
+        "lines": [
+          808
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R8",
+        "tier": "core",
+        "caller": "mealie/services/recipe/template_service.py#TemplateService.render",
+        "relationship": "Resolves requested template type",
+        "callee": "mealie/services/recipe/template_service.py#TemplateService.template_type",
+        "witness_regex": "self\\.template_type\\(template\\)",
+        "lines": [
+          66
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R9",
+        "tier": "core",
+        "caller": "mealie/services/recipe/template_service.py#TemplateService.render",
+        "relationship": "Renders raw JSON branch",
+        "callee": "mealie/services/recipe/template_service.py#TemplateService._render_json",
+        "witness_regex": "self\\._render_json\\(recipe\\)",
+        "lines": [
+          69
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R10",
+        "tier": "core",
+        "caller": "mealie/services/recipe/template_service.py#TemplateService.render",
+        "relationship": "Renders ZIP branch",
+        "callee": "mealie/services/recipe/template_service.py#TemplateService._render_zip",
+        "witness_regex": "self\\._render_zip\\(recipe\\)",
+        "lines": [
+          72
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R11",
+        "tier": "core",
+        "caller": "mealie/services/recipe/template_service.py#TemplateService._render_json",
+        "relationship": "Serializes raw JSON file",
+        "callee": "filesystem JSON export",
+        "witness_regex": "f\\.write\\(recipe\\.model_dump_json\\(indent=4,\\ by_alias=True\\)\\)",
+        "lines": [
+          88
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R12",
+        "tier": "core",
+        "caller": "mealie/services/recipe/template_service.py#TemplateService._render_zip",
+        "relationship": "Writes recipe JSON into archive",
+        "callee": "ZIP JSON member",
+        "witness_regex": "myzip\\.writestr\\(f\"\\{recipe\\.slug\\}\\.json\",\\ recipe\\.model_dump_json\\(\\)\\)",
+        "lines": [
+          103
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R13",
+        "tier": "core",
+        "caller": "mealie/services/recipe/template_service.py#TemplateService._render_zip",
+        "relationship": "Adds original image if present",
+        "callee": "ZIP original image member",
+        "witness_regex": "myzip\\.write\\(image_asset,\\ arcname=image_asset\\.name\\)",
+        "lines": [
+          106
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R14",
+        "tier": "core",
+        "caller": "mealie/routes/recipe/exports.py#RecipeExportController.get_recipe_as_format",
+        "relationship": "Returns file and schedules cleanup after response",
+        "callee": "shutil.rmtree",
+        "witness_regex": "FileResponse\\(file,\\ background=BackgroundTask\\(rmtree,\\ temp_path\\)\\)",
+        "lines": [
+          39
+        ],
+        "resolution_class": "indirect_reference"
+      },
+      {
+        "id": "R15",
+        "tier": "supporting",
+        "caller": "mealie/routes/recipe/_base.py#BaseRecipeController.mixins",
+        "relationship": "Binds recipe mixin",
+        "callee": "mealie/routes/_base/mixins.py#HttpRepo",
+        "witness_regex": "return\\ HttpRepo\\[RecipeCreate,\\ RecipeOut,\\ RecipeOut\\]\\(self\\.recipes,\\ self\\.logger\\)",
+        "lines": [
+          56
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R16",
+        "tier": "supporting",
+        "caller": "mealie/routes/recipe/_base.py#BaseRecipeController.service",
+        "relationship": "Binds recipe service",
+        "callee": "mealie/services/recipe/recipe_service.py#RecipeService",
+        "witness_regex": "return\\ RecipeService\\(self\\.repos,\\ self\\.user,\\ self\\.household,\\ translator=self\\.translator\\)",
+        "lines": [
+          52
+        ],
+        "resolution_class": "static_direct"
+      },
+      {
+        "id": "R17",
+        "tier": "supporting",
+        "caller": "mealie/repos/repository_factory.py#AllRepositories.recipes",
+        "relationship": "Configures slug key and group/household scoped recipe repository",
+        "callee": "mealie/repos/repository_recipes.py#RepositoryRecipes",
+        "witness_regex": "return\\ RepositoryRecipes\\(",
+        "lines": [
+          289
+        ],
+        "resolution_class": "static_direct"
+      }
+    ]
+  },
+  "metadata": {
+    "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+    "repo_id": "7da95a1b-11dc-5f74-8d3b-fabe24489ad7",
+    "generation_id": "611fce96-93f4-4869-b176-2ab668fd2483",
+    "service_sha": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+    "budgets": [
+      4096,
+      16384
+    ],
+    "selection_basis": "Pinned source only; no graph, trace, selection, or RAG answer used. Two password flows share helpers; set is not broad application coverage.",
+    "index_validation": {
+      "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+      "generation_before": {
+        "repo_id": "7da95a1b-11dc-5f74-8d3b-fabe24489ad7",
+        "ingestion_id": "611fce96-93f4-4869-b176-2ab668fd2483",
+        "generation_status": "ready",
+        "commit_sha": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+        "ingested_at": "2026-11-14T23:09:11.414051",
+        "parent_generation_id": null,
+        "is_incremental": false
+      },
+      "generation_after": {
+        "repo_id": "7da95a1b-11dc-5f74-8d3b-fabe24489ad7",
+        "ingestion_id": "611fce96-93f4-4869-b176-2ab668fd2483",
+        "generation_status": "ready",
+        "commit_sha": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+        "ingested_at": "2026-11-14T23:09:11.414051",
+        "parent_generation_id": null,
+        "is_incremental": false
+      },
+      "service_versions": {
+        "8001": {
+          "service": "ingestion_service",
+          "git_sha": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+          "build_date": "2026-11-13T13:11:40Z",
+          "release_version": "prod-2026-11-13-806am"
+        },
+        "8002": {
+          "service": "vector_store_service",
+          "git_sha": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+          "build_date": "2026-11-13T13:11:40Z",
+          "release_version": "prod-2026-11-13-806am"
+        },
+        "8003": {
+          "service": "llm_service",
+          "git_sha": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+          "build_date": "2026-11-13T13:11:40Z",
+          "release_version": "prod-2026-11-13-806am"
+        },
+        "8004": {
+          "service": "rag_orchestrator",
+          "git_sha": "9f039c43604b2e96a6f96351e00afa178c9c81f8",
+          "build_date": "2026-11-13T13:11:40Z",
+          "release_version": "prod-2026-11-13-806am"
+        }
+      },
+      "checks": {
+        "H-1": {
+          "R1": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R2": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R3": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R4": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R5": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R6": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R7": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R8": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R9": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R10": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R11": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R12": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R13": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R14": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R15": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R16": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R17": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R18": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R19": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R20": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          }
+        },
+        "H-2": {
+          "R1": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R2": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R3": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R4": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R5": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R6": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R7": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R8": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R9": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R10": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R11": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R12": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R13": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R14": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R15": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R16": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R17": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R18": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R19": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R20": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          }
+        },
+        "H-3": {
+          "R1": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R2": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R3": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R4": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R5": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R6": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R7": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R8": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R9": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R10": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R11": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R12": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R13": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R14": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R15": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R16": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          },
+          "R17": {
+            "source_valid": true,
+            "index_has_witness": true,
+            "lookup_found": true
+          }
+        }
+      },
+      "full_pages": [],
+      "evaluation_run": false,
+      "method": "Frozen source_has_witness and stored_text_has_witness utilities; canonical-ID lookup and generation-scoped search-by-doc only; no graph export, trace, selection, assembly or scoring."
+    },
+    "counts": {
+      "H-1": {
+        "core": 16,
+        "supporting": 4
+      },
+      "H-2": {
+        "core": 17,
+        "supporting": 3
+      },
+      "H-3": {
+        "core": 14,
+        "supporting": 3
+      }
+    },
+    "limitations": [
+      "No runtime Mealie application executed. Deployment reverse-proxy mounts are not inferred; paths are application public paths.",
+      "Framework dependency injection and receiver calls remain indirect, not graph-resolved.",
+      "SMTP boundary uses frozen indirect_reference class for untyped server methods; it is not mislabeled HTTP.",
+      "Conditional witnesses cover specified scenarios and both export formats, not a claim all branches execute in a single request."
+    ],
+    "public_route_evidence": [
+      {
+        "path": "mealie/app.py",
+        "lines": [
+          158
+        ],
+        "source": "app.include_router(router)"
+      },
+      {
+        "path": "mealie/routes/__init__.py",
+        "lines": [
+          20
+        ],
+        "source": "router = APIRouter(prefix=\"/api\")"
+      },
+      {
+        "path": "mealie/routes/__init__.py",
+        "lines": [
+          24
+        ],
+        "source": "router.include_router(users.router)"
+      },
+      {
+        "path": "mealie/routes/__init__.py",
+        "lines": [
+          27
+        ],
+        "source": "router.include_router(recipe.router)"
+      },
+      {
+        "path": "mealie/routes/users/__init__.py",
+        "lines": [
+          6
+        ],
+        "source": "user_prefix = \"/users\""
+      },
+      {
+        "path": "mealie/routes/users/__init__.py",
+        "lines": [
+          12
+        ],
+        "source": "router.include_router(forgot_password.router, prefix=user_prefix"
+      },
+      {
+        "path": "mealie/routes/users/forgot_password.py",
+        "lines": [
+          10
+        ],
+        "source": "router = APIRouter(prefix=\"\")"
+      },
+      {
+        "path": "mealie/routes/recipe/__init__.py",
+        "lines": [
+          9
+        ],
+        "source": "router.include_router(exports.router"
+      },
+      {
+        "path": "mealie/routes/recipe/exports.py",
+        "lines": [
+          15
+        ],
+        "source": "router = UserAPIRouter(prefix=\"/recipes\")"
+      },
+      {
+        "path": "mealie/routes/_base/routers.py",
+        "lines": [
+          25
+        ],
+        "source": "super().__init__(tags=tags, prefix=prefix, dependencies=[Depends(get_current_user)]"
+      }
+    ]
+  }
+}
