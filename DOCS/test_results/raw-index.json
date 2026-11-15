@@ -358,6 +358,34 @@
       "cited_by": "DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md",
       "notes": "#359 C7 scoring (sealing step 5) against the revealed expected chains 0e8b22ec...; C3 rescan flagged 4 generic terms (see report)."
     },
+    "2026-11-14-359-H-e2e.json": {
+      "bytes": 7254,
+      "sha256": "0929dc2726dc477d217ac84fa56c8ef59746f240a2363fd99a77e302b4933be7",
+      "produced_by": "python scripts/evidence_selection_359.py run-e2e (harness main @ 16fc0d5)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md",
+      "notes": "#359 held-out frozen Stage RI + ES under E2E (sealing step 3): RI resolved no question, so ES did not run. Hash posted on #359 before the oracle reveal. No private endpoints recorded."
+    },
+    "2026-11-14-359-H-oracle-entry.json": {
+      "bytes": 45538,
+      "sha256": "6788c90e4aab83c4c6354bda31d5b7f81e53261d657c2b230897a1032358ca9e",
+      "produced_by": "python scripts/evidence_selection_359.py run-oracle (harness main @ 16fc0d5)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md",
+      "notes": "#359 held-out ORACLE-ENTRY (sealing step 4); never an end-to-end result. Hash posted on #359 before the chains reveal."
+    },
+    "2026-11-14-359-H-preflight.json": {
+      "bytes": 4765,
+      "sha256": "aad5bbfa28340b988f3cd32b05e9f926c62f2952f44f7c6b88fe2fc0a9a3ef2a",
+      "produced_by": "python scripts/evidence_selection_359.py preflight (harness main @ 16fc0d5)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md",
+      "notes": "#359 held-out (mealie) preflight: generation 611fce96 ready at 1624c22, service SHAs 9f039c4, protocol/rules hashes, C3 scan clean against public inputs. Hash posted on #359."
+    },
+    "2026-11-14-359-H-score.json": {
+      "bytes": 237460,
+      "sha256": "332b5f90f44dcb941339696058ee34e519419c5436fb947a6c4692990f45db77",
+      "produced_by": "python scripts/evidence_selection_359.py score (harness main @ 16fc0d5)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md",
+      "notes": "#359 held-out scoring (sealing step 5) against the revealed expected chains a7279b78...; C3 rescan flagged 4 generic terms (delete, file, return, with), exit code 4; owner manually adjudicated all four as false positives (see report)."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",

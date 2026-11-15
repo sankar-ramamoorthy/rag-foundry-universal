@@ -8,6 +8,11 @@ governed.
 
 ## 2026-11-14
 
+Added the [#359 held-out `mealie` results](/DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md).
+The public questions (PR #366) and the revealed expected chains (PR #367,
+stacked on #366) are committed through those PRs, not this one. The raw
+records are indexed in `raw-index.json`.
+
 Added the [#359 C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md)
 and the revealed sealed files under `DOCS/evaluations/359-C7/` (byte-identical, marked `-text`).
 The raw records are indexed in `raw-index.json`.
