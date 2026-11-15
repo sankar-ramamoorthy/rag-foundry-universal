@@ -22,6 +22,15 @@ before any implementation". It draws on the three frozen result sets, each
 with its own evidence class. **Nothing here is implemented or authorized.**
 The recommendation is a proposal for the owner.
 
+**How to read this report.** Four kinds of statement are kept apart:
+
+| Kind | Where | Status |
+|---|---|---|
+| Observed failures | §1–§3, and the "Measured effect" column of §5 | Measured in the frozen records |
+| Hypothesized architectural causes | §5, "Status of the cause" column | Hypotheses unless marked measured |
+| Proposed query-time transparency change | §4 | **Proposal; not implemented, not authorized, not evaluated** |
+| Untested dimensions | §6 | Not measured by #359; no conclusion drawn |
+
 ## 1. Three perspectives, reported separately
 
 | | Primary development case | C7 | `mealie` |
@@ -131,7 +140,48 @@ graph construction, which is outside this recommendation.
 | **Passage granularity for large functions** | Primary: `run_rag` takes 18 of 22 passages at 16 KB | Measured |
 | **4 KB vs real traces** | Bounds of 4.0–9.5 KB | Measured (oracle bound) |
 
-## 6. #359 deliverables
+## 6. Untested dimensions
+
+#359 measured deterministic discovery, selection and context assembly at two
+budgets. It does **not** support conclusions about the following:
+
+- **Larger or different generation models.**
+  - No answer was generated: A0 stubbed generation, and the arms produce
+    evidence only.
+  - #359 says nothing about how any model, larger or smaller, would answer
+    from the delivered evidence.
+  - A model cannot cite implementation evidence it was never given, but
+    whether a stronger model would reason better around the gaps is
+    untested.
+- **Stronger GPUs or other hardware.**
+  - The measured outcomes come from graph traversal and offline assembly,
+    so hardware does not enter them.
+  - Latency, throughput and cost were not measured.
+- **Larger evidence budgets.**
+  - Only 4,096 and 16,384 bytes were run.
+  - On `mealie` no loss was a budget cut, and the selected evidence never
+    exceeded 4,179 bytes. On these frozen records, more budget would add no
+    `mealie` evidence. That is an inference from the records, not a
+    measurement.
+  - On the primary case, discovery requested 103,788 B (P-call) against the
+    16 KB cap, so budgets above 16 KB are untested there. Even then, 7 core
+    relationships were never discovered and could not be delivered at any
+    budget.
+- **Scalability.**
+  - Two repositories were used, one generation each: self, 13,458 nodes;
+    `mealie`, 21,621 nodes.
+  - The 300-node cap was never hit.
+  - Behaviour on larger repositories, ingestion and query latency, memory,
+    and concurrent load were not measured.
+- **Other coverage.**
+  - Only Python, and FastAPI-style routes, were tested.
+  - A0 ran on the primary case only (P4).
+  - `mealie`'s deployed embedding configuration is unverified. It does not
+    affect graph discovery.
+  - The question sets are small: 1 + 3 + 3, with two `mealie` questions
+    sharing helpers.
+
+## 7. #359 deliverables
 
 | Deliverable | Status |
 |---|---|
