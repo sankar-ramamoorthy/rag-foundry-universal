@@ -244,6 +244,20 @@ is not frozen. Resume from the
     status and execution-chain completeness explicitly at query time.
   - That proposal is kept separate from the architectural work on route
     composition and call-target resolution.
+- **#375 source-navigation agent diagnostic (2026-11-15,
+  [report](/DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md)).**
+  Development evidence only, on the revealed `mealie` questions.
+  - A capable hosted model with only file listing, search and file
+    reads cited every expected witness (core 16/16, 17/17, 14/14
+    lenient; one route-decorator witness per question fails the
+    strict caller rule).
+  - The #359 selector supported 2/16, 2/17 and 5/14 with the handler
+    supplied.
+  - About four minutes and 100K fresh input tokens per question.
+    Metered cost, cheaper models, an unseen repository and reverse or
+    global questions are untested.
+  - #373 is paused with its protocol frozen, pending the owner's
+    decision.
 - **Next:** the owner decides on the recommendation. Ranking, budget and
   generation changes are not authorized.
 - Resume from the
