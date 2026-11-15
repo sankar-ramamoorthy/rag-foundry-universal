@@ -224,6 +224,12 @@ The [#359 held-out `mealie` results](/DOCS/test_results/2026-11-14-359-H-mealie-
 are the generalization test: E2E 0/3 (no route resolved), and ORACLE-ENTRY
 0/48 cells. Discovery stops at the entry handler, and no loss is caused by
 the budget.
+The [#359 primary development case](/DOCS/test_results/2026-11-14-359-primary-development-case-results.md)
+(`POST /v1/rag`, previously studied) fails in every cell, with G2 at most
+4/12 core. The [#359 final report and recommendation](/DOCS/test_results/2026-11-14-359-final-report-and-recommendation.md)
+compares the three perspectives. It proposes query-time transparency about
+unresolved routes and incomplete chains, separate from the architectural
+graph-construction work.
 
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.
