@@ -386,6 +386,34 @@
       "cited_by": "DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md",
       "notes": "#359 held-out scoring (sealing step 5) against the revealed expected chains a7279b78...; C3 rescan flagged 4 generic terms (delete, file, return, with), exit code 4; owner manually adjudicated all four as false positives (see report)."
     },
+    "2026-11-14-359-primary-e2e.json": {
+      "bytes": 760391,
+      "sha256": "39146b276820865bb9bb1768b4bb72b4b2fce21ead5917500ef8017c6a4241d8",
+      "produced_by": "python scripts/evidence_selection_359.py run-e2e (harness main @ dec60ce)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-primary-development-case-results.md",
+      "notes": "#359 primary development case E2E (includes A0 with stubbed embedding/generation). Hash posted on #359 before ORACLE-ENTRY. No private endpoints recorded."
+    },
+    "2026-11-14-359-primary-oracle-entry.json": {
+      "bytes": 714468,
+      "sha256": "0078e772e641b866a795bd9f6d73fc1ce97361a95b4a549e4f867566ec7322ab",
+      "produced_by": "python scripts/evidence_selection_359.py run-oracle (harness main @ dec60ce)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-primary-development-case-results.md",
+      "notes": "#359 primary development case ORACLE-ENTRY; never an end-to-end result. ES identical to E2E (RI handler = oracle handler)."
+    },
+    "2026-11-14-359-primary-preflight.json": {
+      "bytes": 5151,
+      "sha256": "488581f6ca4a0bea0828f3c03b2a8a902f4a07ea0f2b64b7f57fd1dd4d2d40e7",
+      "produced_by": "python scripts/evidence_selection_359.py preflight (harness main @ dec60ce)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-primary-development-case-results.md",
+      "notes": "#359 primary development case (POST /v1/rag) preflight: generation 8cbedbb9 ready, 18/18 section-4 witnesses in stored text, C3 scan clean."
+    },
+    "2026-11-14-359-primary-score.json": {
+      "bytes": 155990,
+      "sha256": "d46a03dfc12a8c90ff0cbda8c1dbaa555cabb0f98fdf180a051257a7fd071fe1",
+      "produced_by": "python scripts/evidence_selection_359.py score (harness main @ dec60ce)",
+      "cited_by": "DOCS/test_results/2026-11-14-359-primary-development-case-results.md",
+      "notes": "#359 primary development case scoring against the public section-4 chains 0d79f3e3...; C3 rescan clean (exit 0)."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",

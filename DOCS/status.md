@@ -226,7 +226,25 @@ is not frozen. Resume from the
   scanner returned exit code 4 on four generic terms, and the owner
   manually adjudicated them as false positives on #359. The scope is three
   questions in one repository, two of which share helpers.
-- **Next:** the owner decides after these measurements. Ranking, budget and
+- **#359 primary development case (2026-11-14).** `POST /v1/rag`, a
+  previously studied development case and not validation
+  ([results](/DOCS/test_results/2026-11-14-359-primary-development-case-results.md)):
+  - RI resolves the correct handler, and discovery reaches 94 functions;
+  - every cell fails. G2 supports 2–4 of 12 core relationships, and G3 up
+    to 5/12;
+  - 7 core relationships are not discovered (dispatch into the embedder, the
+    far side of the HTTP hop), and 1 is cut by budget, which `run_rag`
+    consumes;
+  - A0 (today's path) delivers documentation: 0/12.
+- **#359 final report and recommendation (2026-11-14,
+  [report](/DOCS/test_results/2026-11-14-359-final-report-and-recommendation.md)).**
+  - No traversal strategy or budget increase has demonstrated
+    generalization.
+  - Proposed, not implemented or authorized: report route-identification
+    status and execution-chain completeness explicitly at query time.
+  - That proposal is kept separate from the architectural work on route
+    composition and call-target resolution.
+- **Next:** the owner decides on the recommendation. Ranking, budget and
   generation changes are not authorized.
 - Resume from the
   [retrieval-side handoff](/DOCS/notes/20261112-code-intelligence-342-354-handoff.md).

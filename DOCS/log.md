@@ -8,6 +8,11 @@ governed.
 
 ## 2026-11-14
 
+Added the [#359 primary development case results](/DOCS/test_results/2026-11-14-359-primary-development-case-results.md)
+and the [#359 final report and recommendation](/DOCS/test_results/2026-11-14-359-final-report-and-recommendation.md).
+The recommendation is a proposal and is not authorized. The primary raw
+records are indexed in `raw-index.json`.
+
 Added the [#359 held-out `mealie` results](/DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md).
 The public questions (PR #366) and the revealed expected chains (PR #367,
 stacked on #366) are committed through those PRs, not this one. The raw
