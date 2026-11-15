@@ -220,6 +220,10 @@ executes it stage by stage with hash checks; its fixed interpretations are liste
 The [#359 C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md)
 report the first sealed run: 3 routes attempted, 2 evaluable, and 0 end-to-end
 passes. 4 KB is structurally too small for these traces.
+The [#359 held-out `mealie` results](/DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md)
+are the generalization test: E2E 0/3 (no route resolved), and ORACLE-ENTRY
+0/48 cells. Discovery stops at the entry handler, and no loss is caused by
+the budget.
 
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.

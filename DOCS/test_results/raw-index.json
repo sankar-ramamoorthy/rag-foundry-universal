@@ -384,7 +384,7 @@
       "sha256": "332b5f90f44dcb941339696058ee34e519419c5436fb947a6c4692990f45db77",
       "produced_by": "python scripts/evidence_selection_359.py score (harness main @ 16fc0d5)",
       "cited_by": "DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md",
-      "notes": "#359 held-out scoring (sealing step 5) against the revealed expected chains a7279b78...; C3 rescan flagged 4 generic terms, exit code 4 (see report)."
+      "notes": "#359 held-out scoring (sealing step 5) against the revealed expected chains a7279b78...; C3 rescan flagged 4 generic terms (delete, file, return, with), exit code 4; owner manually adjudicated all four as false positives (see report)."
     },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,

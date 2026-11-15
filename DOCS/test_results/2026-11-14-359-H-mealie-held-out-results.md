@@ -2,8 +2,8 @@
 title: "#359 held-out results: route-grounded evidence selection on mealie"
 date: 2026-11-14
 type: test-results
-status: draft
-summary: "PROVISIONAL until owner review. The C3 scanner returned exit code 4 for four generic terms, and owner adjudication is pending. The frozen #359 protocol ran on three Codex-sealed held-out routes in mealie @ 1624c22. All 3 questions are evaluable, and 0 pass end to end: Stage RI resolved none of them (2 unresolved_route from router prefixes, 1 no_route_node). Under ORACLE-ENTRY every arm, unit and budget fails. Discovery never leaves the entry handler, because its onward calls are stored as external symbols. All losses are not-discovered; none is a budget cut. The frozen strategy does not generalize to this repository."
+status: current
+summary: "Held-out result (ADR-054 §5). The C3 scanner returned exit code 4 for four generic terms, which the owner manually adjudicated as false positives; the automated scan did not pass. The frozen #359 protocol ran on three Codex-sealed held-out routes in mealie @ 1624c22. All 3 questions are evaluable, and 0 pass end to end: Stage RI resolved none of them (2 unresolved_route from router prefixes, 1 no_route_node). Under ORACLE-ENTRY all 48 cells fail (3 questions x 4 arms x 2 units x 2 budgets), with identical scores in G0-G3. Discovery never leaves the entry handler, because its onward calls are stored as external symbols. All losses are not-discovered; none is a budget cut. The frozen strategy does not generalize to this repository."
 tags: [evaluation, results, code-intelligence, evidence-selection, overfitting, held-out, issue-359, issue-342, issue-194]
 related:
   - "[Issue #359](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/359)"
@@ -17,9 +17,11 @@ related:
 
 # #359 held-out results: evidence selection on `mealie`
 
-> **PROVISIONAL, pending owner review.** The C3 scanner returned **exit code
-> 4** for four generic terms (§1). This draft does not adjudicate them and does
-> not report the scan as passing.
+> **C3: the automated scanner returned exit code 4, and the scan did not
+> pass.** It flagged four generic terms: `delete`, `file`, `return` and
+> `with`. The owner **manually adjudicated all four as false positives**
+> (#359, 2026-11-14). The scanner, its exit status and its raw output in the
+> score record are unchanged (§1).
 
 **Evidence class: held-out (ADR-054 §5).** This is the generalization test
 (C10) for the strategy frozen at `45f34e1`. Nothing was tuned against
@@ -52,20 +54,35 @@ directly from the frozen records, from **architectural interpretations**
 | Generation and embedding calls | none: A0 was not run (P4), and passages were fetched with the stored vector |
 
 The E2E and ORACLE-ENTRY records were re-hashed before and after scoring, and
-both were unchanged. PRs #366 and #367 were read from their branches and not
-merged.
+both were unchanged.
 
-### C3 rescan with the revealed terms: exit code 4, adjudication pending
+**Input PRs.** This report does not commit the questions or the revealed
+chains. They live in two PRs:
+- [PR #366](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/366)
+  publishes `DOCS/evaluations/359-H/questions.json` (step 1).
+- [PR #367](https://github.com/sankar-ramamoorthy/rag-foundry-universal/pull/367)
+  adds `DOCS/evaluations/359-H/expected-chains.json` (step 5). It is
+  **stacked on #366**: its base is #366's branch, so #366 merges first.
 
-The automated scan did **not** pass. For each hit, the table gives the
-evidence. It does not give a ruling.
+Both were read from their branches and verified by hash; neither was merged
+for this run. Until they merge, those files are reachable only through the
+PRs.
 
-| Term | Occurrence in the frozen rules module | Type | Source in the revealed files |
-|---|---|---|---|
-| `delete` | line 28, `ROUTE_IN_QUESTION` regex: `(GET\|POST\|PUT\|DELETE\|PATCH)` | HTTP method name in the generic route pattern | Match-pattern fragments H-1/R10 and H-2/R17 |
-| `file` | docstring, line 9 ("…file…"), and an `INTERPRETATIONS` string, line 83 ("the file stem for a module node") | Generic English and protocol vocabulary | H-3/R14 |
-| `return` | 23 `return` statements | Python keyword | Match-pattern fragments H-1/R13, R20; H-2/R20; H-3/R15–R17 |
-| `with` | `INTERPRETATIONS` strings, lines 42–43 ("With zero matches…", "with the same method…") | English preposition | H-1/R3 |
+### C3 rescan with the revealed terms: exit code 4, manually adjudicated
+
+**The automated scan did not pass.** It returned exit code 4. Its raw output
+is preserved unchanged in the score record (`c3_rescan_with_revealed_terms`:
+`hits: [delete, file, return, with]`, `clean: false`). The owner ruled each
+hit a false positive. That ruling is a manual adjudication and does not change
+the scanner or its result. C3 compliance (adjudicated) and the scanner result
+(exit code 4) are recorded separately.
+
+| Term | Occurrence in the frozen rules module | Type | Source in the revealed files | Owner ruling |
+|---|---|---|---|---|
+| `delete` | line 28, `ROUTE_IN_QUESTION` regex: `(GET\|POST\|PUT\|DELETE\|PATCH)` | HTTP method name in the generic route pattern | Match-pattern fragments H-1/R10 and H-2/R17 | False positive: generic HTTP DELETE method |
+| `file` | docstring, line 9 ("…file…"), and an `INTERPRETATIONS` string, line 83 ("the file stem for a module node") | Generic English and protocol vocabulary | H-3/R14 | False positive: generic documentation and interpretation terminology |
+| `return` | 23 `return` statements | Python keyword | Match-pattern fragments H-1/R13, R20; H-2/R20; H-3/R15–R17 | False positive: standard Python keyword |
+| `with` | `INTERPRETATIONS` strings, lines 42–43 ("With zero matches…", "with the same method…") | English preposition | H-1/R3 | False positive: ordinary English terminology |
 
 `service` overlapped too, and the scanner reported it under the fixed generic
 list, as designed (`allowed_generic_overlap`). As in C7, the rules file has
@@ -79,7 +96,7 @@ been byte-identical since `49fde85`, which predates these questions.
 | H-2 | `POST /api/users/reset-password` | evaluable | **`unresolved_route`**; suffix candidate `route:mealie:POST:/reset-password` | `mealie/routes/users/forgot_password.py#reset_password` |
 | H-3 | `GET /api/recipes/{slug}/exports` | evaluable | **`no_route_node`** | `mealie/routes/recipe/exports.py#RecipeExportController.get_recipe_as_format` |
 
-- All 57 expected witnesses (20 + 20 + 17) are in stored text and valid at
+- **57/57** expected witnesses (20 + 20 + 17) are in stored text and valid at
   their recorded lines in the pinned source (P3).
 - Index evidence gaps: none.
 - Unwarranted disambiguations: none.
@@ -169,17 +186,27 @@ as structural. Unlike C7, one held-out trace (H-2) fits 4 KB. At 16 KB every
 bound fits, yet the selectors deliver at most 4,179 bytes, because discovery
 supplies nothing more to deliver.
 
-## 7. Architectural interpretations (not established by this run)
+## 7. Architectural interpretations (hypotheses, not established by this run)
 
-These explain the measurements and should be tested separately. None is a
+**Measured (§2, §5):**
+- No question's route resolved.
+- Every unproven relationship is not discovered.
+- The entry handlers' onward calls end at `EXTERNAL_SYMBOL` nodes or, in H-2,
+  at a class node.
+- The next chain functions are not CALL targets of the entry handler.
+
+**Not measured:** *why* the extractor produced those nodes and edges. The
+items below are hypotheses about that, to be tested separately. None is a
 proposal to change anything.
 
-1. **Route identification needs router composition.** Routes are stored with
+1. **Route identification needs router composition (hypothesis).** Routes are stored with
    their router-local path. The `/api/users` and `/api/recipes` prefixes come
    from router inclusion, which the extractor does not compose. H-3's
    class-based controller route produced no route node at all. The graph holds
    only 30 route nodes.
-2. **Calls through injected or attribute-held objects are not resolved.** The
+2. **Calls through injected or attribute-held objects are not resolved
+   (hypothesis covering dependency injection, attribute resolution,
+   background tasks and imports).** The
    unresolved calls include:
    - FastAPI dependency parameters (`f_service`, `bg_tasks`);
    - `self.service` and `self.mixins` on a controller;
@@ -188,7 +215,7 @@ proposal to change anything.
    All of them end at `EXTERNAL_SYMBOL`. Even a module-qualified in-repo
    function (`mealie.core.dependencies.get_temporary_path`) did not resolve,
    which suggests an import-resolution gap as well as a type-inference gap.
-3. **Constructor calls bind to the class, not to a method.** This explains why
+3. **Constructor calls bind to the class, not to a method (hypothesis).** This explains why
    H-2's single followed edge does not continue into the chain.
 4. **No traversal order or budget can recover this.** G0–G3 and both budgets
    are identical because the graph gives them one or two nodes to order. The
@@ -197,9 +224,11 @@ proposal to change anything.
 
 ## 8. Findings
 
-1. **The frozen strategy does not generalize to `mealie`.** The end-to-end
-   result is 0/3, and ORACLE-ENTRY sufficiency fails in all 48 cells
-   (3 questions × 4 arms × 2 units × 2 budgets).
+1. **The frozen strategy does not generalize to `mealie`.** These are two
+   separate results:
+   - **E2E (official): 0/3.**
+   - **ORACLE-ENTRY (oracle-assisted, never end-to-end): 0/48 cells**
+     (3 questions × 4 arms × 2 units × 2 budgets).
 2. **The first failure is route identification** (2 `unresolved_route`, 1
    `no_route_node`). It is the anticipated router-prefix failure, measured
    rather than fixed.
@@ -213,8 +242,11 @@ proposal to change anything.
 
 ## 9. Limitations
 
-- Three questions, two of which share helpers (H-1 and H-2).
-- The C3 scanner returned exit code 4; adjudication is pending (§1).
+- Three questions, two of which share password-reset helpers (H-1 and H-2),
+  which narrows the application breadth.
+- A single held-out repository (`mealie` @ `1624c22`).
+- The C3 scanner returned exit code 4. Compliance rests on the owner's manual
+  adjudication of four false positives (§1), not on the automated scan.
 - The deployed embedding configuration is unverified (§1). The ORACLE-ENTRY
   findings come from graph discovery, which does not use embeddings. Passage
   text was fetched with the stored vector.

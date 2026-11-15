@@ -210,6 +210,22 @@ is not frozen. Resume from the
   These are protocol-valid development diagnostics. The C3 scanner returned
   exit code 4 on four generic terms, and the owner ruled them false positives
   on #359. The held-out `mealie` run is still required.
+- **#359 held-out `mealie` results (2026-11-14).** The same frozen strategy
+  ran on three Codex-sealed routes in `mealie` @ `1624c22` (generation
+  `611fce96`)
+  ([results](/DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md)):
+  - E2E: 0/3. Stage RI resolved no route (2 `unresolved_route` from router
+    prefixes, 1 `no_route_node`);
+  - ORACLE-ENTRY: 0/48 cells, identical in G0–G3, both units and both
+    budgets;
+  - every loss is not discovered, and none is a budget cut. Discovery stops
+    at the entry handler, whose onward calls are stored as external symbols;
+  - 57/57 witnesses are indexed and source-valid.
+
+  **The frozen strategy does not generalize to this repository.** The C3
+  scanner returned exit code 4 on four generic terms, and the owner
+  manually adjudicated them as false positives on #359. The scope is three
+  questions in one repository, two of which share helpers.
 - **Next:** the owner decides after these measurements. Ranking, budget and
   generation changes are not authorized.
 - Resume from the
