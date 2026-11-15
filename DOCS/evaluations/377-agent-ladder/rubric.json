@@ -1,0 +1,63 @@
+{
+  "issue": 377,
+  "source_repository": "sankar-ramamoorthy/mealie",
+  "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+  "authored": "2026-11-15, from the pinned source, before any ladder answer was graded",
+  "grading": {
+    "per_claim": ["correct", "missing", "contradicted"],
+    "correct": "The answer states the claim's substance. Wording, order and extra detail do not matter. Line numbers in the answer need not match exactly.",
+    "missing": "The answer does not state the claim, or states it too vaguely to tell.",
+    "contradicted": "The answer states something incompatible with the claim.",
+    "material_false_statement": "A statement outside the rubric that is false against the pinned source and would mislead a reader about what the code does. Wrong line numbers alone, and framework behaviour the answer flags as unverified, do not count."
+  },
+  "pass_bar": {
+    "contradicted_claims": 0,
+    "material_false_statements": 0,
+    "min_correct_fraction": 0.9,
+    "core_witnesses_lenient": "all",
+    "min_quote_verified_fraction": 0.95
+  },
+  "questions": {
+    "H-1": [
+      {"id": "C1", "claim": "The public path is composed from three places: `/api` from `APIRouter(prefix=\"/api\")`, `/users` from the `prefix=user_prefix` argument when the users package includes the forgot-password router, and `/forgot-password` from the route decorator.", "source": ["mealie/routes/__init__.py:20", "mealie/routes/users/__init__.py:6", "mealie/routes/users/__init__.py:12", "mealie/routes/users/forgot_password.py:19"]},
+      {"id": "C2", "claim": "The handler `forgot_password` does no database or email work itself. It only schedules `_send_reset_email` with `bg_tasks.add_task`, passing the email and accept-language, as a deferred callback that runs after the response.", "source": ["mealie/routes/users/forgot_password.py:28"]},
+      {"id": "C3", "claim": "`_send_reset_email` opens its own database session with `session_context()` (not the request session) and calls `PasswordResetService(session).send_reset_email`.", "source": ["mealie/routes/users/forgot_password.py:15", "mealie/routes/users/forgot_password.py:16"]},
+      {"id": "C4", "claim": "`send_reset_email` calls `generate_reset_token` and returns without sending anything when it returns `None`.", "source": ["mealie/services/user_services/password_reset_service.py:60", "mealie/services/user_services/password_reset_service.py:61"]},
+      {"id": "C5", "claim": "`generate_reset_token` looks the user up by email, case-insensitively, through `self.db.users.get_one(email, \"email\", any_case=True)`, which is a database read in the generic repository.", "source": ["mealie/services/user_services/password_reset_service.py:23", "mealie/repos/repository_generic.py:161"]},
+      {"id": "C6", "claim": "Two early exits return `None` with no token written and no exception: no user with that email, and a user whose auth method is LDAP. Both are logged.", "source": ["mealie/services/user_services/password_reset_service.py:25", "mealie/services/user_services/password_reset_service.py:29"]},
+      {"id": "C7", "claim": "For an eligible user, the user's existing reset tokens are deleted (a DELETE followed by a commit) before the new token is created.", "source": ["mealie/services/user_services/password_reset_service.py:33", "mealie/services/user_services/password_reset_service.py:43"]},
+      {"id": "C8", "claim": "The new token comes from `url_safe_token()` (`secrets.token_urlsafe`) and is persisted through `self.db.tokens_pw_reset.create`, the generic repository create (add, commit, refresh).", "source": ["mealie/services/user_services/password_reset_service.py:36", "mealie/services/user_services/password_reset_service.py:40", "mealie/core/security/security.py:51", "mealie/repos/repository_generic.py:186"]},
+      {"id": "C9", "claim": "The reset URL is built from `BASE_URL` plus `/reset-password/?token=<token>`, and `EmailService(locale=accept_language).send_forgot_password` builds a translated `EmailTemplate` and calls `send_email`.", "source": ["mealie/services/user_services/password_reset_service.py:64", "mealie/services/user_services/password_reset_service.py:65", "mealie/services/email/email_service.py:47"]},
+      {"id": "C10", "claim": "`EmailService.send_email` returns `False` without sending when `SMTP_ENABLE` is false. This check happens after the token has already been created and committed.", "source": ["mealie/services/email/email_service.py:42"]},
+      {"id": "C11", "claim": "With SMTP enabled, `DefaultEmailSender.send` builds a `Message` and `EmailOptions` from settings and calls `Message.send`, which talks to the SMTP server through `smtplib` subclasses (`UTF8AuthSMTP` or `UTF8AuthSMTPSSL`). This is the external service call.", "source": ["mealie/services/email/email_senders.py:133", "mealie/services/email/email_senders.py:159", "mealie/services/email/email_senders.py:85"]},
+      {"id": "C12", "claim": "`send_reset_email` wraps its body in `try/except Exception`, logs the failure and never raises.", "source": ["mealie/services/user_services/password_reset_service.py:59", "mealie/services/user_services/password_reset_service.py:67"]}
+    ],
+    "H-2": [
+      {"id": "C1", "claim": "The public path is composed from three places: `/api` from `APIRouter(prefix=\"/api\")`, `/users` from the `prefix=user_prefix` argument when the users package includes the forgot-password router, and `/reset-password` from the route decorator.", "source": ["mealie/routes/__init__.py:20", "mealie/routes/users/__init__.py:12", "mealie/routes/users/forgot_password.py:31"]},
+      {"id": "C2", "claim": "The handler `reset_password` receives a session from `Depends(generate_session)`, constructs `PasswordResetService(session)` and returns `f_service.reset_password(token, password)` synchronously. It schedules no background task.", "source": ["mealie/routes/users/forgot_password.py:32", "mealie/routes/users/forgot_password.py:34", "mealie/routes/users/forgot_password.py:35"]},
+      {"id": "C3", "claim": "`_get_valid_token` runs a SELECT on `PasswordResetModel` filtered by the token value and takes one row or none.", "source": ["mealie/services/user_services/password_reset_service.py:47"]},
+      {"id": "C4", "claim": "A token is treated as invalid when no row is found or when its age (`now(UTC) - created_at`) exceeds `PASSWORD_RESET_TOKEN_TIME` hours.", "source": ["mealie/services/user_services/password_reset_service.py:51", "mealie/services/user_services/password_reset_service.py:52"]},
+      {"id": "C5", "claim": "On an invalid token the service logs an error and raises `HTTPException` with status 400 and detail \"Invalid token\". Nothing is written on this path.", "source": ["mealie/services/user_services/password_reset_service.py:76"]},
+      {"id": "C6", "claim": "The user is loaded with `self.db.users.get_one(token_entry.user_id)`, a database read through the generic repository.", "source": ["mealie/services/user_services/password_reset_service.py:78", "mealie/repos/repository_generic.py:161"]},
+      {"id": "C7", "claim": "`hash_password` calls `get_hasher().hash`. Outside testing this is `BcryptHasher.hash` (`bcrypt.hashpw` with a generated salt); `FakeHasher` is used only when `settings.TESTING` is set.", "source": ["mealie/core/security/security.py:46", "mealie/core/security/hasher.py:39", "mealie/core/security/hasher.py:27"]},
+      {"id": "C8", "claim": "`self.db.users.update_password` is `RepositoryUsers.update_password`: it loads the row, calls the `User` model's `update_password`, commits, and returns the schema-validated user.", "source": ["mealie/repos/repository_users.py:19", "mealie/repos/repository_users.py:27", "mealie/repos/repository_users.py:28", "mealie/db/models/users/users.py:208"]},
+      {"id": "C9", "claim": "After the update the service compares the returned user's password with the new hash and raises 400 \"Invalid password\" if they differ. In demo mode the repository skips the update for the default user, which is how that branch is reached.", "source": ["mealie/services/user_services/password_reset_service.py:84", "mealie/repos/repository_users.py:21"]},
+      {"id": "C10", "claim": "On success the service calls `_delete_user_tokens(user.id)`, which deletes every reset token belonging to that user (not only the one presented) and commits.", "source": ["mealie/services/user_services/password_reset_service.py:88", "mealie/services/user_services/password_reset_service.py:43"]},
+      {"id": "C11", "claim": "The path makes no external service call and no deferred callback of its own: hashing is an in-process library call and everything else is database work.", "source": ["mealie/routes/users/forgot_password.py:35", "mealie/core/security/hasher.py:29"]}
+    ],
+    "H-3": [
+      {"id": "C1", "claim": "The public path is composed from `/api` (`APIRouter(prefix=\"/api\")`), `/recipes` from the exports router's own `UserAPIRouter(prefix=\"/recipes\")` (it is included by the recipe package without an extra prefix), and `/{slug}/exports` from the route decorator.", "source": ["mealie/routes/__init__.py:20", "mealie/routes/recipe/exports.py:15", "mealie/routes/recipe/__init__.py:9", "mealie/routes/recipe/exports.py:27"]},
+      {"id": "C2", "claim": "The handler is the method `RecipeExportController.get_recipe_as_format` on a class-based controller (`@controller(router)`), and the router is a `UserAPIRouter`, which requires an authenticated user.", "source": ["mealie/routes/recipe/exports.py:18", "mealie/routes/recipe/exports.py:28", "mealie/routes/_base/routers.py:25"]},
+      {"id": "C3", "claim": "A temporary directory is created with `get_temporary_path(auto_unlink=False)`. Because `auto_unlink` is false, leaving the context manager does not delete it.", "source": ["mealie/routes/recipe/exports.py:36", "mealie/core/dependencies/dependencies.py:220"]},
+      {"id": "C4", "claim": "The recipe is looked up with `self.mixins.get_one(slug)`: `HttpRepo.get_one` calls `self.repo.get_one`, where the repo is the controller's recipes repository, ending in a database read in `RepositoryGeneric.get_one`.", "source": ["mealie/routes/recipe/exports.py:37", "mealie/routes/_base/mixins.py:108", "mealie/routes/recipe/_base.py:56", "mealie/repos/repository_generic.py:161"]},
+      {"id": "C5", "claim": "When no recipe is found, `HttpRepo.get_one` raises `not_found`, an HTTP 404.", "source": ["mealie/routes/_base/mixins.py:111", "mealie/routes/_base/permissions.py:47"]},
+      {"id": "C6", "claim": "`self.service.render_template` is `RecipeService.render_template`, which constructs `TemplateService(temp_dir)` and calls its `render(recipe, template)`.", "source": ["mealie/routes/recipe/exports.py:38", "mealie/services/recipe/recipe_service.py:806"]},
+      {"id": "C7", "claim": "`TemplateService.template_type` selects the output from `template_name` using a fixed mapping: `raw` gives JSON and `zip` gives ZIP. Any other name raises `ValueError` (template not found).", "source": ["mealie/services/recipe/template_service.py:31", "mealie/services/recipe/template_service.py:44", "mealie/services/recipe/template_service.py:53"]},
+      {"id": "C8", "claim": "For JSON, `_render_json` writes `<slug>.json` in the temporary directory containing `recipe.model_dump_json(indent=4, by_alias=True)`.", "source": ["mealie/services/recipe/template_service.py:86", "mealie/services/recipe/template_service.py:88"]},
+      {"id": "C9", "claim": "For ZIP, `_render_zip` writes `<slug>.zip` containing `<slug>.json` and, when the original image file exists, that image.", "source": ["mealie/services/recipe/template_service.py:100", "mealie/services/recipe/template_service.py:103", "mealie/services/recipe/template_service.py:105"]},
+      {"id": "C10", "claim": "The file is returned as a `FileResponse` whose `background=BackgroundTask(rmtree, temp_path)` removes the temporary directory as a deferred callback after the response is sent.", "source": ["mealie/routes/recipe/exports.py:39"]},
+      {"id": "C11", "claim": "On the error paths (recipe not found, unknown template name) nothing removes the temporary directory, because `auto_unlink` is false and the background task is never attached.", "source": ["mealie/routes/recipe/exports.py:36", "mealie/routes/recipe/exports.py:39"]},
+      {"id": "C12", "claim": "The path makes no external service call: it is database reads plus local filesystem work.", "source": ["mealie/routes/recipe/exports.py:36"]}
+    ]
+  }
+}
