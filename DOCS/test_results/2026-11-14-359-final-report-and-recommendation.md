@@ -12,6 +12,7 @@ related:
   - "[C7 results](/DOCS/test_results/2026-11-14-359-C7-evidence-selection-results.md)"
   - "[Held-out mealie results](/DOCS/test_results/2026-11-14-359-H-mealie-held-out-results.md)"
   - "[ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)"
+  - "[#359 engineering retrospective (historical note)](/DOCS/notes/2026-11-14-359-engineering-retrospective.md)"
 ---
 
 # #359 final report and recommendation
