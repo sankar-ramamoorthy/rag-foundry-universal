@@ -230,6 +230,8 @@ The [#359 primary development case](/DOCS/test_results/2026-11-14-359-primary-de
 compares the three perspectives. It proposes query-time transparency about
 unresolved routes and incomplete chains, separate from the architectural
 graph-construction work.
+The [#359 engineering retrospective](/DOCS/notes/2026-11-14-359-engineering-retrospective.md)
+is a historical narrative of the closed evaluation; the reports above govern.
 
 The [#342 trace rerun after #354](/DOCS/test_results/2026-11-13-342-post-354-trace-rerun.md)
 re-measures the graph trace on the re-ingested generation `8cbedbb9`.
