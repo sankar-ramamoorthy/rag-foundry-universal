@@ -230,6 +230,10 @@ The [#359 primary development case](/DOCS/test_results/2026-11-14-359-primary-de
 compares the three perspectives. It proposes query-time transparency about
 unresolved routes and incomplete chains, separate from the architectural
 graph-construction work.
+The [#375 source-navigation agent diagnostic](/DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md)
+is a development diagnostic on the same three `mealie` questions: a
+capable model with only search and file reads cited every expected
+witness. It is not held-out evidence and selects no architecture.
 The [#359 engineering retrospective](/DOCS/notes/2026-11-14-359-engineering-retrospective.md)
 is a historical narrative of the closed evaluation; the reports above govern.
 

@@ -6,6 +6,13 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-15
+
+Added the [#375 source-navigation agent diagnostic](/DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md),
+a development diagnostic on the revealed `mealie` questions, with its
+scorer `scripts/agent_navigation_score_375.py`. Raw agent outputs are
+indexed in `raw-index.json`.
+
 ## 2026-11-14
 
 Added the [#359 primary development case results](/DOCS/test_results/2026-11-14-359-primary-development-case-results.md)

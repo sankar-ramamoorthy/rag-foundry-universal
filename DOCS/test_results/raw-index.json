@@ -414,9 +414,44 @@
       "cited_by": "DOCS/test_results/2026-11-14-359-primary-development-case-results.md",
       "notes": "#359 primary development case scoring against the public section-4 chains 0d79f3e3...; C3 rescan clean (exit 0)."
     },
+    "2026-11-15-375-agent-navigation/H-1.json": {
+      "bytes": 46180,
+      "sha256": "8be3b01f2f9512b0a9d2edd4aa41ddcc5f67f2359cf5b8de6f3ba50103a0033b",
+      "produced_by": "Claude Code subagent (claude-fable-5-2), Glob/Grep/Read only, mealie @ 1624c22 (#375)",
+      "cited_by": "DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md",
+      "notes": ""
+    },
+    "2026-11-15-375-agent-navigation/H-2.json": {
+      "bytes": 38143,
+      "sha256": "2a0c42fdfc3eb50b537398dc495aab1810297fb2463f13859d5c4526b88b862b",
+      "produced_by": "Claude Code subagent (claude-fable-5-2), Glob/Grep/Read only, mealie @ 1624c22 (#375)",
+      "cited_by": "DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md",
+      "notes": ""
+    },
+    "2026-11-15-375-agent-navigation/H-3.json": {
+      "bytes": 41724,
+      "sha256": "64a36a9a368b8cb77d59492978c81ba063d73d0e5770b326f25a6a6fece9b009",
+      "produced_by": "Claude Code subagent (claude-fable-5-2), Glob/Grep/Read only, mealie @ 1624c22 (#375)",
+      "cited_by": "DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md",
+      "notes": ""
+    },
+    "2026-11-15-375-agent-navigation/score.json": {
+      "bytes": 12387,
+      "sha256": "50ef809229a48f21af5cd69a5ab2fd71efcb2768d484e922f762416a1a69786a",
+      "produced_by": "scripts/agent_navigation_score_375.py",
+      "cited_by": "DOCS/test_results/2026-11-15-375-source-navigation-agent-diagnostic.md",
+      "notes": ""
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
+      "produced_by": "",
+      "cited_by": "",
+      "notes": ""
+    },
+    "20261111-code-intelligence-control/__pycache__/sql_probe.cpython-312.pyc": {
+      "bytes": 3132,
+      "sha256": "4c9e2edd3b014b02df2d65803450466ad55103e488d9966009f1a5284e68dc75",
       "produced_by": "",
       "cited_by": "",
       "notes": ""
