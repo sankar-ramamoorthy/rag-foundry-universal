@@ -1,0 +1,27 @@
+{
+  "set": "H",
+  "protocol": {
+    "commit": "45f34e1",
+    "sha256": "ca1d1ed5f192910c78ad7a179fb75f3131a6f796f2b3d27244698212c5049535"
+  },
+  "repository": "sankar-ramamoorthy/mealie",
+  "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+  "author": "codex",
+  "questions": [
+    {
+      "qid": "H-1",
+      "route": "POST /api/users/forgot-password",
+      "question": "Trace the execution path from POST /api/users/forgot-password through background processing, reset-token creation, and reset-email delivery. Explain the eligible-account and SMTP-enabled path and the early-exit behavior. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct calls, deferred callbacks, database operations, and external service calls. Base the answer on implementation code rather than documentation or historical reports."
+    },
+    {
+      "qid": "H-2",
+      "route": "POST /api/users/reset-password",
+      "question": "Trace the execution path from POST /api/users/reset-password through token validation, password hashing and persistence, and reset-token removal. Explain the successful non-test, non-demo path and invalid-token behavior. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct calls, deferred callbacks, database operations, and external service calls. Base the answer on implementation code rather than documentation or historical reports."
+    },
+    {
+      "qid": "H-3",
+      "route": "GET /api/recipes/{slug}/exports",
+      "question": "Trace the execution path from GET /api/recipes/{slug}/exports through recipe lookup, raw JSON or ZIP export generation, file delivery, and cleanup. Explain how the template_name query parameter selects the output. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct calls, deferred callbacks, database operations, and external service calls. Base the answer on implementation code rather than documentation or historical reports."
+    }
+  ]
+}
