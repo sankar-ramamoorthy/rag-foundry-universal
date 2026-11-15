@@ -344,10 +344,34 @@ recorded.
 
 - **Precision** = (correct + equivalent) / (sampled − unverifiable), with a
   95% Wilson interval, per repository and per `confidence` (1.0 vs 0.5).
-- **Correctness gate (frozen):** if the upper bound of the 95% interval falls
-  below 0.90 in any repository and confidence stratum, the first-fix
-  recommendation (§10) must address correctness in that path before any
-  change that adds edges.
+- **Severity of each confirmed wrong edge** (`wrong_target`,
+  `wrong_scope_or_override`, `not_a_call`), assigned during adjudication:
+
+  | Severity | Rule |
+  |---|---|
+  | `high` | the graph target is an unrelated implementation: a different function with different behaviour, typically in another module or class hierarchy. A trace following it enters wrong code |
+  | `medium` | the target is a related but wrong definition: a base or override in the same hierarchy, or a same-named sibling with related behaviour |
+  | `low` | the target is the right code at the wrong granularity or position, such as an enclosing definition, or `not_a_call` with no traversal consequence |
+
+  Counts by severity are reported beside precision. A `high`-severity error
+  is not offset by correct edges: every one is listed individually in the
+  report.
+- **Correctness gate (frozen; a minimum diagnostic threshold).** Three
+  things are reported separately:
+  - the **observed precision**: the sample point estimate;
+  - its **95% Wilson interval**;
+  - the **gate reading** for each repository and confidence stratum.
+
+  | Gate reading | Condition | Consequence |
+  |---|---|---|
+  | `fail` | the interval's upper bound is below 0.90 | the first-fix recommendation (§10) must address correctness in that path before any change that adds edges |
+  | `inconclusive` | the interval contains 0.90 | the report states that precision is not established at 0.90, and the recommendation must carry that uncertainty |
+  | `pass` | the interval's lower bound is at or above 0.90 | — |
+
+  **The gate is not certification.** A `pass`, or an observed precision at
+  or above 0.90, does not establish that the graph is correct enough for any
+  use. A point estimate of 0.90 is not evidence that true precision exceeds
+  0.90.
 
 ### 7.4 Confidence labels (M1 reference and the M2/M3 audit)
 
@@ -448,12 +472,18 @@ measurement.
   in-scope internal call sites (`T_internal`) lost as external or not
   represented, per resolution category, with intervals.
   `G_caller_missing` is reported beside them.
-- **Correctness (M3)** is precision per repository and confidence stratum,
-  with the §7.3 gate.
+- **Correctness (M3)** is reported per repository and confidence stratum as
+  observed precision, its interval, wrong-edge counts by severity, and the
+  §7.3 gate reading (`fail`, `inconclusive` or `pass`). These four are never
+  merged into one figure.
 
 **The first fix is chosen by these criteria, applied in order and stated in
 the report:**
-1. **The correctness gate (§7.3).** If it fails, correctness comes first.
+1. **The correctness gate (§7.3).**
+   - If it reads `fail`, correctness in that resolution path comes first.
+   - If it reads `inconclusive`, the recommendation states that uncertainty.
+   - `high`-severity wrong edges are weighed here and named in the
+     recommendation, whatever the gate reads.
 2. **Gating.** A defect that prevents entry, as route defects do for
    route-grounded entry, ranks ahead of a defect of similar size that
    reduces reach after entry.
