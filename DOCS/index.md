@@ -234,6 +234,11 @@ The [#375 source-navigation agent diagnostic](/DOCS/test_results/2026-11-15-375-
 is a development diagnostic on the same three `mealie` questions: a
 capable model with only search and file reads cited every expected
 witness. It is not held-out evidence and selects no architecture.
+The [#377 agent model ladder](/DOCS/test_results/2026-11-15-377-agent-model-ladder.md)
+measures what a correct, well-supported answer costs across six model
+tiers on the same questions, with a
+[rubric](/DOCS/evaluations/377-agent-ladder/rubric.json) fixed before
+grading. Development evidence only.
 The [#359 engineering retrospective](/DOCS/notes/2026-11-14-359-engineering-retrospective.md)
 is a historical narrative of the closed evaluation; the reports above govern.
 

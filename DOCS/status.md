@@ -258,6 +258,23 @@ is not frozen. Resume from the
     global questions are untested.
   - #373 is paused with its protocol frozen, pending the owner's
     decision.
+- **#377 agent model ladder (2026-11-15,
+  [report](/DOCS/test_results/2026-11-15-377-agent-model-ladder.md)).**
+  Development evidence only; 27 answers, blind model grading against a
+  rubric committed beforehand.
+  - Passing the fixed bar: Fable 5.2 3/3, Opus 5.5 3/3, Sonnet 5.5 4/6,
+    Haiku 5.5 4/6, Gemini 3.5 Flash-Lite 0/3, GLM 4.7 Flash 1/6.
+  - Sonnet and Haiku were correct in prose in all 12 answers; their
+    failures are uncited core witnesses on one question. GLM made
+    material false statements in three of six answers.
+  - Estimated cost per passing answer (list prices, not metered):
+    Haiku about $0.06, Sonnet $0.50, Opus $1.21, Fable $2.25.
+  - Addendum (NEAR AI Cloud, published rates): Qwen 3.8 27B passed 4
+    of 6 attempts, all five written answers correct, about $0.08 per
+    passing answer and about eight and a half minutes each. GLM 5.3
+    Flash and DeepSeek V4.1 Flash each passed 1 of 3 answers.
+  - Open: one harness across all models, metered prices, reverse and
+    global questions, a local model, and a fresh sealed repository.
 - **Next:** the owner decides on the recommendation. Ranking, budget and
   generation changes are not authorized.
 - Resume from the
