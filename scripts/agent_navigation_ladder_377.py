@@ -9,12 +9,16 @@ source checkout, and records the answer, token usage, cost and wall time.
         --out OUT_DIR
 
 Credentials are read by LiteLLM from the environment (for example
-ZAI_API_KEY). Nothing here stores them.
+ZAI_API_KEY), or from the variable named by --api-key-env for an
+OpenAI-compatible endpoint given with --api-base. Nothing here stores them.
+--price-in/--price-out record a cost at published rates when LiteLLM has no
+price for the model.
 """
 
 import argparse
 import fnmatch
 import json
+import os
 import re
 import time
 from pathlib import Path
@@ -267,6 +271,10 @@ def run(args: argparse.Namespace) -> dict:
         "model_calls": 0,
     }
     extra = json.loads(args.extra) if args.extra else {}
+    if args.api_base:
+        extra["api_base"] = args.api_base
+    if args.api_key_env:
+        extra["api_key"] = os.environ[args.api_key_env]
     record: dict = {"qid": args.qid, "model": args.model, "stop": "max_steps"}
     tool_calls = 0
     started = time.time()
@@ -312,6 +320,14 @@ def run(args: argparse.Namespace) -> dict:
             "tool_calls": tool_calls,
             "wall_seconds": round(time.time() - started, 1),
             "usage": totals,
+            "published_rate_cost_usd": round(
+                (
+                    totals["prompt_tokens"] * args.price_in
+                    + totals["completion_tokens"] * args.price_out
+                )
+                / 1e6,
+                5,
+            ),
             "transcript": messages,
         }
     )
@@ -329,6 +345,16 @@ def main() -> None:
     parser.add_argument("--max-seconds", type=int, default=1500)
     parser.add_argument("--retries", type=int, default=6)
     parser.add_argument("--extra", default="", help="JSON of extra LiteLLM kwargs")
+    parser.add_argument("--api-base", default="", help="OpenAI-compatible base URL")
+    parser.add_argument(
+        "--api-key-env", default="", help="name of the env var holding the key"
+    )
+    parser.add_argument(
+        "--price-in", type=float, default=0.0, help="USD per 1M input tokens"
+    )
+    parser.add_argument(
+        "--price-out", type=float, default=0.0, help="USD per 1M output tokens"
+    )
     args = parser.parse_args()
     record = run(args)
     out = Path(args.out)
@@ -341,6 +367,7 @@ def main() -> None:
         relationships=len(record["relationships"]),
         wall_seconds=record["wall_seconds"],
         usage=record["usage"],
+        published_rate_cost_usd=record["published_rate_cost_usd"],
     )
     print(json.dumps(summary))
 

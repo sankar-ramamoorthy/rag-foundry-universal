@@ -3,7 +3,7 @@ title: "#377 model ladder for source-navigation answers: cost of a correct, well
 date: 2026-11-15
 type: test-results
 status: current
-summary: "Development diagnostic. Six model tiers answered the three revealed #359-H mealie questions with only source search and file reads; 27 answers were scored mechanically for evidence support and graded blind for correctness against a rubric committed beforehand. Fable 5.2 and Opus 5.5 passed 3/3 (one run each). Sonnet 5.5 and Haiku 5.5 passed 4/6: all 12 answers were correct in prose with no material false statement, and the four failures left two or three core witnesses uncited on one question. Gemini 3.5 Flash-Lite passed 0/3 on incomplete evidence without false statements. GLM 4.7 Flash (free) passed 1/6 and made material false statements in three answers. Estimated cost per passing answer: Haiku about $0.06, Sonnet about $0.50, Opus about $1.21, Fable about $2.25 (list-price estimates, not metered). Gemini 3.8 Flash could not be measured on the free-tier quota. Not held-out evidence; the Claude tiers and the other models ran in different harnesses."
+summary: "Development diagnostic. Six model tiers answered the three revealed #359-H mealie questions with only source search and file reads; 27 answers were scored mechanically for evidence support and graded blind for correctness against a rubric committed beforehand. Fable 5.2 and Opus 5.5 passed 3/3 (one run each). Sonnet 5.5 and Haiku 5.5 passed 4/6: all 12 answers were correct in prose with no material false statement, and the four failures left two or three core witnesses uncited on one question. Gemini 3.5 Flash-Lite passed 0/3 on incomplete evidence without false statements. GLM 4.7 Flash (free) passed 1/6 and made material false statements in three answers. Estimated cost per passing answer: Haiku about $0.06, Sonnet about $0.50, Opus about $1.21, Fable about $2.25 (list-price estimates, not metered). Gemini 3.8 Flash could not be measured on the free-tier quota. Addendum (section 9): on NEAR AI Cloud at published rates, Qwen 3.8 27B passed 4 of 6 attempts with all five written answers correct, at about $0.08 per passing answer but eight and a half minutes each; GLM 5.3 Flash and DeepSeek V4.1 Flash each passed 1 of 3 answers. Not held-out evidence; the Claude tiers and the other models ran in different harnesses."
 tags: [evaluation, results, code-intelligence, agent, source-navigation, model-ladder, cost, development-diagnostic, issue-377, issue-375, issue-359]
 related:
   - "[Issue #377](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/377)"
@@ -204,7 +204,8 @@ Haiku answer stated it. Missing it alone does not fail the bar.
   harness.
 - The pass bar is demanding by design. "Every core witness" turns a
   correct answer with two uncited leaf calls into a fail.
-- No locally hosted model was run.
+- No locally hosted model was run. Section 9 adds a hosted 27B open
+  model, which is a proxy for model capability only.
 - Reverse and global questions (callers, impact, route inventory), where
   an index should help most, are still untested.
 
@@ -231,3 +232,70 @@ Haiku answer stated it. Missing it alone does not fail the bar.
    - a locally hosted model on a larger machine.
 5. Any generalization claim still needs a fresh sealed repository
    (ADR-054). #373 stays paused pending the owner's decision.
+
+## 9. Addendum: three low-cost hosted open models (NEAR AI Cloud)
+
+Run later the same day, in the LiteLLM runner (the same harness as GLM 4.7
+Flash and Gemini), against NEAR AI Cloud's OpenAI-compatible endpoint. Costs
+here are **token counts at the provider's published pay-as-you-go rates**,
+so they are closer to a metered price than the Claude estimates above. The
+provider's invoice was not checked.
+
+| Model | Rate in / out per 1M | Attempts | Answers | Pass | Correct in prose | Mean time | Mean cost per answer | Cost per passing answer |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| `Qwen/Qwen3.8-27B` | $0.04 / $1.35 | 6 | 5 | 4 | 5 | 513 s | $0.056 | $0.079 |
+| `z-ai/glm-5.3-flash` | $0.08 / $0.50 | 6 | 3 | 1 | 3 | 508 s | $0.045 | $0.249 |
+| `deepseek-ai/DeepSeek-V4.1-Flash-1017` | $0.30 / $1.20 | 3 | 3 | 1 | 2 | 438 s | $0.224 | $0.673 |
+
+"Cost per passing answer" counts every attempt, including those that
+returned no answer. Total spend for this addendum: $1.24 at published rates.
+
+| Model | Run | Q | Claims correct | Contradicted | Material false | Core witnesses | Quotes verified | Time (s) | Cost ($) | Bar |
+|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|
+| qwen-3.8-27b | 1 | H-1 | 12/12 | 0 | 0 | 16/16 | 100% | 497 | 0.051 | pass |
+| qwen-3.8-27b | 1 | H-2 | 11/11 | 0 | 0 | 15/17 | 100% | 491 | 0.046 | fail |
+| qwen-3.8-27b | 1 | H-3 | 12/12 | 0 | 0 | 14/14 | 100% | 632 | 0.073 | pass |
+| qwen-3.8-27b | 2 | H-1 | no answer | | | | | 906 | 0.034 | fail |
+| qwen-3.8-27b | 2 | H-2 | 11/11 | 0 | 0 | 17/17 | 100% | 464 | 0.047 | pass |
+| qwen-3.8-27b | 2 | H-3 | 12/12 | 0 | 0 | 14/14 | 100% | 480 | 0.064 | pass |
+| glm-5.3-flash | 1 | H-1 | 12/12 | 0 | 0 | 15/16 | 100% | 349 | 0.030 | fail |
+| glm-5.3-flash | 1 | H-2 | 11/11 | 0 | 0 | 15/17 | 100% | 723 | 0.045 | fail |
+| glm-5.3-flash | 1 | H-3 | 11/12 | 0 | 0 | 14/14 | 100% | 453 | 0.061 | pass |
+| deepseek-v4.1-flash | 1 | H-1 | 12/12 | 0 | 0 | 16/16 | 100% | 516 | 0.194 | pass |
+| deepseek-v4.1-flash | 1 | H-2 | 11/11 | 0 | 0 | 16/17 | 100% | 310 | 0.229 | fail |
+| deepseek-v4.1-flash | 1 | H-3 | 12/12 | 0 | 1 | 14/14 | 100% | 487 | 0.250 | fail |
+
+### Reading
+
+- **Qwen 3.8 27B matches Haiku 5.5 on quality at a similar price.** Five
+  of five written answers were correct with no false statement, four met
+  the full bar, and every quote verified. Its one evidence miss is the
+  same H-2 pattern the cheaper Claude tiers showed.
+- **It is slow here.** About eight and a half minutes per answer on this
+  provider, against under three for Haiku, and one of six attempts stalled
+  past its time cap with no answer.
+- **A 27B model reaching this level bears on local hosting.** It is the
+  size class a well-equipped desktop can run. This run says nothing about
+  local speed, quantisation loss or context limits, which need their own
+  measurement.
+- **GLM 5.3 Flash was correct but incomplete, and needed a longer cap.**
+  Its first three attempts hit the 520-second cap while still exploring
+  and returned nothing; they are the three no-answer attempts in its
+  count. Re-run with a 1,200-second cap it answered all three, correct in
+  prose, with one or two core witnesses uncited on two questions.
+- **DeepSeek V4.1 Flash cited the most and cost the most of the three.**
+  One answer invented a "periodic purge task" for the temporary directory
+  that does not exist in the source, which is a material false statement.
+- **All three were far better than the free GLM 4.7 Flash and Gemini
+  Flash-Lite in the same harness**, which weakens the worry in section 7
+  that the minimal loop itself was holding those two back.
+
+### Limits specific to this addendum
+
+- One or two runs per question; the Qwen pass rate rests on six attempts.
+- Time caps differed: 520 to 560 seconds for Qwen and DeepSeek, 1,200
+  seconds for the GLM 5.3 Flash re-run. Three questions ran in parallel
+  per model, so times include any provider-side queueing.
+- Graded in a third blind batch by the same kind of grader. The six anchor
+  answers again agreed with the first batch on pass or fail, six of six.
+- Kimi K2.6, GLM 5.3 and Kimi K3 were not run, to stay inside a $2 limit.

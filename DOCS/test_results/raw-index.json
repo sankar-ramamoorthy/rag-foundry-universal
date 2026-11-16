@@ -785,6 +785,258 @@
       "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
       "notes": ""
     },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-deepseek-v4.1-flash/run1/H-1.json": {
+      "bytes": 254971,
+      "sha256": "04f8e1af73a9942c16ee16825dbfc367122533393ac336ebb732286c960f1534",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-deepseek-v4.1-flash/run1/H-2.json": {
+      "bytes": 227939,
+      "sha256": "e80726f12fb41ca0d08f7dbb625fefd98afd472a586ff57c4d3125d7275c11cb",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-deepseek-v4.1-flash/run1/H-3.json": {
+      "bytes": 232851,
+      "sha256": "1ab3d2bc13b35325c1ad7d69ff07e362fd3a18368a60e25245a55121dca1f6ef",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-deepseek-v4.1-flash_run1_H-1.log": {
+      "bytes": 299,
+      "sha256": "628fed5d6f23660d517b9799d365f5a625e27d9d4495eb02815efaadd3d4cd1f",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-deepseek-v4.1-flash_run1_H-2.log": {
+      "bytes": 299,
+      "sha256": "a0aec4c98a9c52b2174dba5428f8dd062cb5ac04b3de2ea86fd168e81f1134a6",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-deepseek-v4.1-flash_run1_H-3.log": {
+      "bytes": 299,
+      "sha256": "2b0c44e7e4bc270611a20de8946e98072dabc611571d9a036950b3cf44da5aec",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-glm-5.3-flash/run1/H-1.json": {
+      "bytes": 171349,
+      "sha256": "a9d0a86e97c47005bb077b06089917e30f085e4f4f001b03449062c5df04803e",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-glm-5.3-flash/run1/H-2.json": {
+      "bytes": 193350,
+      "sha256": "b625e1ecbccc29212d886a8ad69de16ca7f6c95a7ad7ab920c21597bee213fd5",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-glm-5.3-flash/run1/H-3.json": {
+      "bytes": 220622,
+      "sha256": "ed4646767d736807e4791b51fdf0509dadff891973606800f885ebf6d8c72e90",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-glm-5.3-flash_run1_H-1.log": {
+      "bytes": 281,
+      "sha256": "3bc5748849f6168f5e94ebbcecbba5c7857b43ec87aa7ceaf2980252c9e5ff17",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-glm-5.3-flash_run1_H-2.log": {
+      "bytes": 281,
+      "sha256": "4b4d79215ad47da17ecb0425bf96be545b2421542f29319e6c14d507dc1dcb8e",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-glm-5.3-flash_run1_H-3.log": {
+      "bytes": 281,
+      "sha256": "dd595abd98ca5387b74be23f899c975b8c08111bb5405255c8e28aa3e529ded9",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b/run1/H-1.json": {
+      "bytes": 228060,
+      "sha256": "6c82b95831b2a1694dbe43f32a8c1d0ee9b3fac82495e1b6987a5be7cb791ba9",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b/run1/H-2.json": {
+      "bytes": 225111,
+      "sha256": "ab90d5a7e4906d44b6839d6967ae5ccb234fa1d5d5c905a2f4576c85496cc1eb",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b/run1/H-3.json": {
+      "bytes": 274060,
+      "sha256": "b26d23f85e3b4a099d2d62d835352cc8583a3b44cc75687ebc80e435628525cd",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b/run2/H-2.json": {
+      "bytes": 215403,
+      "sha256": "817b8c487e03e3859390895eaea138104818a086df52754e4078da5a087a8eea",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b/run2/H-3.json": {
+      "bytes": 250584,
+      "sha256": "fa4b926e1f4c1813979089d3130208de5b1a67f83fc1dd8a1e4b023cbdaf1831",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b_run1_H-1.log": {
+      "bytes": 279,
+      "sha256": "d8d9d1a92f3c88e61f370f336bdf76d86be2feced83579bb1ec8ae9283b838f6",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b_run1_H-2.log": {
+      "bytes": 279,
+      "sha256": "6b54461b5fd0490c880bca1d850c4405089976b2dcb7b6fc9b90b9a9869f02b2",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b_run1_H-3.log": {
+      "bytes": 279,
+      "sha256": "5760456dae22421fb65b297e67899fdd09d6af5df368464e3d1007c2c42c3c4f",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b_run2_H-1.log": {
+      "bytes": 280,
+      "sha256": "ce2afb3ffd79c5ebf85ec9714139058d364edf055b94cfa435aafaa609e9a063",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b_run2_H-2.log": {
+      "bytes": 279,
+      "sha256": "35c84e15a3470eae8a3dc51daf52091acb5aa9b1468ae93e006b2fb3abe3071f",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/answers/near-qwen-3.8-27b_run2_H-3.log": {
+      "bytes": 279,
+      "sha256": "7a783f69ced223fc188efb29946481c29334e44af8ffbd5f0ed34f7911bd8111",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/H-1/answers.md": {
+      "bytes": 62011,
+      "sha256": "08edef3d268ce103645b2d4169c652ac5562b30f870b0385bb6009f63f91b723",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/H-1/grades.json": {
+      "bytes": 5678,
+      "sha256": "62242898ba2815eb3ee9faac2bc0522bc5bc35244375e9f1c672eefaff17106e",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/H-2/answers.md": {
+      "bytes": 58322,
+      "sha256": "9e9b8d1811b9d8911d19539bf5bd027e17cc39932f808cc831bd3f8bc3a51ab1",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/H-2/grades.json": {
+      "bytes": 5908,
+      "sha256": "ea57c4fee591bd3153b41e94ca98f9ca34b85c4fbabeb3dc580e3b5609a4dd09",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/H-3/answers.md": {
+      "bytes": 59386,
+      "sha256": "40997d8dc4f3a2b9fc92ce54c43b49bee9da990f58bfc8befe08c36259fa0948",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/H-3/grades.json": {
+      "bytes": 6217,
+      "sha256": "18136370c2d3f764ee5588c1963dcf238f90b5b4faf032449f3a80bf02d38bcb",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/key.json": {
+      "bytes": 1157,
+      "sha256": "311e404b762fd0fb7640d0eb7270a95109f921f99288ba21fa5177bb3f98c704",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/grading-batch3/results.json": {
+      "bytes": 8892,
+      "sha256": "44c48ce8e8b2351f1254117408d0308010cc68c17cb97430bf845c9b42f79c0b",
+      "produced_by": "Blind claude-fable-5-2 grader and agent_navigation_grade_bundle_377.py",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/incomplete/near-glm-5.3-flash-520s-cap/run1/H-1.json": {
+      "bytes": 140468,
+      "sha256": "03d44a2bcfc2463034b412bdbce492556b3dd0695f6835c5213fc15aeb664d3a",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/incomplete/near-glm-5.3-flash-520s-cap/run1/H-2.json": {
+      "bytes": 124278,
+      "sha256": "1df1456b2ae55f8f1accc2b4c56abcf1c90f02c93f0ee8e1fae7ccc79f8f1ea3",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/incomplete/near-glm-5.3-flash-520s-cap/run1/H-3.json": {
+      "bytes": 219669,
+      "sha256": "6acd82d9bf813cd9d95f81736bcb161b15478d503105aa8c0b0b4f113770b8c0",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/incomplete/near-qwen-3.8-27b-run2-timeout/H-1.json": {
+      "bytes": 168192,
+      "sha256": "b763292ed8962a9802dda5f47c775d3297ff2f8e3a20ad5aad60c7e69c7c5fdb",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/near-ai/support.json": {
+      "bytes": 5576,
+      "sha256": "ce59d1c4d2d4c2d4303afd977a113cf88055d077464fb824bd830963baeae4c1",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
     "2026-11-15-377-agent-ladder/summary.json": {
       "bytes": 5914,
       "sha256": "562dd3210c69106828adb23cb258e1106b4ea9cb602a7259f5dd939b06fd7563",
@@ -799,6 +1051,13 @@
       "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
       "notes": ""
     },
+    "2026-11-15-377-agent-ladder/tools/addendum.py": {
+      "bytes": 6050,
+      "sha256": "9bad47eb7aa7fa4074b22cf3b5c15234000871befd60ab6b4fb3e96d8c2b1542",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
     "2026-11-15-377-agent-ladder/tools/aggregate.py": {
       "bytes": 2843,
       "sha256": "00952d6b1924e7c47c00419c6877fc377b1d18b17136b8f43016c77dcd75c9c9",
@@ -810,6 +1069,13 @@
       "bytes": 3117,
       "sha256": "eb384e8b5682b303244e27b60ade7d651284fc527c6eab2594ffaf082ccc339d",
       "produced_by": "#377 ladder scoring and cost tools (see tools/ in this folder)",
+      "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
+      "notes": ""
+    },
+    "2026-11-15-377-agent-ladder/tools/near_batch.ps1": {
+      "bytes": 2092,
+      "sha256": "21d755d2f0b819d73b3254fe975a7e14ad3d0aa53d3f8cef5790f3392c7207ff",
+      "produced_by": "scripts/agent_navigation_ladder_377.py against NEAR AI Cloud (#377 addendum)",
       "cited_by": "DOCS/test_results/2026-11-15-377-agent-model-ladder.md",
       "notes": ""
     },

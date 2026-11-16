@@ -269,6 +269,10 @@ is not frozen. Resume from the
     material false statements in three of six answers.
   - Estimated cost per passing answer (list prices, not metered):
     Haiku about $0.06, Sonnet $0.50, Opus $1.21, Fable $2.25.
+  - Addendum (NEAR AI Cloud, published rates): Qwen 3.8 27B passed 4
+    of 6 attempts, all five written answers correct, about $0.08 per
+    passing answer and about eight and a half minutes each. GLM 5.3
+    Flash and DeepSeek V4.1 Flash each passed 1 of 3 answers.
   - Open: one harness across all models, metered prices, reverse and
     global questions, a local model, and a fresh sealed repository.
 - **Next:** the owner decides on the recommendation. Ranking, budget and
