@@ -13,6 +13,11 @@ a development diagnostic on the revealed `mealie` questions, with its
 scorer `scripts/agent_navigation_score_375.py`. Raw agent outputs are
 indexed in `raw-index.json`.
 
+Added the [#377 agent model ladder](/DOCS/test_results/2026-11-15-377-agent-model-ladder.md), its
+[rubric and pass bar](/DOCS/evaluations/377-agent-ladder/rubric.json)
+(committed before grading) and the runner, support and grading
+scripts under `scripts/agent_navigation_*_377.py`.
+
 ## 2026-11-14
 
 Added the [#359 primary development case results](/DOCS/test_results/2026-11-14-359-primary-development-case-results.md)
