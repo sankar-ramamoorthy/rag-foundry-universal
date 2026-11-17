@@ -6,6 +6,15 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-17
+
+Added the [Windows Source Navigation API release verification](/DOCS/releases/2026-11-17-prod-1447pm-source-navigation-verification.md)
+after the operator's Linux deployment. Deployed HTTP/SQL checks pass and the
+corpus remains intact. The initial Compose timeout and later six-container
+recovery are recorded as owner-reported pending original logs and SSH/container
+inspection; operational completion is left for owner review. No code or
+deployment changes were performed by this verification.
+
 ## 2026-11-16
 
 Implemented the #379 file navigation foundation with the owner-accepted

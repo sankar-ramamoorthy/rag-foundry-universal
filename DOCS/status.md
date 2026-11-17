@@ -48,8 +48,13 @@ database retrieved the full `codebase_utils.py` module in `f7641840`: 274 lines,
 [pre-implementation assessment](/DOCS/test_results/2026-11-16-379-postgresql-source-ranges.md)
 remains the record of real-corpus performance (largest stored file 604 KiB).
 True cold-cache cost and backend transient peak memory remain unmeasured.
-**Not deployed to Linux.** Production endpoint rollout/HTTP verification remains
-operator-owned. No source data or deployment was changed by this work.
+The operator subsequently deployed the release reporting `e958052` /
+`prod-2026-11-17-1447pm`. The [Windows live-verification record](/DOCS/releases/2026-11-17-prod-1447pm-source-navigation-verification.md)
+captures 41 passing assertions against the deployed HTTP API and read-only SQL
+health, with the existing repository/generation/counts intact. Four API services
+report the expected SHA. OCI labels (including Gradio), Docker health states and
+the original Compose timeout/recovery logs remain pending SSH access; operational
+completion awaits owner review. Codex performed no deployment or data changes.
 
 The [future-agent register](/DOCS/notes/brainstorm-20261116-future-agent-architecture.md)
 preserves exploratory questions; it selects no controller, memory or delegation
