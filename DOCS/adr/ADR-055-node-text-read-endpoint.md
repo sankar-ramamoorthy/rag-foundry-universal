@@ -15,6 +15,14 @@ related:
 
 # ADR-055: Read-only node-text endpoint for statement-level evidence delivery
 
+The accepted [source-navigation supplement](/DOCS/adr/ADR-055-source-navigation-supplement.md)
+adds the Phase 6 / AG0 file-discovery and file-read direction. It explicitly
+retains #282 as deferred batch/function-node access and aligns shared text and
+generation semantics. File navigation is implemented under #379; its
+[API contract](/DOCS/architecture/source-navigation-api.md) and
+[verification](/DOCS/test_results/2026-11-16-379-source-navigation-implementation.md)
+are separate from the still-unimplemented batch endpoint described below.
+
 **Status: Accepted (2026-10-28).** The decision to add this endpoint is accepted.
 **Nothing is implemented.** Acceptance does not authorize the statement-level
 experiment or the implementation: the frozen

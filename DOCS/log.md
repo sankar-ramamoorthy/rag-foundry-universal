@@ -6,6 +6,32 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-16
+
+Implemented the #379 file navigation foundation with the owner-accepted
+response/scan/query/deadline limits; added the
+[API contract](/DOCS/architecture/source-navigation-api.md) and
+[implementation verification](/DOCS/test_results/2026-11-16-379-source-navigation-implementation.md).
+Local PostgreSQL fixtures and read-only local HTTP access to Linux evidence
+were verified without a deployment. The
+[future-agent decision register](/DOCS/notes/brainstorm-20261116-future-agent-architecture.md)
+and [earlier direction proposal](/DOCS/notes/20261116-direction-after-375-377-agent-over-local-index.md)
+remain exploratory; #282 remains deferred.
+
+Added the accepted [ADR-055 source-navigation supplement](/DOCS/adr/ADR-055-source-navigation-supplement.md)
+and [AG0 issue draft](/DOCS/proposals/2026-11-16-ag0-source-navigation-issue.md).
+The supplement separates file access from deferred #282 batch/function-node
+access. Filed [#379](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/379)
+and posted its reconciliation cross-reference to #282 after resolving the
+sandbox/keyring credential mismatch. That initial preparation did not implement
+endpoints; implementation followed the owner's subsequent approval above.
+
+Added the [#379 frozen range-read protocol](/DOCS/evaluations/2026-11-16-379-source-range-protocol.md)
+and [Linux PostgreSQL assessment](/DOCS/test_results/2026-11-16-379-postgresql-source-ranges.md).
+The infrastructure diagnostic recommends scan-work limits for review, verifies
+the motivating file's retained source, and records the missing large-file,
+cold-cache and peak-memory evidence. It does not change the accepted API scope.
+
 ## 2026-11-14
 
 Added the [#359 primary development case results](/DOCS/test_results/2026-11-14-359-primary-development-case-results.md)

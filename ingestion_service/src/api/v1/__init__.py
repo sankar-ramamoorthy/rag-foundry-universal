@@ -7,6 +7,7 @@ from src.api.v1.repos import router as repos_router
 from src.api.v1.graph import router as graph_router
 from src.api.v1.chunks import router as chunks_router  # NEW
 from src.api.v1.orient import router as orient_router  # issue #197
+from src.api.v1.source_navigation import router as source_navigation_router
 
 router = APIRouter(prefix="/v1")
 router.include_router(ingest_router)
@@ -16,3 +17,4 @@ router.include_router(repos_router)
 router.include_router(graph_router)
 router.include_router(chunks_router)  # NEW
 router.include_router(orient_router)  # issue #197
+router.include_router(source_navigation_router)  # issue #379

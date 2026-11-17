@@ -110,6 +110,9 @@ LiteLLM, Gradio, Docker Compose, pytest, and GitHub Actions.
 - **Document retrieval:** Markdown, PDF, office documents, CSV, text, and OCR inputs.
 - **Repository maintenance:** incremental embedding reuse, source/generation
   lineage, serialized ingestion/deletion, and interrupted-job recovery.
+- **Source navigation:** deterministic file discovery and exact stored-source
+  reads for the current completed generation, with explicit response, scan and
+  deadline limits. See the [source-navigation contract](DOCS/architecture/source-navigation-api.md).
 - **Evidence delivery:** query-relevant passages, bounded context, source manifests,
   and visibility into the model and fallback that served an answer.
 
@@ -206,6 +209,24 @@ curl -X POST 'http://localhost:8004/v1/repos/<repo_id>/evidence' \
 The evidence endpoint supports `orient`, `trace`, and `impact` modes. It returns
 structured evidence and an obligation assessment; optional explanation generation
 does not turn a partial assessment into complete evidence.
+
+Read stored source directly from the ingestion service using the ready
+generation returned by `GET /v1/repos/<repo_id>/generation`:
+
+```bash
+curl --get 'http://localhost:8001/v1/repos/<repo_id>/source/files' \
+    --data-urlencode 'generation_id=<ingestion_id>' \
+    --data-urlencode 'pattern=**/*.py'
+curl --get 'http://localhost:8001/v1/repos/<repo_id>/source/read' \
+    --data-urlencode 'generation_id=<ingestion_id>' \
+    --data-urlencode 'path=src/example.py' \
+    --data-urlencode 'start_line=1' --data-urlencode 'end_line=100'
+```
+
+Source text reflects ingestion's decoded representation. Historical generations
+are unavailable, and late ranges in large files can exceed the scan budget even
+when their returned text would be small. These reads do not change which evidence
+the RAG answering path selects.
 
 ## Testing and deployment
 
