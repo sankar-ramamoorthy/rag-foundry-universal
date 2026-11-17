@@ -235,7 +235,8 @@ an actual prioritized 13-item list, filed as GitHub issues #196-#208.
 workstream labels (R/A/D/E/O/P) from the roadmap-reorientation proposal,
 instead of one flat list — every issue number, shipped checkbox, and
 dated decision from the original list is preserved unchanged; nothing was
-replaced or renumbered away. New sub-items (AG0-AG5, D0-D5 minus #204,
+replaced or renumbered away. AG0's source-navigation foundation is now tracked
+by #379 (see below). Other new sub-items (AG1-AG5, D0-D5 minus #204,
 decision-model experiment) have **no GitHub issue filed yet** — do not
 treat them as shipped APIs or preapproved work.
 
@@ -281,11 +282,11 @@ focus, not historical completion or issue membership in the workstreams.
 
 **R exit gate:** predeclared case-by-case answer and exact-source obligations across multiple pinned repositories; negative and historical controls; baseline vs. candidate; acceptable latency/regression profile.
 
-### A — Coding-agent integration and bug investigation (new 2026-10-12; no GitHub issues filed yet)
+### A — Coding-agent integration and bug investigation (AG0 source navigation: #379)
 
 > Make coding agents a first-class external consumer of the repository-intelligence layer (R, above) — not a competing full coding agent by default. Sub-items below are labeled `AG0`-`AG5` (not `A0`-`A5`) to avoid colliding with #200's own, unrelated internal stage labels (`A0`-`A5`) referenced in [`DOCS/index.md`](/DOCS/index.md) and [`DOCS/status.md`](/DOCS/status.md).
 
-- **AG0 — Agent-ready evidence contracts.** Additive, versioned machine-readable contracts (repository/snapshot identity, canonical symbol ID, file path/line/span, evidence type, relationship, role/authority facets, source hashes, confidence/unknown status, completeness/limits, causal trace IDs). Require source-revision agreement or an explicit mismatch warning before suggesting edit locations; preserve read-only default.
+- **AG0 — Agent-ready evidence contracts.** Additive, versioned machine-readable contracts (repository/snapshot identity, canonical symbol ID, file path/line/span, evidence type, relationship, role/authority facets, source hashes, confidence/unknown status, completeness/limits, causal trace IDs). Require source-revision agreement or an explicit mismatch warning before suggesting edit locations; preserve read-only default. **#379** implements the initial [file-navigation contract](/DOCS/architecture/source-navigation-api.md), with [verification](/DOCS/test_results/2026-11-16-379-source-navigation-implementation.md); broader agent/tool contracts remain future work and Linux deployment remains operator-owned.
 - **AG1 — Read-only MCP proof of value.** A small selected tool set (illustrative names only, not promised APIs: `orient_repository`, `find_symbols`/`get_symbol_evidence`, `trace_execution`, `analyze_impact`), reusing existing validated services rather than a broad new control plane. Gate: a real coding agent with/without the MCP, over matched source snapshots and permissions, shows measurable improvement — not merely successful tool invocation.
 - **AG2 — Bug-localization benchmark.** Held-out, reproducible issue scenarios (bug report/failing test, known root cause, expected symbol/file, realistic distractors, source revision); compare the same agent with/without RAG-FOUNDRY-UNIVERSAL.
 - **AG3 — Bounded retrieval repair and sufficiency.** Extends **#200** (owned by R, above — AG3 consumes it, does not own it) from structural endpoints to ordinary queries: at most one or a few bounded, targeted follow-ups, never unconstrained recursion. **#207** (deferred below) is reserved for adaptive multi-step investigation only after this measurably fails.

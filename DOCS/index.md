@@ -113,6 +113,21 @@ experiment (#276). Accepting it authorizes no implementation by itself.
 
 ## Audit & Planning
 
+[ADR-055 source-navigation supplement](/DOCS/adr/ADR-055-source-navigation-supplement.md)
+records the accepted Phase 6 / AG0 direction for file discovery and stored-source
+reads before an agent. The [API contract](/DOCS/architecture/source-navigation-api.md)
+defines the #379 endpoints, limits, provenance, errors and lifecycle behavior.
+The [initial issue draft](/DOCS/proposals/2026-11-16-ag0-source-navigation-issue.md)
+is retained as an obsolete preparation record. Deployment remains operator-owned.
+The [read-only PostgreSQL range assessment](/DOCS/test_results/2026-11-16-379-postgresql-source-ranges.md)
+records live timings, provenance, memory/cache limits and proposed scan budgets;
+files larger than 4 MiB were absent from production. The implementation's isolated
+PostgreSQL tests cover a 5 MiB fixture without changing production data.
+The [implementation verification](/DOCS/test_results/2026-11-16-379-source-navigation-implementation.md)
+records isolated PostgreSQL lifecycle tests and local HTTP reads of the retained
+Linux source. The [future-agent register](/DOCS/notes/brainstorm-20261116-future-agent-architecture.md)
+captures open design questions without selecting an agent architecture.
+
 The production-correctness programme
 ([WP-R1 through WP-R8](/specs/005-production-correctness/spec.md), with
 [delivery plan](/specs/005-production-correctness/plan.md),

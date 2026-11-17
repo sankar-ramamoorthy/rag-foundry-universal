@@ -26,6 +26,35 @@ This is where ADR/issue/PR-numbered detail belongs — `README.md` links
 here rather than embedding it, so the README stays a stable reference
 document.
 
+## Source navigation (Phase 6 / AG / AG0)
+
+[#379](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/379)
+implements file discovery and exact stored-source reads in `ingestion_service`.
+The [API contract](/DOCS/architecture/source-navigation-api.md) and accepted
+[ADR-055 supplement](/DOCS/adr/ADR-055-source-navigation-supplement.md) record
+the owner-approved bounds and current-completed-generation-only behavior.
+#282 remains deferred batch/function-node access. RAG answering is unchanged.
+
+The [implementation verification](/DOCS/test_results/2026-11-16-379-source-navigation-implementation.md)
+records 41 focused passing tests, 286 root tests, 508 ingestion unit tests
+(4 existing skips), and 39 existing PostgreSQL regression cases. Ruff and
+scoped Pyright pass; whole-repository Pyright still reports 417 diagnostics,
+none in the new source-navigation/diagnostic files. An isolated local 5 MiB
+fixture verifies early-read success and explicit late-read scan exhaustion.
+
+Local HTTP calls through the new source-only router against the unchanged Linux
+database retrieved the full `codebase_utils.py` module in `f7641840`: 274 lines,
+13 functions, hash matching its source revision. The
+[pre-implementation assessment](/DOCS/test_results/2026-11-16-379-postgresql-source-ranges.md)
+remains the record of real-corpus performance (largest stored file 604 KiB).
+True cold-cache cost and backend transient peak memory remain unmeasured.
+**Not deployed to Linux.** Production endpoint rollout/HTTP verification remains
+operator-owned. No source data or deployment was changed by this work.
+
+The [future-agent register](/DOCS/notes/brainstorm-20261116-future-agent-architecture.md)
+preserves exploratory questions; it selects no controller, memory or delegation
+architecture and authorizes no agent implementation.
+
 ## CI-06 embedding-input coverage
 
 Development is paused pending the owner's Linux session. Resume with the

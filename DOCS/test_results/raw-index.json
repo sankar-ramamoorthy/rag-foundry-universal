@@ -414,6 +414,33 @@
       "cited_by": "DOCS/test_results/2026-11-14-359-primary-development-case-results.md",
       "notes": "#359 primary development case scoring against the public section-4 chains 0d79f3e3...; C3 rescan clean (exit 0)."
     },
+    "2026-11-16-379-local-api-linux-db.json": {
+      "bytes": 1400,
+      "sha256": "55f706a7a892264ff5aae97fdad20b917c78ff1ebd78edf1155f5688290aa15c",
+      "produced_by": "Local source-only FastAPI TestClient with new #379 code against existing Linux PostgreSQL; read-only transaction; no main lifespan or deployment",
+      "cited_by": [
+        "DOCS/test_results/2026-11-16-379-source-navigation-implementation.md"
+      ],
+      "notes": "Full source read matched the prior stored/Git hash; 274 lines and 13 functions. No source bodies, addresses or credentials retained."
+    },
+    "2026-11-16-379-provenance.json": {
+      "bytes": 1057,
+      "sha256": "e682f135300fbffd262fdbfe54a5293d2913b43f61d8c31bb23cead0a4aa2cba",
+      "produced_by": "scripts/source_range_assessment_379.py; local Git/hash provenance check; owner-authorized read-only #379 assessment",
+      "cited_by": [
+        "DOCS/test_results/2026-11-16-379-postgresql-source-ranges.md"
+      ],
+      "notes": "No source bodies, credentials or private addresses. No production writes. True cold-cache and backend peak RSS not measured."
+    },
+    "2026-11-16-379-source-ranges.json": {
+      "bytes": 290282,
+      "sha256": "b84810c6ae670e9cb207479b87ac2512509f27d34a9589bfc463096d02441137",
+      "produced_by": "scripts/source_range_assessment_379.py; local Git/hash provenance check; owner-authorized read-only #379 assessment",
+      "cited_by": [
+        "DOCS/test_results/2026-11-16-379-postgresql-source-ranges.md"
+      ],
+      "notes": "No source bodies, credentials or private addresses. No production writes. True cold-cache and backend peak RSS not measured."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
