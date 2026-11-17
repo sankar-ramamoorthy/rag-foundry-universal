@@ -187,9 +187,12 @@ verification. [LLM Provider-Request Capture and Replay](/DOCS/deployment/llm-pro
 inference provider (flattened prompt, options, raw response, effective
 Ollama context length), plus a replay tool.
 
-`DOCS/releases/` holds production release records. Current release:
-[prod-2026-09-12](/DOCS/releases/2026-09-12-prod-release.md), deployed from
-`202d91b34ee18e21c1dbb625d72acf9b82bce16d`. The earlier
+`DOCS/releases/` holds production release records. The four API services now
+report `prod-2026-11-17-1447pm` / `e958052`; the
+[Windows Source Navigation API verification](/DOCS/releases/2026-11-17-prod-1447pm-source-navigation-verification.md)
+records passing deployed HTTP checks and the pending container/log attestation.
+The older [prod-2026-09-12 record](/DOCS/releases/2026-09-12-prod-release.md)
+is historical. The earlier
 [827c9cdc failed promotion](/DOCS/releases/2026-09-12-827c9cdc-failed-promotion.md)
 is retained as part of the audit trail.
 

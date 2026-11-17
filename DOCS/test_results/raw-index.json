@@ -441,6 +441,24 @@
       ],
       "notes": "No source bodies, credentials or private addresses. No production writes. True cold-cache and backend peak RSS not measured."
     },
+    "2026-11-17-380-initial-harness-capture.json": {
+      "bytes": 39558,
+      "sha256": "461eb1d55cb31e48f0336e4095d6933d353eda7829454e68e00e910a9caaa347",
+      "produced_by": "Codex Windows: deployed GET-only HTTP verification and read-only PostgreSQL health; temporary verification harness, no application edits",
+      "cited_by": [
+        "DOCS/releases/2026-11-17-prod-1447pm-source-navigation-verification.md"
+      ],
+      "notes": "Source bodies and private addresses/credentials omitted. Initial harness dict-row assertion error retained separately; corrected SQL-only recheck documented. OCI labels and deployment timeout logs pending SSH."
+    },
+    "2026-11-17-380-live-http-verification.json": {
+      "bytes": 40038,
+      "sha256": "b4718ee73ec65c9835f6ff9296e6e82c4d287ad44ebd7e1cc6260e86feeb0782",
+      "produced_by": "Codex Windows: deployed GET-only HTTP verification and read-only PostgreSQL health; temporary verification harness, no application edits",
+      "cited_by": [
+        "DOCS/releases/2026-11-17-prod-1447pm-source-navigation-verification.md"
+      ],
+      "notes": "Source bodies and private addresses/credentials omitted. Initial harness dict-row assertion error retained separately; corrected SQL-only recheck documented. OCI labels and deployment timeout logs pending SSH."
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
