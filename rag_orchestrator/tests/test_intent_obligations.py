@@ -1,6 +1,7 @@
 """Offline software checks for #398."""
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -149,6 +150,19 @@ def test_outage_invalid_schema_and_replay_binding(inputs):
 
 def test_compound_requires_explanation_of_every_definition(inputs):
     cases, pack = inputs
+    # h05 does not ask for sources. Simulate a source-backed variant to exercise
+    # the citation checks.
+    cases = [
+        replace(
+            c,
+            gold=c.gold.model_copy(
+                update={"obligations": c.gold.obligations | {"source_evidence"}}
+            ),
+        )
+        if c.id == "h05"
+        else c
+        for c in cases
+    ]
     report = evaluate(cases, pack, {})
     row = select(report, "labels", "h05")
     cell = row["cell_sha256"]
@@ -265,6 +279,10 @@ def test_completion_reasons_and_plan_only_documents(inputs):
     assert select(report, "labels", "h05")["obligation_status"] == {
         "definitions": "satisfied",
         "explanation_per_function": "unsatisfied",
+    }
+    assert select(report, "labels", "h22")["obligation_status"] == {
+        "definitions": "satisfied",
+        "explanation_per_function": "unsatisfied",
         "source_evidence": "unsupported_by_available_evidence",
     }
     doc = select(report, "labels", "h20")
@@ -273,3 +291,37 @@ def test_completion_reasons_and_plan_only_documents(inputs):
         {"type": "document", "value": "policy-v2.pdf"},
     ]
     assert doc["scores"]["strategy_correct"] and doc["answer_status"] == "unmeasured"
+
+
+def test_source_evidence_only_when_the_question_asks_for_it():
+    asks = ("source", "cite", "quotation", "passages")
+    for case in exp.load_cases():
+        requested = any(word in case.question.lower() for word in asks)
+        assert ("source_evidence" in case.gold.obligations) == requested, case.id
+
+
+def test_capability_scoring_separates_dependencies_from_arbitrary_order(inputs):
+    assert exp.order_valid(("source_navigation", "ast_inventory"))
+    assert not exp.order_valid(("ast_inventory", "source_navigation"))
+    assert not exp.order_valid(("ast_inventory",))
+    assert not exp.order_valid(("grounded_synthesis", "find_callers"))
+    # Navigation and caller lookup have no hard dependency in either direction.
+    assert exp.order_valid(("find_callers", "source_navigation"))
+    assert exp.order_valid(("source_navigation", "find_callers"))
+    assert not exp.order_valid(("find_callers", "find_callers"))
+    cases, _ = inputs
+    assert all(exp.order_valid(c.gold.proposed_strategy) for c in cases)
+    case = next(c for c in cases if c.id == "h18")
+    swapped = case.gold.model_copy(
+        update={"proposed_strategy": tuple(reversed(case.gold.proposed_strategy))}
+    )
+    scores = exp.replay(case, swapped, exp.Scenarios["normal"], Corpus())["scores"]
+    assert not scores["strategy_correct"]
+    assert scores["capabilities_correct"] and scores["order_valid"]
+    inventory = next(c for c in cases if c.id == "h01")
+    flipped = inventory.gold.model_copy(
+        update={"proposed_strategy": ("ast_inventory", "source_navigation")}
+    )
+    row = exp.replay(inventory, flipped, exp.Scenarios["normal"], Corpus())
+    assert row["scores"]["capabilities_correct"] and not row["scores"]["order_valid"]
+    assert row["route"] == "rag"

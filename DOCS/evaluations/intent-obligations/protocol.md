@@ -30,6 +30,14 @@ The regex and prototype arms use a lexical extractor for filenames, documents an
 
 Each prediction is replayed eight ways, including a one-read inventory budget. Explicit RAG selects RAG for every prediction. Investigation requires trace intent, caller authority, a material gap, a repair capable of addressing it and remaining investigation budget. The scenarios exercise all four conditions together and each condition absent. These evidence and permission states are supplied by the experiment. The classifier cannot set them. A recorded classifier outage or invalid output uses the regex fallback and records the reason. A missing capture remains unmeasured.
 
+## Evidence obligations
+
+`source_evidence` is a separate obligation only when the question asks for sources, citations, quotations or supporting passages. Callers, impact, comparison, summary and per-function explanation questions do not carry it by default. The rule applies to prototypes and held-out cases alike. The labels were corrected under this rule before any model capture. [Change log](label-changes.md)
+
+## Tool strategy scoring
+
+Each prediction records three views. Ordered `strategy_correct` compares the exact sequence in the CSV and is kept for continuity. `capabilities_correct` compares the set of tools and ignores order. `order_valid` checks only the hard dependencies: `source_navigation` before `ast_inventory`, `ast_inventory` before `filter_async`, `retrieve_sections` before `compare_versions`, `grounded_synthesis` last, and no repeated tool. Other orders, such as caller lookup before or after navigation, are arbitrary and are not penalized, so the CSV order for those tools is not a requirement. The inventory route requires the right tool set in a valid order. The summary adds `understood_capabilities_and_delivered_verifiable` beside the ordered joint score.
+
 ## Answer verification
 
 The corpus pins the LF-normalized source of `codebase_ingest.py` from commit `061dda5` by SHA-256. Two small synthetic files, `api/ingest.py` and `cli/ingest.py`, cover ambiguous and multiple targets. The runner executes the merged #396 inventory policy against an in-memory source transport. The scorer compares every path, stored-text digest and qualified name, kind and span with a separate whole-module AST witness. The large module crosses the 500-line page boundary. [Witness](inventory-witness.json) · [Corpus adapter](/rag_orchestrator/experiments/intent_obligations/corpus.py)
@@ -69,6 +77,12 @@ For an approved run, set the digest variables from the approved manifest. The co
 ..\.venv\Scripts\python.exe -m experiments.intent_obligations.collect --pack requests.json --approved-pack-sha256 $packDigest --llm-model $model --llm-digest $llmDigest --embed-digest $embedDigest --output captures.json
 ..\.venv\Scripts\python.exe -m experiments.intent_obligations --llm-model $model --captures captures.json --output comparison.json
 ```
+
+## Comparison caveats
+
+- **Prompting asymmetry.** The embedding arm sees twelve labelled prototypes. p09-p12 share intents with h18-h24 (callers, comparison, impact, summary), so the embedding arm is not fully held out on those questions. The LLM arm is zero-shot. Its single fixed instruction states the inventory, scope, obligation and tool-order rules but gives no examples and says nothing about callers, comparison or impact beyond the schema. The inventory and compound rules were written with these development labels in view. Read results as a development comparison of two setups, not a clean model-against-model comparison or evidence of generalization.
+- **Entity resolution.** Entity scoring compares the typed mention exactly. Whether a file exists, or whether a basename is ambiguous, is decided by the controller against the fixture. h07 and h17 expect `clarify` because `ingest.py` matches two paths. h08 expects `missing` because `ingrst.py` matches none. A classifier cannot know either from the question alone, so those rows measure entity and plan accuracy, not route insight. The regex and embedding arms use a lexical extractor that finds `.py` and `.pdf` names and backticked symbols but not prose references.
+- **CPU timing.** The host is an i7-8565U with integrated graphics and no GPU. Collection alternates embedding and generation calls with no warm-up, so Ollama may load and unload models between pairs. Latency therefore includes loading and switching and is not steady-state. A 60 s HTTP timeout can produce outages on this machine. They are scored as classifier outages with regex fallback and reported separately. Treat latency as an upper bound for this hardware, not a deployment estimate.
 
 ## Reading the expanded scorecard
 

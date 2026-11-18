@@ -25,8 +25,12 @@ def request_pack(cases, embed_model, llm_model):
         "Classify the question by intent, scope and every required answer obligation. "
         "Use inventory/all for all definitions, inventory/async for async functions, "
         "file for other file-specific questions and unspecified for unclear scope. "
-        "For list and explain use definitions, explanation_per_function "
-        "and source_evidence. "
+        "For list and explain use definitions and explanation_per_function. "
+        "Add source_evidence only when the question asks for sources, citations, "
+        "quotations or supporting passages. "
+        "List tools in dependency order: source_navigation before ast_inventory, "
+        "ast_inventory before filter_async, retrieve_sections before "
+        "compare_versions, grounded_synthesis last. "
         "Return all intents, literal typed entities and ordered proposed tools."
     )
     requests = {}

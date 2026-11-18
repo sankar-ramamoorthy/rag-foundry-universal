@@ -142,6 +142,16 @@ def evaluate(cases, pack, records, judgments=None):
                             "strategy",
                         )
                     )
+                    scores = row["scores"]
+                    scores["understood_capabilities_and_delivered_verifiable"] = (
+                        scores["delivered_all_verifiable"]
+                        and scores["capabilities_correct"]
+                        and scores["order_valid"]
+                        and all(
+                            scores[field + "_correct"]
+                            for field in ("intent", "entities", "scope", "obligations")
+                        )
+                    )
                     row["obligation_status"] = obligation_status(row, case)
                 rows.append(row)
     if judgments:

@@ -119,6 +119,25 @@ def baseline(question):
         proposed_strategy=("ordinary_rag",),
     )
 
+# Hard prerequisites only. A tool here cannot run before the tools it needs.
+# Any other order (for example caller lookup before or after source navigation)
+# is arbitrary and is not penalized by the capability metrics.
+Requires = {
+    "ast_inventory": {"source_navigation"},
+    "filter_async": {"ast_inventory"},
+    "compare_versions": {"retrieve_sections"},
+}
+
+
+def order_valid(strategy):
+    """True when each tool follows its prerequisites and synthesis is last."""
+    for index, tool in enumerate(strategy):
+        if not Requires.get(tool, set()) <= set(strategy[:index]):
+            return False
+        if tool == "grounded_synthesis" and index != len(strategy) - 1:
+            return False
+    return len(set(strategy)) == len(strategy)
+
 
 @dataclass(frozen=True)
 class Case:
@@ -215,15 +234,18 @@ def route(frame, scenario):
     if (
         frame.scope == "all"
         and frame.obligations == {"definitions"}
-        and frame.proposed_strategy == ("source_navigation", "ast_inventory")
+        and set(frame.proposed_strategy) == {"source_navigation", "ast_inventory"}
+        and order_valid(frame.proposed_strategy)
     ):
         return "inventory"
     if (
         frame.scope == "all"
-        and frame.obligations
-        == {"definitions", "explanation_per_function", "source_evidence"}
-        and frame.proposed_strategy
-        == ("source_navigation", "ast_inventory", "grounded_synthesis")
+        and {"definitions", "explanation_per_function"}
+        <= frame.obligations
+        <= {"definitions", "explanation_per_function", "source_evidence"}
+        and set(frame.proposed_strategy)
+        == {"source_navigation", "ast_inventory", "grounded_synthesis"}
+        and order_valid(frame.proposed_strategy)
     ):
         return "inventory_then_rag"
     return "rag"
@@ -286,6 +308,9 @@ def replay(case, frame, scenario, corpus):
             "intent_correct": frame.intents == case.gold.intents,
             "entities_correct": frame.entities == case.gold.entities,
             "strategy_correct": frame.proposed_strategy == case.gold.proposed_strategy,
+            "capabilities_correct": set(frame.proposed_strategy)
+            == set(case.gold.proposed_strategy),
+            "order_valid": order_valid(frame.proposed_strategy),
             "scope_correct": frame.scope == case.gold.scope,
             "obligations_correct": frame.obligations == case.gold.obligations,
             "route_correct": actual == expected,

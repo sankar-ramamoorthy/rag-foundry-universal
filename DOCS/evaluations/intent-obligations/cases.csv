@@ -1,7 +1,7 @@
 id,split,family,question,entities,intents,scope,obligations,strategy,route
 p01,prototype,direct,What functions are in codebase_ingest.py?,python_file:codebase_ingest.py,inventory,all,definitions,source_navigation|ast_inventory,inventory
 p02,prototype,explain,Explain what codebase_ingest.py does.,python_file:codebase_ingest.py,explain,file,explanation,source_navigation|grounded_synthesis,rag
-p03,prototype,compound,List and explain every function in codebase_ingest.py.,python_file:codebase_ingest.py,inventory|explain,all,definitions|explanation_per_function|source_evidence,source_navigation|ast_inventory|grounded_synthesis,inventory_then_rag
+p03,prototype,compound,List and explain every function in codebase_ingest.py.,python_file:codebase_ingest.py,inventory|explain,all,definitions|explanation_per_function,source_navigation|ast_inventory|grounded_synthesis,inventory_then_rag
 p04,prototype,callee,What functions does codebase_ingest.py call?,python_file:codebase_ingest.py,calls,file,callees,find_callees|source_navigation,rag
 p05,prototype,dependencies,What does codebase_ingest.py import?,python_file:codebase_ingest.py,imports,file,imports,inspect_imports,rag
 p06,prototype,filtered,List only the async functions in codebase_ingest.py.,python_file:codebase_ingest.py,inventory,async,definitions,source_navigation|ast_inventory|filter_async,rag
@@ -16,7 +16,7 @@ h01,holdout,fronted,"In codebase_ingest.py, what functions are defined?",python_
 h02,holdout,fronted,"In codebase_ingest.py, what functions are called?",python_file:codebase_ingest.py,calls,file,callees,find_callees|source_navigation,rag
 h03,holdout,fronted,"In codebase_ingest.py, what gets imported?",python_file:codebase_ingest.py,imports,file,imports,inspect_imports,rag
 h04,holdout,fronted,"In codebase_ingest.py, which functions are async?",python_file:codebase_ingest.py,inventory,async,definitions,source_navigation|ast_inventory|filter_async,rag
-h05,holdout,shorthand,codebase_ingest.py function names plus a description of each please.,python_file:codebase_ingest.py,inventory|explain,all,definitions|explanation_per_function|source_evidence,source_navigation|ast_inventory|grounded_synthesis,inventory_then_rag
+h05,holdout,shorthand,codebase_ingest.py function names plus a description of each please.,python_file:codebase_ingest.py,inventory|explain,all,definitions|explanation_per_function,source_navigation|ast_inventory|grounded_synthesis,inventory_then_rag
 h06,holdout,shorthand,codebase_ingest.py function list plese.,python_file:codebase_ingest.py,inventory,all,definitions,source_navigation|ast_inventory,inventory
 h07,holdout,shorthand,ingest.py function list please.,python_file:ingest.py,inventory,all,definitions,source_navigation|ast_inventory,clarify
 h08,holdout,shorthand,ingrst.py function list please.,python_file:ingrst.py,inventory,all,definitions,source_navigation|ast_inventory,missing
@@ -29,11 +29,11 @@ h14,holdout,fronted,"In api/ingest.py or cli/ingest.py, which file's functions s
 h15,holdout,polite,Please enumerate all functions defined in codebase_ingest.py.,python_file:codebase_ingest.py,inventory,all,definitions,source_navigation|ast_inventory,inventory
 h16,holdout,polite,Please enumerate all functions called in codebase_ingest.py.,python_file:codebase_ingest.py,calls,file,callees,find_callees|source_navigation,rag
 h17,holdout,polite,Please list functions in ingest.py.,python_file:ingest.py,inventory,all,definitions,source_navigation|ast_inventory,clarify
-p09,prototype,incoming,Which functions call `save_repo`?,symbol:save_repo,callers,file,callers|source_evidence,find_callers|source_navigation,rag
-p10,prototype,compare,Compare old-policy.pdf and new-policy.pdf.,document:old-policy.pdf|document:new-policy.pdf,compare,file,changes|source_evidence,retrieve_sections|compare_versions|grounded_synthesis,rag
-p11,prototype,impact,What breaks if I remove `save_repo`?,symbol:save_repo,impact,file,dependencies|source_evidence,inspect_dependencies|source_navigation,rag
-p12,prototype,summary,Summarize contract.pdf.,document:contract.pdf,summary,file,summary|source_evidence,retrieve_sections|grounded_synthesis,rag
-h18,holdout,direction,Who calls `save_repo` from codebase_ingest.py?,symbol:save_repo|python_file:codebase_ingest.py,callers,file,callers|source_evidence,find_callers|source_navigation,rag
+p09,prototype,incoming,Which functions call `save_repo`?,symbol:save_repo,callers,file,callers,find_callers|source_navigation,rag
+p10,prototype,compare,Compare old-policy.pdf and new-policy.pdf.,document:old-policy.pdf|document:new-policy.pdf,compare,file,changes,retrieve_sections|compare_versions|grounded_synthesis,rag
+p11,prototype,impact,What breaks if I remove `save_repo`?,symbol:save_repo,impact,file,dependencies,inspect_dependencies|source_navigation,rag
+p12,prototype,summary,Summarize contract.pdf.,document:contract.pdf,summary,file,summary,retrieve_sections|grounded_synthesis,rag
+h18,holdout,direction,Who calls `save_repo` from codebase_ingest.py?,symbol:save_repo|python_file:codebase_ingest.py,callers,file,callers,find_callers|source_navigation,rag
 h19,holdout,direction,Who is called by `save_repo` in codebase_ingest.py?,symbol:save_repo|python_file:codebase_ingest.py,calls,file,callees,find_callees|source_navigation,rag
 h20,holdout,contrast,Show changes between policy-v1.pdf and policy-v2.pdf with quotations.,document:policy-v1.pdf|document:policy-v2.pdf,compare,file,changes|source_evidence,retrieve_sections|compare_versions|grounded_synthesis,rag
 h21,holdout,contrast,What would fail without `save_repo`? Cite the affected code.,symbol:save_repo,impact,file,dependencies|source_evidence,inspect_dependencies|source_navigation,rag
