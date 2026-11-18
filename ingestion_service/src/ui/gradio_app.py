@@ -261,6 +261,14 @@ def _overview_controls_note(data: dict, query_mode: str) -> str:
     return f"Overview controls: {values}\n\n"
 
 
+def _budget_options(mode: str, amount: int | None) -> dict:
+    if mode != "custom":
+        return {"context_mode": mode}
+    if type(amount) is not int or amount <= 0:
+        raise ValueError("Enter a positive whole number of evidence bytes.")
+    return {"context_mode": mode, "max_evidence_bytes": amount}
+
+
 def submit_rag_query(
     query: str,
     repo_id: str | None,
@@ -271,6 +279,8 @@ def submit_rag_query(
     claim_selection: bool = False,
     structured_answers: bool = False,
     canonical_selection: bool = False,
+    context_mode: str = "auto",
+    max_evidence_bytes: int | None = None,
 ):
     """Submit RAG query with repo_id."""
     try:
@@ -288,6 +298,8 @@ def submit_rag_query(
             "repository_overview_structured_answers_enabled": structured_answers,
             "repository_overview_canonical_selection_enabled": canonical_selection,
         }
+        payload.update(_budget_options(context_mode, max_evidence_bytes))
+        payload["execution_mode"] = "rag" if query_mode == "rag" else "auto"
         if query_mode == "repository_overview":
             payload["claim_type"] = "repository_overview"
 
@@ -490,7 +502,7 @@ def build_ui():
         )
 
         query_mode = gr.Radio(  # type: ignore
-            choices=[("Normal RAG", "normal"),
+            choices=[("Automatic", "normal"), ("Standard RAG", "rag"),
                      ("Repository Overview", "repository_overview")],
             value="normal",
             label="Query mode",
@@ -527,6 +539,20 @@ def build_ui():
                 info="Alias from llm_service, or a raw provider/model string",
                 scale=2
             )
+
+        with gr.Row():
+            context_mode = gr.Radio(
+                choices=[("Auto (default)", "auto"), ("Compact", "compact"),
+                         ("Custom", "custom")], value="auto", label="Evidence budget",
+            )
+            evidence_bytes = gr.Number(
+                label="Maximum evidence bytes", value=8192, precision=0,
+                minimum=1, visible=False,
+            )
+        context_mode.change(
+            lambda mode: gr.update(visible=mode == "custom"),
+            context_mode, evidence_bytes,
+        )
 
         rag_btn = gr.Button("🚀 Ask Graph RAG", variant="primary", size="lg")  # type: ignore
         rag_output = gr.Textbox(  # type: ignore
@@ -589,6 +615,7 @@ def build_ui():
             inputs=[
                 rag_query, repo_dropdown, top_k, provider, model, query_mode,
                 claim_selection, structured_answers, canonical_selection,
+                context_mode, evidence_bytes,
             ],
             outputs=rag_output,
         )

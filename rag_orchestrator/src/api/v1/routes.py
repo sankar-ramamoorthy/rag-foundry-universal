@@ -16,6 +16,7 @@ from src.api.v1.models import (
     TraceResponse,
     ImpactResponse,
 )
+from src.core.inventory_query import inventory_response
 from src.core.config import get_settings
 from src.core.evidence_service import (
     fetch_orient_response,
@@ -64,6 +65,9 @@ async def rag_endpoint(rag_query: RAGQuery):
     logger.debug(f"Received RAG query: {rag_query}")
 
     try:
+        inventory = await inventory_response(rag_query)
+        if inventory is not None:
+            return inventory
         result = await run_rag(
             query=rag_query.query,
             context_mode=rag_query.context_mode,

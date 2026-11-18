@@ -305,3 +305,55 @@ def test_foundry_module_inventory(monkeypatch):
     assert len(names) == 13 and "get_cached_graph_with_generation" in names
     assert result["completion"] == "verified_complete" and result["tool_calls"] == 1
     assert result["model_calls"] == 0 and not backend.fetches
+
+def test_inventory_through_public_route(monkeypatch):
+    from fastapi.testclient import TestClient
+    from src.api.v1.main import app
+
+    backend = Fixture()
+    patch_pipeline(monkeypatch, backend)
+    response = TestClient(app).post("/v1/rag", json={
+        "repo_id": REPO, "query": "What functions are defined in module.py?",
+        "context_mode": "custom", "max_evidence_bytes": 8192,
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "C.f.inner" in data["answer"]
+    assert data["sources"] == ["a/module.py"]
+    assert data["retrieval_plan"]["model_calls"] == 0 and backend.payload is None
+    assert "text" not in data["retrieval_plan"]
+
+
+def test_inventory_does_not_capture_explanations_or_standard_rag():
+    from src.api.v1.models import RAGQuery
+    from src.core.inventory_query import inventory_response
+
+    for query, mode in [
+        ("What functions are defined in module.py?", "rag"),
+        ("What functions are defined in module.py and how do they interact?", "auto"),
+        ("How does module.py work?", "auto"),
+    ]:
+        req = RAGQuery.model_validate({"query": query, "execution_mode": mode})
+        assert asyncio.run(inventory_response(req)) is None
+
+
+def test_inventory_ambiguity_returns_paths_without_reading(monkeypatch):
+    from fastapi.testclient import TestClient
+    from src.api.v1.main import app
+
+    class Ambiguous(Fixture):
+        def __call__(self, req):
+            if req.url.path.endswith("/files"):
+                return httpx.Response(200, json={
+                    "repo_id": REPO, "generation_id": GEN,
+                    "files": [{"path": "a/mod.py"}, {"path": "b/mod.py"}],
+                })
+            assert not req.url.path.endswith("/read")
+            return super().__call__(req)
+
+    patch_pipeline(monkeypatch, Ambiguous())
+    data = TestClient(app).post("/v1/rag", json={
+        "repo_id": REPO, "query": "List all functions in mod.py",
+    }).json()
+    assert "a/mod.py" in data["answer"] and "b/mod.py" in data["answer"]
+    assert data["retrieval_plan"]["termination_reason"] == "clarification"

@@ -28,6 +28,13 @@ document.
 
 ## Source navigation (Phase 6 / AG / AG0)
 
+Issue #388 connects explicit single-file Python function inventories to
+Gradio and the repository RAG endpoint. A local API handler against the
+deployed ingestion service returned 13 functions for
+`rag_orchestrator/src/retrieval/codebase_utils.py`, with verified completion
+and zero model calls. The Gradio repository query also accepts Auto, Compact,
+and Custom evidence budgets for ordinary RAG.
+
 The [ordinary RAG budget comparison](/DOCS/test_results/2026-11-17-386-context-budget.md)
 records #386's mocked provider checks and offline passage delivery. Live
 answer quality for the new budget modes remains unevaluated.
