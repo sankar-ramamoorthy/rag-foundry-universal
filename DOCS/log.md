@@ -8,6 +8,10 @@ governed.
 
 ## 2026-11-18
 
+Proposed the #400 [directional-semantics and compound-obligations experiment](/DOCS/evaluations/directional-compound-routing/protocol.md)
+(design only, unexecuted) from the #398 findings. No router, model or
+deployment change.
+
 Added the #398 [intent and answer-obligation evaluation](/DOCS/evaluations/intent-obligations/protocol.md):
 protocol, [label change log](/DOCS/evaluations/intent-obligations/label-changes.md),
 frozen [run manifest](/DOCS/evaluations/intent-obligations/planning-run-manifest.json)
