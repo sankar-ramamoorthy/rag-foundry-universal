@@ -1,10 +1,11 @@
 ---
 title: "Ordinary RAG evidence budgets and Ollama capacity profiles"
-date: 2026-11-17
+date: 2026-11-18
 type: note
 status: complete
 related:
   - "[Phase 6 issue #386](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/386)"
+  - "[Automatic Custom admission #394](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/394)"
   - "[Provider request capture](/DOCS/deployment/llm-provider-request-capture.md)"
 ---
 
@@ -13,11 +14,17 @@ related:
 Use matching orchestrator and LLM service versions. The ordinary RAG API accepts
 `context_mode` values `auto`, `compact` and `custom`. Custom requires a positive
 integer `max_evidence_bytes`. Set `COMPACT_EVIDENCE_BYTES` (default 2048) and
-`MAX_EVIDENCE_BYTES` (default 32768) at the orchestrator. The existing
-`CONTEXT_WINDOW_TOKENS`, prompt reserve, query byte charge and output reserve
-also constrain selection. With the default 8192/1024/2048 configuration even a
-Custom 8192-byte request can deliver at most 5120 bytes minus the query charge.
-An operator may raise that selection ceiling after checking backend capacity.
+`MAX_EVIDENCE_BYTES` (default 32768) at the orchestrator. Auto requests
+4,096 bytes. The orchestrator applies its configured prompt and output reserves
+to Auto, Compact and repository overview queries.
+
+For an ordinary repository question, Custom first selects whole passages up to
+the requested amount and deployment ceiling. The LLM service checks the
+complete prompt for each candidate, reserves output, and can drop trailing
+passages to fit its window. The orchestrator verifies the serving candidate's
+passage count and SHA-256 before returning the answer and citations. Missing
+or inconsistent delivery metadata fails the request. Deploy the orchestrator
+and LLM service together.
 
 `retrieval_plan.evidence_budget` records requested, effective and delivered
 bytes, the binding limit, and passages skipped at final byte assembly. The
@@ -28,7 +35,22 @@ policy text can add instructions and evidence after that stage, and the LLM
 service counts the entire rendered prompt for admission. A deterministic
 structured overview can return directly without invoking a provider.
 
-## Verify and configure the serving candidate
+## Automatic Ollama admission for Custom
+
+Select Qwen3:4b in Gradio and enter the desired evidence bytes. A cold model
+loads with the backend's default window. If a runner is already loaded, the
+LLM service reads its current allocation from `/api/ps`. A small allocation
+can reduce the delivered evidence. Setting Custom does not resize the GPU
+allocation. The service verifies the runner again after generation.
+
+This release verifies Ollama 0.32.1's render-only generation behavior. The
+service uses the model's rendered prompt, a conservative token bound and
+the configured output reserve. The final call disables input truncation and
+context shifting. Each fallback undergoes the same checks. Unsupported
+servers and tokenizers can produce a capacity error. Auto remains available
+on those deployments.
+
+## Administrative capacity profiles
 
 The LLM service reads optional top-level `rag_capacity_profiles` from its
 models YAML. Each profile requires the exact LiteLLM `model` (initially
@@ -54,13 +76,12 @@ Before dispatch, the service checks the digest on the configured endpoint and
 uses LiteLLM's Ollama transform to measure the flattened prompt. It sends
 `num_ctx` and an output limit mapping to `num_predict` for admitted profiles.
 The same check applies independently to fallback candidates. A capacity error
-returns HTTP 413. A primary with unknown capacity retains its legacy behavior
-for compatibility-size requests and reports `unknown_legacy_primary`. Fallbacks
-always need profiles on ordinary RAG requests, including Auto. With no profiles
-configured, an ordinary RAG primary outage can therefore end in a capacity
-error. The serving-model trace includes provider usage when available.
+returns HTTP 413. Auto and Compact retain the compatibility behavior on an
+unprofiled primary and report `unknown_legacy_primary`. Fallbacks for those
+modes require profiles. Custom ordinary requests independently verify the
+serving Ollama candidate. The serving-model trace includes provider usage.
 
-## Run an 8,192-byte experiment on Linux
+## Run an 8,192-byte experiment with an administrative profile
 
 1. Verify the operator's selected endpoint, model digest, usable window and
    template overhead for this deployment. The [November 12 capture](/DOCS/test_results/2026-11-12-345-round2.md)
@@ -69,10 +90,8 @@ error. The serving-model trace includes provider usage when available.
    including runtime model overrides. For each eligible fallback supply its
    own calibrated profile. The shipped registry contains no calibrated profiles.
 2. For a verified **16,384-token** runner, set the orchestrator environment
-   to `CONTEXT_WINDOW_TOKENS=16384`, `PROMPT_RESERVE_TOKENS=1024`,
-   `OUTPUT_RESERVE_TOKENS=2048` and `MAX_EVIDENCE_BYTES=8192`.
-   With those settings, queries up to 5,120 UTF-8 bytes leave the full
-   8,192-byte selection allowance. Longer queries reduce it. Keep the primary
+   to `OUTPUT_RESERVE_TOKENS=2048` and `MAX_EVIDENCE_BYTES=8192`.
+   Longer queries can reduce the effective allowance. Keep the primary
    profile's `window_tokens` at the independently verified value. Install the
    full models YAML, including its existing aliases and the new profile, at
    the LLM service's `MODELS_CONFIG_PATH` inside the container. Apply settings
@@ -81,8 +100,8 @@ error. The serving-model trace includes provider usage when available.
    the larger arm send `"context_mode":"custom","max_evidence_bytes":8192`
    to `POST /v1/rag`. Require `effective_evidence_bytes=8192` in
    `retrieval_plan.evidence_budget`. Whole-passage delivery may use less.
-   For a generated answer, verify the serving model and digest and require
-   `provider_capacity.method=ollama_utf8_upper_bound`. Under the example
+   For a generated answer, verify the recorded serving model, capacity method
+   and digest. Under the example
    profile, the full prompt upper bound including template overhead must be
    at most 14,336 tokens, leaving 2,048 for output. A 413, a smaller effective
    allowance, or an unexpected serving model does not qualify as this arm.

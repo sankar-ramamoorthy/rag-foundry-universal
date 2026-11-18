@@ -194,8 +194,10 @@ For ordinary `/v1/rag`, the optional `context_mode` selects the evidence
 allowance in UTF-8 bytes. Auto (the default) requests 4,096 bytes, Compact
 requests 2,048 by default, and Custom takes a positive `max_evidence_bytes`.
 For example, add `"context_mode": "custom", "max_evidence_bytes": 8192` to
-the JSON request. The deployment can clamp the allowance. Enlarged inference
-requests and fallback models require a matching capacity profile. See the
+the JSON request. For ordinary repository questions, Custom is a maximum.
+Foundry checks the serving Ollama runner and can reduce the evidence to
+whole passages that fit with the question, instructions and output reserve.
+Gradio reports the requested and used bytes. See the
 [configuration and trace guide](/DOCS/deployment/rag-evidence-budgets.md).
 
 In Gradio's repository query panel, choose **Auto**, **Compact**, or **Custom**

@@ -1,6 +1,6 @@
 ---
 title: "Project Status"
-date: 2026-11-10
+date: 2026-11-18
 type: status
 status: current
 tags: [status, overview]
@@ -27,6 +27,20 @@ here rather than embedding it, so the README stays a stable reference
 document.
 
 ## Source navigation (Phase 6 / AG / AG0)
+
+For [issue #394](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/394),
+the local Custom RAG implementation was tested against deployed ingestion,
+vector retrieval and Ollama. With Custom set to 8,192 bytes, the 16,384-token
+Qwen3:4b runner received 8,153 evidence bytes in 11 whole passages. The
+Gradio callback displayed five distinct sources matching the captured request.
+With a primary HTTP 503 injected locally, a real Granite4:350m fallback with
+a 4,096-token window received 1,312 bytes in two passages and displayed one
+source. The full prompt bounds were 8,663 and 2,001 tokens respectively,
+with 2,048 tokens reserved for output in each case. Every passage matched
+its manifest hash. The tests used Ollama 0.32.1 without capacity profiles;
+the Qwen runner was temporarily loaded at 16,384 for the wide-window test.
+See the [acceptance contract](/specs/010-custom-evidence-capacity/spec.md)
+and [configuration guide](/DOCS/deployment/rag-evidence-budgets.md).
 
 Issue #388 connects explicit single-file Python function inventories to
 Gradio and the repository RAG endpoint. A local API handler against the

@@ -108,6 +108,21 @@ def test_repository_query_budget(mode):
         assert "max_evidence_bytes" not in payload
 
 
+def test_custom_displays_serving_model_and_actual_evidence():
+    response = MagicMock()
+    response.json.return_value = {
+        "answer": "answer", "model_used": "ollama/smaller", "fallback_from": "primary",
+        "retrieval_plan": {"evidence_budget": {
+            "requested_evidence_bytes": 8192, "delivered_evidence_bytes": 2954,
+        }},
+    }
+    with patch("src.ui.gradio_app.requests.post", return_value=response):
+        output = submit_rag_query("question", "repo", 10, None, None,
+                                  context_mode="custom", max_evidence_bytes=8192)
+    assert "requested 8,192 bytes · used 2,954 bytes" in output
+    assert "ollama/smaller" in output and "fell back from primary" in output
+
+
 def test_custom_capacity_failure_explains_retry():
     response = MagicMock(status_code=413)
     response.json.return_value = {"detail": {
@@ -119,5 +134,5 @@ def test_custom_capacity_failure_explains_retry():
             "query", "repo-1", 10, None, None,
             context_mode="custom", max_evidence_bytes=8192,
         )
-    assert "4,096" in answer and "Auto" in answer and "profile" in answer
+    assert "4,096" in answer and "Auto" in answer and "different model" in answer
     post.assert_called_once()

@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 class RagCapacity(BaseModel):
     enlarged: bool
     output_reserve_tokens: int = Field(gt=0)
+    evidence_passages: list[str] | None = None
 
 
 class OllamaProfile(BaseModel):

@@ -243,6 +243,17 @@ def _model_line(data: dict) -> str:
     return line
 
 
+def _evidence_line(data: dict) -> str:
+    if not data.get("model_used"):
+        return ""
+    budget = data.get("retrieval_plan", {}).get("evidence_budget", {})
+    requested = budget.get("requested_evidence_bytes")
+    used = budget.get("delivered_evidence_bytes")
+    if isinstance(requested, int) and isinstance(used, int):
+        return f"\n**Evidence:** requested {requested:,} bytes · used {used:,} bytes"
+    return ""
+
+
 def _overview_controls_note(data: dict, query_mode: str) -> str:
     """Show server-confirmed effective values for an overview experiment."""
     if query_mode != "repository_overview":
@@ -269,28 +280,19 @@ def _budget_options(mode: str, amount: int | None) -> dict:
     return {"context_mode": mode, "max_evidence_bytes": amount}
 
 
-def _rag_http_error(response, context_mode: str, max_evidence_bytes: int | None):
+def _rag_http_error(response) -> str:
     if response.status_code == 404:
         return (
             "❌ Repository not found. "
             "Refresh repos and select a complete repository."
         )
+    if response.status_code == 413:
+        return (
+            "The configured models could not safely fit this request. "
+            "Try Automatic (4,096 bytes) or a different model."
+        )
     try:
-        detail = response.json().get("detail", response.text)
-        if (response.status_code == 413 and isinstance(detail, dict)
-                and detail.get("error") == "capacity"):
-            if context_mode == "custom" and (max_evidence_bytes or 0) > 4096:
-                return (
-                    "Model capacity check failed. Try Auto or set Custom to "
-                    "4,096 evidence bytes or less. Larger effective budgets "
-                    "require a verified model capacity profile."
-                )
-            return (
-                "Model capacity check failed. Check the primary model's "
-                "availability and the capacity profiles for the configured "
-                f"models. Service detail: {detail.get('detail', '')}"
-            )
-        return f"❌ RAG Error: {detail}"
+        return f"❌ RAG Error: {response.json().get('detail', response.text)}"
     except Exception:
         return f"❌ RAG Error: {response.text}"
 
@@ -347,7 +349,8 @@ def submit_rag_query(
         sources = data.get("sources", [])
         formatted_sources = "\n".join(f"• {s}" for s in sources)
 
-        return f"""🎯 **Repository:** {repo_id[:8]}...{_model_line(data)}
+        run_info = _model_line(data) + _evidence_line(data)
+        return f"""🎯 **Repository:** {repo_id[:8]}...{run_info}
 
 **Answer:**
 {answer}
@@ -356,7 +359,7 @@ def submit_rag_query(
 {formatted_sources if formatted_sources else 'None found.'}"""
 
     except requests.exceptions.HTTPError as e:
-        return _rag_http_error(e.response, context_mode, max_evidence_bytes)
+        return _rag_http_error(e.response)
     except Exception as exc:
         return f"❌ Error querying RAG: {exc}"
 
@@ -560,12 +563,12 @@ def build_ui():
 
         with gr.Row():
             context_mode = gr.Radio(
-                choices=[("Auto (default)", "auto"), ("Compact", "compact"),
+                choices=[("Automatic (4,096 bytes)", "auto"), ("Compact", "compact"),
                          ("Custom", "custom")], value="auto", label="Evidence budget",
             )
             evidence_bytes = gr.Number(
                 label="Maximum evidence bytes", value=4096, precision=0,
-                info="Budgets above 4,096 bytes may require a verified model profile.",
+                info="Foundry fits whole passages to the model's available context.",
                 minimum=1, visible=False,
             )
         context_mode.change(

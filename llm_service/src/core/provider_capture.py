@@ -309,6 +309,10 @@ async def _on_response(response: httpx.Response) -> None:
         record.setdefault("capture_errors", []).append(f"wire response: {e}")
 
 
+def wire_hooks() -> dict:
+    return {"request": [_on_request], "response": [_on_response]}
+
+
 def wire_client(timeout: float) -> Any:
     """A fresh LiteLLM AsyncHTTPHandler whose httpx client records the
     exact request bytes and raw response. Per attempt, so it is never
@@ -317,7 +321,7 @@ def wire_client(timeout: float) -> Any:
 
     return AsyncHTTPHandler(
         timeout=timeout,
-        event_hooks={"request": [_on_request], "response": [_on_response]},
+        event_hooks=wire_hooks(),
     )
 
 
@@ -492,6 +496,20 @@ class Attempt:
     def finish_error(self, exc: BaseException) -> None:
         with contextlib.suppress(Exception):
             self._finish_error(exc)
+
+    def finish_ollama(self, data: dict) -> None:
+        with contextlib.suppress(Exception):
+            self.record["result"] = {
+                "status": "ok",
+                "latency_ms": round((time.monotonic() - self._t0) * 1000, 1),
+                "finish_reason": data.get("done_reason"),
+                "content": data.get("response"),
+                "reasoning_content": data.get("thinking"),
+                "usage": {
+                    "prompt_tokens": data.get("prompt_eval_count"),
+                    "completion_tokens": data.get("eval_count"),
+                },
+            }
 
     def _finish_error(self, exc: BaseException) -> None:
         self.record["result"] = {

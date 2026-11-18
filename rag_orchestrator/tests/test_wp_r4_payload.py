@@ -56,8 +56,18 @@ class Backend:
             }]})
         if path == "/generate":
             self.payload = json.loads(request.content)
+            capacity = {}
+            if "evidence_passages" in self.payload:
+                parts = self.payload["evidence_passages"][:1]
+                delivered = "\n\n".join(parts).encode()
+                capacity = {
+                    "delivered_passage_count": len(parts),
+                    "delivered_evidence_sha256": hashlib.sha256(delivered).hexdigest(),
+                    "evidence_allowance_bytes": 4096,
+                }
             return httpx.Response(200, json={
                 "response": "ok", "model": "test-model", "fallback_from": "test",
+                "capacity": capacity,
             })
         return httpx.Response(404)
 
@@ -112,6 +122,26 @@ def test_tail_supplementation_and_same_relation_overload_cross_prompt(monkeypatc
     assert any(row["chunk_index"] == 97 for row in manifest)
     assert result.model_used == "test-model"
     assert result.fallback_from == "test"
+
+
+@pytest.mark.parametrize("receipt", [
+    {},
+    {"delivered_passage_count": 1, "evidence_allowance_bytes": 8192,
+     "delivered_evidence_sha256": "wrong"},
+])
+def test_custom_rejects_unconfirmed_delivery(monkeypatch, receipt):
+    class Unconfirmed(Backend):
+        def __call__(self, request):
+            if request.url.path == "/generate":
+                return httpx.Response(200, json={"response": "ok", "capacity": receipt})
+            return super().__call__(request)
+
+    patch_pipeline(monkeypatch, Unconfirmed())
+    with pytest.raises(HTTPException) as error:
+        asyncio.run(service.run_rag(
+            "target", repo_id="repo", context_mode="custom", max_evidence_bytes=8192,
+        ))
+    assert error.value.status_code == 502
 
 
 def test_generation_change_prevents_generation_call(monkeypatch):
@@ -191,3 +221,21 @@ def test_evidence_budget_request_and_final_payload(monkeypatch):
                     {"context_mode": "custom", "max_evidence_bytes": 0}):
         with pytest.raises(ValidationError):
             RAGQuery.model_validate({"query": "target", **invalid})
+
+
+def test_custom_fallback_receipt_controls_manifest_and_sources(monkeypatch):
+    backend = Backend()
+    patch_pipeline(monkeypatch, backend)
+    result = asyncio.run(service.run_rag(
+        "target", repo_id="repo", context_mode="custom", max_evidence_bytes=8192,
+    ))
+    parts = backend.payload["evidence_passages"]
+    assert len(parts) > 1 and backend.payload["context"] == "\n\n".join(parts)
+    plan = result.retrieval_plan
+    assert len(plan["final_context_manifest"]) == 1
+    assert result.sources == [plan["final_context_manifest"][0]["source_label"]]
+    budget = plan["evidence_budget"]
+    assert budget["requested_evidence_bytes"] == 8192
+    assert budget["delivered_evidence_bytes"] == len(parts[0].encode())
+    assert len(budget["omitted_by_provider_capacity"]) == len(parts) - 1
+    assert result.fallback_from == "test"
