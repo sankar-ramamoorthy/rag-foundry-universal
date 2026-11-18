@@ -54,6 +54,9 @@ does ingest.py have?” and a spelling hint for unmatched basenames. A deployed
 control using “What functions are in ingest.py?” returned eight definitions
 with zero model calls.
 
+Issue #392 sets the Gradio Custom prefill to 4,096 evidence bytes and
+explains the model capacity requirement when a larger request is rejected.
+
 The [ordinary RAG budget comparison](/DOCS/test_results/2026-11-17-386-context-budget.md)
 records #386's mocked provider checks and offline passage delivery. Live
 answer quality for the new budget modes remains unevaluated.

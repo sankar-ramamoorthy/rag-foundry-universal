@@ -567,7 +567,8 @@ def build_ui():
                          ("Custom", "custom")], value="auto", label="Evidence budget",
             )
             evidence_bytes = gr.Number(
-                label="Maximum evidence bytes", value=8192, precision=0,
+                label="Maximum evidence bytes", value=4096, precision=0,
+                info="Foundry fits whole passages to the model's available context.",
                 minimum=1, visible=False,
             )
         context_mode.change(
