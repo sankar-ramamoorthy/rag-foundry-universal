@@ -32,8 +32,9 @@ The documentation-only [#382 architecture/evaluation package](https://github.com
 proposes an [evidence-aware router](/DOCS/proposals/2026-11-17-evidence-aware-execution-router.md)
 and [SDD experimental contract](/specs/009-evidence-aware-execution-router/spec.md)
 with [twelve development cases and independent scoring](/DOCS/evaluations/evidence-aware-router/protocol.md).
-The design remains proposed; experiments are unexecuted and the run manifest is
-unapproved/unfrozen. No production router/agent or model expenditure is authorized.
+The [#384 experimental Python slice](/DOCS/test_results/2026-11-17-384-execution-policy.md)
+exercises deterministic inventory and H-3 with mocked dependencies. The quality
+experiment still awaits a frozen manifest and model and spending approval.
 The existing #207 evidence gate and separate #282 scope remain intact.
 
 [#379](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/379)
