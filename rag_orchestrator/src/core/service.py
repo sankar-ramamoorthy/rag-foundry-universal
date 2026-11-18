@@ -1209,45 +1209,15 @@ def _order_named_symbol_first(
     return ordered
 
 
-async def run_rag(
-    query: str,
-    repo_id: Optional[str] = None,
-    top_k: int = 20,
-    max_chunks_per_doc: int = 5,
-    max_total_tokens: int = 4096,
-    provider: Optional[str] = None,
-    model: Optional[str] = None,
-    chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
-    language: Optional[str] = None,
-    trace_canonical_ids: Optional[Set[str]] = None,
-    rerank: Optional[bool] = None,
-    claim_type: Optional[ClaimType] = None,
-    repository_overview_claim_selection_enabled: Optional[bool] = None,
-    repository_overview_structured_answers_enabled: Optional[bool] = None,
-    repository_overview_canonical_selection_enabled: Optional[bool] = None,
-    named_symbol_first: bool = False,
-) -> RAGResult:
+async def prepare_rag_evidence(
+    query: str, resolved_repo_id: str, trace_id: str, *,
+    top_k: int = 20, max_chunks_per_doc: int = 5, max_total_tokens: int = 4096,
+    chunk_filter_fn=None, language=None, trace_canonical_ids=None, rerank=None,
+    claim_type=None, claim_selection=False, structured_answers=False,
+    canonical_selection=False, named_symbol_first=False,
+):
+    """Build the ordinary pre-generation context and its passage manifest."""
     settings = get_settings()
-    claim_selection = (
-        settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
-        if repository_overview_claim_selection_enabled is None
-        else repository_overview_claim_selection_enabled
-    )
-    structured_answers = (
-        settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
-        if repository_overview_structured_answers_enabled is None
-        else repository_overview_structured_answers_enabled
-    )
-    canonical_selection = (
-        settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED
-        if repository_overview_canonical_selection_enabled is None
-        else repository_overview_canonical_selection_enabled
-    )
-    trace_id = _new_trace_id()
-    _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
-
-    resolved_repo_id = await resolve_repo_id_http(repo_id)
-
     embedder = get_embedder(
         provider=settings.EMBEDDING_PROVIDER,
         ollama_base_url=settings.OLLAMA_BASE_URL,
@@ -1434,7 +1404,7 @@ async def run_rag(
         )
 
     # Token budget
-    context_str, token_count = assembled.text, assembled.token_count
+    token_count = assembled.token_count
     retrieval_plan_dict["token_count_method"] = "utf8_bytes_upper_estimate"
     retrieval_plan_dict["context_budget"] = context_budget
     retrieval_plan_dict["tokens_before_budget"] = tokens_before_budget
@@ -1467,6 +1437,63 @@ async def run_rag(
             for finding in diagnose_manifest(claim_type, final_context_manifest)
         ]
 
+    return assembled, retrieval_plan_dict, rerank_active, obligation, query_embedding
+
+
+async def run_rag(
+    query: str,
+    repo_id: Optional[str] = None,
+    top_k: int = 20,
+    max_chunks_per_doc: int = 5,
+    max_total_tokens: int = 4096,
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
+    chunk_filter_fn: Optional[Callable[[RetrievedChunk], bool]] = None,
+    language: Optional[str] = None,
+    trace_canonical_ids: Optional[Set[str]] = None,
+    rerank: Optional[bool] = None,
+    claim_type: Optional[ClaimType] = None,
+    repository_overview_claim_selection_enabled: Optional[bool] = None,
+    repository_overview_structured_answers_enabled: Optional[bool] = None,
+    repository_overview_canonical_selection_enabled: Optional[bool] = None,
+    named_symbol_first: bool = False,
+) -> RAGResult:
+    settings = get_settings()
+    claim_selection = (
+        settings.REPOSITORY_OVERVIEW_CLAIM_SELECTION_ENABLED
+        if repository_overview_claim_selection_enabled is None
+        else repository_overview_claim_selection_enabled
+    )
+    structured_answers = (
+        settings.REPOSITORY_OVERVIEW_STRUCTURED_ANSWERS_ENABLED
+        if repository_overview_structured_answers_enabled is None
+        else repository_overview_structured_answers_enabled
+    )
+    canonical_selection = (
+        settings.REPOSITORY_OVERVIEW_CANONICAL_SELECTION_ENABLED
+        if repository_overview_canonical_selection_enabled is None
+        else repository_overview_canonical_selection_enabled
+    )
+    trace_id = _new_trace_id()
+    _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
+
+    resolved_repo_id = await resolve_repo_id_http(repo_id)
+
+    assembled, retrieval_plan_dict, rerank_active, obligation, query_embedding = (
+        await prepare_rag_evidence(
+            query, resolved_repo_id, trace_id, top_k=top_k,
+            max_chunks_per_doc=max_chunks_per_doc, max_total_tokens=max_total_tokens,
+            chunk_filter_fn=chunk_filter_fn, language=language,
+            trace_canonical_ids=trace_canonical_ids, rerank=rerank,
+            claim_type=claim_type, claim_selection=claim_selection,
+            structured_answers=structured_answers,
+            canonical_selection=canonical_selection,
+            named_symbol_first=named_symbol_first,
+        )
+    )
+    chunks_in_final_context = assembled.chunks
+    final_context_manifest = retrieval_plan_dict["final_context_manifest"]
+    context_str = assembled.text
     llm_context = context_str
     if claim_type == "repository_overview":
         focus = _structured_overview_focus(query, obligation)
