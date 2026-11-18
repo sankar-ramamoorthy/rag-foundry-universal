@@ -200,7 +200,7 @@ requests and fallback models require a matching capacity profile. See the
 
 In Gradio's repository query panel, choose **Auto**, **Compact**, or **Custom**
 under the evidence budget control. Custom lets you enter the requested byte
-allowance. In Automatic query mode, a question such as “What functions are
+allowance, initially 4,096 bytes. In Automatic query mode, a question such as “What functions are
 defined in `codebase_utils.py`?” uses the indexed Python source and returns
 function names and line ranges without calling a model. “What functions
 does ingest.py have?” also requests an inventory. If the basename is

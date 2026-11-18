@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 
 from src.ui.gradio_app import build_ui, submit_rag_query
 
@@ -79,6 +80,7 @@ def test_ui_controls_default_off_and_feed_rag_callback():
     }
     expected = {
         "Query mode": "normal",
+        "Maximum evidence bytes": 4096,
         "Overview claim selection": False,
         "Structured repository answers": False,
         "Canonical source selection": False,
@@ -104,3 +106,18 @@ def test_repository_query_budget(mode):
         assert payload["max_evidence_bytes"] == 8192
     else:
         assert "max_evidence_bytes" not in payload
+
+
+def test_custom_capacity_failure_explains_retry():
+    response = MagicMock(status_code=413)
+    response.json.return_value = {"detail": {
+        "error": "capacity", "detail": "candidate has no verified capacity profile",
+    }}
+    response.raise_for_status.side_effect = requests.HTTPError(response=response)
+    with patch("src.ui.gradio_app.requests.post", return_value=response) as post:
+        answer = submit_rag_query(
+            "query", "repo-1", 10, None, None,
+            context_mode="custom", max_evidence_bytes=8192,
+        )
+    assert "4,096" in answer and "Auto" in answer and "profile" in answer
+    post.assert_called_once()
