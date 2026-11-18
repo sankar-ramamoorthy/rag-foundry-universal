@@ -4,6 +4,7 @@ import ast
 import asyncio
 import hashlib
 import json
+import time
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Literal, Union
 from uuid import UUID
@@ -72,6 +73,10 @@ class Finish(Contract):
 proposal = TypeAdapter(Union[Repair, Finish])
 Propose = Callable[[str, int], Awaitable[str]]
 
+SOURCE_PAGE_LINES = 500
+SOURCE_SIZE_ERRORS = {"READ_TOO_LARGE", "RESPONSE_TOO_LARGE"}
+SOURCE_BUDGET_ERRORS = SOURCE_SIZE_ERRORS | {"SCAN_LIMIT_EXCEEDED", "DEADLINE_EXCEEDED"}
+
 
 class Stop(Exception):
     pass
@@ -106,7 +111,7 @@ async def dispatch(request: Request, action: Action):
             and action.end_line is not None
             and (
                 action.start_line is None
-                or not 0 <= action.end_line - action.start_line < 500
+                or not 0 <= action.end_line - action.start_line < SOURCE_PAGE_LINES
             )
         ):
             raise Stop("invalid_action")
@@ -124,6 +129,8 @@ async def dispatch(request: Request, action: Action):
     if result.get("generation_id") != generation:
         raise Stop("stale_generation")
     if isinstance(action, Read):
+        if not isinstance(result["text"], str):
+            raise Stop("invalid_source")
         digest = hashlib.sha256(result["text"].encode()).hexdigest()
         if result["path"] != action.path or digest != result["returned_text_sha256"]:
             raise Stop("invalid_source")
@@ -154,6 +161,50 @@ def inventory(text: str):
 
     visit(ast.parse(text), ())
     return rows
+
+
+def validate_inventory_page(page, start, limit):
+    """Verify LF-based interval and EOF metadata against the returned text."""
+    text = page["text"]
+    lines = text.count("\n") + int(bool(text) and not text.endswith("\n"))
+    end = page["end_line"]
+    if (
+        type(page["start_line"]) is not int
+        or type(end) is not int
+        or page["start_line"] != start
+        or not 1 <= lines <= limit
+        or end != start + lines - 1
+    ):
+        raise Stop("partial_source")
+    following = page["next_start_line"]
+    if following is None:
+        if (
+            type(page["total_lines"]) is not int
+            or page["total_lines"] != end
+            or page["complete_file"] is not (start == 1)
+        ):
+            raise Stop("partial_source")
+    elif (
+        type(following) is not int
+        or following != end + 1
+        or not text.endswith("\n")
+        or page["total_lines"] is not None
+        or page["complete_file"] is not False
+    ):
+        raise Stop("partial_source")
+    return following
+
+
+def inventory_document_id(page, path, expected):
+    document_id = page["document_id"]
+    if (
+        not isinstance(document_id, str)
+        or not document_id
+        or page["canonical_id"] != path
+        or (expected is not None and document_id != expected)
+    ):
+        raise Stop("invalid_source")
+    return document_id
 
 
 class Investigation:
@@ -191,10 +242,52 @@ class Investigation:
         self.ledger.append({"id": len(self.ledger), "tool": action.tool, "data": data})
         return data
 
+    async def module_text(self, path, document_id):
+        pieces = []
+        start, limit = 1, SOURCE_PAGE_LINES
+        while True:
+            action = Read(
+                tool="read_source",
+                path=path,
+                start_line=start,
+                end_line=start + limit - 1,
+            )
+            try:
+                page = await self.execute(action, "read the next module lines")
+            except Stop as exc:
+                if str(exc) in SOURCE_SIZE_ERRORS and limit > 1:
+                    limit //= 2
+                    continue
+                if str(exc) != "INVALID_LINE_RANGE" or start != 1:
+                    raise
+                # The source API represents empty files only on whole-file reads.
+                page = await self.execute(
+                    Read(tool="read_source", path=path), "verify empty file"
+                )
+                inventory_document_id(page, path, document_id)
+                if (
+                    page["text"] != ""
+                    or page["start_line"] != 0
+                    or page["end_line"] != 0
+                    or page["complete_file"] is not True
+                    or page["total_lines"] != 0
+                    or page["next_start_line"] is not None
+                ):
+                    raise Stop("partial_source") from exc
+                return ""
+            document_id = inventory_document_id(page, path, document_id)
+            following = validate_inventory_page(page, start, limit)
+            pieces.append(page["text"])
+            if following is None:
+                return "".join(pieces)
+            start = following
+
     async def list_functions(self):
+        deadline = time.monotonic() + self.request.wall_seconds
         if not self.request.path:
             raise Stop("clarification")
         path = self.request.path
+        document_id = None
         if "/" not in path:
             found = await self.execute(
                 Find(tool="find_source", pattern="**/" + path),
@@ -203,13 +296,20 @@ class Investigation:
             if len(found["files"]) != 1 or found.get("next_cursor"):
                 raise Stop("clarification" if found["files"] else "file_not_found")
             path = found["files"][0]["path"]
-        source = await self.execute(
-            Read(tool="read_source", path=path), "inspect complete module"
+            document_id = found["files"][0]["document_id"]
+        text = await self.module_text(path, document_id)
+        rows = inventory(text)
+        digest = hashlib.sha256(text.encode()).hexdigest()
+        # Synchronous AST parsing can finish after wait_for's timer is due.
+        if time.monotonic() >= deadline:
+            raise Stop("timeout")
+        self.result.update(
+            inventory=rows,
+            path=path,
+            returned_text_sha256=digest,
+            unresolved=[],
+            completion="verified_complete",
         )
-        if not source["complete_file"]:
-            raise Stop("partial_source")
-        self.result["inventory"] = inventory(source["text"])
-        self.result.update(unresolved=[], completion="verified_complete")
 
     async def next_step(self):
         if self.result["model_calls"] >= self.request.model_calls:
@@ -295,6 +395,10 @@ async def run_execution_policy(request: Request, propose: Propose | None = None)
         )
     if reason in {"scope_mismatch", "stale_generation"}:
         investigation.ledger.clear()
-    if reason.endswith("_exhaustion") or reason == "timeout":
+    if (
+        reason.endswith("_exhaustion")
+        or reason == "timeout"
+        or (request.family == "python_inventory" and reason in SOURCE_BUDGET_ERRORS)
+    ):
         result["completion"] = "budget_limited"
     return {**result, "termination_reason": reason}

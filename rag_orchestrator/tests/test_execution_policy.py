@@ -1,5 +1,6 @@
 """Phase 6 #384: mocked HTTP/embedding and scripted model, real selection and policy."""
 
+import ast
 import asyncio
 import hashlib
 import json
@@ -58,7 +59,9 @@ class Fixture(Backend):
             assert req.url.params["generation_id"] == GEN
             if path.endswith("/files"):
                 return httpx.Response(
-                    200, json={**scope, "files": [{"path": "a/module.py"}]}
+                    200, json={**scope, "files": [{
+                        "path": "a/module.py", "document_id": "module",
+                    }]}
                 )
             name = req.url.params["path"]
             text = (
@@ -71,10 +74,14 @@ class Fixture(Backend):
                 json={
                     **scope,
                     "path": name,
+                    "canonical_id": name,
+                    "document_id": "module",
                     "text": text,
                     "complete_file": self.status and name != PATH,
                     "start_line": 36 if name == PATH else 1,
                     "end_line": 39 if name == PATH else 3,
+                    "next_start_line": None,
+                    "total_lines": 3 if self.status and name != PATH else None,
                     "returned_text_sha256": hashlib.sha256(text.encode()).hexdigest(),
                 },
             )
@@ -281,6 +288,12 @@ def test_foundry_module_inventory(monkeypatch):
                         "repo_id": REPO,
                         "generation_id": GEN,
                         "path": module.as_posix(),
+                        "canonical_id": module.as_posix(),
+                        "document_id": "module",
+                        "start_line": 1,
+                        "end_line": len(text.splitlines()),
+                        "next_start_line": None,
+                        "total_lines": len(text.splitlines()),
                         "complete_file": True,
                         "text": text,
                         "returned_text_sha256": hashlib.sha256(
@@ -306,21 +319,173 @@ def test_foundry_module_inventory(monkeypatch):
     assert result["completion"] == "verified_complete" and result["tool_calls"] == 1
     assert result["model_calls"] == 0 and not backend.fetches
 
-@pytest.mark.parametrize("question", [
-    "What functions are defined in module.py?",
-    "what functions does module.py have",
-    "Which functions does `a/module.py` define?",
-])
+
+class PagedModule(Fixture):
+    def __init__(self, source, final_changes=None, page_cap=500):
+        super().__init__()
+        self.lines = source.splitlines(keepends=True)
+        self.starts = []
+        self.page_cap = page_cap
+        self.final_changes = final_changes or {}
+
+    def __call__(self, req):
+        if not req.url.path.endswith("/read"):
+            return super().__call__(req)
+        params = req.url.params
+        start = int(params.get("start_line", 0))
+        self.starts.append(start)
+        if not self.lines and start:
+            return httpx.Response(416, json={"error_code": "INVALID_LINE_RANGE"})
+        if not start:
+            assert not self.lines  # Whole-file requests only confirm empty source.
+        end = min(int(params.get("end_line", 0)), len(self.lines))
+        if end - start + 1 > self.page_cap:
+            return httpx.Response(413, json={"error_code": "READ_TOO_LARGE"})
+        text = "".join(self.lines[max(0, start - 1) : end])
+        eof = end == len(self.lines)
+        data = {
+            "repo_id": REPO,
+            "generation_id": GEN,
+            "canonical_id": params["path"],
+            "path": params["path"],
+            "document_id": "module",
+            "start_line": start,
+            "end_line": end,
+            "next_start_line": None if eof else end + 1,
+            "total_lines": end if eof else None,
+            "complete_file": start <= 1 and eof,
+            "text": text,
+            "returned_text_sha256": hashlib.sha256(text.encode()).hexdigest(),
+        }
+        if eof:
+            data.update(self.final_changes)
+        return httpx.Response(200, json=data)
+
+
+def test_large_inventory_public_route_matches_full_ast(monkeypatch):
+    from fastapi.testclient import TestClient
+    from src.api.v1.main import app
+
+    path = "ingestion_service/src/api/v1/codebase_ingest.py"
+    source = (Path(__file__).resolve().parents[2] / path).read_text(encoding="utf8")
+    backend = PagedModule(source)
+    patch_pipeline(monkeypatch, backend)
+    data = (
+        TestClient(app)
+        .post(
+            "/v1/rag",
+            json={
+                "repo_id": REPO,
+                "query": f"What functions are in {path}?",
+            },
+        )
+        .json()
+    )
+    tree = ast.parse(source)
+    parents = {
+        child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)
+    }
+    expected = []
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            names = [node.name]
+            ancestor = node
+            while ancestor in parents:
+                ancestor = parents[ancestor]
+                if isinstance(
+                    ancestor, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+                ):
+                    names.append(ancestor.name)
+            expected.append(
+                {
+                    "name": ".".join(reversed(names)),
+                    "start": node.lineno,
+                    "end": node.end_lineno,
+                    "kind": "async"
+                    if isinstance(node, ast.AsyncFunctionDef)
+                    else "sync",
+                }
+            )
+    plan = data["retrieval_plan"]
+    assert backend.starts == [1, 501] and data["sources"] == [path]
+    assert plan["inventory"] == sorted(expected, key=lambda row: row["start"])
+    assert plan["returned_text_sha256"] == hashlib.sha256(source.encode()).hexdigest()
+    assert plan["completion"] == "verified_complete"
+    assert plan["model_calls"] == 0 and backend.payload is None
+
+
+@pytest.mark.parametrize(
+    ("changes", "budget", "reason"),
+    [
+        ({}, 1, "tool_call_exhaustion"),
+        ({"generation_id": OTHER}, 2, "stale_generation"),
+        ({"document_id": OTHER}, 2, "invalid_source"),
+        ({"canonical_id": "other.py"}, 2, "invalid_source"),
+        ({"start_line": 500}, 2, "partial_source"),
+        ({"total_lines": None}, 2, "partial_source"),
+        ({"next_start_line": 501}, 2, "partial_source"),
+        ({"returned_text_sha256": ""}, 2, "invalid_source"),
+    ],
+)
+def test_interrupted_parseable_inventory(monkeypatch, changes, budget, reason):
+    prefix = "def first(): pass\r\n" + "# café\r\n" * 499
+    ast.parse(prefix)
+    backend = PagedModule(prefix + "def last(): pass", changes)
+    patch_pipeline(monkeypatch, backend)
+    req = request(family="python_inventory", path="a/module.py", tool_calls=budget)
+    result = asyncio.run(policy.run_execution_policy(req))
+    assert result["termination_reason"] == reason
+    assert result["completion"] == ("budget_limited" if budget == 1 else "incomplete")
+    assert "inventory" not in result and result["model_calls"] == 0
+    assert len(backend.starts) == budget
+
+
+@pytest.mark.parametrize(
+    ("source", "cap", "starts", "names"),
+    [
+        ("", 500, [1, 0], []),
+        (
+            "# café\r\n" * 499 + "class C:\r\n async def f(self): pass",
+            250,
+            [1, 1, 251, 501],
+            ["C.f"],
+        ),
+    ],
+)
+def test_empty_and_size_limited_pages(monkeypatch, source, cap, starts, names):
+    backend = PagedModule(source, page_cap=cap)
+    patch_pipeline(monkeypatch, backend)
+    req = request(family="python_inventory", path="module.py")
+    result = asyncio.run(policy.run_execution_policy(req))
+    assert result["completion"] == "verified_complete"
+    assert result["returned_text_sha256"] == hashlib.sha256(source.encode()).hexdigest()
+    assert [row["name"] for row in result["inventory"]] == names
+    assert backend.starts == starts and result["tool_calls"] == 1 + len(starts)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What functions are defined in module.py?",
+        "what functions does module.py have",
+        "Which functions does `a/module.py` define?",
+    ],
+)
 def test_inventory_through_public_route(monkeypatch, question):
     from fastapi.testclient import TestClient
     from src.api.v1.main import app
 
     backend = Fixture()
     patch_pipeline(monkeypatch, backend)
-    response = TestClient(app).post("/v1/rag", json={
-        "repo_id": REPO, "query": question,
-        "context_mode": "custom", "max_evidence_bytes": 8192,
-    })
+    response = TestClient(app).post(
+        "/v1/rag",
+        json={
+            "repo_id": REPO,
+            "query": question,
+            "context_mode": "custom",
+            "max_evidence_bytes": 8192,
+        },
+    )
     assert response.status_code == 200
     data = response.json()
     assert "C.f.inner" in data["answer"]
