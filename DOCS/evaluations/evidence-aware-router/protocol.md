@@ -9,6 +9,7 @@ related:
   - "[Specification](/specs/009-evidence-aware-execution-router/spec.md)"
   - "[Case manifest](cases.json)"
   - "[Run manifest template](run-manifest.template.json)"
+  - "[Intent and answer-obligation experiment](/DOCS/evaluations/intent-obligations/protocol.md)"
   - "[ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)"
 ---
 

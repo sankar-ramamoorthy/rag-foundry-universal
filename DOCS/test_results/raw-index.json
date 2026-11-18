@@ -529,6 +529,13 @@
       "cited_by": "DOCS/test_results/2026-11-12-retrieval-mechanism-diagnostics.md",
       "notes": "Known development queries; no answer-generation test. No private endpoints recorded. Corpus source commit and original ingest-time embedding digest unverified."
     },
+    "398/baseline.json": {
+      "bytes": 790772,
+      "sha256": "e0d8ce0ed925928867d5ab8636c7491346dbb1a79ba8186b2cf61a0679187bec",
+      "produced_by": "python -m experiments.intent_obligations (regex and supplied labels)",
+      "cited_by": "DOCS/evaluations/intent-obligations/protocol.md",
+      "notes": "Local deterministic replay. No live embedding or LLM captures."
+    },
     "ci06/coverage-foundry.json": {
       "bytes": 4724,
       "sha256": "dade63221429f7e41a410a5a1317b1b62439707d2c2cb2eca8718b622da006e6",

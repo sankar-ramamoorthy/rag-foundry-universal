@@ -1,0 +1,31 @@
+id,split,family,question,entities,intent,scope,obligations,route
+p01,prototype,direct,What functions are in codebase_ingest.py?,codebase_ingest.py,inventory,all,definitions,inventory
+p02,prototype,explain,Explain what codebase_ingest.py does.,codebase_ingest.py,explain,file,explanation,rag
+p03,prototype,compound,List and explain every function in codebase_ingest.py.,codebase_ingest.py,inventory,all,definitions|explanation,inventory_then_rag
+p04,prototype,callee,What functions does codebase_ingest.py call?,codebase_ingest.py,calls,file,callees,rag
+p05,prototype,dependencies,What does codebase_ingest.py import?,codebase_ingest.py,imports,file,imports,rag
+p06,prototype,filtered,List only the async functions in codebase_ingest.py.,codebase_ingest.py,inventory,async,definitions,rag
+p07,prototype,trace,Trace the execution path for repository ingestion starting in codebase_ingest.py.,codebase_ingest.py,trace,file,trace,rag
+p08,prototype,vague,Functions?,,unclear,unspecified,clarification,clarify
+c01,calibration,existential,Which functions does codebase_ingest.py have?,codebase_ingest.py,inventory,all,definitions,inventory
+c02,calibration,existential,Which imports does codebase_ingest.py have?,codebase_ingest.py,imports,file,imports,rag
+c03,calibration,noun,Give me a function inventory for codebase_ingest.py.,codebase_ingest.py,inventory,all,definitions,inventory
+c04,calibration,noun,Give me a function inventory for this file.,,inventory,all,definitions,clarify
+c05,calibration,noun,Give me a summary for codebase_ingest.py.,codebase_ingest.py,explain,file,explanation,rag
+h01,holdout,fronted,"In codebase_ingest.py, what functions are defined?",codebase_ingest.py,inventory,all,definitions,inventory
+h02,holdout,fronted,"In codebase_ingest.py, what functions are called?",codebase_ingest.py,calls,file,callees,rag
+h03,holdout,fronted,"In codebase_ingest.py, what gets imported?",codebase_ingest.py,imports,file,imports,rag
+h04,holdout,fronted,"In codebase_ingest.py, which functions are async?",codebase_ingest.py,inventory,async,definitions,rag
+h05,holdout,shorthand,codebase_ingest.py function names plus a description of each please.,codebase_ingest.py,inventory,all,definitions|explanation,inventory_then_rag
+h06,holdout,shorthand,codebase_ingest.py function list plese.,codebase_ingest.py,inventory,all,definitions,inventory
+h07,holdout,shorthand,ingest.py function list please.,ingest.py,inventory,all,definitions,clarify
+h08,holdout,shorthand,ingrst.py function list please.,ingrst.py,inventory,all,definitions,missing
+h09,holdout,shorthand,codebase_ingest.py and api/ingest.py function lists please.,codebase_ingest.py|api/ingest.py,inventory,all,definitions,inventory
+h10,holdout,walkthrough,Walk me through the ingestion call chain from codebase_ingest.py.,codebase_ingest.py,trace,file,trace,rag
+h11,holdout,walkthrough,Walk me through the purpose of codebase_ingest.py.,codebase_ingest.py,explain,file,explanation,rag
+h12,holdout,shorthand,Function stuff in codebase_ingest.py?,codebase_ingest.py,unclear,unspecified,clarification,clarify
+h13,holdout,shorthand,Function list please.,,inventory,all,definitions,clarify
+h14,holdout,fronted,"In api/ingest.py or cli/ingest.py, which file's functions should I inspect?",api/ingest.py|cli/ingest.py,unclear,unspecified,clarification,clarify
+h15,holdout,polite,Please enumerate all functions defined in codebase_ingest.py.,codebase_ingest.py,inventory,all,definitions,inventory
+h16,holdout,polite,Please enumerate all functions called in codebase_ingest.py.,codebase_ingest.py,calls,file,callees,rag
+h17,holdout,polite,Please list functions in ingest.py.,ingest.py,inventory,all,definitions,clarify

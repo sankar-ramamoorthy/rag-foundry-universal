@@ -1,0 +1,96 @@
+{
+  "path": "ingestion_service/src/api/v1/codebase_ingest.py",
+  "sha256": "3c308cd3016a5a7afd5d23545a532b507bf9a9a798fff9976b3498896e4b8570",
+  "inventory": [
+    {
+      "name": "NoOpValidator.validate",
+      "kind": "sync",
+      "start": 58,
+      "end": 59
+    },
+    {
+      "name": "_build_pipeline",
+      "kind": "sync",
+      "start": 62,
+      "end": 82
+    },
+    {
+      "name": "_chunk_and_buffer_node",
+      "kind": "sync",
+      "start": 102,
+      "end": 123
+    },
+    {
+      "name": "_retag_reused_vectors",
+      "kind": "sync",
+      "start": 126,
+      "end": 164
+    },
+    {
+      "name": "_embed_repo_artifacts",
+      "kind": "sync",
+      "start": 170,
+      "end": 285
+    },
+    {
+      "name": "_embed_repo_artifacts.pages",
+      "kind": "sync",
+      "start": 217,
+      "end": 224
+    },
+    {
+      "name": "_embed_repo_artifacts.acknowledged",
+      "kind": "sync",
+      "start": 232,
+      "end": 238
+    },
+    {
+      "name": "_embed_repo_artifacts.append_page",
+      "kind": "sync",
+      "start": 250,
+      "end": 267
+    },
+    {
+      "name": "_embed_missing_reuse",
+      "kind": "sync",
+      "start": 288,
+      "end": 306
+    },
+    {
+      "name": "_build_and_persist_graph",
+      "kind": "sync",
+      "start": 309,
+      "end": 388
+    },
+    {
+      "name": "embedding_config_identity",
+      "kind": "sync",
+      "start": 391,
+      "end": 402
+    },
+    {
+      "name": "_resolve_reuse_eligibility",
+      "kind": "sync",
+      "start": 405,
+      "end": 453
+    },
+    {
+      "name": "_background_ingest_repo",
+      "kind": "sync",
+      "start": 459,
+      "end": 648
+    },
+    {
+      "name": "ingest_repo",
+      "kind": "sync",
+      "start": 659,
+      "end": 709
+    },
+    {
+      "name": "get_repo_ingest_status",
+      "kind": "sync",
+      "start": 716,
+      "end": 735
+    }
+  ]
+}
