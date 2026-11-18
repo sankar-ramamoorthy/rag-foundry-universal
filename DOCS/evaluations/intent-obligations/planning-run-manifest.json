@@ -1,7 +1,7 @@
 {
   "run_id": "398-planning-local-01",
-  "runtime_commit": "5802d1c4a430746a00cf55668f2b2d4b3ef37247",
-  "experiment": "Local classifier comparison on exposed development data",
+  "runtime_commit": "f928b3a23b87ed0a9b282831d4a142ec8126e4ed",
+  "experiment": "Local classifier comparison on exposed development data (labels corrected before first capture; see label-changes.md)",
   "model_revisions": {
     "qwen2.5:1.5b": "65ec06548149b04c096a120e4a6da9d4017ea809c91734ea5631e89f96ddc57b",
     "mxbai-embed-large:latest": "468836162de7f81e041c43663fedbbba921dcea9b9fefea135685a39b2d83dd8"
@@ -13,16 +13,17 @@
     "os": "Windows-11-10.0.26300-SP0",
     "python": "3.12.0"
   },
-  "request_pack_sha256": "4f7c02c6499837b23017ae6718204efbf9b1ca38dd13aabe29fe8d1d0f0b102a",
+  "request_pack_sha256": "bc6236ce41fc9cdfa57bebd41e0c050bd93f2daf2d42f4ac4848c67b2b4ceaef",
   "git_blob_content_sha256": {
-    "DOCS/evaluations/intent-obligations/cases.csv": "8d1bb025aca2d215f56bdbf093fd8f26dbf5d19a63a238aa9344feb826116185",
+    "DOCS/evaluations/intent-obligations/cases.csv": "6bfe794526d79f5773d3f79df291725584b434bfb274d4bf656f6df53b55001d",
     "DOCS/evaluations/intent-obligations/inventory-witness.json": "f4ce1ed61c5c3020caae756dbf906e7a323944723e667efafcd65ad42d20da4b",
-    "DOCS/evaluations/intent-obligations/protocol.md": "ef302bfefd6596732d491bff0821a524b8a5e9dfaa2f8d4b244e61af8e98d125",
-    "rag_orchestrator/experiments/intent_obligations/__main__.py": "d334c01c69b3b17628d453d859f6a6ceb855b610eb4cf07b1778429bf01d3213",
+    "DOCS/evaluations/intent-obligations/label-changes.md": "b5f0d64ea36c9982fdbdeefdbfab5b0d3909085b1eefacd46eea1cd32765eb9e",
+    "DOCS/evaluations/intent-obligations/protocol.md": "b9337e061dca42daf09380be670c274ad57fc9d9f01f7e00220052bf456cf6a3",
+    "rag_orchestrator/experiments/intent_obligations/__main__.py": "edf250fc8fc9eab52234fe34f5df0f6aed19edcea34c408fb8f3e0076c405b53",
     "rag_orchestrator/experiments/intent_obligations/collect.py": "edfbfa1af81d59388060a5fbc88a161aeecc2afc0daf774506f7f6e3d7c5061a",
     "rag_orchestrator/experiments/intent_obligations/corpus.py": "b320eca26cb007721aa82392d95e6b8f8aa29bd49b8b2a52597f85496e93dc71",
-    "rag_orchestrator/experiments/intent_obligations/experiment.py": "b07fad4614d0dcc730f911b7a40603f971d98fbe87c5b94e4e7856d1922b0051",
-    "rag_orchestrator/experiments/intent_obligations/recognition.py": "67a1e10cebba6e72ed7160ec911475eb40434dfe4a72ee494681fa071b490e09"
+    "rag_orchestrator/experiments/intent_obligations/experiment.py": "9b20ea6460171f4250e04cf7c82600f730b1b0ef73387ed0c35affdf490679ee",
+    "rag_orchestrator/experiments/intent_obligations/recognition.py": "cde83fc6d3887372e0ad88bf1c1aa596719156e1e5a04274d45e83058d340501"
   },
   "budgets": {
     "embedding_calls": 42,
@@ -110,9 +111,10 @@
   "warmup": "None; no model pulls. Latency includes model loading and switching.",
   "settings": "Exact prompt, schema and options in the hash-bound request pack. No fallback model.",
   "corpus": "Pinned #396 module and two synthetic files from corpus.py in this commit. Model inputs are questions and fixed classifier instructions only. No Foundry retrieval, investigator tools, or source access during classification.",
-  "scoring": "All arms share 5 calibration and 25 held-out questions and eight policy scenarios. Score against cases.csv and independent AST witness. Keep all scheduled cases. Report missing observations and classifier outages separately. No new downstream synthesis or independent answer judgments in this run.",
+  "scoring": "All arms share 5 calibration and 25 held-out questions and eight policy scenarios. Score against cases.csv and independent AST witness. Keep all scheduled cases. Report missing observations and classifier outages separately. No new downstream synthesis or independent answer judgments in this run. Report ordered strategy beside order-insensitive capability and dependency-validity scores. See the protocol comparison caveats for the prompting asymmetry, entity-resolution limits and CPU timing.",
   "provenance": "Experiment-authored labels proposed for owner review. These development questions and source cannot establish production reliability.",
   "accounting": "One capture per request. Compare normal-scenario holdout counts and observed model round trips, input/output tokens and unknown local electricity cost separately. Use recorded regex recognition latency for baseline.",
   "artifacts": "DOCS/test_results/_raw/398/planning-requests.json; save planning-captures.json and planning-comparison.json in the same directory. Keep the partial journal on interruption.",
-  "approval": "An external owner receipt must reference the exact SHA-256 of this manifest, models and spending cap. No approval is implied by this file."
+  "approval": "An external owner receipt must reference the exact SHA-256 of this manifest, models and spending cap. No approval is implied by this file.",
+  "supersedes": "Manifest SHA-256 43338571a89ea42319397ebbabeafc58bae522107ad605f941e9ae44b9589cfc at e1354b6, never approved; labels changed before any capture."
 }
