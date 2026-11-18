@@ -536,19 +536,61 @@
       "cited_by": "DOCS/evaluations/intent-obligations/protocol.md",
       "notes": "Local deterministic replay. No live embedding or LLM captures."
     },
-    "398/planning-baseline.json": {
+    "398/collect.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "produced_by": "stdout/stderr of the collector",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Debug noise only"
+    },
+    "398/planning-approval-receipt.json": {
+      "bytes": 372,
+      "sha256": "3bb3369b6deefcc6bb9e1d97ea5212548366de65d3cecd0eb8c4b115997d3792",
+      "produced_by": "written by the agent from the owner approval message in-session",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Owner approved manifest 0e24106d and the labels on 2026-11-18"
+    },
+    "398/planning-baseline-superseded-e1354b6.json": {
       "bytes": 1519274,
       "sha256": "ee909e870e231b0abc0ead813dcaa05e786e5ba54994840d56c2e142051cdc89",
-      "produced_by": "python -m experiments.intent_obligations",
-      "cited_by": "DOCS/evaluations/intent-obligations/phase-6-checkpoint.md",
-      "notes": "Expanded development suite. Local request pack or no-model baseline."
+      "produced_by": "offline replay at e1354b6",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Superseded by the label correction; kept for before/after"
     },
-    "398/planning-requests.json": {
+    "398/planning-baseline.json": {
+      "bytes": 1586024,
+      "sha256": "ebf4bd14a46090f2b99d59af3fc94580fec4d772f92716576048e1974e03abf1",
+      "produced_by": "offline replay at f928b3a (regex and supplied labels)",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Recomputed baseline after label correction"
+    },
+    "398/planning-captures.json": {
+      "bytes": 677231,
+      "sha256": "b4bacd8bfc4308008a0c3bca87fce53ec3861fba01598b8452410a1192dd46fc",
+      "produced_by": "experiments.intent_obligations.collect under manifest 0e24106d",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "72 captures, no errors; model digests verified before and after"
+    },
+    "398/planning-comparison.json": {
+      "bytes": 2894003,
+      "sha256": "3788fa6b36dc8676d1d02ef501829b9d8f5ea8e4f63603f3686576e5ad4f12ac",
+      "produced_by": "experiments.intent_obligations --captures planning-captures.json",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Scored report for run 398-planning-local-01"
+    },
+    "398/planning-requests-superseded-e1354b6.json": {
       "bytes": 130414,
       "sha256": "cc11fd9c2d23a5534212f108cf55dd2fe160e36376f1fb481afba5216bae655a",
-      "produced_by": "python -m experiments.intent_obligations",
-      "cited_by": "DOCS/evaluations/intent-obligations/phase-6-checkpoint.md",
-      "notes": "Expanded development suite. Local request pack or no-model baseline."
+      "produced_by": "--request-pack at e1354b6",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Superseded request pack; manifest 43338571 was never approved"
+    },
+    "398/planning-requests.json": {
+      "bytes": 138364,
+      "sha256": "c794babfed0f4919157289833260a902cc8bfb5bcdfe1663875ae9c70bd83349",
+      "produced_by": "--request-pack --llm-model qwen2.5:1.5b at f928b3a",
+      "cited_by": "DOCS/evaluations/intent-obligations/planning-comparison-results.md",
+      "notes": "Digest bc6236ce41fc9cdfa57bebd41e0c050bd93f2daf2d42f4ac4848c67b2b4ceaef"
     },
     "ci06/coverage-foundry.json": {
       "bytes": 4724,
