@@ -269,6 +269,32 @@ def _budget_options(mode: str, amount: int | None) -> dict:
     return {"context_mode": mode, "max_evidence_bytes": amount}
 
 
+def _rag_http_error(response, context_mode: str, max_evidence_bytes: int | None):
+    if response.status_code == 404:
+        return (
+            "❌ Repository not found. "
+            "Refresh repos and select a complete repository."
+        )
+    try:
+        detail = response.json().get("detail", response.text)
+        if (response.status_code == 413 and isinstance(detail, dict)
+                and detail.get("error") == "capacity"):
+            if context_mode == "custom" and (max_evidence_bytes or 0) > 4096:
+                return (
+                    "Model capacity check failed. Try Auto or set Custom to "
+                    "4,096 evidence bytes or less. Larger effective budgets "
+                    "require a verified model capacity profile."
+                )
+            return (
+                "Model capacity check failed. Check the primary model's "
+                "availability and the capacity profiles for the configured "
+                f"models. Service detail: {detail.get('detail', '')}"
+            )
+        return f"❌ RAG Error: {detail}"
+    except Exception:
+        return f"❌ RAG Error: {response.text}"
+
+
 def submit_rag_query(
     query: str,
     repo_id: str | None,
@@ -330,15 +356,7 @@ def submit_rag_query(
 {formatted_sources if formatted_sources else 'None found.'}"""
 
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
-            return (
-                "❌ Repository not found. "
-                "Refresh repos and select a complete repository."
-            )
-        try:
-            return f"❌ RAG Error: {e.response.json().get('detail', e.response.text)}"
-        except Exception:
-            return f"❌ RAG Error: {e.response.text}"
+        return _rag_http_error(e.response, context_mode, max_evidence_bytes)
     except Exception as exc:
         return f"❌ Error querying RAG: {exc}"
 
@@ -546,7 +564,8 @@ def build_ui():
                          ("Custom", "custom")], value="auto", label="Evidence budget",
             )
             evidence_bytes = gr.Number(
-                label="Maximum evidence bytes", value=8192, precision=0,
+                label="Maximum evidence bytes", value=4096, precision=0,
+                info="Budgets above 4,096 bytes may require a verified model profile.",
                 minimum=1, visible=False,
             )
         context_mode.change(
