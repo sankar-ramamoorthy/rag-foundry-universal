@@ -64,7 +64,7 @@ The controller, the eight policy scenarios, the investigation rule (the classifi
 
 Frozen before any question is authored, so that direction labels do not drift:
 
-- **Definitions:** functions or classes defined in the named file. Intent `inventory`.
+- **Definitions:** Python function definitions in the named file, including methods and nested functions. Intent `inventory`. Class inventories are outside the executor's supported scope.
 - **Callees:** functions that the named file or symbol calls. Intent `calls`.
 - **Callers:** places that call the named symbol. Intent `callers`.
 - **Imports:** names or modules the named file imports. Intent `imports`.
@@ -93,6 +93,8 @@ Phrasing families stay whole within one split. Roughly one fifth of cases are ab
 | Sealed | about 64 (16 groups of 4) | Authored independently. One run per frozen arm set |
 
 ## Sealed-set procedure (ADR-054)
+
+The [approved authoring brief](authoring-brief.md) publishes the phrasing-family assignments so the authors can construct disjoint splits. Individual sealed questions and labels remain in evaluator custody through candidate selection and freeze.
 
 1. This protocol and the glossary are merged first.
 2. The implementer authors the development set and builds the arms, tuning only on the 25 and the development set.
