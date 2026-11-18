@@ -5,12 +5,20 @@ import re
 from src.api.v1.models import RAGQuery, RAGResponse
 from src.core import execution_policy, service
 
+_FILE = (
+    r"\s+(?:the\s+file\s+)?(?P<quote>[\x22'`]?)(?P<path>(?:[\w.-]+/)*[\w.-]+\.py)"
+    r"(?P=quote)"
+)
 _INVENTORY = re.compile(
     r"(?:please\s+)?(?:(?:what|which)\s+(?:python\s+)?functions\s+"
     r"(?:are\s+)?(?:defined\s+)?in|(?:list|show|enumerate)\s+"
     r"(?:(?:all|the)\s+)*(?:python\s+)?functions\s+(?:defined\s+)?in)"
-    r"\s+(?:the\s+file\s+)?(?P<quote>[\x22'`]?)(?P<path>(?:[\w.-]+/)*[\w.-]+\.py)"
-    r"(?P=quote)[?.!]?",
+    + _FILE + r"[?.!]?",
+    re.IGNORECASE,
+)
+_DOES_FILE_HAVE = re.compile(
+    r"(?:please\s+)?(?:what|which)\s+(?:python\s+)?functions\s+does"
+    + _FILE + r"\s+(?:have|define|contain)[?.!]?",
     re.IGNORECASE,
 )
 
@@ -26,7 +34,8 @@ async def inventory_response(query: RAGQuery) -> RAGResponse | None:
         )
     ):
         return None
-    match = _INVENTORY.fullmatch(query.query.strip())
+    question = query.query.strip()
+    match = _INVENTORY.fullmatch(question) or _DOES_FILE_HAVE.fullmatch(question)
     if not match:
         return None
     name = match["path"]
@@ -70,6 +79,11 @@ async def inventory_response(query: RAGQuery) -> RAGResponse | None:
         files = result["evidence"][0]["data"]["files"]
         answer = "Please specify the repository-relative path. Matching files:\n"
         answer += "\n".join(f"- {f['path']}" for f in files)
+    elif result["termination_reason"] == "file_not_found":
+        answer = (
+            f"No indexed file matches {name}. "
+            "Check the spelling or supply its repository-relative path."
+        )
     else:
         answer = f"Could not inventory {name} ({result['termination_reason']})."
     return RAGResponse(

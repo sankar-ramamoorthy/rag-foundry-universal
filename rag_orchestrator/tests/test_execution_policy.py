@@ -306,14 +306,19 @@ def test_foundry_module_inventory(monkeypatch):
     assert result["completion"] == "verified_complete" and result["tool_calls"] == 1
     assert result["model_calls"] == 0 and not backend.fetches
 
-def test_inventory_through_public_route(monkeypatch):
+@pytest.mark.parametrize("question", [
+    "What functions are defined in module.py?",
+    "what functions does module.py have",
+    "Which functions does `a/module.py` define?",
+])
+def test_inventory_through_public_route(monkeypatch, question):
     from fastapi.testclient import TestClient
     from src.api.v1.main import app
 
     backend = Fixture()
     patch_pipeline(monkeypatch, backend)
     response = TestClient(app).post("/v1/rag", json={
-        "repo_id": REPO, "query": "What functions are defined in module.py?",
+        "repo_id": REPO, "query": question,
         "context_mode": "custom", "max_evidence_bytes": 8192,
     })
     assert response.status_code == 200
@@ -332,6 +337,8 @@ def test_inventory_does_not_capture_explanations_or_standard_rag():
         ("What functions are defined in module.py?", "rag"),
         ("What functions are defined in module.py and how do they interact?", "auto"),
         ("How does module.py work?", "auto"),
+        ("What functions does module.py have and how do they interact?", "auto"),
+        ("What functions does module.py have?", "rag"),
     ]:
         req = RAGQuery.model_validate({"query": query, "execution_mode": mode})
         assert asyncio.run(inventory_response(req)) is None
@@ -357,3 +364,28 @@ def test_inventory_ambiguity_returns_paths_without_reading(monkeypatch):
     }).json()
     assert "a/mod.py" in data["answer"] and "b/mod.py" in data["answer"]
     assert data["retrieval_plan"]["termination_reason"] == "clarification"
+
+
+def test_missing_inventory_file_through_public_route(monkeypatch):
+    from fastapi.testclient import TestClient
+    from src.api.v1.main import app
+
+    class Missing(Fixture):
+        def __call__(self, req):
+            if req.url.path.endswith("/files"):
+                return httpx.Response(200, json={
+                    "repo_id": REPO, "generation_id": GEN, "files": [],
+                })
+            assert not req.url.path.endswith("/read")
+            return super().__call__(req)
+
+    backend = Missing()
+    patch_pipeline(monkeypatch, backend)
+    response = TestClient(app).post("/v1/rag", json={
+        "repo_id": REPO, "query": "what functions are in ingrst.py",
+    })
+    assert response.status_code == 200
+    result = response.json()
+    assert "ingrst.py" in result["answer"] and "spelling" in result["answer"]
+    assert result["retrieval_plan"]["termination_reason"] == "file_not_found"
+    assert result["retrieval_plan"]["model_calls"] == 0 and backend.payload is None
