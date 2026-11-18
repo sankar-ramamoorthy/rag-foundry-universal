@@ -202,7 +202,8 @@ In Gradio's repository query panel, choose **Auto**, **Compact**, or **Custom**
 under the evidence budget control. Custom lets you enter the requested byte
 allowance. In Automatic query mode, a question such as “What functions are
 defined in `codebase_utils.py`?” uses the indexed Python source and returns
-function names and line ranges without calling a model. If the basename is
+function names and line ranges without calling a model. “What functions
+does ingest.py have?” also requests an inventory. If the basename is
 ambiguous, repeat the question with a repository-relative path. Choose
 **Standard RAG** (API `"execution_mode": "rag"`) to apply retrieval and the
 selected evidence budget to the same question.

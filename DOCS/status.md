@@ -35,6 +35,11 @@ deployed ingestion service returned 13 functions for
 and zero model calls. The Gradio repository query also accepts Auto, Compact,
 and Custom evidence budgets for ordinary RAG.
 
+Issue #390 adds conversational inventory wording such as “What functions
+does ingest.py have?” and a spelling hint for unmatched basenames. A deployed
+control using “What functions are in ingest.py?” returned eight definitions
+with zero model calls.
+
 The [ordinary RAG budget comparison](/DOCS/test_results/2026-11-17-386-context-budget.md)
 records #386's mocked provider checks and offline passage delivery. Live
 answer quality for the new budget modes remains unevaluated.
