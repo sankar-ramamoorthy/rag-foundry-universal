@@ -50,12 +50,15 @@ async def generate(
     )
     try:
         capacity = {}
+        if request.evidence_passages is not None and x_rag_capacity is None:
+            raise ValueError("evidence_passages requires RAG capacity headers")
         if x_rag_capacity is not None:
             if x_rag_output_reserve is None:
                 raise ValueError("missing RAG output reserve")
             capacity["rag_capacity"] = RagCapacity(
                 enlarged=x_rag_capacity == "enlarged",
                 output_reserve_tokens=x_rag_output_reserve,
+                evidence_passages=request.evidence_passages,
             )
         return await generate_completion(
             context=request.context,

@@ -14,6 +14,7 @@ import litellm
 
 from src.core.rag_capacity import CapacityError, RagCapacity, check_candidate
 from src.core import provider_capture
+from src.core.ollama_evidence import complete_evidence
 from src.core.config import MAX_TRANSIENT_RETRIES, RETRY_BACKOFF_BASE_SECONDS
 from src.core.model_registry import ResolvedModel, get_registry
 from src.core.prompts import PROMPT_TEMPLATE_VERSION, build_messages
@@ -74,16 +75,21 @@ async def generate_completion(
     for position, candidate in enumerate(chain):
         try:
             options, admission = {}, None
-            if rag_capacity is not None:
-                options, admission = await check_candidate(
-                    candidate, build_messages(context, query), rag_capacity,
-                    registry.rag_capacity_profiles.get(
-                        (candidate.model, candidate.api_base)
-                    ),
-                    fallback=position > 0,
+            profile = registry.rag_capacity_profiles.get(
+                (candidate.model, candidate.api_base)
+            ) if rag_capacity is not None else None
+            if rag_capacity is not None and rag_capacity.evidence_passages is not None:
+                result, admission = await complete_evidence(
+                    candidate, query, rag_capacity, profile
                 )
-            result = await _complete(candidate, context=context, query=query,
-                                     **({"options": options} if options else {}))
+            else:
+                if rag_capacity is not None:
+                    options, admission = await check_candidate(
+                        candidate, build_messages(context, query), rag_capacity,
+                        profile, fallback=position > 0,
+                    )
+                result = await _complete(candidate, context=context, query=query,
+                                         **({"options": options} if options else {}))
             if admission is not None:
                 result["capacity"] = {**admission, "skipped_candidates": skipped}
         except CapacityError as exc:

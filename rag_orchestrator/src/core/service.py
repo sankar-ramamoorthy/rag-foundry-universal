@@ -2,6 +2,7 @@
 # ADR-045 Hybrid Vector + Graph RAG (HTTP-only, clean boundaries)
 
 import asyncio
+import hashlib
 import logging
 import re
 import uuid
@@ -1214,7 +1215,7 @@ async def prepare_rag_evidence(
     top_k: int = 20, max_chunks_per_doc: int = 5, max_total_tokens: int = 4096,
     chunk_filter_fn=None, language=None, trace_canonical_ids=None, rerank=None,
     claim_type=None, claim_selection=False, structured_answers=False,
-    canonical_selection=False, named_symbol_first=False,
+    canonical_selection=False, named_symbol_first=False, provider_manages_window=False,
 ):
     """Build the ordinary pre-generation context and its passage manifest."""
     settings = get_settings()
@@ -1359,16 +1360,14 @@ async def prepare_rag_evidence(
         documents=len(chunk_limited_document_ids),
     )
     tokens_before_budget = assemble_context(agent_chunks, 2**63).token_count
-    context_budget = min(
-        max_total_tokens,
-        max(
-            0,
+    context_budget = max_total_tokens
+    if not provider_manages_window:
+        available = (
             settings.CONTEXT_WINDOW_TOKENS
             - settings.PROMPT_RESERVE_TOKENS
-            - settings.OUTPUT_RESERVE_TOKENS
-            - conservative_token_count(query),
-        ),
-    )
+            - settings.OUTPUT_RESERVE_TOKENS - conservative_token_count(query)
+        )
+        context_budget = min(context_budget, max(0, available))
     # E1 #323: ordering-only; runs after the unbounded pool call above so the
     # observed pool matches the control. Diagnostic key is never read.
     agent_chunks = _order_named_symbol_first(
@@ -1440,6 +1439,75 @@ async def prepare_rag_evidence(
     return assembled, retrieval_plan_dict, rerank_active, obligation, query_embedding
 
 
+def _apply_delivery_receipt(assembled, plan, capacity, claim_type):
+    """Use the serving candidate's confirmed prefix for citations and diagnostics."""
+    if not isinstance(capacity, dict):
+        raise HTTPException(502, "LLM service returned no valid evidence receipt.")
+    count = capacity.get("delivered_passage_count")
+    allowance = capacity.get("evidence_allowance_bytes")
+    if (type(count) is not int or not 0 <= count <= len(assembled.passages)
+            or type(allowance) is not int or allowance < 0):
+        raise HTTPException(502, "LLM service returned no valid evidence receipt.")
+    delivered = "\n\n".join(assembled.passages[:count]).encode("utf-8")
+    digest = hashlib.sha256(delivered).hexdigest()
+    if (digest != capacity.get("delivered_evidence_sha256")
+            or len(delivered) > allowance):
+        raise HTTPException(502, "LLM evidence receipt differs from the sent passages.")
+    manifest = plan["final_context_manifest"]
+    budget = plan["evidence_budget"]
+    budget["omitted_by_provider_capacity"] = [
+        row["chunk_id"] for row in manifest[count:]
+    ]
+    budget["delivered_evidence_bytes"] = len(delivered)
+    if allowance < budget["effective_evidence_bytes"]:
+        budget.update(effective_evidence_bytes=allowance, binding_limit="serving_model")
+    plan["context_budget"] = budget["effective_evidence_bytes"]
+    plan["tokens_after_budget"] = len(delivered)
+    plan["final_context_manifest"] = manifest[:count]
+    chunks = assembled.chunks[:count]
+    delivered_docs = {chunk["document_id"] for chunk in chunks}
+    for target in plan.get("evidence_trace", []):
+        if (target["reaches_final_context"]
+                and target["document_id"] not in delivered_docs):
+            target.update(reaches_final_context=False, drop_reason="provider_capacity")
+    if claim_type:
+        plan["provenance_diagnostics"] = [
+            asdict(finding)
+            for finding in diagnose_manifest(claim_type, manifest[:count])
+        ]
+    return chunks
+
+
+async def _generate_rag_answer(
+    llm_context, query, passages, provider, model, trace_id, resolved_repo_id,
+    generation_id, effective, settings,
+):
+    llm_payload: dict[str, Any] = {"context": llm_context, "query": query}
+    if passages is not None:
+        llm_payload["evidence_passages"] = passages
+    params: Dict[str, str] = {}
+    if provider:
+        params["provider"] = provider
+    if model:
+        params["model"] = model
+
+    llm_headers = _llm_correlation_headers(
+        trace_id, resolved_repo_id, generation_id
+    )
+
+    llm_headers["X-RAG-Capacity"] = "enlarged" if effective > 4096 else "compatibility"
+    llm_headers["X-RAG-Output-Reserve"] = str(settings.OUTPUT_RESERVE_TOKENS)
+    llm_url = f"{settings.LLM_SERVICE_URL}/generate"
+    async with httpx.AsyncClient(timeout=200) as client:
+        resp = await client.post(
+            llm_url, json=llm_payload, params=params, headers=llm_headers
+        )
+        if resp.status_code == 413:
+            raise HTTPException(413, resp.json())
+        resp.raise_for_status()
+        return resp.json()
+
+
 async def run_rag(
     query: str,
     repo_id: Optional[str] = None,
@@ -1489,6 +1557,7 @@ async def run_rag(
     if context_mode == "compact":
         requested = min(requested, settings.COMPACT_EVIDENCE_BYTES)
     allowance = min(requested, settings.MAX_EVIDENCE_BYTES)
+    adaptive = context_mode == "custom" and claim_type != "repository_overview"
     resolved_repo_id = await resolve_repo_id_http(repo_id)
 
     assembled, retrieval_plan_dict, rerank_active, obligation, query_embedding = (
@@ -1501,6 +1570,7 @@ async def run_rag(
             structured_answers=structured_answers,
             canonical_selection=canonical_selection,
             named_symbol_first=named_symbol_first,
+            provider_manages_window=adaptive,
         )
     )
     chunks_in_final_context = assembled.chunks
@@ -1508,7 +1578,8 @@ async def run_rag(
     context_str = assembled.text
     effective = retrieval_plan_dict["context_budget"]
     budget_trace = {
-        "policy": "compatibility_v1", "mode": context_mode,
+        "policy": "serving_model" if adaptive else "compatibility_v1",
+        "mode": context_mode,
         "requested_evidence_bytes": requested, "effective_evidence_bytes": effective,
         "binding_limit": ("orchestrator_reserves" if effective < allowance else
                           "deployment_ceiling" if allowance < requested else "request"),
@@ -1576,29 +1647,15 @@ async def run_rag(
                 reranked=rerank_active,
             )
 
-    # LLM call
-    llm_payload = {"context": llm_context, "query": query}
-    params: Dict[str, str] = {}
-    if provider:
-        params["provider"] = provider
-    if model:
-        params["model"] = model
-
-    llm_headers = _llm_correlation_headers(
-        trace_id, resolved_repo_id, retrieval_plan_dict.get("generation_id")
+    result = await _generate_rag_answer(
+        llm_context, query, assembled.passages if adaptive else None,
+        provider, model, trace_id, resolved_repo_id,
+        retrieval_plan_dict.get("generation_id"), effective, settings,
     )
-
-    llm_headers["X-RAG-Capacity"] = "enlarged" if effective > 4096 else "compatibility"
-    llm_headers["X-RAG-Output-Reserve"] = str(settings.OUTPUT_RESERVE_TOKENS)
-    llm_url = f"{settings.LLM_SERVICE_URL}/generate"
-    async with httpx.AsyncClient(timeout=200) as client:
-        resp = await client.post(
-            llm_url, json=llm_payload, params=params, headers=llm_headers
+    if adaptive:
+        chunks_in_final_context = _apply_delivery_receipt(
+            assembled, retrieval_plan_dict, result.get("capacity"), claim_type,
         )
-        if resp.status_code == 413:
-            raise HTTPException(413, resp.json())
-        resp.raise_for_status()
-        result = resp.json()
     budget_trace["provider_capacity"] = result.get("capacity")
     budget_trace["provider_usage"] = result.get("usage")
     budget_trace["serving_model"] = result.get("model")

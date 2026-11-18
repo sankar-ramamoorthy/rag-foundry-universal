@@ -104,3 +104,18 @@ def test_repository_query_budget(mode):
         assert payload["max_evidence_bytes"] == 8192
     else:
         assert "max_evidence_bytes" not in payload
+
+
+def test_custom_displays_serving_model_and_actual_evidence():
+    response = MagicMock()
+    response.json.return_value = {
+        "answer": "answer", "model_used": "ollama/smaller", "fallback_from": "primary",
+        "retrieval_plan": {"evidence_budget": {
+            "requested_evidence_bytes": 8192, "delivered_evidence_bytes": 2954,
+        }},
+    }
+    with patch("src.ui.gradio_app.requests.post", return_value=response):
+        output = submit_rag_query("question", "repo", 10, None, None,
+                                  context_mode="custom", max_evidence_bytes=8192)
+    assert "requested 8,192 bytes · used 2,954 bytes" in output
+    assert "ollama/smaller" in output and "fell back from primary" in output

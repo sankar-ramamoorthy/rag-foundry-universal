@@ -71,6 +71,7 @@ class AssembledContext:
     chunks: List[Dict[str, object]]
     token_count: int
     omitted: list[dict] = field(default_factory=list)
+    passages: list[str] = field(default_factory=list)
 
 
 def assemble_context(
@@ -99,7 +100,7 @@ def assemble_context(
         parts.append(part)
         selected.append(chunk)
         used += cost
-    return AssembledContext("\n\n".join(parts), selected, used, omitted)
+    return AssembledContext("\n\n".join(parts), selected, used, omitted, parts)
 
 
 def select_chunks_within_token_budget(

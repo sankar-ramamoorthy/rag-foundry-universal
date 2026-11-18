@@ -243,6 +243,17 @@ def _model_line(data: dict) -> str:
     return line
 
 
+def _evidence_line(data: dict) -> str:
+    if not data.get("model_used"):
+        return ""
+    budget = data.get("retrieval_plan", {}).get("evidence_budget", {})
+    requested = budget.get("requested_evidence_bytes")
+    used = budget.get("delivered_evidence_bytes")
+    if isinstance(requested, int) and isinstance(used, int):
+        return f"\n**Evidence:** requested {requested:,} bytes · used {used:,} bytes"
+    return ""
+
+
 def _overview_controls_note(data: dict, query_mode: str) -> str:
     """Show server-confirmed effective values for an overview experiment."""
     if query_mode != "repository_overview":
@@ -267,6 +278,23 @@ def _budget_options(mode: str, amount: int | None) -> dict:
     if type(amount) is not int or amount <= 0:
         raise ValueError("Enter a positive whole number of evidence bytes.")
     return {"context_mode": mode, "max_evidence_bytes": amount}
+
+
+def _rag_http_error(response) -> str:
+    if response.status_code == 404:
+        return (
+            "❌ Repository not found. "
+            "Refresh repos and select a complete repository."
+        )
+    if response.status_code == 413:
+        return (
+            "The configured models could not safely fit this request. "
+            "Try Automatic (4,096 bytes) or a different model."
+        )
+    try:
+        return f"❌ RAG Error: {response.json().get('detail', response.text)}"
+    except Exception:
+        return f"❌ RAG Error: {response.text}"
 
 
 def submit_rag_query(
@@ -321,7 +349,8 @@ def submit_rag_query(
         sources = data.get("sources", [])
         formatted_sources = "\n".join(f"• {s}" for s in sources)
 
-        return f"""🎯 **Repository:** {repo_id[:8]}...{_model_line(data)}
+        run_info = _model_line(data) + _evidence_line(data)
+        return f"""🎯 **Repository:** {repo_id[:8]}...{run_info}
 
 **Answer:**
 {answer}
@@ -330,15 +359,7 @@ def submit_rag_query(
 {formatted_sources if formatted_sources else 'None found.'}"""
 
     except requests.exceptions.HTTPError as e:
-        if e.response.status_code == 404:
-            return (
-                "❌ Repository not found. "
-                "Refresh repos and select a complete repository."
-            )
-        try:
-            return f"❌ RAG Error: {e.response.json().get('detail', e.response.text)}"
-        except Exception:
-            return f"❌ RAG Error: {e.response.text}"
+        return _rag_http_error(e.response)
     except Exception as exc:
         return f"❌ Error querying RAG: {exc}"
 
@@ -542,7 +563,7 @@ def build_ui():
 
         with gr.Row():
             context_mode = gr.Radio(
-                choices=[("Auto (default)", "auto"), ("Compact", "compact"),
+                choices=[("Automatic (4,096 bytes)", "auto"), ("Compact", "compact"),
                          ("Custom", "custom")], value="auto", label="Evidence budget",
             )
             evidence_bytes = gr.Number(
