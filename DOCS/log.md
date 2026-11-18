@@ -6,6 +6,15 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-18
+
+Added the #398 [intent and answer-obligation evaluation](/DOCS/evaluations/intent-obligations/protocol.md):
+protocol, [label change log](/DOCS/evaluations/intent-obligations/label-changes.md),
+frozen [run manifest](/DOCS/evaluations/intent-obligations/planning-run-manifest.json)
+and [local comparison results](/DOCS/evaluations/intent-obligations/planning-comparison-results.md).
+Labels were corrected before the first model capture and the manifest was
+re-frozen. Experimental only; no routing or production change.
+
 ## 2026-11-17
 
 Added the #382 [experimental specification](/specs/009-evidence-aware-execution-router/spec.md),

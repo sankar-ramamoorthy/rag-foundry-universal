@@ -1030,6 +1030,22 @@ This does not substitute for Stage A's still-open formal frozen-
 evaluation gate (12-16 case, two-repo, statistical tracking), which
 remains separate, not-yet-run work.
 
+## Intent and answer-obligation experiment (#398)
+
+Experimental, offline and local only. No production routing changed. The
+[protocol](/DOCS/evaluations/intent-obligations/protocol.md) scores intent,
+typed entities, obligations, tool strategy and route independently, with the
+regex and supplied-label controls, on 25 held-out development questions. A
+local comparison (`398-planning-local-01`, manifest `0e24106d…`, zero hosted
+spend) ran on 2026-11-18; see the
+[results](/DOCS/evaluations/intent-obligations/planning-comparison-results.md).
+Embeddings understood the request far better than the regex (intent 11/25
+against 2/25) but made ten incorrect deterministic routes, mainly on direction
+and ambiguity. `qwen2.5:1.5b` with a 256-token cap was not usable (nine
+held-out outages from truncation). No router is selected. Development labels
+and the prompting asymmetry limit what the result supports. Labels were
+corrected before any capture ([change log](/DOCS/evaluations/intent-obligations/label-changes.md)).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
