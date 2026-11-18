@@ -445,3 +445,47 @@ def test_url_query_credentials_are_redacted():
     assert redact is not None
     url = redact("https://h/v1/x?key=abc123&alt=sse&api_key=zz")
     assert "abc123" not in url and "zz" not in url and "alt=sse" in url
+
+@pytest.mark.parametrize(
+    "backup_window,expected", [(8192, 200), (128, 413), (None, 413)]
+)
+def test_rag_capacity_on_fallback_wire(stub, monkeypatch, backup_window, expected):
+    from src.api.v1.main import app
+    from src.core.model_registry import ModelRegistry
+
+    digest = "a" * 64
+    monkeypatch.setitem(_GET_ROUTES, "/api/tags", {"models": [
+        {"name": name, "digest": digest} for name in ("large", "small")
+    ]})
+    common = {"api_base": stub.base, "digest": digest, "template_overhead_tokens": 32}
+    profiles = [{"model": "ollama/large", "window_tokens": 16384, **common}]
+    if backup_window:
+        profiles.append({"model": "ollama/small", "window_tokens": backup_window,
+                         **common})
+    registry = ModelRegistry({
+        "models": {n: {"model": f"ollama/{n}", "api_base": stub.base}
+                   for n in ("large", "small")},
+        "fallbacks": {"large": ["small"]}, "rag_capacity_profiles": profiles,
+    })
+    monkeypatch.setattr(llm_client, "get_registry", lambda: registry)
+    send = llm_client._acompletion_with_backoff
+
+    async def fail_primary(kwargs):
+        if kwargs["model"] == "ollama/large":
+            raise RuntimeError("simulated outage")
+        return await send(kwargs)
+
+    monkeypatch.setattr(llm_client, "_acompletion_with_backoff", fail_primary)
+    response = TestClient(app).post("/generate?model=large", json={
+        "context": "overview policy plus evidence 雪", "query": "explain " * 100,
+    }, headers={"X-RAG-Capacity": "enlarged", "X-RAG-Output-Reserve": "200"})
+    assert response.status_code == expected, response.text
+    if expected == 413:
+        assert not stub.inference()
+        return
+    wire = json.loads(stub.inference()[0][2])
+    assert wire["options"]["num_predict"] == 200
+    assert wire["options"]["num_ctx"] == backup_window
+    assert "overview policy plus evidence" in wire["prompt"]
+    assert response.json()["capacity"]["prompt_bytes"] == len(wire["prompt"].encode())
+    assert response.json()["usage"]["prompt_tokens"] == 11

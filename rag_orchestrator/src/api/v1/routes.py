@@ -66,6 +66,8 @@ async def rag_endpoint(rag_query: RAGQuery):
     try:
         result = await run_rag(
             query=rag_query.query,
+            context_mode=rag_query.context_mode,
+            max_evidence_bytes=rag_query.max_evidence_bytes,
             repo_id=rag_query.repo_id,
             top_k=rag_query.top_k,
             provider=rag_query.provider,

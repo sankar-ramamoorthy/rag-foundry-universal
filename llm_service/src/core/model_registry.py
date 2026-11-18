@@ -51,6 +51,7 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from src.core.rag_capacity import OllamaProfile
 from src.core import model_policy
 from src.core.config import LLM_TIMEOUT, OLLAMA_BASE_URL, OLLAMA_MODEL
 
@@ -128,6 +129,10 @@ class ModelRegistry:
         self, config: Dict[str, Any], policy: Optional[Dict[str, Any]] = None
     ):
         config = _interpolate_env(config)
+        profiles = [OllamaProfile.model_validate(p)
+                    for p in config.get("rag_capacity_profiles", [])]
+        self.rag_capacity_profiles = {(p.model, p.api_base): p for p in profiles
+                                      if p.model.startswith("ollama/")}
         raw_models = config.get("models") or {}
         self._aliases: Dict[str, Dict[str, Any]] = {}
         for alias, value in raw_models.items():

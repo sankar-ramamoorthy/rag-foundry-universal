@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +29,8 @@ class Settings(BaseSettings):
     # Overall chunk cap handed to the agent adapter (was 9999).
     MAX_TOTAL_CHUNKS: int = 50
     # Context allowance excludes conservative prompt/query and output reserves.
+    COMPACT_EVIDENCE_BYTES: int = Field(default=2048, gt=0, le=4096)
+    MAX_EVIDENCE_BYTES: int = Field(default=32768, gt=0)
     CONTEXT_WINDOW_TOKENS: int = 8192
     PROMPT_RESERVE_TOKENS: int = 1024
     OUTPUT_RESERVE_TOKENS: int = 2048

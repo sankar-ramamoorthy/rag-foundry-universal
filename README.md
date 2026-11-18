@@ -190,6 +190,14 @@ curl -X POST http://localhost:8004/v1/rag \
     -d '{"query":"What calls this function?","repo_id":"<repo_id>","top_k":5}'
 ```
 
+For ordinary `/v1/rag`, the optional `context_mode` selects the evidence
+allowance in UTF-8 bytes. Auto (the default) requests 4,096 bytes, Compact
+requests 2,048 by default, and Custom takes a positive `max_evidence_bytes`.
+For example, add `"context_mode": "custom", "max_evidence_bytes": 8192` to
+the JSON request. The deployment can clamp the allowance. Enlarged inference
+requests and fallback models require a matching capacity profile. See the
+[configuration and trace guide](/DOCS/deployment/rag-evidence-budgets.md).
+
 Replace the placeholders with your repository, returned identifiers, and a
 question about its source. Structural queries are also available without generation:
 

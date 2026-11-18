@@ -2,6 +2,8 @@
 import asyncio
 import logging
 
+from typing import Annotated, Literal
+
 from fastapi import FastAPI, Header, Query
 from fastapi.responses import JSONResponse
 from shared.runtime_provenance import install_version_route
@@ -14,6 +16,7 @@ from src.core.config import (
     OLLAMA_MODEL,
 )
 from src.core import model_catalog, provider_capture
+from src.core.rag_capacity import CapacityError, RagCapacity
 from src.core.llm_client import AllProvidersFailedError, generate_completion
 from src.core.model_registry import (
     DEFAULT_ALIAS,
@@ -36,6 +39,9 @@ async def generate(
     x_trace_id: str | None = Header(None),
     x_repo_id: str | None = Header(None),
     x_generation_id: str | None = Header(None),
+    x_rag_capacity: Annotated[Literal["compatibility", "enlarged"] | None,
+                              Header()] = None,
+    x_rag_output_reserve: Annotated[int | None, Header(gt=0)] = None,
 ) -> dict:
     # Issue #344: correlation for opt-in provider-request capture only;
     # has no effect on generation and nothing is recorded when disabled.
@@ -43,11 +49,24 @@ async def generate(
         trace_id=x_trace_id, repo_id=x_repo_id, generation_id=x_generation_id
     )
     try:
+        capacity = {}
+        if x_rag_capacity is not None:
+            if x_rag_output_reserve is None:
+                raise ValueError("missing RAG output reserve")
+            capacity["rag_capacity"] = RagCapacity(
+                enlarged=x_rag_capacity == "enlarged",
+                output_reserve_tokens=x_rag_output_reserve,
+            )
         return await generate_completion(
             context=request.context,
             query=request.query,
             provider=provider,
             model=model,
+            **capacity,
+        )
+    except CapacityError as exc:
+        return JSONResponse(
+            status_code=413, content={"error": "capacity", "detail": str(exc)}
         )
     except UnknownModelAliasError as e:
         # WP-M1: unknown alias is a client error, with the valid menu

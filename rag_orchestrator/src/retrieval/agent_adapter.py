@@ -2,7 +2,7 @@
 
 import logging
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Dict, Optional, Callable
 
 from .types import RetrievedContext, RetrievedChunk
@@ -70,6 +70,7 @@ class AssembledContext:
     text: str
     chunks: List[Dict[str, object]]
     token_count: int
+    omitted: list[dict] = field(default_factory=list)
 
 
 def assemble_context(
@@ -82,16 +83,23 @@ def assemble_context(
     """
     parts: List[str] = []
     selected: List[Dict[str, object]] = []
+    omitted = []
     used = 0
     for chunk in agent_chunks:
         part = _render_chunk(chunk)
-        cost = conservative_token_count(part) + (2 if parts else 0)
+        rendered_bytes = conservative_token_count(part)
+        separator_bytes = 2 if parts else 0
+        cost = rendered_bytes + separator_bytes
         if used + cost > max_total_tokens:
+            omitted.append({
+                "chunk_id": chunk.get("chunk_id"), "rendered_bytes": rendered_bytes,
+                "separator_bytes": separator_bytes,
+            })
             continue
         parts.append(part)
         selected.append(chunk)
         used += cost
-    return AssembledContext("\n\n".join(parts), selected, used)
+    return AssembledContext("\n\n".join(parts), selected, used, omitted)
 
 
 def select_chunks_within_token_budget(
