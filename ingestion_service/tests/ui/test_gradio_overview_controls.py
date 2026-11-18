@@ -93,4 +93,14 @@ def test_ui_controls_default_off_and_feed_rag_callback():
         if item.get("api_name") == "submit_rag_query"
     )
     connected = {components[item].get("label") for item in rag_handler["inputs"]}
-    assert set(expected).issubset(connected)
+    assert (set(expected) | {"Evidence budget", "Maximum evidence bytes"}) <= connected
+
+
+@pytest.mark.parametrize("mode", ["auto", "compact", "custom"])
+def test_repository_query_budget(mode):
+    payload = _sent_payload("rag", False, False, False, mode, 8192)
+    assert payload["context_mode"] == mode and payload["execution_mode"] == "rag"
+    if mode == "custom":
+        assert payload["max_evidence_bytes"] == 8192
+    else:
+        assert "max_evidence_bytes" not in payload

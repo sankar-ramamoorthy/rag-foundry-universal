@@ -5,6 +5,7 @@ from pydantic import BaseModel, StrictBool, Field, model_validator
 
 
 class RAGQuery(BaseModel):
+    execution_mode: Literal["auto", "rag"] = "auto"
     context_mode: Literal["auto", "compact", "custom"] = "auto"
     max_evidence_bytes: int | None = Field(None, gt=0, strict=True)
 
