@@ -198,6 +198,12 @@ is retained as part of the audit trail.
 
 ## Proposals
 
+The [evidence-aware execution router proposal](/DOCS/proposals/2026-11-17-evidence-aware-execution-router.md)
+and [experimental SDD specification](/specs/009-evidence-aware-execution-router/spec.md)
+track #382 (Phase 6). The [protocol and manifests](/DOCS/evaluations/evidence-aware-router/protocol.md)
+define unexecuted development experiments; no router implementation or model
+expenditure is authorized. Resume from the [handoff](/specs/009-evidence-aware-execution-router/HANDOFF.md).
+
 The [Phase 6 Claude handoff](/DOCS/proposals/2026-09-19-phase-6-sufficiency-authority-handoff.md)
 plans #200 mechanical sufficiency, then #199 authority/subject/provenance, then
 authority-aware sufficiency checks. Its

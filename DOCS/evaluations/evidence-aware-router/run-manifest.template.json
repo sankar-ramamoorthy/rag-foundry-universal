@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "tracking_issue": 382,
+  "status": "template_not_approved",
+  "execution_authorized": false,
+  "required_before_freeze": [
+    "run_id",
+    "runtime_commit",
+    "protocol_sha256",
+    "cases_sha256",
+    "tool_schema_sha256",
+    "scoring.sha256",
+    "scoring.sealed_witness_commitment_sha256",
+    "scoring.claim_and_equivalence_rules_sha256",
+    "provider_model.provider",
+    "provider_model.model",
+    "provider_model.revision",
+    "provider_model.approval_reference",
+    "provider_model.settings_sha256",
+    "prompts",
+    "corpora",
+    "environment",
+    "selected_cells",
+    "order_seed",
+    "warmup_cache_policy",
+    "pricing_and_usage",
+    "approval_receipt"
+  ],
+  "run_id": null,
+  "runtime_commit": null,
+  "protocol_sha256": null,
+  "cases_sha256": null,
+  "tool_schema_sha256": null,
+  "provider_model": {
+    "provider": null,
+    "model": null,
+    "revision": null,
+    "approval_reference": null,
+    "settings_sha256": null,
+    "silent_fallback_allowed": false
+  },
+  "prompts": {
+    "router_sha256": null,
+    "investigator_sha256": null,
+    "synthesis_sha256": null,
+    "existing_rag_sha256": null
+  },
+  "scoring": {
+    "sha256": null,
+    "sealed_witness_commitment_sha256": null,
+    "claim_and_equivalence_rules_sha256": null,
+    "evaluator_identity": null,
+    "witness_location": "outside experimental system; do not mount"
+  },
+  "corpora": [
+    {
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "repo_id": null,
+      "generation_id": null,
+      "ready_verified": false,
+      "source_fidelity_verified": false,
+      "embedding_configuration": null,
+      "excluded_evaluation_material_verified": false
+    },
+    {
+      "repository": "sankar-ramamoorthy/mealie",
+      "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+      "repo_id": null,
+      "generation_id": null,
+      "ready_verified": false,
+      "source_fidelity_verified": false,
+      "embedding_configuration": null,
+      "excluded_evaluation_material_verified": false
+    }
+  ],
+  "environment": {
+    "hardware": null,
+    "service_revisions": null,
+    "model_runtime": null,
+    "concurrency": 1,
+    "checkout_access": false,
+    "web_access": false,
+    "available_tools": [
+      "orient",
+      "find_source",
+      "read_source",
+      "search_evidence"
+    ],
+    "capability_preflight_reference": null
+  },
+  "budget_profiles": {
+    "Small": {
+      "tool_calls": 8,
+      "model_calls": 10,
+      "aggregate_model_tokens": 32000,
+      "wall_seconds": 60
+    },
+    "Medium": {
+      "tool_calls": 20,
+      "model_calls": 22,
+      "aggregate_model_tokens": 160000,
+      "wall_seconds": 180
+    },
+    "Large": {
+      "tool_calls": 40,
+      "model_calls": 42,
+      "aggregate_model_tokens": 1000000,
+      "wall_seconds": 600
+    }
+  },
+  "stagnation_executed_actions": 3,
+  "selected_cells": [],
+  "cell_contract": {
+    "required_fields": [
+      "case_id",
+      "stage",
+      "arm",
+      "profile",
+      "repeats",
+      "maximum_strategy",
+      "orient_enabled",
+      "monetary_cap",
+      "currency"
+    ],
+    "stages": [
+      "A",
+      "B",
+      "C"
+    ],
+    "arms": [
+      "existing_rag",
+      "direct_answer",
+      "evidence_aware_router",
+      "bounded_investigation"
+    ],
+    "note": "Select explicit matched cells; empty array blocks execution. Freeze direct-answer applicability and ORIENT ablation matching."
+  },
+  "proposed_repeats": 3,
+  "order_seed": null,
+  "warmup_cache_policy": null,
+  "pricing_and_usage": {
+    "currency": null,
+    "price_snapshot_sha256": null,
+    "token_counting_method": null,
+    "hard_cap_reservation_method": null,
+    "unknown_values_are_null": true,
+    "total_spend_cap": null
+  },
+  "approval_receipt": {
+    "location": null,
+    "required_fields": [
+      "approver",
+      "approved_at",
+      "manifest_sha256",
+      "provider_model_approval",
+      "total_spend_approval",
+      "execution_authorization_reference"
+    ],
+    "note": "External receipt hashes final manifest; do not put manifest hash into its own bytes."
+  },
+  "freeze_rule": "All required values and nested nulls must be resolved; booleans verified true where required; selected cells nonempty; external receipt must approve exact manifest hash. Documentation approval alone never authorizes a run."
+}

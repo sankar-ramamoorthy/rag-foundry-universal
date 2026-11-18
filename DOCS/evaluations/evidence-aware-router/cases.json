@@ -1,0 +1,269 @@
+{
+  "schema_version": 1,
+  "tracking_issue": 382,
+  "status": "proposed",
+  "dataset_class": "development",
+  "cases": [
+    {
+      "case_id": "S-1",
+      "family": "exact_source",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "Return the complete stored source of rag_orchestrator/src/retrieval/codebase_utils.py, preserving text and reporting source identity, generation, hash and any limits.",
+      "declared_scope": {
+        "path": "rag_orchestrator/src/retrieval/codebase_utils.py",
+        "representation": "stored_source"
+      },
+      "obligations": [
+        "exact stored text",
+        "complete file coverage",
+        "provenance and returned-text hash"
+      ],
+      "direct_answer_applicable": true,
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "I-1",
+      "family": "python_inventory",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "List every Python function defined in rag_orchestrator/src/retrieval/codebase_utils.py, recursively including async functions, methods and nested functions, excluding lambdas. Give qualified lexical name, sync/async kind, def line and end line; state whether the entire module was inspected.",
+      "declared_scope": {
+        "path": "rag_orchestrator/src/retrieval/codebase_utils.py",
+        "representation": "stored_source"
+      },
+      "obligations": [
+        "full-source AST parse",
+        "all FunctionDef and AsyncFunctionDef entries",
+        "qualified names, kind, def/end lines",
+        "explicit completeness limits"
+      ],
+      "direct_answer_applicable": true,
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "S-2",
+      "family": "exact_source",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "Return the complete stored source of rag_orchestrator/src/retrieval/evidence_sufficiency.py, preserving text and reporting source identity, generation, hash and any limits.",
+      "declared_scope": {
+        "path": "rag_orchestrator/src/retrieval/evidence_sufficiency.py",
+        "representation": "stored_source"
+      },
+      "obligations": [
+        "exact stored text",
+        "complete file coverage",
+        "provenance and returned-text hash"
+      ],
+      "direct_answer_applicable": true,
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "I-2",
+      "family": "python_inventory",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "List every Python function defined in rag_orchestrator/src/retrieval/evidence_sufficiency.py, recursively including async functions, methods and nested functions, excluding lambdas. Give qualified lexical name, sync/async kind, def line and end line; state whether the entire module was inspected.",
+      "declared_scope": {
+        "path": "rag_orchestrator/src/retrieval/evidence_sufficiency.py",
+        "representation": "stored_source"
+      },
+      "obligations": [
+        "full-source AST parse",
+        "all FunctionDef and AsyncFunctionDef entries",
+        "qualified names, kind, def/end lines",
+        "explicit completeness limits"
+      ],
+      "direct_answer_applicable": true,
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "S-3",
+      "family": "exact_source",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "Return the complete stored source of rag_orchestrator/src/retrieval/execute_plan.py, preserving text and reporting source identity, generation, hash and any limits.",
+      "declared_scope": {
+        "path": "rag_orchestrator/src/retrieval/execute_plan.py",
+        "representation": "stored_source"
+      },
+      "obligations": [
+        "exact stored text",
+        "complete file coverage",
+        "provenance and returned-text hash"
+      ],
+      "direct_answer_applicable": true,
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "I-3",
+      "family": "python_inventory",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "List every Python function defined in rag_orchestrator/src/retrieval/execute_plan.py, recursively including async functions, methods and nested functions, excluding lambdas. Give qualified lexical name, sync/async kind, def line and end line; state whether the entire module was inspected.",
+      "declared_scope": {
+        "path": "rag_orchestrator/src/retrieval/execute_plan.py",
+        "representation": "stored_source"
+      },
+      "obligations": [
+        "full-source AST parse",
+        "all FunctionDef and AsyncFunctionDef entries",
+        "qualified names, kind, def/end lines",
+        "explicit completeness limits"
+      ],
+      "direct_answer_applicable": true,
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "O-1",
+      "family": "overview",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "Describe this repository architecture: identify its application services, their entrypoints, persistence ownership and HTTP communication boundaries. Distinguish implementation evidence from assumptions.",
+      "declared_scope": {
+        "description": "repository application services"
+      },
+      "obligations": [
+        "services/components",
+        "entrypoints",
+        "persistence ownership",
+        "HTTP boundaries",
+        "inspected support and uncertainty"
+      ],
+      "direct_answer_applicable": false,
+      "direct_answer_exclusion_reason": "No single exact source is named; giving evaluator-selected files would introduce hidden hints. Compare unchanged RAG and non-investigative router behavior.",
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "O-2",
+      "family": "overview",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "Describe ingestion_service architecture: identify its API entrypoint, pipeline construction boundary, source-processing components and persistence ownership. Cite implementation evidence and disclose coverage limits.",
+      "declared_scope": {
+        "description": "ingestion_service and shared components it directly uses"
+      },
+      "obligations": [
+        "services/components",
+        "entrypoints",
+        "persistence ownership",
+        "HTTP boundaries",
+        "inspected support and uncertainty"
+      ],
+      "direct_answer_applicable": false,
+      "direct_answer_exclusion_reason": "No single exact source is named; giving evaluator-selected files would introduce hidden hints. Compare unchanged RAG and non-investigative router behavior.",
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "O-3",
+      "family": "overview",
+      "repository": "sankar-ramamoorthy/rag-foundry-universal",
+      "source_commit": "4366ab65fe5d186481fa0951575665db56e0c2cd",
+      "question": "Describe rag_orchestrator architecture: identify its API entrypoints, retrieval and generation coordination, and outbound service dependencies. Cite implementation evidence and disclose coverage limits.",
+      "declared_scope": {
+        "description": "rag_orchestrator and its outbound HTTP boundaries"
+      },
+      "obligations": [
+        "services/components",
+        "entrypoints",
+        "persistence ownership",
+        "HTTP boundaries",
+        "inspected support and uncertainty"
+      ],
+      "direct_answer_applicable": false,
+      "direct_answer_exclusion_reason": "No single exact source is named; giving evaluator-selected files would introduce hidden hints. Compare unchanged RAG and non-investigative router behavior.",
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "requires independent sealed rubric"
+    },
+    {
+      "case_id": "H-1",
+      "family": "execution_trace",
+      "repository": "sankar-ramamoorthy/mealie",
+      "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+      "question": "Trace the execution path from POST /api/users/forgot-password through background processing, reset-token creation, and reset-email delivery. Explain the eligible-account and SMTP-enabled path and the early-exit behavior. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct calls, deferred callbacks, database operations, and external service calls. Base the answer on implementation code rather than documentation or historical reports.",
+      "declared_scope": {
+        "route": "POST /api/users/forgot-password",
+        "source": "implementation only"
+      },
+      "obligations": [
+        "actual functions and files",
+        "ordered execution and conditions",
+        "direct/deferred calls",
+        "database and external boundaries",
+        "unsupported relationships and uncertainty"
+      ],
+      "direct_answer_applicable": false,
+      "direct_answer_exclusion_reason": "Route is given, but exact implementation files are not; baseline cannot receive oracle file hints.",
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "previously revealed; reseal offline, never expose to experimental system",
+      "question_source": "DOCS/evaluations/359-H/questions.json"
+    },
+    {
+      "case_id": "H-2",
+      "family": "execution_trace",
+      "repository": "sankar-ramamoorthy/mealie",
+      "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+      "question": "Trace the execution path from POST /api/users/reset-password through token validation, password hashing and persistence, and reset-token removal. Explain the successful non-test, non-demo path and invalid-token behavior. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct calls, deferred callbacks, database operations, and external service calls. Base the answer on implementation code rather than documentation or historical reports.",
+      "declared_scope": {
+        "route": "POST /api/users/reset-password",
+        "source": "implementation only"
+      },
+      "obligations": [
+        "actual functions and files",
+        "ordered execution and conditions",
+        "direct/deferred calls",
+        "database and external boundaries",
+        "unsupported relationships and uncertainty"
+      ],
+      "direct_answer_applicable": false,
+      "direct_answer_exclusion_reason": "Route is given, but exact implementation files are not; baseline cannot receive oracle file hints.",
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "previously revealed; reseal offline, never expose to experimental system",
+      "question_source": "DOCS/evaluations/359-H/questions.json"
+    },
+    {
+      "case_id": "H-3",
+      "family": "execution_trace",
+      "repository": "sankar-ramamoorthy/mealie",
+      "source_commit": "1624c22bf70988c7fe404ad586e2f9689f77748d",
+      "question": "Trace the execution path from GET /api/recipes/{slug}/exports through recipe lookup, raw JSON or ZIP export generation, file delivery, and cleanup. Explain how the template_name query parameter selects the output. Identify the actual Python functions and files involved, explain the call sequence, and distinguish direct calls, deferred callbacks, database operations, and external service calls. Base the answer on implementation code rather than documentation or historical reports.",
+      "declared_scope": {
+        "route": "GET /api/recipes/{slug}/exports",
+        "source": "implementation only"
+      },
+      "obligations": [
+        "actual functions and files",
+        "ordered execution and conditions",
+        "direct/deferred calls",
+        "database and external boundaries",
+        "unsupported relationships and uncertainty"
+      ],
+      "direct_answer_applicable": false,
+      "direct_answer_exclusion_reason": "Route is given, but exact implementation files are not; baseline cannot receive oracle file hints.",
+      "maximum_strategy": "investigation",
+      "dataset_class": "development",
+      "witness_status": "previously revealed; reseal offline, never expose to experimental system",
+      "question_source": "DOCS/evaluations/359-H/questions.json"
+    }
+  ]
+}
