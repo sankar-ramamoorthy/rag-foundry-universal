@@ -28,6 +28,14 @@ document.
 
 ## Source navigation (Phase 6 / AG / AG0)
 
+The documentation-only [#382 architecture/evaluation package](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/382)
+proposes an [evidence-aware router](/DOCS/proposals/2026-11-17-evidence-aware-execution-router.md)
+and [SDD experimental contract](/specs/009-evidence-aware-execution-router/spec.md)
+with [twelve development cases and independent scoring](/DOCS/evaluations/evidence-aware-router/protocol.md).
+The design remains proposed; experiments are unexecuted and the run manifest is
+unapproved/unfrozen. No production router/agent or model expenditure is authorized.
+The existing #207 evidence gate and separate #282 scope remain intact.
+
 [#379](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/379)
 implements file discovery and exact stored-source reads in `ingestion_service`.
 The [API contract](/DOCS/architecture/source-navigation-api.md) and accepted

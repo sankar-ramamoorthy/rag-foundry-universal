@@ -8,6 +8,13 @@ governed.
 
 ## 2026-11-17
 
+Added the #382 [experimental specification](/specs/009-evidence-aware-execution-router/spec.md),
+[architecture proposal](/DOCS/proposals/2026-11-17-evidence-aware-execution-router.md)
+and [evaluation protocol/manifests](/DOCS/evaluations/evidence-aware-router/protocol.md).
+The package separates routing evaluation, answer support and completion claims,
+and supplies SDD traceability and a fresh-context handoff. It authorizes no
+implementation, model experiment or production change.
+
 Added the [Windows Source Navigation API release verification](/DOCS/releases/2026-11-17-prod-1447pm-source-navigation-verification.md)
 after the operator's Linux deployment. Deployed HTTP/SQL checks pass and the
 corpus remains intact. The initial Compose timeout and later six-container
