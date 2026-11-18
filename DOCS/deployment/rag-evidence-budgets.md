@@ -59,3 +59,31 @@ for compatibility-size requests and reports `unknown_legacy_primary`. Fallbacks
 always need profiles on ordinary RAG requests, including Auto. With no profiles
 configured, an ordinary RAG primary outage can therefore end in a capacity
 error. The serving-model trace includes provider usage when available.
+
+## Run an 8,192-byte experiment on Linux
+
+1. Verify the operator's selected endpoint, model digest, usable window and
+   template overhead for this deployment. The [November 12 capture](/DOCS/test_results/2026-11-12-345-round2.md)
+   observed Qwen3:4b at 16,384 tokens. It does not calibrate today's runner
+   or the separate `local` fallback. Check the registry's resolved aliases,
+   including runtime model overrides. For each eligible fallback supply its
+   own calibrated profile. The shipped registry contains no calibrated profiles.
+2. For a verified **16,384-token** runner, set the orchestrator environment
+   to `CONTEXT_WINDOW_TOKENS=16384`, `PROMPT_RESERVE_TOKENS=1024`,
+   `OUTPUT_RESERVE_TOKENS=2048` and `MAX_EVIDENCE_BYTES=8192`.
+   With those settings, queries up to 5,120 UTF-8 bytes leave the full
+   8,192-byte selection allowance. Longer queries reduce it. Keep the primary
+   profile's `window_tokens` at the independently verified value. Install the
+   full models YAML, including its existing aliases and the new profile, at
+   the LLM service's `MODELS_CONFIG_PATH` inside the container. Apply settings
+   through the [operator's release process](/DOCS/deployment/production-docker-compose.md).
+3. Use the same query, repository, generation and model for both arms. For
+   the larger arm send `"context_mode":"custom","max_evidence_bytes":8192`
+   to `POST /v1/rag`. Require `effective_evidence_bytes=8192` in
+   `retrieval_plan.evidence_budget`. Whole-passage delivery may use less.
+   For a generated answer, verify the serving model and digest and require
+   `provider_capacity.method=ollama_utf8_upper_bound`. Under the example
+   profile, the full prompt upper bound including template overhead must be
+   at most 14,336 tokens, leaving 2,048 for output. A 413, a smaller effective
+   allowance, or an unexpected serving model does not qualify as this arm.
+   Record runner context, provider usage and latency with the result.
