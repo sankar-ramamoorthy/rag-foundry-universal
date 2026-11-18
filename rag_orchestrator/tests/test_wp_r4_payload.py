@@ -165,3 +165,29 @@ def test_empty_budget_has_no_sources_or_manifest_claims(monkeypatch):
     assert backend.payload["context"] == ""
     assert result.sources == []
     assert result.retrieval_plan["final_context_manifest"] == []
+
+def test_evidence_budget_request_and_final_payload(monkeypatch):
+    from pydantic import ValidationError
+    from src.api.v1.models import RAGQuery
+
+    backend = Backend()
+    patch_pipeline(monkeypatch, backend)
+    default = asyncio.run(service.run_rag("target", repo_id="repo"))
+    auto = asyncio.run(service.run_rag("target", repo_id="repo", context_mode="auto"))
+    assert default.retrieval_plan["final_context_manifest"] == (
+        auto.retrieval_plan["final_context_manifest"]
+    )
+    compact = asyncio.run(service.run_rag(
+        "target", repo_id="repo", context_mode="compact",
+    ))
+    assert compact.retrieval_plan["evidence_budget"]["effective_evidence_bytes"] == 2048
+    tiny = asyncio.run(service.run_rag(
+        "target", repo_id="repo", context_mode="custom", max_evidence_bytes=1,
+    ))
+    trace = tiny.retrieval_plan["evidence_budget"]
+    assert trace["delivered_evidence_bytes"] == 0 and trace["omitted_by_byte_budget"]
+    assert backend.payload["context"] == ""
+    for invalid in ({"context_mode": "custom"}, {"max_evidence_bytes": 10},
+                    {"context_mode": "custom", "max_evidence_bytes": 0}):
+        with pytest.raises(ValidationError):
+            RAGQuery.model_validate({"query": "target", **invalid})

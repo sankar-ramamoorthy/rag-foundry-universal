@@ -28,6 +28,10 @@ document.
 
 ## Source navigation (Phase 6 / AG / AG0)
 
+The [ordinary RAG budget comparison](/DOCS/test_results/2026-11-17-386-context-budget.md)
+records #386's mocked provider checks and offline passage delivery. Live
+answer quality for the new budget modes remains unevaluated.
+
 The documentation-only [#382 architecture/evaluation package](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/382)
 proposes an [evidence-aware router](/DOCS/proposals/2026-11-17-evidence-aware-execution-router.md)
 and [SDD experimental contract](/specs/009-evidence-aware-execution-router/spec.md)

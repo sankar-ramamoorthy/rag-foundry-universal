@@ -1,10 +1,19 @@
 # rag_orchestrator/src/api/v1/models.py (UPDATED)
 from typing import List, Literal, Optional, Dict, Any
 
-from pydantic import BaseModel, StrictBool
+from pydantic import BaseModel, StrictBool, Field, model_validator
 
 
 class RAGQuery(BaseModel):
+    context_mode: Literal["auto", "compact", "custom"] = "auto"
+    max_evidence_bytes: int | None = Field(None, gt=0, strict=True)
+
+    @model_validator(mode="after")
+    def validate_budget(self):
+        if (self.context_mode == "custom") != (self.max_evidence_bytes is not None):
+            raise ValueError("custom mode requires max_evidence_bytes exclusively")
+        return self
+
     query: str
     repo_id: Optional[str] = None  # NEW: Repo selection
     top_k: int = 5

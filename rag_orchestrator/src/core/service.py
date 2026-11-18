@@ -1457,6 +1457,8 @@ async def run_rag(
     repository_overview_structured_answers_enabled: Optional[bool] = None,
     repository_overview_canonical_selection_enabled: Optional[bool] = None,
     named_symbol_first: bool = False,
+    context_mode: str = "auto",
+    max_evidence_bytes: int | None = None,
 ) -> RAGResult:
     settings = get_settings()
     claim_selection = (
@@ -1477,12 +1479,22 @@ async def run_rag(
     trace_id = _new_trace_id()
     _log_stage(trace_id, "rag.query.started", repo_id=repo_id, top_k=top_k)
 
+    if context_mode not in {"auto", "compact", "custom"} or (
+        (context_mode == "custom") != (max_evidence_bytes is not None)
+    ):
+        raise ValueError("invalid evidence budget mode or override")
+    if max_evidence_bytes is not None and max_evidence_bytes <= 0:
+        raise ValueError("max_evidence_bytes must be positive")
+    requested = max_total_tokens if max_evidence_bytes is None else max_evidence_bytes
+    if context_mode == "compact":
+        requested = min(requested, settings.COMPACT_EVIDENCE_BYTES)
+    allowance = min(requested, settings.MAX_EVIDENCE_BYTES)
     resolved_repo_id = await resolve_repo_id_http(repo_id)
 
     assembled, retrieval_plan_dict, rerank_active, obligation, query_embedding = (
         await prepare_rag_evidence(
             query, resolved_repo_id, trace_id, top_k=top_k,
-            max_chunks_per_doc=max_chunks_per_doc, max_total_tokens=max_total_tokens,
+            max_chunks_per_doc=max_chunks_per_doc, max_total_tokens=allowance,
             chunk_filter_fn=chunk_filter_fn, language=language,
             trace_canonical_ids=trace_canonical_ids, rerank=rerank,
             claim_type=claim_type, claim_selection=claim_selection,
@@ -1494,6 +1506,16 @@ async def run_rag(
     chunks_in_final_context = assembled.chunks
     final_context_manifest = retrieval_plan_dict["final_context_manifest"]
     context_str = assembled.text
+    effective = retrieval_plan_dict["context_budget"]
+    budget_trace = {
+        "policy": "compatibility_v1", "mode": context_mode,
+        "requested_evidence_bytes": requested, "effective_evidence_bytes": effective,
+        "binding_limit": ("orchestrator_reserves" if effective < allowance else
+                          "deployment_ceiling" if allowance < requested else "request"),
+        "delivered_evidence_bytes": assembled.token_count,
+        "omitted_by_byte_budget": assembled.omitted,
+    }
+    retrieval_plan_dict["evidence_budget"] = budget_trace
     llm_context = context_str
     if claim_type == "repository_overview":
         focus = _structured_overview_focus(query, obligation)
@@ -1566,13 +1588,20 @@ async def run_rag(
         trace_id, resolved_repo_id, retrieval_plan_dict.get("generation_id")
     )
 
+    llm_headers["X-RAG-Capacity"] = "enlarged" if effective > 4096 else "compatibility"
+    llm_headers["X-RAG-Output-Reserve"] = str(settings.OUTPUT_RESERVE_TOKENS)
     llm_url = f"{settings.LLM_SERVICE_URL}/generate"
     async with httpx.AsyncClient(timeout=200) as client:
         resp = await client.post(
             llm_url, json=llm_payload, params=params, headers=llm_headers
         )
+        if resp.status_code == 413:
+            raise HTTPException(413, resp.json())
         resp.raise_for_status()
         result = resp.json()
+    budget_trace["provider_capacity"] = result.get("capacity")
+    budget_trace["provider_usage"] = result.get("usage")
+    budget_trace["serving_model"] = result.get("model")
     _log_stage(
         trace_id,
         "llm.generate.completed",

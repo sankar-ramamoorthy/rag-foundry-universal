@@ -12,6 +12,7 @@ import logging
 
 import litellm
 
+from src.core.rag_capacity import CapacityError, RagCapacity, check_candidate
 from src.core import provider_capture
 from src.core.config import MAX_TRANSIENT_RETRIES, RETRY_BACKOFF_BASE_SECONDS
 from src.core.model_registry import ResolvedModel, get_registry
@@ -62,15 +63,32 @@ async def generate_completion(
     query: str,
     provider: str | None = None,
     model: str | None = None,
+    rag_capacity: RagCapacity | None = None,
 ) -> dict:
     registry = get_registry()
     primary = registry.resolve(provider, model)
     chain = registry.fallback_chain(primary)
 
     last_error: Exception | None = None
+    skipped = []
     for position, candidate in enumerate(chain):
         try:
-            result = await _complete(candidate, context=context, query=query)
+            options, admission = {}, None
+            if rag_capacity is not None:
+                options, admission = await check_candidate(
+                    candidate, build_messages(context, query), rag_capacity,
+                    registry.rag_capacity_profiles.get(
+                        (candidate.model, candidate.api_base)
+                    ),
+                    fallback=position > 0,
+                )
+            result = await _complete(candidate, context=context, query=query,
+                                     **({"options": options} if options else {}))
+            if admission is not None:
+                result["capacity"] = {**admission, "skipped_candidates": skipped}
+        except CapacityError as exc:
+            skipped.append({"model": candidate.model, "reason": str(exc)})
+            continue
         except Exception as e:  # noqa: BLE001 - any provider error → next
             last_error = e
             logger.warning(
@@ -92,6 +110,8 @@ async def generate_completion(
             result["fallback_from"] = primary.model
         return result
 
+    if skipped and skipped[-1]["model"] == chain[-1].model:
+        raise CapacityError(str(skipped))
     assert last_error is not None
     raise AllProvidersFailedError([c.model for c in chain], last_error)
 
@@ -172,7 +192,7 @@ async def _complete_captured(
 
 
 async def _complete(
-    resolved: ResolvedModel, *, context: str, query: str
+    resolved: ResolvedModel, *, context: str, query: str, options: dict | None = None
 ) -> dict:
     kwargs: dict = {
         "model": resolved.model,
@@ -180,6 +200,8 @@ async def _complete(
         "timeout": resolved.timeout,
         "num_retries": LITELLM_NUM_RETRIES,
     }
+    if options:
+        kwargs.update(options)
     if resolved.api_base:
         kwargs["api_base"] = resolved.api_base
 

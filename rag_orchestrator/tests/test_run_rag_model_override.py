@@ -128,6 +128,8 @@ def test_run_rag_sends_trace_correlation_headers(monkeypatch):
 
     assert request.headers["X-Trace-Id"] == result.trace_id
     assert request.headers["X-Repo-Id"] == "repo-x"
+    assert request.headers["X-RAG-Capacity"] == "compatibility"
+    assert request.headers["X-RAG-Output-Reserve"] == "2048"
     import json
 
     assert set(json.loads(request.content)) == {"context", "query"}
