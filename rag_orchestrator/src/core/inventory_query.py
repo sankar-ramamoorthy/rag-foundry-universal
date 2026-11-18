@@ -66,10 +66,9 @@ async def inventory_response(query: RAGQuery) -> RAGResponse | None:
     plan["strategy"] = "python_inventory"
     sources = []
     if result["completion"] == "verified_complete":
-        source = result["evidence"][-1]["data"]
-        path = source["path"]
+        path = result["path"]
         sources.append(path)
-        plan["returned_text_sha256"] = source["returned_text_sha256"]
+        plan["returned_text_sha256"] = result["returned_text_sha256"]
         rows = result["inventory"]
         plan["inventory"] = rows
         lines = [f"{len(rows)} Python functions defined in {path}:"]

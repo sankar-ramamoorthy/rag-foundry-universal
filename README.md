@@ -205,7 +205,10 @@ under the evidence budget control. Custom lets you enter the requested byte
 allowance, initially 4,096 bytes. In Automatic query mode, a question such as “What functions are
 defined in `codebase_utils.py`?” uses the indexed Python source and returns
 function names and line ranges without calling a model. “What functions
-does ingest.py have?” also requests an inventory. If the basename is
+does ingest.py have?” also requests an inventory. For larger files, Foundry
+reads successive pages from the same indexed generation. It lists definitions
+only after verifying coverage through the end of the file. If a read limit
+interrupts the inventory, the answer reports the reason. If the basename is
 ambiguous, repeat the question with a repository-relative path. Choose
 **Standard RAG** (API `"execution_mode": "rag"`) to apply retrieval and the
 selected evidence budget to the same question.
