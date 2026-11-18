@@ -4,7 +4,7 @@ import hashlib
 import json
 import math
 
-from .experiment import Frame, Meaning, entities
+from .experiment import Frame, entities
 
 
 def digest(value):
@@ -25,8 +25,9 @@ def request_pack(cases, embed_model, llm_model):
         "Classify the question by intent, scope and every required answer obligation. "
         "Use inventory/all for all definitions, inventory/async for async functions, "
         "file for other file-specific questions and unspecified for unclear scope. "
-        "Explaining each definition requires both definitions and explanation. "
-        "Distinguish calls and imports from definitions. Return the schema object."
+        "For list and explain use definitions, explanation_per_function "
+        "and source_evidence. "
+        "Return all intents, literal typed entities and ordered proposed tools."
     )
     requests = {}
     for c in cases:
@@ -41,9 +42,9 @@ def request_pack(cases, embed_model, llm_model):
                     "model": llm_model,
                     "system": prompt,
                     "prompt": c.question,
-                    "format": Meaning.model_json_schema(),
+                    "format": Frame.model_json_schema(),
                     "stream": False,
-                    "options": {"temperature": 0, "seed": 398, "num_predict": 128},
+                    "options": {"temperature": 0, "seed": 398, "num_predict": 256},
                 },
             }
     return requests
@@ -145,7 +146,7 @@ class Recognizers:
                 or response.get("done_reason") == "length"
             ):
                 raise Unavailable("incomplete LLM response")
-            meaning = Meaning.model_validate_json(response["response"])
+            return Frame.model_validate_json(response["response"]), None
         else:
             if self.setup_error:
                 raise Unavailable(self.setup_error)

@@ -89,7 +89,9 @@ def test_recorded_transport_and_permission_replay(inputs, tmp_path):
             "done": True,
             "response": json.dumps(
                 {
-                    "intent": "trace",
+                    "intents": ["trace"],
+                    "entities": [],
+                    "proposed_strategy": ["inspect_dependencies"],
                     "scope": "file",
                     "obligations": ["trace"],
                 }
@@ -112,7 +114,7 @@ def test_recorded_transport_and_permission_replay(inputs, tmp_path):
     assert report["classifier_usage"]["embed/h01"]["input_tokens"] == 7
     assert report["classifier_usage"]["llm/h01"]["output_tokens"] == 8
     assert report["classifier_usage"]["embed/p01"]["latency_ms"] >= 0
-    assert report["similarity_diagnostics"]["holdout/0.9"]["accepted"] == 17
+    assert report["similarity_diagnostics"]["holdout/0.9"]["accepted"] == 25
     assert not any("obligations" in req for req in pack.values())
 
 
@@ -153,7 +155,9 @@ def test_compound_requires_explanation_of_every_definition(inputs):
     evidence = {
         "reviewer": "fixture",
         "answer": "only one",
-        "supported": {"explanation": "reviewed against full stored source"},
+        "supported": {
+            "explanation_per_function": "reviewed against full stored source"
+        },
     }
     with pytest.raises(ValueError, match="each definition"):
         evaluate(cases, pack, {}, {cell: evidence})
@@ -166,11 +170,29 @@ def test_compound_requires_explanation_of_every_definition(inputs):
         answer="\n".join(excerpts.values()), per_function_explanations=excerpts
     )
     partial = evaluate(cases, pack, {}, {cell: evidence})
-    assert select(partial, "labels", "h05")["satisfied"] == ["explanation"]
+    assert select(partial, "labels", "h05")["satisfied"] == ["explanation_per_function"]
     evidence["supported"]["definitions"] = "All witness rows appear in the answer."
     evidence["definition_rows"] = {MODULE: rows}
     evidence["answer"] += "\n" + "\n".join(
         f"{r['name']} ({r['kind']}, lines {r['start']}-{r['end']})" for r in rows
+    )
+    assert (
+        select(evaluate(cases, pack, {}, {cell: evidence}), "labels", "h05")[
+            "answer_status"
+        ]
+        == "partial"
+    )
+    evidence["supported"]["source_evidence"] = "Reviewer verified each citation."
+    evidence["per_function_citations"] = {
+        f"{MODULE}:{r['start']}:{r['name']}": {
+            "start": r["start"],
+            "end": r["start"],
+            "quote": Corpus().text[MODULE].splitlines()[r["start"] - 1],
+        }
+        for r in rows
+    }
+    evidence["answer"] += "\n" + "\n".join(
+        f"{MODULE}:{r['start']}-{r['start']}" for r in rows
     )
     result = evaluate(cases, pack, {}, {cell: evidence})
     assert select(result, "labels", "h05")["answer_status"] == "complete"
@@ -201,8 +223,8 @@ def test_embedding_uses_nearest_prototype_without_copying_its_entity(inputs):
     recognizers = Recognizers(cases, Captures(pack, records))
     case = next(c for c in cases if c.id == "h09")
     meaning, confidence = recognizers.predict("embed", case.id, case.question)
-    assert meaning.intent == "calls" and confidence == pytest.approx(1)
-    assert meaning.entities == ("codebase_ingest.py", "api/ingest.py")
+    assert meaning.intents == {"calls"} and confidence == pytest.approx(1)
+    assert meaning.files == ("codebase_ingest.py", "api/ingest.py")
     records["embed/h09"]["response"]["embeddings"] = [[0] * 1024]
     report = evaluate(cases, pack, records)
     assert select(report, "embed", "h09")["status"] == "fallback"
@@ -217,3 +239,37 @@ def test_model_revision_preflight_blocks_inference(inputs, tmp_path):
 
     with pytest.raises(ValueError, match="approved revisions"):
         collect(pack, {"unit-test:latest": "absent"}, send, tmp_path / "out.json")
+
+
+def test_plan_and_obligations_are_scored_independently(inputs):
+    cases, _ = inputs
+    case = next(c for c in cases if c.id == "h22")
+    assert case.gold.intents == {"inventory", "explain"}
+    assert case.gold.obligations == {
+        "definitions",
+        "explanation_per_function",
+        "source_evidence",
+    }
+    wrong = case.gold.model_copy(update={"proposed_strategy": ("ordinary_rag",)})
+    row = exp.replay(case, wrong, exp.Scenarios["normal"], Corpus())
+    assert row["scores"]["intent_correct"] and row["scores"]["obligations_correct"]
+    assert not row["scores"]["strategy_correct"] and not row["inventory_results"]
+
+
+def test_completion_reasons_and_plan_only_documents(inputs):
+    cases, pack = inputs
+    report = evaluate(cases, pack, {})
+    assert select(report, "labels", "h01", "one_read")["obligation_status"] == {
+        "definitions": "blocked_by_resource_limit"
+    }
+    assert select(report, "labels", "h05")["obligation_status"] == {
+        "definitions": "satisfied",
+        "explanation_per_function": "unsatisfied",
+        "source_evidence": "unsupported_by_available_evidence",
+    }
+    doc = select(report, "labels", "h20")
+    assert doc["retrieval_plan"]["analysis"]["entities"] == [
+        {"type": "document", "value": "policy-v1.pdf"},
+        {"type": "document", "value": "policy-v2.pdf"},
+    ]
+    assert doc["scores"]["strategy_correct"] and doc["answer_status"] == "unmeasured"

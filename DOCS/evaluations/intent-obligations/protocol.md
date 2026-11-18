@@ -5,6 +5,7 @@ type: evaluation
 status: experimental
 tags: [phase-6, routing, inventory, evaluation]
 related:
+  - "[Phase 6 architecture and restart checkpoint](phase-6-checkpoint.md)"
   - "[Experiment issue #398](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/398)"
   - "[Parent evaluation protocol](/DOCS/evaluations/evidence-aware-router/protocol.md)"
   - "[Dataset isolation and generalization](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)"
@@ -16,18 +17,18 @@ Can a recognizer recover inventories the current regex misses while preserving t
 
 ## Design
 
-The development set contains eight labelled prototypes, five calibration questions and seventeen questions in held-out phrasing families. Labels identify literal file mentions, intent, definition scope, required answer components and the expected route under ordinary permissions. The CSV keeps each phrasing family in one split. These labels were authored during experiment design and are available to the scorer. They have not undergone independent human adjudication. The repository and questions have influenced development. [Cases](cases.csv) · [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
+The development set contains twelve labelled prototypes, five calibration questions and twenty-five questions in held-out phrasing families. Every row labels the set of intents, typed entity mentions, scope, required answer components, ordered proposed tools and expected authorized route under ordinary permissions. New cases distinguish callers from callees and include dependency impact, document comparison and summary. The CSV keeps each phrasing family in one split. These labels were authored during experiment design and are available to the scorer. They have not undergone independent human adjudication. The repository and questions have influenced development. [Cases](cases.csv) · [ADR-054](/DOCS/adr/ADR-054-evaluation-dataset-isolation-and-generalization.md)
 
 | Arm | Input and decision |
 | --- | --- |
 | Regex | Applies both expressions from the current inventory recognizer. A matching question requests all definitions in the captured file. An unmatched question falls back to RAG. |
-| Prototype embeddings | Embeds each prototype once with `mxbai-embed-large`. Embeds each query independently and uses the highest cosine similarity to select the prototype's intent, scope and obligations. A tie selects the first prototype in CSV order. |
-| Constrained local LLM | Receives the question, fixed instruction and JSON schema. A single generation proposes intent, scope and obligations. |
+| Prototype embeddings | Embeds each prototype once with `mxbai-embed-large`. Embeds each query independently and uses the highest cosine similarity to select the prototype's intents, scope, obligations and strategy. A tie selects the first prototype in CSV order. |
+| Constrained local LLM | Receives the question, fixed instruction and JSON schema. A single constrained generation predicts the entire frame, including typed entities and ordered tools. |
 | Supplied labels | Sends the case labels directly through the same policy and executor. Correct recognition is given in this control, so remaining gaps expose execution or evidence limitations. |
 
-The two model arms use the same lexical extractor for Python file mentions. The extractor retains spelling and path order. It never borrows filenames from a prototype. The controller resolves exact paths or basenames against the same fixture for every arm. A request for both named files can use both. An ambiguous basename requires clarification, and an unmatched spelling yields a missing-file result.
+The regex and prototype arms use a lexical extractor for filenames, documents and backtick-quoted symbols. The LLM predicts entities directly. Entity scoring compares type, spelling and mention order. It never borrows filenames from a prototype. The controller resolves exact paths or basenames against the same fixture for every arm. A request for both named files can use both. An ambiguous basename requires clarification, and an unmatched spelling yields a missing-file result.
 
-Each prediction is replayed seven ways. Explicit RAG selects RAG for every prediction. Investigation requires trace intent, caller authority, a material gap, a repair capable of addressing it and remaining investigation budget. The scenarios exercise all four conditions together and each condition absent. These evidence and permission states are supplied by the experiment. The classifier cannot set them. A recorded classifier outage or invalid output uses the regex fallback and records the reason. A missing capture remains unmeasured.
+Each prediction is replayed eight ways, including a one-read inventory budget. Explicit RAG selects RAG for every prediction. Investigation requires trace intent, caller authority, a material gap, a repair capable of addressing it and remaining investigation budget. The scenarios exercise all four conditions together and each condition absent. These evidence and permission states are supplied by the experiment. The classifier cannot set them. A recorded classifier outage or invalid output uses the regex fallback and records the reason. A missing capture remains unmeasured.
 
 ## Answer verification
 
@@ -35,7 +36,7 @@ The corpus pins the LF-normalized source of `codebase_ingest.py` from commit `06
 
 The report distinguishes a demonstrated complete answer, partial evidence, unresolved work and unmeasured synthesis. A successful clarification can discharge an explicitly labelled clarification obligation. Asking for a missing filename leaves a requested inventory unresolved. The normal compound case initially earns credit only for discovery. RAG and investigation decisions alone earn zero demonstrated answer completions.
 
-For separately captured downstream answers, pass `--judgments FILE`. Its JSON object maps a report row's `cell_sha256` to the captured `answer`, the independent `reviewer`, and a `supported` object mapping each satisfied obligation to the reviewer's source evidence and rationale. For an inventory answer, a reviewed definitions claim additionally needs `definition_rows` keyed by path, equal to the authoritative rows in scope. For a compound explanation, supply `per_function_explanations` keyed by `path:start:name` with an actual answer excerpt for each function. The reviewer assesses grounding against the cited source. The scorer checks coverage, excerpts and cell identity. Preserve contradictions and omissions by withholding credit for the affected obligation.
+For separately captured downstream answers, pass `--judgments FILE`. Its JSON object maps a report row's `cell_sha256` to the captured `answer`, the independent `reviewer`, and a `supported` object mapping each satisfied obligation to the reviewer's source evidence and rationale. For an inventory answer, a reviewed definitions claim additionally needs `definition_rows` keyed by path, equal to the authoritative rows in scope. For a separate source-evidence claim in a compound inventory, supply reviewed per_function_citations keyed by path:start:name. Each citation identifies start and end lines within its function, quotes that exact source and appears as a path:start-end citation in the answer. For a compound explanation, supply `per_function_explanations` keyed by `path:start:name` with an actual answer excerpt for each function. The reviewer assesses grounding against the cited source. The scorer checks coverage, excerpts and cell identity. Preserve contradictions and omissions by withholding credit for the affected obligation.
 
 ## Run and inspect
 
@@ -69,7 +70,15 @@ For an approved run, set the digest variables from the approved manifest. The co
 ..\.venv\Scripts\python.exe -m experiments.intent_obligations --llm-model $model --captures captures.json --output comparison.json
 ```
 
-## Development result
+## Reading the expanded scorecard
+
+Analysis precedes execution. The scorer compares intent sets, typed entities, obligation sets and ordered strategies independently with the case labels. A plan to retrieve two documents can receive strategy credit while the answer remains unmeasured. Scope and actual route have their own scores. The controller checks the proposed inventory tool sequence and its authority before dispatch.
+
+Each required obligation records one of four outcomes: satisfied, unsatisfied, unsupported by available evidence, or blocked by resource limits. Source-evidence credit for a compound question requires reviewed support for each discovered function. The supplied-label control establishes which obligations this executor demonstrably fulfills in the same scenario. Among cases with at least one such obligation, report both delivery of all verifiable obligations and the stricter joint score requiring exact understanding, strategy and delivery. Full-answer completion still requires every requested obligation.
+
+Keep prototype setup latency separate. For each classifier count one provider latency sample per measured question, include outages, report token usage and unknown costs, and compare identical question IDs. Keep development families separate from any future sealed generalization set.
+
+## Original development result at 72a02c2
 
 In the ordinary-permissions replay, the regex chose the expected route on 3 of 5 calibration questions and 8 of 17 held-out questions. Of the five held-out questions requiring executable inventory discovery, it missed four. It made zero incorrect deterministic selections. The inputs include both a direct phrasing the regex recognizes and a fronted phrasing it misses.
 

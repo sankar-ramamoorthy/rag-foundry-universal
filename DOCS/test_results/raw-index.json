@@ -536,6 +536,20 @@
       "cited_by": "DOCS/evaluations/intent-obligations/protocol.md",
       "notes": "Local deterministic replay. No live embedding or LLM captures."
     },
+    "398/planning-baseline.json": {
+      "bytes": 1519274,
+      "sha256": "ee909e870e231b0abc0ead813dcaa05e786e5ba54994840d56c2e142051cdc89",
+      "produced_by": "python -m experiments.intent_obligations",
+      "cited_by": "DOCS/evaluations/intent-obligations/phase-6-checkpoint.md",
+      "notes": "Expanded development suite. Local request pack or no-model baseline."
+    },
+    "398/planning-requests.json": {
+      "bytes": 130414,
+      "sha256": "cc11fd9c2d23a5534212f108cf55dd2fe160e36376f1fb481afba5216bae655a",
+      "produced_by": "python -m experiments.intent_obligations",
+      "cited_by": "DOCS/evaluations/intent-obligations/phase-6-checkpoint.md",
+      "notes": "Expanded development suite. Local request pack or no-model baseline."
+    },
     "ci06/coverage-foundry.json": {
       "bytes": 4724,
       "sha256": "dade63221429f7e41a410a5a1317b1b62439707d2c2cb2eca8718b622da006e6",

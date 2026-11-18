@@ -71,6 +71,7 @@ def evaluate(cases, pack, records, judgments=None):
     captures = Captures(pack, records)
     models = Recognizers(cases, captures)
     rows = []
+    controls = {}
     judgments = dict(judgments or {})
     for case in cases:
         if case.split == "prototype":
@@ -98,13 +99,8 @@ def evaluate(cases, pack, records, judgments=None):
                 if frame is not None:
                     row.update(replay(case, frame, scenario, corpus))
                     row["retrieval_plan"] = {
-                        "entities": frame.entities,
-                        "proposed_intent": frame.intent,
-                        "classifier_output": None
-                        if diagnostic
-                        else frame.model_dump(mode="json"),
-                        "effective_scope": frame.scope,
-                        "obligations": sorted(frame.obligations),
+                        "analysis": frame.record(),
+                        "classifier_output": None if diagnostic else frame.record(),
                         "route": row["route"],
                         "diagnostic": diagnostic,
                     }
@@ -116,32 +112,44 @@ def evaluate(cases, pack, records, judgments=None):
                             scenario.__dict__,
                             arm,
                             capture_hash,
-                            sorted(frame.obligations),
-                            frame.scope,
-                            frame.intent,
-                            frame.entities,
+                            frame.record(),
+                            case.gold.record(),
                             row["route"],
                             row["inventory_results"],
                             corpus.witness["sha256"],
                         ]
                     )
                     row["cell_sha256"] = cell
+                    if arm == "labels":
+                        controls[case.id, name] = set(row["satisfied"])
                     if cell in judgments:
                         apply_judgment(row, case, judgments.pop(cell), corpus)
+                    feasible = controls[case.id, name]
+                    row["verifiable_obligations"] = sorted(feasible)
+                    row["scores"]["verifiable_cases"] = bool(feasible)
+                    row["scores"]["delivered_all_verifiable"] = bool(
+                        feasible
+                    ) and feasible <= set(row["satisfied"])
+                    row["scores"]["understood_and_delivered_verifiable"] = row[
+                        "scores"
+                    ]["delivered_all_verifiable"] and all(
+                        row["scores"][field + "_correct"]
+                        for field in (
+                            "intent",
+                            "entities",
+                            "scope",
+                            "obligations",
+                            "strategy",
+                        )
+                    )
+                    row["obligation_status"] = obligation_status(row, case)
                 rows.append(row)
     if judgments:
         raise ValueError("answer judgments do not match executed cells")
     totals, calibration = summarize(rows)
     return {
         "cases_sha256": digest(
-            [
-                case.__dict__
-                | {
-                    "gold": case.gold.model_dump(mode="json")
-                    | {"obligations": sorted(case.gold.obligations)}
-                }
-                for case in cases
-            ]
+            [case.__dict__ | {"gold": case.gold.record()} for case in cases]
         ),
         "request_pack_sha256": digest(pack),
         "source_sha256": corpus.witness["sha256"],
@@ -152,9 +160,50 @@ def evaluate(cases, pack, records, judgments=None):
     }
 
 
+def obligation_status(row, case):
+    status = {}
+    limited = any(
+        r["completion"] == "budget_limited" for r in row["inventory_results"].values()
+    )
+    for obligation in sorted(case.gold.obligations):
+        if obligation in row["satisfied"]:
+            state = "satisfied"
+        elif limited and obligation in {
+            "definitions",
+            "explanation_per_function",
+            "source_evidence",
+        }:
+            state = "blocked_by_resource_limit"
+        elif obligation == "source_evidence" or row["route"] == "missing":
+            state = "unsupported_by_available_evidence"
+        else:
+            state = "unsatisfied"
+        status[obligation] = state
+    return status
+
+
+def check_citations(corpus, judgment, witnesses, required):
+    citations = judgment.get("per_function_citations", {})
+    if set(citations) != required:
+        raise ValueError("source evidence requires a citation for each definition")
+    for path, rows in witnesses.items():
+        lines = corpus.text[path].splitlines()
+        for r in rows:
+            citation = citations[f"{path}:{r['start']}:{r['name']}"]
+            first, last = citation["start"], citation["end"]
+            quote = citation["quote"]
+            if not (
+                r["start"] <= first <= last <= r["end"]
+                and quote.strip()
+                and quote == "\n".join(lines[first - 1 : last])
+                and f"{path}:{first}-{last}" in judgment["answer"]
+            ):
+                raise ValueError("citation does not match delivered answer and source")
+
+
 def check_inventory_judgment(case, corpus, judgment, obligation):
     witnesses = {}
-    for entity in case.gold.entities:
+    for entity in case.gold.files:
         paths = matches(entity)
         if len(paths) != 1:
             raise ValueError("inventory judgment has an unresolved entity")
@@ -175,6 +224,9 @@ def check_inventory_judgment(case, corpus, judgment, obligation):
         for path, rows in witnesses.items()
         for r in rows
     }
+    if obligation == "source_evidence":
+        check_citations(corpus, judgment, witnesses, required)
+        return
     explanations = judgment.get("per_function_explanations", {})
     if set(explanations) != required or any(
         not quote.strip() or quote not in judgment["answer"]
@@ -200,9 +252,10 @@ def apply_judgment(row, case, judgment, corpus):
             or not evidence.strip()
         ):
             raise ValueError("unsupported judgment entry")
-        if case.gold.intent == "inventory" and requirement in {
+        if "inventory" in case.gold.intents and requirement in {
             "definitions",
-            "explanation",
+            "explanation_per_function",
+            "source_evidence",
         }:
             check_inventory_judgment(case, corpus, judgment, requirement)
         satisfied.add(requirement)

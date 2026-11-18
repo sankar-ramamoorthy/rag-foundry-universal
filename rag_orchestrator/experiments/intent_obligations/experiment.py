@@ -12,31 +12,90 @@ from src.core import inventory_query
 from .corpus import DATA, matches
 
 Intent = Literal[
-    "inventory", "explain", "calls", "imports", "trace", "unclear", "other"
+    "inventory",
+    "explain",
+    "calls",
+    "imports",
+    "trace",
+    "unclear",
+    "other",
+    "callers",
+    "compare",
+    "summary",
+    "impact",
 ]
 Scope = Literal["all", "async", "file", "unspecified"]
 Obligation = Literal[
-    "definitions", "explanation", "callees", "imports", "trace", "clarification"
+    "definitions",
+    "explanation",
+    "callees",
+    "imports",
+    "trace",
+    "clarification",
+    "callers",
+    "changes",
+    "summary",
+    "dependencies",
+    "source_evidence",
+    "explanation_per_function",
 ]
 
 
-class Meaning(BaseModel):
+Strategy = Literal[
+    "source_navigation",
+    "ast_inventory",
+    "grounded_synthesis",
+    "find_callers",
+    "find_callees",
+    "inspect_imports",
+    "filter_async",
+    "clarify",
+    "ordinary_rag",
+    "retrieve_sections",
+    "compare_versions",
+    "inspect_dependencies",
+]
+
+
+class Entity(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    intent: Intent
+    type: Literal["python_file", "symbol", "document"]
+    value: str = Field(min_length=1)
+
+
+class Frame(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    intents: frozenset[Intent] = Field(min_length=1)
     scope: Scope
-    obligations: frozenset[Obligation] = Field(max_length=6)
+    obligations: frozenset[Obligation]
+    entities: tuple[Entity, ...]
+    proposed_strategy: tuple[Strategy, ...] = Field(min_length=1)
 
+    @property
+    def files(self):
+        return tuple(e.value for e in self.entities if e.type == "python_file")
 
-class Frame(Meaning):
-    entities: tuple[str, ...]
+    def record(self):
+        return self.model_dump(mode="json") | {
+            "intents": sorted(self.intents),
+            "obligations": sorted(self.obligations),
+        }
 
 
 def entities(question):
-    return tuple(
-        dict.fromkeys(
-            re.findall(r"(?<![\w./-])(?:[\w.-]+/)*[\w.-]+\.py(?![\w/-])", question)
+    found = []
+    for match in re.finditer(
+        r"(?P<file>(?:[\w.-]+/)*[\w.-]+\.(?:py|pdf))|`(?P<symbol>[A-Za-z_]\w*)`",
+        question,
+    ):
+        value = match.group(0).strip("`")
+        kind = (
+            "symbol"
+            if match.lastgroup == "symbol"
+            else ("python_file" if value.endswith(".py") else "document")
         )
-    )
+        found.append(Entity(type=kind, value=value))
+    return tuple(dict.fromkeys(found))
 
 
 def baseline(question):
@@ -46,16 +105,18 @@ def baseline(question):
     ) or inventory_query._DOES_FILE_HAVE.fullmatch(q)
     if match:
         return Frame(
-            intent="inventory",
+            intents=frozenset({"inventory"}),
             scope="all",
             obligations=frozenset({"definitions"}),
-            entities=(match["path"],),
+            entities=(Entity(type="python_file", value=match["path"]),),
+            proposed_strategy=("source_navigation", "ast_inventory"),
         )
     return Frame(
-        intent="other",
+        intents=frozenset({"other"}),
         scope="unspecified",
         obligations=frozenset(),
         entities=entities(q),
+        proposed_strategy=("ordinary_rag",),
     )
 
 
@@ -78,10 +139,15 @@ def load_cases():
                 raise ValueError("phrasing family appears in two splits")
             gold = Frame.model_validate(
                 {
-                    "intent": row["intent"],
+                    "intents": row["intents"].split("|"),
+                    "proposed_strategy": row["strategy"].split("|"),
                     "scope": row["scope"],
                     "obligations": row["obligations"].split("|"),
-                    "entities": row["entities"].split("|") if row["entities"] else [],
+                    "entities": [
+                        dict(zip(("type", "value"), e.split(":", 1)))
+                        for e in row["entities"].split("|")
+                        if e
+                    ],
                 }
             )
             cases.append(
@@ -108,10 +174,12 @@ class Scenario:
     material_gap: bool = False
     repair_available: bool = False
     budget_available: bool = True
+    read_budget: int = 8
 
 
 Scenarios = {
     "normal": Scenario(),
+    "one_read": Scenario(read_budget=1),
     "authorized_gap": Scenario(False, True, True, True),
     "denied_gap": Scenario(False, False, True, True),
     "sufficient_evidence": Scenario(False, True, False, True),
@@ -124,9 +192,9 @@ Scenarios = {
 def route(frame, scenario):
     if scenario.explicit_rag:
         return "rag"
-    if frame.intent == "unclear":
+    if "unclear" in frame.intents:
         return "clarify"
-    if frame.intent == "trace" and all(
+    if "trace" in frame.intents and all(
         (
             scenario.authorized,
             scenario.material_gap,
@@ -135,16 +203,28 @@ def route(frame, scenario):
         )
     ):
         return "investigation"
-    if frame.intent != "inventory":
+    if "inventory" not in frame.intents:
         return "rag"
-    candidates = [matches(entity) for entity in frame.entities]
+    candidates = [matches(entity) for entity in frame.files]
     if not candidates or any(len(paths) > 1 for paths in candidates):
         return "clarify"
     if any(not paths for paths in candidates):
         return "missing"
-    if frame.scope == "all" and frame.obligations == {"definitions"}:
+    if len(frame.files) != len(frame.entities):
+        return "rag"
+    if (
+        frame.scope == "all"
+        and frame.obligations == {"definitions"}
+        and frame.proposed_strategy == ("source_navigation", "ast_inventory")
+    ):
         return "inventory"
-    if frame.scope == "all" and frame.obligations == {"definitions", "explanation"}:
+    if (
+        frame.scope == "all"
+        and frame.obligations
+        == {"definitions", "explanation_per_function", "source_evidence"}
+        and frame.proposed_strategy
+        == ("source_navigation", "ast_inventory", "grounded_synthesis")
+    ):
         return "inventory_then_rag"
     return "rag"
 
@@ -152,7 +232,7 @@ def route(frame, scenario):
 def expected_route(case, scenario):
     if scenario.explicit_rag:
         return "rag"
-    if case.gold.intent == "trace" and scenario == Scenarios["authorized_gap"]:
+    if "trace" in case.gold.intents and scenario == Scenarios["authorized_gap"]:
         return "investigation"
     return case.expected_route
 
@@ -161,25 +241,29 @@ def replay(case, frame, scenario, corpus):
     actual = route(frame, scenario)
     expected = expected_route(case, scenario)
     inv = {"inventory", "inventory_then_rag"}
-    results = corpus.inventories(frame.entities, case.question) if actual in inv else {}
+    results = (
+        corpus.inventories(frame.files, case.question, budget=scenario.read_budget)
+        if actual in inv
+        else {}
+    )
     satisfied = set()
     if (
         actual in inv
         and case.gold.scope == "all"
-        and corpus.verified(case.gold.entities, results)
+        and corpus.verified(case.gold.files, results)
     ):
         satisfied.add("definitions")
     response = None
     if actual == "clarify":
-        candidates = [path for entity in frame.entities for path in matches(entity)]
+        candidates = [path for entity in frame.files for path in matches(entity)]
         response = (
             "Which file and which information do you want? " + " ".join(candidates)
         ).strip()
     elif actual == "missing":
         response = "No indexed match for " + ", ".join(
-            entity for entity in frame.entities if not matches(entity)
+            entity for entity in frame.files if not matches(entity)
         )
-    if response and actual == expected == "clarify" and case.gold.intent == "unclear":
+    if response and actual == expected == "clarify" and "unclear" in case.gold.intents:
         satisfied.add("clarification")
     # A route to synthesis is not evidence that the model produced a grounded answer.
     complete = case.gold.obligations <= satisfied
@@ -199,8 +283,9 @@ def replay(case, frame, scenario, corpus):
             else "unresolved"
         ),
         "scores": {
-            "intent_correct": frame.intent == case.gold.intent,
+            "intent_correct": frame.intents == case.gold.intents,
             "entities_correct": frame.entities == case.gold.entities,
+            "strategy_correct": frame.proposed_strategy == case.gold.proposed_strategy,
             "scope_correct": frame.scope == case.gold.scope,
             "obligations_correct": frame.obligations == case.gold.obligations,
             "route_correct": actual == expected,
