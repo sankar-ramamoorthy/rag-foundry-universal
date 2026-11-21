@@ -228,6 +228,7 @@ class HttpVectorStore:
         provenance_by_document_id = provenance_by_document_id or {}
         ranges = source_ranges_by_document_id or {}
         stats: dict = {
+            "requested": sum(len(entries) for entries in ranges.values()),
             "patched": 0,
             "skipped_total": 0,
             "skipped": [],
