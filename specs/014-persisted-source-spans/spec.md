@@ -25,6 +25,7 @@ its last line by trailing source (a comment, say); nothing else may differ.
 | Storage | `document_nodes.start_line` and `end_line`, nullable integers (additive migration `20261121_node_source_span`, no default, no rewrite). Refreshed on every upsert, including surviving rows. |
 | Passages | A single passage that is the whole artifact carries its range. Several passages from one artifact carry none and the reason `artifact split into several passages`. |
 | Overflow pieces | A piece never inherits the whole passage's range. If the pieces reassemble to the passage exactly, each gets the lines containing it; otherwise none, with a reason. |
+| Window ranges (#416) | Superseded for several-passage artifacts: see `specs/015-per-window-source-ranges/spec.md`. Every window of a verified artifact now gets its own range from the chunker's offset. |
 | Reuse (#196) | Reuse is by byte-identical file, so a reused artifact's range cannot have moved. Vectors from generations ingested before this change have no range and stay null with the existing reason until a changed file or a full rebuild re-embeds them. |
 | Citations | The manifest carries `start_line`, `end_line`, `range_reason` from chunk metadata. A citation uses a well-formed range as is, and otherwise null with the stored reason. The orchestrator never derives or repairs a range. |
 

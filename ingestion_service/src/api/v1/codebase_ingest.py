@@ -1,3 +1,4 @@
+import hashlib
 from uuid import uuid4, UUID
 import logging
 from dataclasses import replace
@@ -161,11 +162,67 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
         buffer.append(chunk, str(node.document_id), ordinal)
 
 
+def _reuse_range_entries(pipeline, node, provider: str) -> list[dict]:
+    """Issue #416 WP4: source-range entries for a reused artifact's passages.
+
+    A reused artifact is not re-embedded, but its stored passages lack window
+    ranges. Under the unchanged chunking config the windows recompute
+    identically, so each is tagged exactly as the embed path would tag it, and
+    sent with the SHA-256 of the window text. The vector store patches a stored
+    passage only if it hashes to that digest. No embedder is involved.
+    """
+    if not (node.text or "").strip():
+        return []
+    chunks = pipeline._chunk(node.text, "code", provider)
+    spans = _passage_spans(node, chunks)
+    return [
+        {
+            "chunk_index": ordinal,
+            "text_sha256": hashlib.sha256(chunk.content.encode("utf-8")).hexdigest(),
+            "start_line": span.get("start_line"),
+            "end_line": span.get("end_line"),
+            "range_reason": span.get("range_reason"),
+        }
+        for ordinal, (chunk, span) in enumerate(zip(chunks, spans))
+    ]
+
+
+def _note_reused_node(
+    pipeline, node, provider: str, provenance_map: dict, ranges_map: dict
+) -> None:
+    """A reuse-eligible artifact: remember the provenance and the window ranges
+    to patch onto its existing vectors (nothing is chunked into the buffer or
+    embedded)."""
+    document_id = str(node.document_id)
+    provenance_map[document_id] = classify_node(
+        node.relative_path, node.doc_type, node.text
+    )
+    entries = _reuse_range_entries(pipeline, node, provider)
+    if entries:
+        ranges_map[document_id] = entries
+
+
+def _report_range_outcome(pipeline, progress: dict) -> None:
+    """Issue #416 WP4: surface what the vector store did with the range patches
+    (counts only; a skipped passage keeps its previous range metadata)."""
+    outcome = getattr(pipeline._vector_store, "last_range_patch", None)
+    if not isinstance(outcome, dict):
+        return
+    progress["ranges_patched"] = outcome["patched"]
+    progress["ranges_skipped"] = outcome["skipped_total"]
+    if outcome["skipped_total"]:
+        logger.warning(
+            f"{outcome['skipped_total']} reused passage(s) kept their previous "
+            f"range metadata; first: {outcome['skipped'][:3]}"
+        )
+
+
 def _retag_reused_vectors(
     pipeline: IngestionPipeline,
     provenance_by_document_id: dict[str, dict],
     ingestion_id: str,
     prior_generation_id: str | None,
+    source_ranges_by_document_id: dict[str, list[dict]] | None = None,
 ) -> set[str]:
     """Issue #196 (FR-007b, T024): bulk-carry reused artifacts' existing
     vectors forward to this generation's ingestion_id, no re-embedding.
@@ -190,9 +247,13 @@ def _retag_reused_vectors(
     document_ids = list(provenance_by_document_id)
     # CI-06 review R2 (#337): fenced to the prior generation, so rows of an
     # older generation whose cleanup failed are never relabeled as current.
+    extra = {}
+    if source_ranges_by_document_id:
+        extra["source_ranges_by_document_id"] = source_ranges_by_document_id
     rows, retagged = pipeline._vector_store.retag_ingestion_id(
         document_ids, ingestion_id, provenance_by_document_id,
         expected_ingestion_id=prior_generation_id,
+        **extra,
     )
     logger.info(
         f"Re-tagged {rows} reused vector row(s) of generation "
@@ -284,6 +345,8 @@ def _embed_repo_artifacts(
     )
 
     retag_provenance_by_document_id: dict[str, dict] = {}
+    # Issue #416 WP4: window ranges for reused artifacts, keyed like provenance.
+    reuse_ranges_by_document_id: dict[str, list[dict]] = {}
 
     def append_page(page):
         # Frame exit drops the last artifact's text/chunk-list references.
@@ -297,8 +360,9 @@ def _embed_repo_artifacts(
                 # still recompute provenance here (cheap, no I/O) so the
                 # retag call can refresh it too -- see
                 # _retag_reused_vectors's docstring.
-                retag_provenance_by_document_id[str(node.document_id)] = classify_node(
-                    node.relative_path, node.doc_type, node.text
+                _note_reused_node(
+                    pipeline, node, provider,
+                    retag_provenance_by_document_id, reuse_ranges_by_document_id,
                 )
             else:
                 _chunk_and_buffer_node(pipeline, buffer, node, repo_id, provider)
@@ -313,8 +377,11 @@ def _embed_repo_artifacts(
     buffer.flush()
     acknowledged()
     retagged = _retag_reused_vectors(
-        pipeline, retag_provenance_by_document_id, ingestion_id, prior_generation_id
+        pipeline, retag_provenance_by_document_id, ingestion_id, prior_generation_id,
+        reuse_ranges_by_document_id,
     )
+    reuse_ranges_by_document_id.clear()
+    _report_range_outcome(pipeline, progress)
     missing = set(retag_provenance_by_document_id) - retagged
     _embed_missing_reuse(pages, missing, pipeline, buffer, repo_id, provider)
     acknowledged()
