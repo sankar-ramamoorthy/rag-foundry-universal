@@ -87,7 +87,7 @@ class Env:
         """Everything stored for the repository's passages, byte for byte."""
         with psycopg.connect(self.dsn) as conn:
             return conn.execute(
-                "SELECT document_id::text, chunk_index, ingestion_id, chunk_id, "
+                "SELECT document_id::text, chunk_index, ingestion_id::text, chunk_id, "
                 "chunk_text, vector::text, provider, source_metadata::text "
                 "FROM ingestion_service.vector_chunks "
                 "WHERE document_id IN (%s, %s) ORDER BY document_id, chunk_index",
@@ -97,7 +97,7 @@ class Env:
     def meta(self, document, index):
         with psycopg.connect(self.dsn) as conn:
             return conn.execute(
-                "SELECT ingestion_id, source_metadata FROM "
+                "SELECT ingestion_id::text, source_metadata FROM "
                 "ingestion_service.vector_chunks "
                 "WHERE document_id = %s AND chunk_index = %s",
                 (document, index),
