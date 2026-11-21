@@ -1059,6 +1059,13 @@ stays operational during the transition. Docs only: no frontend code, model run
 or deployment is authorized. See [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)
 and [issue #402](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/402).
 
+## Evidence envelope (#406)
+
+Evidence-bearing orchestrator responses (`/v1/rag`, `/v1/repos/{id}/evidence`, orient, trace, impact) now carry an additive
+`envelope` with `schema_version`, `repo_id`, `generation_id`, `commit_sha`, `coverage` and `limitations`. Existing fields are
+unchanged. Covered by unit tests with mocked HTTP only; not exercised against the live stack and not deployed (operator-owned).
+See the [spec](/specs/011-evidence-envelope/spec.md) and [issue #406](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/406).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**

@@ -51,7 +51,12 @@ def test_orient_passthrough_success(monkeypatch):
     response = client.get("/v1/repos/repo-x/orient")
 
     assert response.status_code == 200
-    assert response.json() == orient_body
+    body = response.json()
+    # Issue #406: the envelope is additive; every previous field is unchanged.
+    envelope = body.pop("envelope")
+    assert body == orient_body
+    assert envelope["generation_id"] == "ing-1"
+    assert envelope["commit_sha"] == "abc123"
 
 
 def test_orient_passthrough_404_survives_the_hop(monkeypatch):

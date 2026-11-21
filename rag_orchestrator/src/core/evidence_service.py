@@ -178,7 +178,10 @@ async def run_orient_evidence(
             "ORIENT response generation does not match the currently ready "
             "generation; repository generation changed mid-request -- retry",
         )
-    result = run_orient_workflow(orient_response, required_facets)
+    result = replace(
+        run_orient_workflow(orient_response, required_facets),
+        generation_id=generation_id,
+    )
     await _verify_generation(repo_id, generation_id)
     return await _with_explanation("orient", result, explanation_query, provider, model)
 
@@ -224,6 +227,7 @@ async def run_trace_evidence(
         required_target,
         claim_type,
     )
+    result = replace(result, generation_id=generation_id)
     await _verify_generation(repo_id, generation_id)
     return await _with_explanation("trace", result, explanation_query, provider, model)
 
@@ -247,6 +251,9 @@ async def run_impact_evidence(
         raise HTTPException(
             409, "Repository generation changed while loading the graph; retry"
         )
-    result = run_impact_workflow(graph, start, max_depth, max_candidates, claim_type)
+    result = replace(
+        run_impact_workflow(graph, start, max_depth, max_candidates, claim_type),
+        generation_id=generation_id,
+    )
     await _verify_generation(repo_id, generation_id)
     return await _with_explanation("impact", result, explanation_query, provider, model)

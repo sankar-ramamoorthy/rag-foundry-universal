@@ -14,6 +14,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 
 from src.core.config import get_settings
+from src.core.envelope import EvidenceEnvelope
 from shared.embedders.query import embed_query
 from shared.embedders.factory import get_embedder
 
@@ -141,6 +142,8 @@ class RAGResult(BaseModel):
     # request (WP-S8) -- lets an A/B comparison confirm which arm a given
     # response came from, independent of the flag's current default.
     reranked: bool = False
+    # Issue #406: set by the route layer, never by run_rag itself.
+    envelope: Optional[EvidenceEnvelope] = None
 
 
 # ------------------------------------------------------------------

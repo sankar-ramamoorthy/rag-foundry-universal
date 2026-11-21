@@ -102,6 +102,9 @@ class WorkflowResult:
     # gates or replaces `assessment` above; both are always visible
     # together when present.
     authority: AuthorityAssessment | None = None
+    # Issue #406: the generation the evidence came from, set by the I/O
+    # adapters in evidence_service (the pure workflow functions never know it).
+    generation_id: str | None = None
 
 
 def _with_authority(
