@@ -18,6 +18,13 @@ from src.core.ingestion_ownership import AdmissionBusy, RepositoryBusy
 from src.core.codebase.repo_graph_builder import RepoGraphBuilder
 from src.core.codebase.codebase_persistence import CodebaseGraphPersistence
 from src.core.codebase.provenance_classifier import classify_node
+from src.core.codebase.source_span import (
+    REASON_ARTIFACT_UNVERIFIED,
+    REASON_MISMATCH,
+    REASON_NO_OFFSET,
+    NewlineIndex,
+    window_range,
+)
 from src.core.codebase.structural_inventory import (
     build_structural_inventory,
     inventory_to_graph_dicts,
@@ -99,20 +106,33 @@ class RepoIngestResponse(BaseModel):
     embed_progress: dict | None = None
 
 
-def _passage_span(node, chunk_count: int) -> dict:
-    """Issue #412: line range metadata for this artifact's passage(s).
+def _passage_spans(node, chunks) -> list[dict]:
+    """Issue #416: the line range metadata for each passage window of an artifact.
 
-    Only a single passage that is the whole artifact carries the artifact's
-    verified range; several passages, or no verified range, carry none and a
-    reason. A range is never guessed.
+    Each window is located by the offset the chunker reported (never by
+    searching for its text) and verified against the artifact text before it is
+    mapped to lines. A window that cannot be verified carries an explicit
+    reason and no range; a range is never guessed. The transient
+    ``window_offset`` is removed from every chunk so it is not persisted.
     """
+    offsets = [c.metadata.pop("window_offset", None) for c in chunks]
     start = getattr(node, "start_line", None)
     end = getattr(node, "end_line", None)
     if type(start) is not int or type(end) is not int or not 1 <= start <= end:
-        return {"range_reason": "range not verified at ingestion"}
-    if chunk_count != 1:
-        return {"range_reason": "artifact split into several passages"}
-    return {"start_line": start, "end_line": end}
+        return [{"range_reason": REASON_ARTIFACT_UNVERIFIED} for _ in chunks]
+    text = node.text or ""
+    index = NewlineIndex(text)
+    spans = []
+    for chunk, offset in zip(chunks, offsets):
+        if offset is None:
+            spans.append({"range_reason": REASON_NO_OFFSET})
+            continue
+        found = window_range(text, start, offset, chunk.content, index)
+        if found is None or found[1] > end:
+            spans.append({"range_reason": REASON_MISMATCH})
+        else:
+            spans.append({"start_line": found[0], "end_line": found[1]})
+    return spans
 
 
 def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) -> None:
@@ -123,8 +143,8 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
     # row with, so this never drifts from what's persisted -- transport,
     # not a second opinion.
     provenance = classify_node(node.relative_path, node.doc_type, node.text)
-    span = _passage_span(node, len(chunks))
-    for ordinal, chunk in enumerate(chunks):
+    spans = _passage_spans(node, chunks)
+    for ordinal, (chunk, span) in enumerate(zip(chunks, spans)):
         chunk.metadata.update(
             **span,
             canonical_id=node.canonical_id,

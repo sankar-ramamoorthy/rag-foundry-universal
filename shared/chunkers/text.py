@@ -60,6 +60,23 @@ def line_windows(
 ) -> List[str]:
     """Split text into exact, contiguous windows that fit an embedding input.
 
+    Same windows as :func:`line_window_offsets`, without the offsets.
+    """
+    return [w for w, _ in line_window_offsets(text, max_chars, overlap, max_tokens)]
+
+
+def line_window_offsets(
+    text: str, max_chars: int, overlap: int, max_tokens: int | None = None
+) -> List[tuple[str, int]]:
+    """Split text into exact, contiguous windows that fit an embedding input,
+    each with the character offset where it starts in ``text``.
+
+    Issue #416: the offset is where the chunker actually cut, so a window can be
+    located in its artifact by position, never by searching for its content
+    (repeated text and overlapping windows stay unambiguous). The windows
+    themselves are exactly what ``line_windows`` returned before the offsets
+    existed; a test pins that equivalence.
+
     CI-06 (#337): every window is a verbatim substring of ``text`` and the
     windows together cover all of it, so a stored passage can be the exact
     embedding input. A window holds at most ``max_chars`` characters and, if
@@ -80,11 +97,18 @@ def line_windows(
         pieces.extend(_split_line(line, max_chars, max_tokens))
     packer = _Packer(pieces, max_chars, max_tokens)
 
-    windows: List[str] = []
+    # starts[i] is the character offset of pieces[i]; pieces tile the text.
+    starts: List[int] = []
+    total = 0
+    for piece in pieces:
+        starts.append(total)
+        total += len(piece)
+
+    windows: List[tuple[str, int]] = []
     start = 0
     while start < len(pieces):
         end = packer.window_end(start)
-        windows.append("".join(pieces[start:end]))
+        windows.append(("".join(pieces[start:end]), starts[start]))
         if end == len(pieces):
             break
         start = packer.overlap_start(start, end, overlap)
@@ -164,9 +188,18 @@ class TextChunker(BaseChunker):
         max_tokens = params.get("max_tokens")
 
         if chunk_strategy == "line_window":
+            # Issue #416: `window_offset` is transient. It lets ingestion tag a
+            # window with its verified source lines and is removed before the
+            # passage is persisted.
             return [
-                Chunk(content=text, chunk_id=str(uuid.uuid4()), metadata={})
-                for text in line_windows(content, chunk_size, overlap, max_tokens)
+                Chunk(
+                    content=text,
+                    chunk_id=str(uuid.uuid4()),
+                    metadata={"window_offset": offset},
+                )
+                for text, offset in line_window_offsets(
+                    content, chunk_size, overlap, max_tokens
+                )
             ]
         if chunk_strategy == "simple":
             if max_chars is not None and chunk_size > max_chars:

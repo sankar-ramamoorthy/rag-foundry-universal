@@ -15,6 +15,7 @@ indentation and may be followed on its last line by trailing source (such as a
 comment); both are accounted for in the check and nothing else may differ.
 """
 
+from bisect import bisect_left
 from typing import Optional, Sequence, Tuple
 
 Range = Tuple[int, int]
@@ -84,3 +85,53 @@ def piece_ranges(
         out.append((start_line + first, start_line + last))
         offset += len(piece)
     return out
+
+
+# Reasons a passage window carries no range (issue #416, spec 015 section 3).
+REASON_ARTIFACT_UNVERIFIED = "artifact range not verified"
+REASON_NO_OFFSET = "window offset not reported"
+REASON_MISMATCH = "passage does not match artifact text at reported offset"
+
+
+class NewlineIndex:
+    """Positions of every LF in a text, so the number of lines before any
+    character position is a binary search instead of a rescan per window."""
+
+    def __init__(self, text: str):
+        self._positions = [i for i, ch in enumerate(text) if ch == "\n"]
+
+    def lines_before(self, position: int) -> int:
+        """How many LFs lie strictly before ``position``."""
+        return bisect_left(self._positions, position)
+
+
+def window_range(
+    artifact_text: str,
+    artifact_start: int,
+    offset: int,
+    window: str,
+    index: Optional[NewlineIndex] = None,
+) -> Optional[Range]:
+    """Source lines holding one passage window of an artifact, or None.
+
+    ``offset`` is where the chunker cut the window in ``artifact_text``. The
+    window is located by that position, never by searching for its content, so
+    repeated text and overlapping windows are not ambiguous. The position is
+    verified (the slice must equal the window) before it is mapped to lines
+    under the source read API's LF-only convention, starting at the artifact's
+    own first line. The range names the lines containing the window.
+    """
+    if (
+        type(artifact_start) is not int
+        or artifact_start < 1
+        or type(offset) is not int
+        or offset < 0
+        or not window
+        or offset + len(window) > len(artifact_text)
+        or artifact_text[offset : offset + len(window)] != window
+    ):
+        return None
+    index = index or NewlineIndex(artifact_text)
+    first = index.lines_before(offset)
+    last = index.lines_before(offset + len(window) - 1)
+    return artifact_start + first, artifact_start + last

@@ -1098,6 +1098,14 @@ Mealie passages carry a range. Baseline and follow-ups: [measurement](/DOCS/test
 [#416](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/416) (per-window ranges, priority),
 [#417](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/417) (same-line prefix).
 
+#416 WP1 and WP2 are implemented (the chunker reports each window's offset and ingestion tags every passage window with a
+verified range or an explicit reason; passage text, order, boundaries, embeddings and the chunking version are unchanged). An
+offline simulation on the Mealie generation (read-only SQL, nothing deployed or re-ingested) gives 15,619 of 17,676 passages
+(88.4%) a range, which is 100% of passages whose artifact range is verified, and all 15,619 resolve against the stored module
+text; the other 2,057 are `artifact range not verified` (#417). The live check through `/source/read` needs a rebuild and is not
+done. The vector-store patch (WP3) and reuse wiring (WP4) are not started. See the [spec](/specs/015-per-window-source-ranges/spec.md)
+and [plan](/specs/015-per-window-source-ranges/plan.md).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
