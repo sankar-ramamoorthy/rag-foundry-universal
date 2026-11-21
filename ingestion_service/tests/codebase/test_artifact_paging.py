@@ -148,6 +148,10 @@ def test_pages_are_narrow_complete_and_generation_scoped(corpus):
             "relative_path",
             "doc_type",
             "text",
+            # Issue #412: two nullable integers, still narrow (no ORM object,
+            # no extra text); the embedding stage reads them to tag passages.
+            "start_line",
+            "end_line",
         }
         assert not session.identity_map
         with pytest.raises(RuntimeError, match="generation changed"):
