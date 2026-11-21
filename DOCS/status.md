@@ -1106,7 +1106,11 @@ text; the other 2,057 are `artifact range not verified` (#417). The live check t
 done. The vector-store range patch (WP3, merged) is a digest-guarded, generation-fenced, atomic patch on the retag request. Reuse wiring
 (WP4) and the orchestrator checks (WP5) are implemented in a PR: a reused artifact's windows are recomputed under the unchanged config and
 sent with each window's digest, so reused passages gain ranges with no re-embedding; a batch the vector store rejects is retried once
-without ranges so reuse never depends on location metadata. Not deployed and not run against a live repository. See the [spec](/specs/015-per-window-source-ranges/spec.md)
+without ranges so reuse never depends on location metadata. An incremental run that reused artifacts states in its progress
+(`embed_progress`, returned by the ingestion status endpoint and kept as the final result) what happened to their ranges:
+`ranges_outcome` is `patched`, `partial`, `retried_without_ranges`, `unsupported` (older vector store), `not_reported` or
+`not_applicable`, with `ranges_requested`, `ranges_patched`, `ranges_skipped`, `ranges_retried_batches` and `ranges_unsupported`.
+Reuse succeeding does not imply the ranges were patched. Not deployed and not run against a live repository. See the [spec](/specs/015-per-window-source-ranges/spec.md)
 and [plan](/specs/015-per-window-source-ranges/plan.md).
 
 ## Known issues

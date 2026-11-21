@@ -202,18 +202,56 @@ def _note_reused_node(
         ranges_map[document_id] = entries
 
 
-def _report_range_outcome(pipeline, progress: dict) -> None:
-    """Issue #416 WP4: surface what the vector store did with the range patches
-    (counts only; a skipped passage keeps its previous range metadata)."""
-    outcome = getattr(pipeline._vector_store, "last_range_patch", None)
+def _range_outcome_label(outcome: dict | None, reused: int, requested: int) -> str:
+    """One word for what happened to reused artifacts' source ranges. Reuse
+    succeeding never implies the ranges were patched, so this is always stated
+    when artifacts were reused. Precedence: unsupported, retried, partial."""
+    if not requested:
+        return "not_applicable"
     if not isinstance(outcome, dict):
+        return "not_reported"
+    if outcome["unsupported"]:
+        return "unsupported"
+    if outcome["retried_without_ranges"]:
+        return "retried_without_ranges"
+    if outcome["skipped_total"] or outcome["patched"] < requested:
+        return "partial"
+    return "patched"
+
+
+def _report_range_outcome(
+    pipeline, progress: dict, reused: int = 0, requested: int = 0
+) -> None:
+    """Issue #416: put the range-patch outcome in ingestion progress, which the
+    status endpoint returns and which persists as the run's final result.
+
+    A retry without ranges, an older vector store, skipped passages or a missing
+    report are all visible here and in the logs. Counts only; a passage that was
+    not patched keeps its previous range metadata.
+    """
+    if not reused:
+        # A first or full ingestion reuses nothing; its progress is unchanged.
         return
-    progress["ranges_patched"] = outcome["patched"]
-    progress["ranges_skipped"] = outcome["skipped_total"]
-    if outcome["skipped_total"]:
+    reported = getattr(pipeline._vector_store, "last_range_patch", None)
+    outcome = reported if isinstance(reported, dict) else None
+    label = _range_outcome_label(outcome, reused, requested)
+    progress["ranges_outcome"] = label
+    progress["ranges_requested"] = requested
+    progress["ranges_patched"] = outcome["patched"] if outcome else 0
+    progress["ranges_skipped"] = outcome["skipped_total"] if outcome else 0
+    progress["ranges_retried_batches"] = (
+        outcome["retried_without_ranges"] if outcome else 0
+    )
+    progress["ranges_unsupported"] = bool(outcome and outcome["unsupported"])
+    if outcome and outcome["skipped_total"]:
         logger.warning(
             f"{outcome['skipped_total']} reused passage(s) kept their previous "
             f"range metadata; first: {outcome['skipped'][:3]}"
+        )
+    if label in ("retried_without_ranges", "unsupported", "not_reported"):
+        logger.warning(
+            f"Reused {reused} artifact(s) but range patching was not completed "
+            f"({label}): {progress['ranges_patched']}/{requested} passage(s) patched"
         )
 
 
@@ -380,8 +418,11 @@ def _embed_repo_artifacts(
         pipeline, retag_provenance_by_document_id, ingestion_id, prior_generation_id,
         reuse_ranges_by_document_id,
     )
+    requested = sum(len(entries) for entries in reuse_ranges_by_document_id.values())
     reuse_ranges_by_document_id.clear()
-    _report_range_outcome(pipeline, progress)
+    _report_range_outcome(
+        pipeline, progress, len(retag_provenance_by_document_id), requested
+    )
     missing = set(retag_provenance_by_document_id) - retagged
     _embed_missing_reuse(pages, missing, pipeline, buffer, repo_id, provider)
     acknowledged()

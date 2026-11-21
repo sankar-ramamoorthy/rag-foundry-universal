@@ -673,6 +673,11 @@ def test_reuse_attaches_ranges_to_legacy_vectors_without_reembed(
     )
 
     assert "keep.py" not in embedded_ids and "keep.py#keep" not in embedded_ids
+    # The run's final result says the ranges were patched, not just reused.
+    progress = _request_row(id2).ingestion_metadata["embed_progress"]
+    assert progress["ranges_outcome"] == "patched"
+    assert progress["ranges_patched"] == progress["ranges_requested"] > 0
+    assert progress["ranges_skipped"] == 0 and progress["ranges_retried_batches"] == 0
     for d in docs:
         after = _vector_rows(d)
         assert len(after) == len(first[d])
@@ -713,6 +718,13 @@ def test_reuse_skips_a_passage_whose_digest_does_not_match(
     id2 = uuid.uuid4()
     _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id2)
     assert _request_row(id2).status == "completed"
+    # Reuse succeeded, but the result says the patching was only partial.
+    progress = _request_row(id2).ingestion_metadata["embed_progress"]
+    assert progress["ranges_outcome"] == "partial"
+    assert progress["ranges_skipped"] >= 1
+    assert progress["ranges_patched"] + progress["ranges_skipped"] == (
+        progress["ranges_requested"]
+    )
 
     # The mismatched passage was still reused (moved), but its metadata and text
     # are exactly as they were: no range was attached to a passage that is not
