@@ -12,6 +12,11 @@ class RetagResult(NamedTuple):
 
     rows: int
     document_ids: List[str]
+    # Issue #416 WP3: source-range patches applied, and the ones skipped with a
+    # reason ({"document_id", "chunk_index", "reason"}). Defaults keep every
+    # existing RetagResult(rows, ids) call valid.
+    ranges_patched: int = 0
+    ranges_skipped: Sequence[dict] = ()
 
 
 class VectorStore(ABC):
@@ -48,6 +53,7 @@ class VectorStore(ABC):
         provenance_by_document_id: "dict[str, dict] | None" = None,
         *,
         expected_ingestion_id: str,
+        source_ranges_by_document_id: "dict[str, list[dict]] | None" = None,
     ) -> RetagResult:
         """Re-tag the given document_ids' vector rows that belong to
         ``expected_ingestion_id`` (the reused prior generation) to

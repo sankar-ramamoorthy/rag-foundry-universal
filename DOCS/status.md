@@ -1103,7 +1103,8 @@ verified range or an explicit reason; passage text, order, boundaries, embedding
 offline simulation on the Mealie generation (read-only SQL, nothing deployed or re-ingested) gives 15,619 of 17,676 passages
 (88.4%) a range, which is 100% of passages whose artifact range is verified, and all 15,619 resolve against the stored module
 text; the other 2,057 are `artifact range not verified` (#417). The live check through `/source/read` needs a rebuild and is not
-done. The vector-store patch (WP3) and reuse wiring (WP4) are not started. See the [spec](/specs/015-per-window-source-ranges/spec.md)
+done. The vector-store range patch (WP3) is implemented in the vector store only (a digest-guarded, generation-fenced, atomic patch on the retag request; 
+nothing calls it yet); reuse wiring (WP4) is not started. See the [spec](/specs/015-per-window-source-ranges/spec.md)
 and [plan](/specs/015-per-window-source-ranges/plan.md).
 
 ## Known issues
