@@ -1046,6 +1046,13 @@ held-out outages from truncation). No router is selected. Development labels
 and the prompting asymmetry limit what the result supports. Labels were
 corrected before any capture ([change log](/DOCS/evaluations/intent-obligations/label-changes.md)).
 
+## Frontend direction (ADR-057, proposed)
+
+React with TypeScript (Vite proposed) is the proposed product frontend; Gradio
+stays operational during the transition. Docs only: no frontend code, model run
+or deployment is authorized. See [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)
+and [issue #402](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/402).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
