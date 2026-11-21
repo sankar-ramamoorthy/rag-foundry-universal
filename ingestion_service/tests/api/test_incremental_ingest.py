@@ -588,3 +588,140 @@ def test_force_full_rebuild_bypasses_reuse_but_records_parent(
     assert "keep.py" in embedded_ids, (
         "force_full_rebuild must re-embed every file, even unchanged ones"
     )
+
+
+# ---------------------------------------------------------------------
+# Issue #416 WP4: a reused artifact gains window ranges without a re-embed.
+# Vectors written before window ranges existed are simulated by stripping the
+# range keys after the first generation. The reuse path must patch them back,
+# digest-verified, leaving text, vectors and ordinals exactly as they were.
+# ---------------------------------------------------------------------
+
+LEGACY_REASON = "line span not persisted at ingestion"
+LOCATION_KEYS = ("start_line", "end_line", "range_reason")
+
+
+def _keep_document_ids(repo_id):
+    return [
+        _document_id(repo_id, "keep.py"),
+        _document_id(repo_id, "keep.py#keep"),
+    ]
+
+
+def _vector_rows(document_id):
+    Session = get_sessionmaker()
+    with Session() as s:
+        rows = s.execute(
+            text(
+                "SELECT chunk_index, chunk_text, vector::text, chunk_id, "
+                "ingestion_id::text, source_metadata FROM "
+                "ingestion_service.vector_chunks WHERE document_id = :d "
+                "ORDER BY chunk_index"
+            ),
+            {"d": document_id},
+        ).all()
+        return [tuple(r) for r in rows]
+
+
+def _make_legacy(document_ids):
+    """Rewrite the stored location metadata as a pre-#416 vector had it."""
+    Session = get_sessionmaker()
+    with Session() as s:
+        s.execute(
+            text(
+                "UPDATE ingestion_service.vector_chunks SET source_metadata = "
+                "(source_metadata - 'start_line' - 'end_line' - 'range_reason') "
+                "|| CAST(:legacy AS jsonb) WHERE document_id = ANY(:ids)"
+            ),
+            {"legacy": '{"range_reason": "%s"}' % LEGACY_REASON,
+             "ids": list(document_ids)},
+        )
+        s.commit()
+
+
+def _without_location(metadata):
+    return {k: v for k, v in metadata.items() if k not in LOCATION_KEYS}
+
+
+def test_reuse_attaches_ranges_to_legacy_vectors_without_reembed(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+
+    docs = _keep_document_ids(repo_id)
+    first = {d: _vector_rows(d) for d in docs}
+    assert all(first[d] for d in docs)
+    # The first generation already tags windows with ranges (WP2).
+    original = {
+        d: [(r[5].get("start_line"), r[5].get("end_line")) for r in first[d]]
+        for d in docs
+    }
+    assert all(a is not None for d in docs for a, _ in original[d])
+    _make_legacy(docs)
+    assert all(
+        "start_line" not in r[5] and r[5]["range_reason"] == LEGACY_REASON
+        for d in docs for r in _vector_rows(d)
+    )
+
+    (tmp_path / "touch.py").write_text("def touch():\n    return 2\n", encoding="utf-8")
+    id2 = uuid.uuid4()
+    embedder, embedded_ids = _counting_embedder()
+    _run_ingestion(
+        monkeypatch, vector_http_url, tmp_path, repo_id, id2, embedder=embedder,
+    )
+
+    assert "keep.py" not in embedded_ids and "keep.py#keep" not in embedded_ids
+    for d in docs:
+        after = _vector_rows(d)
+        assert len(after) == len(first[d])
+        for old, new in zip(first[d], after):
+            # Text, ordinal, chunk id and vector are exactly what they were.
+            assert (old[0], old[1], old[2], old[3]) == (new[0], new[1], new[2], new[3])
+            assert new[4] == str(id2)  # moved to the new generation
+            assert _without_location(new[5]) == _without_location(old[5])
+        assert [(r[5].get("start_line"), r[5].get("end_line")) for r in after] == (
+            original[d]
+        )
+        assert all("range_reason" not in r[5] for r in after)
+
+
+def test_reuse_skips_a_passage_whose_digest_does_not_match(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+
+    module_doc, function_doc = _keep_document_ids(repo_id)
+    _make_legacy([module_doc, function_doc])
+    Session = get_sessionmaker()
+    # The stored passage is no longer the window ingestion recomputes.
+    with Session() as s:
+        s.execute(
+            text(
+                "UPDATE ingestion_service.vector_chunks SET chunk_text = 'tampered' "
+                "WHERE document_id = :d"
+            ),
+            {"d": module_doc},
+        )
+        s.commit()
+    tampered_before = _vector_rows(module_doc)
+
+    (tmp_path / "touch.py").write_text("def touch():\n    return 2\n", encoding="utf-8")
+    id2 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id2)
+    assert _request_row(id2).status == "completed"
+
+    # The mismatched passage was still reused (moved), but its metadata and text
+    # are exactly as they were: no range was attached to a passage that is not
+    # the window the range was computed for.
+    tampered_after = _vector_rows(module_doc)
+    assert len(tampered_after) == len(tampered_before)
+    for old, new in zip(tampered_before, tampered_after):
+        assert (old[0], old[1], old[2], old[3], old[5]) == (
+            new[0], new[1], new[2], new[3], new[5])
+        assert new[4] == str(id2)
+    # The other artifact in the same ingestion was patched.
+    assert all(r[5].get("start_line") for r in _vector_rows(function_doc))

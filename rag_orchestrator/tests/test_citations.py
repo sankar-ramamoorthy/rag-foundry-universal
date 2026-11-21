@@ -209,3 +209,64 @@ def test_malformed_range_is_never_repaired(start, end):
     )
     assert out[0].start_line is None and out[0].end_line is None
     assert out[0].range_reason == REASON
+
+
+# --- issue #416 WP5: every reason in spec 015 passes through unchanged ---
+
+SPEC_015_REASONS = [
+    "artifact range not verified",
+    "window offset not reported",
+    "passage does not match artifact text at reported offset",
+    "passage split; range not established",
+    "line span not persisted at ingestion",
+    # Retired for new generations; rows written before #416 keep it.
+    "artifact split into several passages",
+]
+
+
+@pytest.mark.parametrize("reason", SPEC_015_REASONS)
+def test_every_spec_reason_is_returned_unchanged_with_no_range(reason):
+    manifest = build_final_context_manifest(
+        [
+            {
+                "text": "x",
+                "document_id": "d1",
+                "metadata": {
+                    "source_metadata": {
+                        "relative_path": "a.py",
+                        "range_reason": reason,
+                    }
+                },
+            }
+        ]
+    )
+    out = citations.from_manifest("repo-x", GEN, manifest)
+    assert out[0].start_line is None and out[0].end_line is None
+    assert out[0].range_reason == reason
+
+
+def test_a_window_range_flows_from_chunk_metadata_to_the_http_citation(monkeypatch):
+    chunk = {
+        "text": "window text",
+        "document_id": "d1",
+        "canonical_id": "a.py#f",
+        "metadata": {
+            "source_metadata": {
+                "relative_path": "a.py",
+                "start_line": 40,
+                "end_line": 52,
+            }
+        },
+    }
+    plan = {
+        "generation_id": GEN,
+        "final_context_manifest": build_final_context_manifest([chunk]),
+    }
+    _patch_rag(monkeypatch, plan)
+    body = TestClient(app).post(
+        "/v1/rag", json={"query": "q", "repo_id": "repo-x"}
+    ).json()
+    cited = body["citations"][0]
+    assert (cited["path"], cited["start_line"], cited["end_line"]) == ("a.py", 40, 52)
+    assert cited["range_reason"] is None
+    assert cited["generation_id"] == GEN

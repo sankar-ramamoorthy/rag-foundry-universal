@@ -191,6 +191,7 @@ class HttpVectorStore:
         provenance_by_document_id: "dict[str, dict] | None" = None,
         *,
         expected_ingestion_id: str,
+        source_ranges_by_document_id: "dict[str, list[dict]] | None" = None,
     ) -> tuple[int, set[str]]:
         """Re-tag reused artifacts' vectors to the new generation's
         ingestion_id, in place (issue #196, FR-007b) -- no re-embedding.
@@ -208,40 +209,132 @@ class HttpVectorStore:
         current without a re-embed. See
         `vector_store_service`'s `retag_ingestion_id` for the exact
         preserve-other-keys guarantee.
+
+        Issue #416 WP4: `source_ranges_by_document_id` carries each reused
+        document's verified source-line ranges (or reasons) with the digest of
+        every passage. The vector store applies them atomically with the
+        retag, only to rows whose stored passage matches the digest, and only
+        to source-location metadata. A batch the vector store rejects is
+        rolled back whole, so it is retried once without ranges: the artifact
+        is still reused and simply keeps its previous range reason. Outcome
+        counts are left in `last_range_patch`.
         """
         check_ownership()
         if not expected_ingestion_id:
             raise ValueError("expected_ingestion_id is required")
+        self.last_range_patch = None
         if not document_ids:
             return 0, set()
         provenance_by_document_id = provenance_by_document_id or {}
-        url = f"{self.base_url}/v1/vectors/retag"
+        ranges = source_ranges_by_document_id or {}
+        stats: dict = {
+            "patched": 0,
+            "skipped_total": 0,
+            "skipped": [],
+            "unsupported": False,
+            "retried_without_ranges": 0,
+        }
+        if ranges:
+            self.last_range_patch = stats
         total = 0
         retagged: set[str] = set()
-        for start in range(0, len(document_ids), self.RETAG_BATCH_SIZE):
-            batch = document_ids[start:start + self.RETAG_BATCH_SIZE]
-            batch_provenance = {
-                document_id: provenance_by_document_id[document_id]
-                for document_id in batch
-                if document_id in provenance_by_document_id
-            }
-            resp = requests.post(
-                url,
-                json={
-                    "document_ids": batch,
-                    "new_ingestion_id": new_ingestion_id,
-                    "expected_ingestion_id": expected_ingestion_id,
-                    "provenance_by_document_id": batch_provenance or None,
-                },
-                timeout=90,
+        for batch in self._retag_batches(document_ids, ranges):
+            body = self._post_retag(
+                batch, new_ingestion_id, expected_ingestion_id,
+                provenance_by_document_id, ranges, stats,
             )
-            resp.raise_for_status()
-            body = resp.json()
-            if "document_ids" not in body:
-                raise RuntimeError(
-                    "vector_store_service retag response lacks document_ids; "
-                    "deploy vector_store_service with ingestion_service (#337)"
-                )
             total += body.get("count", 0)
             retagged.update(str(d) for d in body["document_ids"])
         return total, retagged
+
+    # Issue #416 WP4: a retag request carries at most this many passage patches
+    # (a single document with more gets a request of its own).
+    RANGE_PATCHES_PER_REQUEST = 4000
+    RANGE_SKIPS_KEPT = 200
+    last_range_patch: "dict | None" = None
+
+    def _retag_batches(self, document_ids, ranges):
+        """Document batches bounded by count and by number of range patches;
+        a document is never split across requests."""
+        batch: list = []
+        patches = 0
+        for document_id in document_ids:
+            n = len(ranges.get(document_id) or ())
+            if batch and (
+                len(batch) >= self.RETAG_BATCH_SIZE
+                or patches + n > self.RANGE_PATCHES_PER_REQUEST
+            ):
+                yield batch
+                batch, patches = [], 0
+            batch.append(document_id)
+            patches += n
+        if batch:
+            yield batch
+
+    def _post_retag(self, batch, new_ingestion_id, expected_ingestion_id,
+                    provenance_by_document_id, ranges, stats):
+        url = f"{self.base_url}/v1/vectors/retag"
+        batch_provenance = {
+            document_id: provenance_by_document_id[document_id]
+            for document_id in batch
+            if document_id in provenance_by_document_id
+        }
+        batch_ranges = {
+            document_id: ranges[document_id]
+            for document_id in batch
+            if ranges.get(document_id)
+        }
+        payload = {
+            "document_ids": batch,
+            "new_ingestion_id": new_ingestion_id,
+            "expected_ingestion_id": expected_ingestion_id,
+            "provenance_by_document_id": batch_provenance or None,
+        }
+        if batch_ranges:
+            payload["source_ranges_by_document_id"] = batch_ranges
+        resp = requests.post(url, json=payload, timeout=90)
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError:
+            if not batch_ranges:
+                raise
+            # The vector store rejects or rolls back the whole request, so the
+            # batch is untouched. Reuse must not depend on location metadata.
+            logger.warning(
+                "Retag with source ranges failed for %d document(s); retrying "
+                "without ranges", len(batch),
+            )
+            stats["retried_without_ranges"] += 1
+            plain = {
+                k: v for k, v in payload.items() if k != "source_ranges_by_document_id"
+            }
+            resp = requests.post(url, json=plain, timeout=90)
+            resp.raise_for_status()
+            batch_ranges = {}
+        body = resp.json()
+        if "document_ids" not in body:
+            raise RuntimeError(
+                "vector_store_service retag response lacks document_ids; "
+                "deploy vector_store_service with ingestion_service (#337)"
+            )
+        if batch_ranges:
+            self._record_range_outcome(stats, body)
+        return body
+
+    def _record_range_outcome(self, stats: dict, body: dict):
+        if "ranges_patched" not in body:
+            # An older vector store ignores the field: the retag succeeded but
+            # no range was written. Say so; do not claim a patch.
+            stats["unsupported"] = True
+            logger.warning(
+                "vector_store_service predates source-range patches; reused "
+                "passages keep their previous range metadata"
+            )
+            return
+        stats["patched"] += int(body["ranges_patched"])
+        stats["skipped_total"] += int(
+            body.get("ranges_skipped_total", len(body.get("ranges_skipped", ())))
+        )
+        room = self.RANGE_SKIPS_KEPT - len(stats["skipped"])
+        if room > 0:
+            stats["skipped"].extend(body.get("ranges_skipped", ())[:room])
