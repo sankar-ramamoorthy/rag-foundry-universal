@@ -97,9 +97,31 @@ window ranges. Two parts:
   ordinal is touched.
 
 This is the one change outside the ingestion service (vector store request
-shape). **Open decision for the owner:** include the reuse patch in this work
-(recommended: otherwise reused repositories need a full rebuild to gain
-ranges), or defer it and document the full rebuild.
+shape). **Decision (owner, 2026-11-21): the reuse patch is included.** Without
+it, unchanged files would keep missing range metadata until a forced full
+rebuild, which would undercut incremental ingestion.
+
+The patch introduces a correctness boundary between the ingestion service and
+the vector store. It must satisfy all of:
+
+1. **Artifact and passage identity:** a row is patched only if its document id
+   matches the artifact and its stored passage digest equals the digest sent.
+2. **Generation fence:** the row still belongs to the expected prior
+   generation; otherwise the whole update is rejected.
+3. **Location metadata only:** only `start_line`, `end_line` and `range_reason`
+   in the passage's source metadata may change.
+4. **Nothing else changes:** embeddings, passage text, chunk ordinals and the
+   chunking config version are untouched.
+5. **Rejection leaves the record unchanged:** a failed generation or digest
+   check writes nothing for that row (a generation failure writes nothing at
+   all), and the skipped rows are counted and reported, never silently dropped.
+6. **Tests cover both outcomes:** successful reuse, and each rejection path
+   (digest mismatch, stale generation, unknown document), asserting the stored
+   record is byte-for-byte unchanged after a rejection.
+
+The patch is applied in the same request that moves the rows to the new
+generation (as the existing provenance patch is), so a row never carries the
+new generation with an old range.
 
 ### 5. Generation consistency
 
@@ -140,7 +162,12 @@ ranges), or defer it and document the full rebuild.
 | CRLF and lone CR | Ranges resolve against the stored (newline-normalized) text |
 | Multi-byte text | Offsets are character offsets, not bytes; ranges still resolve |
 | Overflow pieces | Piece ranges lie inside, and are consistent with, the window range |
-| Reuse patch | Patched row gains the range; a digest mismatch leaves the row untouched and counted; wrong prior generation is rejected |
+| Reuse patch, success | An unchanged file re-ingested incrementally: its reused passages gain ranges; text, vectors, ordinals and chunking version are unchanged |
+| Reuse patch, digest mismatch | The row is untouched, counted and reported; the rest of the batch still applies |
+| Reuse patch, stale generation | The request is rejected; no row changes |
+| Reuse patch, unknown document or row | Reported, nothing written for it |
+| Reuse patch, preservation | After every rejection the stored row equals its prior state exactly (text, vector, ordinal, metadata) |
+| Reuse patch, scope | Only `start_line`, `end_line` and `range_reason` differ after a successful patch |
 | Pre-#412 vectors | Still report `line span not persisted at ingestion` |
 | Live audit | The `source/read` read-back above on a real rebuild and on an incremental re-ingest with no file changes |
 
