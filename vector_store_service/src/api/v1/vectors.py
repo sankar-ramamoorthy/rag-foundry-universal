@@ -2,7 +2,7 @@
 import asyncio
 from functools import partial
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing import List, Dict, Any, Optional
 import logging
 
@@ -11,6 +11,7 @@ from src.core.config import get_vector_store
 from shared.models.vector import VectorRecord, VectorMetadata
 
 router = APIRouter(prefix="/v1/vectors", tags=["vectors"])
+RANGES_SKIPPED_REPORT_LIMIT = 200
 logger = logging.getLogger(__name__)
 
 class VectorMetadataAPI(BaseModel):
@@ -35,6 +36,36 @@ class VectorSearchRequest(BaseModel):
     k: int = 5
     metadata_filter: Optional[Dict[str, Any]] = None
 
+class SourceRangePatch(BaseModel):
+    """Issue #416 WP3: location metadata for one stored passage of a reused
+    artifact. Location only: this model has no field that could carry text, a
+    vector or an ordinal, and unknown fields are rejected."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    chunk_index: int = Field(ge=0)
+    # Digest of the stored passage the range was computed for; the vector store
+    # patches a row only when its stored passage hashes to exactly this.
+    text_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    start_line: Optional[int] = Field(default=None, ge=1)
+    end_line: Optional[int] = Field(default=None, ge=1)
+    range_reason: Optional[str] = Field(default=None, max_length=200)
+
+    @model_validator(mode="after")
+    def _range_xor_reason(self):
+        has_range = self.start_line is not None or self.end_line is not None
+        if has_range:
+            if self.start_line is None or self.end_line is None:
+                raise ValueError("start_line and end_line go together")
+            if self.start_line > self.end_line:
+                raise ValueError("start_line must not exceed end_line")
+            if self.range_reason is not None:
+                raise ValueError("a passage with a range has no range_reason")
+        elif not self.range_reason:
+            raise ValueError("a passage with no range needs a range_reason")
+        return self
+
+
 class VectorRetagRequest(BaseModel):
     document_ids: List[str]
     new_ingestion_id: str
@@ -48,6 +79,11 @@ class VectorRetagRequest(BaseModel):
     # source_metadata key is preserved. Omitted/absent for a given
     # document_id -> retag only, no provenance change.
     provenance_by_document_id: Optional[Dict[str, Dict[str, Any]]] = None
+    # Issue #416 WP3 (spec 015): document_id -> location metadata for that
+    # document's reused passages. Digest-guarded, fenced to the new generation,
+    # applied in the same transaction as the retag. Only source-location keys
+    # can change. Omitted -> today's behavior.
+    source_ranges_by_document_id: Optional[Dict[str, List[SourceRangePatch]]] = None
 
 
 class VectorSearchByDocRequest(BaseModel):
@@ -148,6 +184,12 @@ async def retag_vectors(
 ):
     """Re-tag reused artifacts' vectors to a new ingestion_id (issue #196)."""
     try:
+        extra = {}
+        if request.source_ranges_by_document_id is not None:
+            extra["source_ranges_by_document_id"] = {
+                doc: [p.model_dump() for p in patches]
+                for doc, patches in request.source_ranges_by_document_id.items()
+            }
         # #170 (WP-R7): off the event loop (see add_vectors above).
         result = await asyncio.to_thread(
             partial(
@@ -156,6 +198,7 @@ async def retag_vectors(
                 request.new_ingestion_id,
                 request.provenance_by_document_id,
                 expected_ingestion_id=request.expected_ingestion_id,
+                **extra,
             )
         )
         logger.info(
@@ -163,11 +206,21 @@ async def retag_vectors(
             f"{request.expected_ingestion_id} to ingestion_id "
             f"{request.new_ingestion_id}"
         )
+        skipped = list(result.ranges_skipped)
         return {
             "status": "ok",
             "count": result.rows,
             "document_ids": result.document_ids,
+            "ranges_patched": result.ranges_patched,
+            # Bounded in size; the total is always exact.
+            "ranges_skipped": skipped[:RANGES_SKIPPED_REPORT_LIMIT],
+            "ranges_skipped_total": len(skipped),
         }
+    except ValueError as e:
+        # A malformed patch or fence is the caller's error, and nothing was
+        # written (validation runs before any SQL).
+        logger.error(f"Rejected retag request: {e}")
+        raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         logger.error(f"Error retagging vectors: {e}")
         raise HTTPException(status_code=500, detail=str(e))

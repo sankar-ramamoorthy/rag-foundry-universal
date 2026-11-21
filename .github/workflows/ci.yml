@@ -113,6 +113,10 @@ jobs:
         working-directory: vector_store_service
         run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_retag_generation_fence.py -q
 
+      - name: vector_store_service integration tests (source-range patch, #416)
+        working-directory: vector_store_service
+        run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_range_patch.py -q
+
       - name: vector_store_service integration tests (WP-R4 passages)
         working-directory: vector_store_service
         run: ../.venv/bin/python -m pytest tests/core/vectorstore/test_wp_r4_passages.py -q
