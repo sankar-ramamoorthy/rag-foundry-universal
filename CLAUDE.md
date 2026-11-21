@@ -109,11 +109,19 @@ See `DOCS/index.md` for the full documentation map.
 
 Per `docs-archive/Rules-to-help-me-coding.md`: this repo follows **Test-Guided Development** — for each issue, define acceptance criteria (observable behavior, not implementation) and write at least a skeletal test before or immediately alongside the first implementation spike, then expand tests as confidence grows. Acceptance criteria should be checkable via HTTP response or DB state.
 
-**Merge gate:** every required CI job (lint, unit, integration, bounded-memory) must be green before any
-merge, including documentation-only PRs; a docs PR whose branch includes implementation changes is not
-exempt. Check `gh pr checks` and merge only on green. A red `main` blocks unrelated PRs, so repair it
-first (precedent: #415 merged without its integration job, which failed on a page-column contract test;
-fixed by #419).
+**Merge gate:** every required CI job (lint, unit, integration, bounded-memory) must be green on the PR's
+*current head commit* before any merge, including documentation-only PRs; a docs PR whose branch includes
+implementation changes is not exempt. Check `gh pr checks` and merge only on green. Only a completed, passing
+result on the current head counts:
+
+- **Pending or queued:** wait; do not merge.
+- **Failed:** fix and rerun; do not merge over it.
+- **Cancelled, skipped or timed out:** rerun; it is not a pass.
+- **Stale** (a result for an earlier commit, or the branch is behind `main`): update the branch and rerun against
+  the current head.
+
+A red `main` blocks unrelated PRs, so repair it first (precedent: #415 merged without its integration job,
+which failed on a page-column contract test; fixed by #419).
 
 ## Documentation map
 
