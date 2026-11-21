@@ -6,6 +6,10 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-20
+
+Added the [evidence API assessment](/DOCS/notes/20261120-evidence-api-assessment-404.md) (#404) and the [LAB boundary and communication-folder rules](/DOCS/notes/20261120-lab-boundary-and-communication-folder.md), with a pointer in `CLAUDE.md` so any agent finds them. Proposal and process only; no code or API change.
+
 ## 2026-11-18
 
 Proposed the #400 [directional-semantics and compound-obligations experiment](/DOCS/evaluations/directional-compound-routing/protocol.md)
