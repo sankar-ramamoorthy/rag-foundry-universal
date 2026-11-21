@@ -16,7 +16,7 @@ from src.api.v1.models import (
     TraceResponse,
     ImpactResponse,
 )
-from src.core import envelope
+from src.core import citations, envelope
 from src.core.inventory_query import inventory_response
 from src.core.config import get_settings
 from src.core.evidence_service import (
@@ -68,7 +68,15 @@ async def _with_rag_envelope(result):
     env = await envelope.build(
         result.repo_id, plan.get("generation_id"), coverage, notes
     )
-    return result.model_copy(update={"envelope": env})
+    if plan.get("strategy") == "python_inventory":
+        cited = citations.from_inventory(result.repo_id, plan, result.sources)
+    else:
+        cited = citations.from_manifest(
+            result.repo_id,
+            plan.get("generation_id"),
+            plan.get("final_context_manifest"),
+        )
+    return result.model_copy(update={"envelope": env, "citations": cited})
 
 
 # /rag endpoint to run the full RAG (retrieval-augmented generation) process

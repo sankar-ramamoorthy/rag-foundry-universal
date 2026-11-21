@@ -11,9 +11,10 @@ from typing import List, Optional, Callable, Dict, Any, Set, cast
 import httpx
 
 from fastapi import HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.core.config import get_settings
+from src.core.citations import Citation
 from src.core.envelope import EvidenceEnvelope
 from shared.embedders.query import embed_query
 from shared.embedders.factory import get_embedder
@@ -144,6 +145,7 @@ class RAGResult(BaseModel):
     reranked: bool = False
     # Issue #406: set by the route layer, never by run_rag itself.
     envelope: Optional[EvidenceEnvelope] = None
+    citations: List[Citation] = Field(default_factory=list)
 
 
 # ------------------------------------------------------------------

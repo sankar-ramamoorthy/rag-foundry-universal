@@ -37,6 +37,17 @@ def _source_label(c: Dict[str, object]) -> Optional[object]:
     )
 
 
+def _relative_path(c: Dict[str, object]) -> Optional[object]:
+    """Repository-relative file path from chunk metadata (flat or nested)."""
+    raw_metadata = c.get("metadata")
+    metadata: Dict[str, object] = (
+        raw_metadata if isinstance(raw_metadata, dict) else {}
+    )
+    raw_nested = metadata.get("source_metadata")
+    nested: Dict[str, object] = raw_nested if isinstance(raw_nested, dict) else {}
+    return metadata.get("relative_path") or nested.get("relative_path") or None
+
+
 def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
     """
     Human-readable, deduplicated source labels (issue #30 Part 4).
@@ -158,6 +169,8 @@ def build_final_context_manifest(
                 "chunk_id": c.get("chunk_id"),
                 "chunk_index": c.get("chunk_index"),
                 "source_label": _source_label(c),
+                # Issue #407: additive, for structured citations.
+                "relative_path": _relative_path(c),
                 "char_count": len(text),
                 "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
                 "token_count": conservative_token_count(_render_chunk(c)),

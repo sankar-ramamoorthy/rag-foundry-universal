@@ -3,6 +3,7 @@ from typing import List, Literal, Optional, Dict, Any
 
 from pydantic import BaseModel, StrictBool, Field, model_validator
 
+from src.core.citations import Citation
 from src.core.envelope import EvidenceEnvelope
 
 
@@ -71,6 +72,8 @@ class RAGResponse(BaseModel):  # Updated name
     reranked: bool = False
     # Issue #406: additive evidence envelope (generation, commit, coverage).
     envelope: Optional[EvidenceEnvelope] = None
+    # Issue #407: one citation per passage in the final context.
+    citations: List[Citation] = Field(default_factory=list)
 
 
 class SearchQuery(BaseModel):
