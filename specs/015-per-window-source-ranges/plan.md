@@ -131,17 +131,58 @@ location.
 - Update spec 014 and `DOCS/status.md`; retire the
   `artifact split into several passages` reason in the docs for new generations.
 
-### WP6. Live audit (not committed code)
+### WP6. Reproducible audit script (tracked, sanitized)
 
-- A personal read-only audit (kept untracked, like `db_inspect.py`): read the
-  passage list by SELECT, then for a random sample of at least 1,000 ranged
-  passages plus every non-null non-legacy reason, call
-  `GET /v1/repos/{id}/source/read` at the same generation and check the lines
-  contain the window text exactly (first-line prefix and last-line suffix
-  allowed). Record results in `DOCS/test_results/` using the baseline note's
-  format; raw captures go in `_raw/` with an index entry.
-- The audit procedure and acceptance thresholds are committed in the results
-  note; the script is not.
+Owner decision (2026-11-21): the audit logic is committed; connection settings and private
+host information are not. `scripts/db_inspect.py` stays private and gitignored.
+
+- **File:** `scripts/audit_source_ranges.py`, plus a unit test that runs it against a fake HTTP
+  transport and a fake passage list (no database, no network).
+- **Verification uses Foundry's public API.** For each sampled passage it calls
+  `GET /v1/repos/{id}/source/read` at the pinned generation for the passage's `start_line` to
+  `end_line` and checks the returned lines contain the passage text exactly (text before the
+  window start on the first line and after its end on the last line are allowed), also checking
+  the returned-text digest.
+- **Database use is minimal and read-only.** Passage ranges and texts are not exposed by any
+  public route, so listing passages needs a SELECT over `ingestion_service.vector_chunks`
+  (`document_id`, `chunk_index`, `chunk_text`, `source_metadata` range keys). The script opens the
+  session with `default_transaction_read_only = on`, runs only that SELECT, and has no write path.
+  Without database settings it can instead audit a list of citations supplied as JSON (for
+  example from `/v1/rag` answers), so another developer without database access can still use it.
+- **No secrets or addresses in the repo.** Base URL and database settings come from environment
+  variables or arguments (`FOUNDRY_ORCHESTRATOR_URL`, standard `PG*` variables or a DSN in
+  `FOUNDRY_AUDIT_DSN`); nothing is defaulted to a real host. `scripts/check_private_addresses.py`
+  must pass on it.
+- **Deterministic and recorded.** Passages are ordered by `(document_id, chunk_index)` and sampled
+  with `random.Random(seed)`; the seed, the sample size (default 1,000, minimum 1,000 for an
+  acceptance run), the generation id, the commit SHA, the deployed `/version` SHAs and every
+  outcome are written to a JSON result. Every passage with a non-null, non-legacy
+  `range_reason` is audited in full in addition to the sample.
+- **Results:** a committed note under `DOCS/test_results/` summarizing the run (using the baseline
+  note's format) with the command line used; the raw JSON goes under `_raw/` with an index entry.
+
+## Overflow-split passages and the 85% target (measured 2026-11-21)
+
+Question: would passages that cannot be patched, because the original embed split a window,
+prevent the acceptance target? Method: read-only SQL on the Mealie generation `1f1a7949…`
+(commit `1624c22`), recomputing every artifact's windows with the current chunker and config and
+comparing each stored passage to the window at the same `chunk_index`.
+
+| Measure | Result |
+| --- | --- |
+| Passages | 17,676 across 7,758 artifacts |
+| Rows marked `overflow_split` | 0 |
+| Stored passage equal to its recomputed window at the same index | 17,676 (100%) |
+| Shifted or unmatched passages | 0 |
+| Artifacts whose passage count differs from recomputed windows | 0 |
+
+So on this corpus the digest guard would skip nothing; the overflow caveat does not threaten the
+target. It could on a corpus embedded with a smaller-context provider, so WP4 still reports
+`ranges_skipped` and the audit lists them. The real ceiling for the absolute share is different:
+passages of artifacts with no verified artifact range (11.6% of passages, almost all TypeScript
+`export` declarations) stay null until #417, so #416 alone can reach at most about 88% of all
+passages. The #416 target is stated against passages whose artifact range is verified, where the
+expected yield is close to 100%.
 
 ## Measurement sequence (against the recorded baseline)
 
@@ -176,6 +217,6 @@ update. Implementation does not start until this plan is approved.
 
 ## Open points for the owner
 
-- Confirm three PRs in the order above, or fold WP3 and WP4 together.
-- Confirm that the live audit script stays untracked (it uses the personal
-  read-only database access) with the procedure recorded in the results note.
+- Owner approved (2026-11-21): three separate PRs in the order above (WP1+WP2,
+  WP3, WP4+WP5), and a tracked, sanitized audit script (WP6). Implementation
+  still needs a separate authorization.
