@@ -12,7 +12,6 @@ from uuid import uuid4
 
 import pytest
 
-from src.api.v1.codebase_ingest import _passage_span
 from src.core.codebase.repo_graph_builder import RepoGraphBuilder
 from src.core.codebase.source_span import (
     module_range,
@@ -187,28 +186,9 @@ def test_typescript_ranges_resolve_or_are_absent(tmp_path):
             assert e["end_line"] is None
 
 
-# --- passage-level range (single passage vs several vs unverified) ---
-
-
-class _Node:
-    def __init__(self, start, end):
-        self.start_line = start
-        self.end_line = end
-
-
-def test_single_passage_carries_the_artifact_range():
-    assert _passage_span(_Node(3, 8), 1) == {"start_line": 3, "end_line": 8}
-
-
-def test_several_passages_carry_no_range_and_say_why():
-    out = _passage_span(_Node(3, 8), 2)
-    assert "start_line" not in out and "several passages" in out["range_reason"]
-
-
-@pytest.mark.parametrize("start,end", [(None, None), (5, 2), (0, 3), ("1", 2)])
-def test_unverified_artifact_carries_no_range(start, end):
-    out = _passage_span(_Node(start, end), 1)
-    assert "start_line" not in out and "not verified" in out["range_reason"]
+# Passage-level ranges (single window, several windows, unverified artifact) are
+# covered by test_window_ranges.py (issue #416), which replaced the single-passage-only
+# rule of issue #412.
 
 
 # --- overflow pieces never inherit the whole passage's range ---
