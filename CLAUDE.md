@@ -44,6 +44,13 @@ limits of HTTP-based verification) and
 [DOCS/deployment/production-docker-compose.md](DOCS/deployment/production-docker-compose.md)
 (the release procedure itself).
 
+## Separate agent project (LAB / peri-Foundry)
+
+A separate agent project is a *customer* of Foundry's APIs. Do not read its
+repository directly, and do not post instructions or requests for it; the
+only exchange channel is the owner's `communication-folder`, for information
+only. Details: [DOCS/notes/20261120-lab-boundary-and-communication-folder.md](DOCS/notes/20261120-lab-boundary-and-communication-folder.md).
+
 ## Dependency management & tooling
 
 Each service (`ingestion_service`, `llm_service`, `rag_orchestrator`, `vector_store_service`, `gradio`) has its **own** `pyproject.toml`/`uv.lock` and is managed independently with `uv`. There is also a root `pyproject.toml`/`uv.lock`. When adding a dependency, add it to the specific service's `pyproject.toml`, not just root.
