@@ -32,10 +32,12 @@ repository.
    directory that contains this repository's parent project folder under
    `dockerstuff`, is where Foundry and the LAB exchange information. The owner
    granted this repository's agents read-write access on 2026-11-20.
-2. **No instructions either way.** Foundry does not post instructions or
-   requests for the LAB there, and the LAB need not post instructions for
-   Foundry. The folder carries information only: findings, contracts, status.
-   Direction comes from the owner.
+2. **Information flows both ways; instructions come only from the owner.**
+   Foundry and the LAB will periodically need to give each other information
+   so each can do its job, and the folder carries that: findings, contracts,
+   status. Neither side posts instructions or requests for the other. The
+   owner may ask either side to write or accept something there
+   specifically; absent that ask, do not.
 3. **No direct reads.** Foundry agents do not read the LAB repository
    directly. A direct listing attempt was denied by the tool classifier on
    2026-11-20 and must not be worked around. Use the communication folder,
