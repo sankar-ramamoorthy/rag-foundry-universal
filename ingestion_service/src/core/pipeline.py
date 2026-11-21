@@ -15,10 +15,21 @@ from src.core.crud.crud_document_node import create_document_node
 from src.core.crud.document_relationships import create_document_relationship
 from src.core.extractors.markdown_extractor import MarkdownSectionExtractor
 from src.core.batch_contracts import validate_batch_identity
+from src.core.codebase.source_span import piece_ranges
 from src.core.worker_context import check_ownership
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+
+
+def _overflow_ranges(chunk: Chunk, texts: list[str]) -> list:
+    """Issue #412: line ranges for exact overflow pieces of `chunk`, or all
+    None when the passage carries no verified range to subdivide."""
+    meta = chunk.metadata or {}
+    start, end = meta.get("start_line"), meta.get("end_line")
+    if type(start) is not int or type(end) is not int:
+        return [None] * len(texts)
+    return piece_ranges(start, chunk.content, texts)
 
 
 class IngestionPipeline:
@@ -329,9 +340,19 @@ class IngestionPipeline:
                 origin.append(position)
                 continue
             pieces = []
-            for text in split_for_overflow(chunk.content):
+            texts = split_for_overflow(chunk.content)
+            ranges = _overflow_ranges(chunk, texts)
+            for text, line_range in zip(texts, ranges):
                 metadata = copy.deepcopy(chunk.metadata or {})
                 metadata["overflow_split"] = True
+                # Issue #412: a piece never inherits the whole passage's range.
+                metadata.pop("start_line", None)
+                metadata.pop("end_line", None)
+                metadata.pop("range_reason", None)
+                if line_range is not None:
+                    metadata["start_line"], metadata["end_line"] = line_range
+                else:
+                    metadata["range_reason"] = "passage split; range not established"
                 pieces.append(
                     Chunk(content=text, chunk_id=str(uuid4()), metadata=metadata)
                 )

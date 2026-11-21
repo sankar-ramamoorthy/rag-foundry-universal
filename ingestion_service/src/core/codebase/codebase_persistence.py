@@ -92,6 +92,8 @@ class CodebaseGraphPersistence:
         "text",
         "content_hash",
         "provenance",
+        "start_line",
+        "end_line",
     )
 
     def persist_graph(
@@ -169,6 +171,10 @@ class CodebaseGraphPersistence:
                     "doc_type": doc_type,
                     "text": text_value,
                     "content_hash": node.get("content_hash"),
+                    # Issue #412: refreshed on every upsert, so a surviving
+                    # row can never keep a stale range.
+                    "start_line": node.get("start_line"),
+                    "end_line": node.get("end_line"),
                     # Issue #199 (ADR-053, Stage B1): recomputed on every
                     # upsert -- including a reused, otherwise-unchanged
                     # row -- so a classifier-version bump reclassifies
@@ -369,7 +375,8 @@ class CodebaseGraphPersistence:
                 query = select(
                     DocumentNode.document_id, DocumentNode.canonical_id,
                     DocumentNode.relative_path, DocumentNode.doc_type,
-                    DocumentNode.text,
+                    DocumentNode.text, DocumentNode.start_line,
+                    DocumentNode.end_line,
                 ).where(
                     DocumentNode.repo_id == repo_id,
                     DocumentNode.ingestion_id == ingestion_id,

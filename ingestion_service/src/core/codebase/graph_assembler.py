@@ -24,6 +24,7 @@ from src.core.codebase.identity import build_canonical_id
 from src.core.codebase.ir import CallSite, ExtractionResult, ImportRecord, SymbolRecord
 from src.core.codebase.module_conventions import ModulePathConvention
 from src.core.codebase.repo_graph import RepoGraph
+from src.core.codebase.source_span import module_range, split_lines, verified_range
 from src.core.codebase.symbol_table import build_symbol_table
 from src.core.codebase.language import language_for_path as _language_for_path
 from src.core.codebase.language import LANGUAGE_BY_SUFFIX as LANGUAGE_BY_SUFFIX
@@ -64,6 +65,17 @@ INHERITABLE_TYPES = {"CLASS", "INTERFACE", "STRUCT", "ENUM", "TRAIT", "RECORD"}
 _DOTTED_NAME = re.compile(r"^[A-Za-z_]\w*(\.[A-Za-z_]\w*)*$")
 
 
+def _symbol_range(
+    sym: SymbolRecord, file_text: Optional[str], lines: Optional[List[str]]
+):
+    """Issue #412: the verified line range for a symbol, or None."""
+    if file_text is None or lines is None or not sym.text:
+        return None
+    if sym.symbol_path is None:
+        return module_range(lines, file_text, sym.text)
+    return verified_range(lines, sym.span[1] if sym.span else None, sym.text)
+
+
 class GraphAssembler:
     def __init__(self, module_convention: ModulePathConvention):
         self.module_convention = module_convention
@@ -77,10 +89,20 @@ class GraphAssembler:
         graph = RepoGraph(repo_root, ingestion_id)
 
         for relative_path, result in extracted_files:
+            file_text = next(
+                (s.text for s in result.symbols if s.symbol_path is None), None
+            )
+            file_lines = split_lines(file_text) if file_text is not None else None
             for sym in result.symbols:
                 graph.add_entity(
                     relative_path,
-                    self._lower_symbol(relative_path, sym, ingestion_id),
+                    self._lower_symbol(
+                        relative_path,
+                        sym,
+                        ingestion_id,
+                        file_text=file_text,
+                        file_lines=file_lines,
+                    ),
                 )
             for imp in result.imports:
                 graph.add_entity(
@@ -111,7 +133,12 @@ class GraphAssembler:
     # -----------------------------
 
     def _lower_symbol(
-        self, relative_path: str, sym: SymbolRecord, ingestion_id
+        self,
+        relative_path: str,
+        sym: SymbolRecord,
+        ingestion_id,
+        file_text: Optional[str] = None,
+        file_lines: Optional[List[str]] = None,
     ) -> dict:
         canonical_id = build_canonical_id(relative_path, sym.symbol_path)
         parent_id = (
@@ -120,6 +147,7 @@ class GraphAssembler:
             else None  # MODULE has no parent
         )
         metadata = {k: v for k, v in sym.metadata.items() if k != "doc_type"}
+        span = _symbol_range(sym, file_text, file_lines)
         return {
             "artifact_type": sym.kind,
             "id": canonical_id,
@@ -132,6 +160,10 @@ class GraphAssembler:
             "doc_type": sym.metadata.get("doc_type", "unknown"),
             "language": _language_for_path(relative_path),
             "text": sym.text,
+            # Issue #412: a verified one-based inclusive line range, or None
+            # (never an unverified extractor span; see source_span.py).
+            "start_line": span[0] if span else None,
+            "end_line": span[1] if span else None,
             "metadata": metadata,
             "defines": [],
         }

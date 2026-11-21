@@ -16,6 +16,7 @@ This prevents cross-repository collisions.
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Column,
+    Integer,
     String,
     ForeignKey,
     JSON,
@@ -149,6 +150,18 @@ class DocumentNode(Base):
         nullable=True,
         doc="ADR-053 role/subject/derivation/validity/classification "
         "envelope; NULL means unclassified (read every facet as unknown).",
+    )
+    # Issue #412: verified one-based inclusive line range holding `text` in the
+    # file (source read API line convention). NULL = not verified/unknown.
+    start_line: int | None = Column(
+        Integer,
+        nullable=True,
+        doc="First line of the verified source range, or NULL if unverified.",
+    )
+    end_line: int | None = Column(
+        Integer,
+        nullable=True,
+        doc="Last line of the verified source range, or NULL if unverified.",
     )
     # ------------------------------------------------------------------
     # Relationships

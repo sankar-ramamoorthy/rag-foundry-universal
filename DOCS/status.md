@@ -1083,6 +1083,16 @@ Other languages report `not_covered_language`, not an empty result. Definition-n
 with a mocked ingestion service only; not run against the live stack; not deployed. See the
 [spec](/specs/013-orchestrator-read-and-locate/spec.md) and [issue #408](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/408).
 
+## Persisted verified source spans (#412)
+
+Ingestion now stores a verified one-based line range on each code node (`document_nodes.start_line`/`end_line`, additive
+migration `20261121_node_source_span`) and carries it into the passage metadata; `/v1/rag` citations return it. A range is stored
+only after the lines are compared to the artifact text; otherwise it is null with a reason (several passages, unverified,
+pre-#412 vectors). Overflow pieces get sub-ranges or none. Existing repositories need the migration plus a full rebuild to gain
+ranges. **Not run against Postgres** (Docker was unavailable): unit tests only. The #398 frozen corpus now reads a committed copy
+of the witnessed source instead of the live file. See the [spec](/specs/014-persisted-source-spans/spec.md) and
+[issue #412](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/412).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
