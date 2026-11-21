@@ -123,6 +123,15 @@ The patch is applied in the same request that moves the rows to the new
 generation (as the existing provenance patch is), so a row never carries the
 new generation with an old range.
 
+**Atomicity (owner, 2026-11-21):** the metadata update and the generation
+transition are one atomic unit. If any part fails, no row of that request is
+left half-transitioned: either every eligible row moves to the new generation
+with its range, or the request is rejected and every row stays as it was. Rows
+skipped by the digest check are the only permitted exception, and they are
+unchanged, counted and reported. Implementation must check this with a test that
+injects a failure after some rows have been processed and asserts that the stored
+generation and metadata of every row equal their prior state.
+
 ### 5. Generation consistency
 
 - A window's range is relative to the artifact range of the same generation,
