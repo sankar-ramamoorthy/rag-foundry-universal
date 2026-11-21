@@ -12,7 +12,7 @@ from typing import Any, Mapping, Optional, Sequence
 
 from pydantic import BaseModel
 
-RANGE_REASON = "line span not persisted at ingestion"
+RANGE_REASON = "line span not persisted at ingestion"  # ingested before #412
 
 
 class Citation(BaseModel):
@@ -32,23 +32,40 @@ def _text(value: Any) -> Optional[str]:
     return str(value) if value else None
 
 
+def _range(
+    entry: Mapping[str, Any],
+) -> tuple[Optional[int], Optional[int], Optional[str]]:
+    """The persisted range when well formed, else None with a reason. A range is
+    never derived or repaired here."""
+    start, end = entry.get("start_line"), entry.get("end_line")
+    if type(start) is int and type(end) is int and 1 <= start <= end:
+        return start, end, None
+    return None, None, _text(entry.get("range_reason")) or RANGE_REASON
+
+
 def from_manifest(
     repo_id: str,
     generation_id: Optional[str],
     manifest: Optional[Sequence[Mapping[str, Any]]],
 ) -> list[Citation]:
-    return [
-        Citation(
-            repo_id=repo_id,
-            generation_id=generation_id,
-            path=_text(entry.get("relative_path")),
-            canonical_id=_text(entry.get("canonical_id")),
-            document_id=_text(entry.get("document_id")),
-            chunk_id=_text(entry.get("chunk_id")),
-            text_sha256=_text(entry.get("text_sha256")),
+    out = []
+    for entry in manifest or []:
+        start, end, reason = _range(entry)
+        out.append(
+            Citation(
+                repo_id=repo_id,
+                generation_id=generation_id,
+                path=_text(entry.get("relative_path")),
+                canonical_id=_text(entry.get("canonical_id")),
+                document_id=_text(entry.get("document_id")),
+                chunk_id=_text(entry.get("chunk_id")),
+                text_sha256=_text(entry.get("text_sha256")),
+                start_line=start,
+                end_line=end,
+                range_reason=reason,
+            )
         )
-        for entry in (manifest or [])
-    ]
+    return out
 
 
 def from_inventory(

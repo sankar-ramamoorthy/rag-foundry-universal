@@ -99,6 +99,22 @@ class RepoIngestResponse(BaseModel):
     embed_progress: dict | None = None
 
 
+def _passage_span(node, chunk_count: int) -> dict:
+    """Issue #412: line range metadata for this artifact's passage(s).
+
+    Only a single passage that is the whole artifact carries the artifact's
+    verified range; several passages, or no verified range, carry none and a
+    reason. A range is never guessed.
+    """
+    start = getattr(node, "start_line", None)
+    end = getattr(node, "end_line", None)
+    if type(start) is not int or type(end) is not int or not 1 <= start <= end:
+        return {"range_reason": "range not verified at ingestion"}
+    if chunk_count != 1:
+        return {"range_reason": "artifact split into several passages"}
+    return {"start_line": start, "end_line": end}
+
+
 def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) -> None:
     """Chunk+embed one node not eligible for reuse (T024's re-embed path)."""
     chunks = pipeline._chunk(node.text, "code", provider)
@@ -107,8 +123,10 @@ def _chunk_and_buffer_node(pipeline, buffer, node, repo_id: str, provider: str) 
     # row with, so this never drifts from what's persisted -- transport,
     # not a second opinion.
     provenance = classify_node(node.relative_path, node.doc_type, node.text)
+    span = _passage_span(node, len(chunks))
     for ordinal, chunk in enumerate(chunks):
         chunk.metadata.update(
+            **span,
             canonical_id=node.canonical_id,
             repo_id=repo_id,
             relative_path=node.relative_path,

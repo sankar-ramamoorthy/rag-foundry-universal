@@ -37,15 +37,21 @@ def _source_label(c: Dict[str, object]) -> Optional[object]:
     )
 
 
-def _relative_path(c: Dict[str, object]) -> Optional[object]:
-    """Repository-relative file path from chunk metadata (flat or nested)."""
+def _meta(c: Dict[str, object], key: str) -> Optional[object]:
+    """A chunk metadata value (flat or nested under source_metadata)."""
     raw_metadata = c.get("metadata")
     metadata: Dict[str, object] = (
         raw_metadata if isinstance(raw_metadata, dict) else {}
     )
     raw_nested = metadata.get("source_metadata")
     nested: Dict[str, object] = raw_nested if isinstance(raw_nested, dict) else {}
-    return metadata.get("relative_path") or nested.get("relative_path") or None
+    value = metadata.get(key)
+    return value if value is not None else nested.get(key)
+
+
+def _relative_path(c: Dict[str, object]) -> Optional[object]:
+    """Repository-relative file path from chunk metadata (flat or nested)."""
+    return _meta(c, "relative_path") or None
 
 
 def build_sources(agent_chunks: List[Dict[str, object]]) -> List[str]:
@@ -171,6 +177,11 @@ def build_final_context_manifest(
                 "source_label": _source_label(c),
                 # Issue #407: additive, for structured citations.
                 "relative_path": _relative_path(c),
+                # Issue #412: verified line range persisted at ingestion, or
+                # None with a reason; never guessed here.
+                "start_line": _meta(c, "start_line"),
+                "end_line": _meta(c, "end_line"),
+                "range_reason": _meta(c, "range_reason"),
                 "char_count": len(text),
                 "text_sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
                 "token_count": conservative_token_count(_render_chunk(c)),

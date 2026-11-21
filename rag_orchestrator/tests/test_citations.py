@@ -153,3 +153,59 @@ def test_rag_inventory_path_cites_the_file(monkeypatch):
     ).json()
     assert [c["path"] for c in body["citations"]] == ["x.py"]
     assert body["citations"][0]["text_sha256"] == "e" * 64
+
+
+# --- issue #412: persisted ranges flow through, never guessed ---
+
+
+def test_manifest_carries_persisted_range_flat_and_nested():
+    chunks = [
+        {
+            "text": "x",
+            "document_id": "d1",
+            "metadata": {"start_line": 3, "end_line": 8, "relative_path": "a.py"},
+        },
+        {
+            "text": "y",
+            "document_id": "d2",
+            "metadata": {
+                "source_metadata": {
+                    "relative_path": "b.py",
+                    "range_reason": "artifact split into several passages",
+                }
+            },
+        },
+        {"text": "z", "document_id": "d3"},
+    ]
+    manifest = build_final_context_manifest(chunks)
+    assert (manifest[0]["start_line"], manifest[0]["end_line"]) == (3, 8)
+    assert manifest[1]["start_line"] is None
+    assert manifest[1]["range_reason"] == "artifact split into several passages"
+    assert manifest[2]["range_reason"] is None
+
+
+def test_citation_uses_a_well_formed_persisted_range():
+    out = citations.from_manifest(
+        "repo-x", GEN, [_entry(start_line=3, end_line=8, range_reason=None)]
+    )
+    assert (out[0].start_line, out[0].end_line) == (3, 8)
+    assert out[0].range_reason is None
+
+
+def test_citation_keeps_the_stored_reason_when_there_is_no_range():
+    out = citations.from_manifest(
+        "repo-x", GEN, [_entry(range_reason="passage split; range not established")]
+    )
+    assert out[0].start_line is None
+    assert out[0].range_reason == "passage split; range not established"
+
+
+@pytest.mark.parametrize(
+    "start,end", [(0, 3), (5, 2), ("3", 8), (3, None), (True, 5)]
+)
+def test_malformed_range_is_never_repaired(start, end):
+    out = citations.from_manifest(
+        "repo-x", GEN, [_entry(start_line=start, end_line=end)]
+    )
+    assert out[0].start_line is None and out[0].end_line is None
+    assert out[0].range_reason == REASON

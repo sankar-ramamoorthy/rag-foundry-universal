@@ -11,6 +11,9 @@ from src.core import execution_policy as policy
 ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / "DOCS/evaluations/intent-obligations"
 MODULE = "ingestion_service/src/api/v1/codebase_ingest.py"
+# The witnessed source is a committed copy, not the live file, so ordinary
+# development of that module cannot silently invalidate the frozen corpus.
+FIXTURE = DATA / "fixtures/codebase_ingest.py.txt"
 PATHS = (MODULE, "api/ingest.py", "cli/ingest.py")
 REPO = "00000000-0000-4000-8000-000000000001"
 GEN = "00000000-0000-4000-8000-000000000002"
@@ -28,7 +31,7 @@ def matches(entity):
 
 class Corpus:
     def __init__(self):
-        self.text = {MODULE: (ROOT / MODULE).read_text(encoding="utf8")}
+        self.text = {MODULE: FIXTURE.read_text(encoding="utf8")}
         self.witness = json.loads((DATA / "inventory-witness.json").read_bytes())
         if sha(self.text[MODULE]) != self.witness["sha256"]:
             raise ValueError("corpus source differs from frozen inventory witness")
