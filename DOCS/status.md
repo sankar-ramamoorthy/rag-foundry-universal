@@ -1093,6 +1093,11 @@ ranges. **Not run against Postgres** (Docker was unavailable): unit tests only. 
 of the witnessed source instead of the live file. See the [spec](/specs/014-persisted-source-spans/spec.md) and
 [issue #412](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/412).
 
+Live check on the dev host (2026-11-21): the range read back through `/source/read` matched the cited method; only 25.8% of
+Mealie passages carry a range. Baseline and follow-ups: [measurement](/DOCS/test_results/2026-11-21-412-mealie-span-baseline.md),
+[#416](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/416) (per-window ranges, priority),
+[#417](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/417) (same-line prefix).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
