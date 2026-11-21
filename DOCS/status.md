@@ -1066,6 +1066,14 @@ Evidence-bearing orchestrator responses (`/v1/rag`, `/v1/repos/{id}/evidence`, o
 unchanged. Covered by unit tests with mocked HTTP only; not exercised against the live stack and not deployed (operator-owned).
 See the [spec](/specs/011-evidence-envelope/spec.md) and [issue #406](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/406).
 
+## Structured citations (#407)
+
+`POST /v1/rag` responses carry an additive `citations` list next to the unchanged `sources`: one per passage in the final context,
+with path, canonical id, generation and passage digest. **Line ranges are null with a stated reason**: definition spans exist in the
+extractor IR but ingestion does not persist them. Persisting them is a separate ingestion change (schema, incremental-reuse
+retagging, ADR review) and still needs its own issue. Unit tests only; not deployed. See the
+[spec](/specs/012-structured-citations/spec.md) and [issue #407](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/407).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
