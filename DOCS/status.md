@@ -1046,6 +1046,12 @@ held-out outages from truncation). No router is selected. Development labels
 and the prompting asymmetry limit what the result supports. Labels were
 corrected before any capture ([change log](/DOCS/evaluations/intent-obligations/label-changes.md)).
 
+Next (#400, proposed, unexecuted): a narrow embedding-only follow-up on
+directional semantics and compound obligations, with a sealed set and a
+zero-wrong-deterministic-route gate. See the
+[protocol](/DOCS/evaluations/directional-compound-routing/protocol.md). The
+production router stays unchanged.
+
 ## Frontend direction (ADR-057, proposed)
 
 React with TypeScript (Vite proposed) is the proposed product frontend; Gradio
