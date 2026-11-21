@@ -1074,6 +1074,15 @@ extractor IR but ingestion does not persist them. Persisting them is a separate 
 retagging, ADR review) and still needs its own issue. Unit tests only; not deployed. See the
 [spec](/specs/012-structured-citations/spec.md) and [issue #407](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/407).
 
+## Source read and locate through the orchestrator (#408)
+
+Three read-only GET routes: `/v1/repos/{id}/source/files`, `/source/read` and `/locate`. Files and read proxy the ingestion source
+navigation API unchanged (a returned-text digest mismatch is a 502) and add the evidence envelope. Locate matches a path, glob or
+basename and returns Python definitions identical to a whole-module AST parse via the verified paged inventory, with zero model calls.
+Other languages report `not_covered_language`, not an empty result. Definition-name and semantic search are not included. Unit tests
+with a mocked ingestion service only; not run against the live stack; not deployed. See the
+[spec](/specs/013-orchestrator-read-and-locate/spec.md) and [issue #408](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/408).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
