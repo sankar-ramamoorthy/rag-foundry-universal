@@ -16,6 +16,7 @@ from src.api.v1.models import (
     TraceResponse,
     ImpactResponse,
 )
+from src.core import envelope
 from src.core.inventory_query import inventory_response
 from src.core.config import get_settings
 from src.core.evidence_service import (
@@ -59,6 +60,17 @@ logger = logging.getLogger(__name__)
 #        )
 
 
+async def _with_rag_envelope(result):
+    """Issue #406: attach the evidence envelope to a RAG result. The
+    envelope is computed from the plan the pipeline already returned."""
+    plan = result.retrieval_plan
+    coverage, notes = envelope.rag_coverage(plan)
+    env = await envelope.build(
+        result.repo_id, plan.get("generation_id"), coverage, notes
+    )
+    return result.model_copy(update={"envelope": env})
+
+
 # /rag endpoint to run the full RAG (retrieval-augmented generation) process
 @router.post("/rag", response_model=RAGResponse)
 async def rag_endpoint(rag_query: RAGQuery):
@@ -67,7 +79,7 @@ async def rag_endpoint(rag_query: RAGQuery):
     try:
         inventory = await inventory_response(rag_query)
         if inventory is not None:
-            return inventory
+            return await _with_rag_envelope(inventory)
         result = await run_rag(
             query=rag_query.query,
             context_mode=rag_query.context_mode,
@@ -94,7 +106,7 @@ async def rag_endpoint(rag_query: RAGQuery):
                 else None
             ),
         )
-        return result
+        return await _with_rag_envelope(result)
 
     except HTTPException:
         # Preserve service-layer status codes (e.g. 404 unknown repo_id)
@@ -138,7 +150,19 @@ async def get_repo_orient(repo_id: str):
     generation-fenced ORIENT evidence workflow); this route is purely
     the thin HTTP passthrough.
     """
-    return await fetch_orient_response(repo_id)
+    body = await fetch_orient_response(repo_id)
+    coverage, notes = envelope.orient_coverage(
+        body.get("gaps") or [], body.get("heuristic_fields") or []
+    )
+    env = await envelope.build(
+        repo_id,
+        body.get("ingestion_id"),
+        coverage,
+        notes,
+        commit_sha=body.get("commit_sha"),
+        commit_known=True,
+    )
+    return {**body, "envelope": env.model_dump()}
 
 
 @router.get("/repos/{repo_id}/trace", response_model=TraceResponse)
@@ -196,7 +220,11 @@ async def trace_endpoint(
         max_depth=effective_depth,
         max_nodes=settings.TRACE_MAX_NODES,
     )
-    return TraceResponse(repo_id=repo_id, ingestion_id=generation, **asdict(result))
+    coverage, notes = envelope.graph_coverage(result.truncated, result.depth_limited)
+    env = await envelope.build(repo_id, generation, coverage, notes)
+    return TraceResponse(
+        repo_id=repo_id, ingestion_id=generation, envelope=env, **asdict(result)
+    )
 
 
 @router.get("/repos/{repo_id}/impact", response_model=ImpactResponse)
@@ -242,7 +270,11 @@ async def impact_endpoint(repo_id: str, start: str, max_depth: int | None = None
         max_depth=effective_depth,
         max_candidates=settings.IMPACT_MAX_CANDIDATES,
     )
-    return ImpactResponse(repo_id=repo_id, ingestion_id=generation, **asdict(result))
+    coverage, notes = envelope.graph_coverage(result.truncated)
+    env = await envelope.build(repo_id, generation, coverage, notes)
+    return ImpactResponse(
+        repo_id=repo_id, ingestion_id=generation, envelope=env, **asdict(result)
+    )
 
 
 @router.post("/rag/simple", response_model=SimpleRAGResponse)
@@ -271,10 +303,16 @@ async def simple_rag_endpoint(simple_rag_query: SimpleRAGQuery):
 # --- Issue #200, Stage A3: bounded evidence-sufficiency workflow ---
 
 
-def _to_evidence_response(
+async def _to_evidence_response(
     repo_id: str, mode: str, result: WorkflowResult
 ) -> EvidenceResponse:
-    return EvidenceResponse(repo_id=repo_id, mode=mode, **asdict(result))
+    fields = asdict(result)
+    generation_id = fields.pop("generation_id", None)
+    coverage, notes = envelope.evidence_coverage(
+        result.assessment.status, result.assessment.missing_obligations
+    )
+    env = await envelope.build(repo_id, generation_id, coverage, notes)
+    return EvidenceResponse(repo_id=repo_id, mode=mode, envelope=env, **fields)
 
 
 async def _dispatch_orient_evidence(
@@ -391,4 +429,4 @@ async def evidence_endpoint(repo_id: str, req: EvidenceRequest):
     """
     dispatch = _EVIDENCE_DISPATCH[req.mode]  # pydantic Literal already restricts this
     result = await dispatch(repo_id, req)
-    return _to_evidence_response(repo_id, req.mode, result)
+    return await _to_evidence_response(repo_id, req.mode, result)

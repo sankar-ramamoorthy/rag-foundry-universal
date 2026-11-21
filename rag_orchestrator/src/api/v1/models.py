@@ -3,6 +3,8 @@ from typing import List, Literal, Optional, Dict, Any
 
 from pydantic import BaseModel, StrictBool, Field, model_validator
 
+from src.core.envelope import EvidenceEnvelope
+
 
 class RAGQuery(BaseModel):
     execution_mode: Literal["auto", "rag"] = "auto"
@@ -67,6 +69,8 @@ class RAGResponse(BaseModel):  # Updated name
     trace_id: Optional[str] = None
     # WP-S8: whether the reranker actually ran for this response.
     reranked: bool = False
+    # Issue #406: additive evidence envelope (generation, commit, coverage).
+    envelope: Optional[EvidenceEnvelope] = None
 
 
 class SearchQuery(BaseModel):
@@ -131,6 +135,7 @@ class TraceResponse(BaseModel):
     truncated: bool
     depth_limited: bool
     gaps: List[GapNoteModel]
+    envelope: Optional[EvidenceEnvelope] = None
 
 
 class ImpactBasisModel(BaseModel):
@@ -155,6 +160,7 @@ class ImpactResponse(BaseModel):
     max_depth: int
     candidates: List[ImpactCandidateModel]
     truncated: bool
+    envelope: Optional[EvidenceEnvelope] = None
 
 
 # --- Issue #200, Stage A3: bounded evidence-sufficiency workflow ---
@@ -255,3 +261,4 @@ class EvidenceResponse(BaseModel):
     stop_reason: str
     explanation: Optional[ExplanationModel] = None
     authority: Optional[AuthorityAssessmentModel] = None
+    envelope: Optional[EvidenceEnvelope] = None
