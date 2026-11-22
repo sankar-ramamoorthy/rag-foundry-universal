@@ -216,11 +216,11 @@ def test_failure_after_some_rows_rolls_everything_back(env, monkeypatch):
     original = PgVectorStore._patch_range_batch
     calls = {"n": 0}
 
-    def flaky(self, cur, new_generation, batch):
+    def flaky(self, cur, new_generation, expected, batch):
         calls["n"] += 1
         if calls["n"] == 2:
             raise RuntimeError("injected failure")
-        return original(self, cur, new_generation, batch)
+        return original(self, cur, new_generation, expected, batch)
 
     monkeypatch.setattr(PgVectorStore, "_patch_range_batch", flaky)
     before = env.snapshot()
@@ -254,3 +254,39 @@ def test_batches_are_applied_across_a_batch_boundary(env):
     result = env.retag(all_ranges(env))
     assert result.ranges_patched == 3
     assert env.meta(env.doc_b, 0)[1]["start_line"] == 3
+
+
+def test_a_realistically_large_request_completes_in_one_pass(env):
+    """The live failure: a reuse request for a repository the size of a real one
+    outlasted its client timeout because every row was updated twice. 3,000
+    passages across 150 documents in ONE request must finish well inside it."""
+    import time
+
+    docs = [str(uuid.uuid4()) for _ in range(150)]
+    with psycopg.connect(env.dsn) as conn:
+        for i, document in enumerate(docs):
+            conn.execute(
+                "INSERT INTO ingestion_service.document_nodes "
+                "(document_id, repo_id, canonical_id, relative_path, title, "
+                "summary, source, ingestion_id, doc_type) "
+                "VALUES (%s, %s, %s, %s, 't', '', 'test', %s, 'code')",
+                (document, env.repo, f"big{i}.py", f"big{i}.py", env.g_new),
+            )
+    texts = {(d, i): f"{d[:8]}-passage-{i}" for d in docs for i in range(20)}
+    env.store.add([
+        record(env.g_old, d, i, text, env.repo) for (d, i), text in texts.items()
+    ])
+    ranges = {
+        d: [ok(i, texts[(d, i)], 1 + i, 2 + i) for i in range(20)] for d in docs
+    }
+    started = time.monotonic()
+    result = env.store.retag_ingestion_id(
+        docs, env.g_new, None, expected_ingestion_id=env.g_old,
+        source_ranges_by_document_id=ranges,
+    )
+    elapsed = time.monotonic() - started
+    assert result.rows == 3000 and result.ranges_patched == 3000
+    assert list(result.ranges_skipped) == []
+    assert elapsed < 60, f"3,000 passages took {elapsed:.1f}s"
+    gen, meta = env.meta(docs[7], 11)
+    assert gen == env.g_new and (meta["start_line"], meta["end_line"]) == (12, 13)

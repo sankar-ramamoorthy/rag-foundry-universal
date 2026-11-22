@@ -1113,6 +1113,11 @@ without ranges so reuse never depends on location metadata. An incremental run t
 Reuse succeeding does not imply the ranges were patched. Not deployed and not run against a live repository. See the [spec](/specs/015-per-window-source-ranges/spec.md)
 and [plan](/specs/015-per-window-source-ranges/plan.md).
 
+The first live incremental run of #416 failed (vector-store read timeout during the reuse retag) and left Mealie unservable until
+a full rebuild; the 15,619-of-17,676 range yield and a clean audit of readable ranges were confirmed on the rebuilt generation. A fix
+(one UPDATE per row, smaller requests, explicit timeout handling, and a documented generation-promotion and recovery behavior) is in a PR
+and not yet deployed. See [the note](/DOCS/notes/20261122-retag-timeout-and-generation-promotion.md).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**

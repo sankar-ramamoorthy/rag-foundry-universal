@@ -737,3 +737,70 @@ def test_reuse_skips_a_passage_whose_digest_does_not_match(
         assert new[4] == str(id2)
     # The other artifact in the same ingestion was patched.
     assert all(r[5].get("start_line") for r in _vector_rows(function_doc))
+
+
+# ---------------------------------------------------------------------
+# Issue #416 live finding: a failure between retag requests must not leave a
+# partially promoted generation eligible for serving. Each retag request is
+# atomic in the vector store, but a run is many requests; the generation is
+# promoted only when the whole run is marked `completed`. A run that dies
+# midway is `failed`, nothing is served from it, and the next run is a full
+# ingestion (its prior generation did not complete), which leaves one
+# consistent generation with no duplicated vectors.
+# ---------------------------------------------------------------------
+
+def test_failure_between_retag_requests_is_never_servable_and_recovers_by_full_run(
+    monkeypatch, vector_http_url, repo_id, tmp_path,
+):
+    from src.core import db_utils
+
+    _write_repo(tmp_path, "def touch():\n    return 1\n")
+    id1 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id1)
+    docs = _keep_document_ids(repo_id)
+    first_counts = {d: len(_vector_rows(d)) for d in docs}
+    assert db_utils.resolve_current_generation(repo_id) == str(id1)
+
+    (tmp_path / "touch.py").write_text("def touch():\n    return 2\n", encoding="utf-8")
+    original = HttpVectorStore._post_retag
+    calls = {"n": 0}
+
+    def times_out_on_the_second_request(self, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 2:
+            raise requests.Timeout("read timed out")
+        return original(self, *args, **kwargs)
+
+    monkeypatch.setattr(HttpVectorStore, "RETAG_BATCH_SIZE", 1)  # one doc per request
+    monkeypatch.setattr(HttpVectorStore, "_post_retag", times_out_on_the_second_request)
+    id2 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id2)
+
+    # The first request committed, the second did not: a split generation exists
+    # physically, and it must not be servable.
+    assert calls["n"] == 2
+    assert _request_row(id2).status == "failed"
+    generations = {g for d in docs for g in _vector_ingestion_ids(d)}
+    assert generations == {str(id1), str(id2)}, (
+        f"generations on the reused documents: {sorted(generations)}; "
+        f"id1={id1} id2={id2}; per document: "
+        f"{ {d: sorted(_vector_ingestion_ids(d)) for d in docs} }"
+    )
+    assert db_utils.resolve_current_generation(repo_id) is None
+    assert db_utils.generation_status(repo_id) == "failed"
+
+    # Recovery: the next run sees no completed prior generation, so it is a full
+    # ingestion, and ends with one consistent generation and no duplicates.
+    monkeypatch.setattr(HttpVectorStore, "_post_retag", original)
+    id3 = uuid.uuid4()
+    _run_ingestion(monkeypatch, vector_http_url, tmp_path, repo_id, id3)
+    assert _request_row(id3).status == "completed"
+    assert _request_row(id3).is_incremental is False
+    assert db_utils.resolve_current_generation(repo_id) == str(id3)
+    # Rows of older generations may linger here: their best-effort cleanup call
+    # needs the production service hostname, which this test process cannot
+    # resolve. They are not served; what matters is the current generation.
+    for d in docs:
+        current = [r for r in _vector_rows(d) if r[4] == str(id3)]
+        assert len(current) == first_counts[d]
+        assert len({r[0] for r in current}) == len(current)  # no duplicate ordinals

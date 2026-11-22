@@ -85,10 +85,19 @@ def test_malformed_patch_entries_are_rejected_by_the_request_model(bad):
 # --- the store ---
 
 
+def _moves(cursor):
+    """The executed statements that move rows (UPDATE ... ingestion_id)."""
+    return [
+        c for c in cursor.execute.call_args_list
+        if "UPDATE" in str(c.args[0]) and "ingestion_id = %s" in str(c.args[0])
+    ]
+
+
 @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
-def test_patch_runs_in_the_same_connection_after_the_retag(mock_connect):
+def test_patch_and_move_run_first_in_the_same_connection(mock_connect):
     cursor = _cursor(mock_connect)
-    cursor.fetchall.side_effect = [[(DOC,)], [(DOC, 0)]]
+    # 1) move-and-patch returns chunk 0; 2) the plain retag moves what is left.
+    cursor.fetchall.side_effect = [[(DOC, 0)], [(DOC,)]]
     store = PgVectorStore(dsn="mock", dimension=1024)
 
     result = store.retag_ingestion_id(
@@ -98,51 +107,85 @@ def test_patch_runs_in_the_same_connection_after_the_retag(mock_connect):
 
     assert mock_connect.call_count == 1  # one connection, so one transaction
     texts = [str(c.args[0]) for c in cursor.execute.call_args_list]
-    retag = next(i for i, t in enumerate(texts) if "SET ingestion_id" in t)
     patch_ = next(i for i, t in enumerate(texts) if "start_line" in t)
-    assert retag < patch_
+    retag = next(
+        i for i, t in enumerate(texts)
+        if "SET ingestion_id" in t and "start_line" not in t
+    )
+    assert patch_ < retag  # a patched row is moved once, by the first statement
     assert result.ranges_patched == 1 and list(result.ranges_skipped) == []
+    assert result.rows == 2  # one patched row plus one moved by the plain retag
 
 
 @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
-def test_patch_only_touches_location_keys_and_is_digest_and_generation_guarded(
+def test_each_row_is_written_once_a_move_statement_per_batch_plus_one_plain(
     mock_connect,
 ):
     cursor = _cursor(mock_connect)
-    cursor.fetchall.side_effect = [[(DOC,)], [(DOC, 0)]]
+    cursor.fetchall.return_value = []
+    store = PgVectorStore(dsn="mock", dimension=1024)
+    store.RANGE_PATCH_BATCH = 2
+    store.retag_ingestion_id(
+        [DOC], "new", {DOC: {"role": "x"}}, expected_ingestion_id="old",
+        source_ranges_by_document_id={DOC: [ok(i) for i in range(5)]},
+    )
+    moves = _moves(cursor)
+    with_ranges = [c for c in moves if "start_line" in str(c.args[0])]
+    plain = [c for c in moves if "start_line" not in str(c.args[0])]
+    assert len(with_ranges) == 3  # 2 + 2 + 1 passages
+    assert len(plain) == 1  # the leftover rows, retagged once (with provenance)
+
+
+@patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+def test_move_and_patch_is_location_only_digest_and_generation_guarded(
+    mock_connect,
+):
+    cursor = _cursor(mock_connect)
+    cursor.fetchall.side_effect = [[(DOC, 0)], [(DOC,)]]
     store = PgVectorStore(dsn="mock", dimension=1024)
     store.retag_ingestion_id(
         [DOC], "new", expected_ingestion_id="old",
+        source_ranges_by_document_id={DOC: [ok(0)]},
+    )
+    call = next(
+        c for c in cursor.execute.call_args_list if "start_line" in str(c.args[0])
+    )
+    stmt, params = str(call.args[0]), call.args[1]
+    set_clause = stmt.split("SET", 1)[1].split("FROM", 1)[0]
+    # Only these two columns are written.
+    written = set_clause.replace("source_metadata", "").replace("ingestion_id", "")
+    for forbidden in ("vector", "chunk_text", "chunk_index", "chunk_id", "provider"):
+        assert forbidden not in written
+    for key in ("'start_line'", "'end_line'", "'range_reason'"):
+        assert key in stmt
+    # Guards: digest of the stored passage, and the EXPECTED (prior) generation.
+    assert "sha256" in stmt and "vc.ingestion_id = %s" in stmt
+    assert params[0] == "new" and params[-1] == "old"
+
+
+@patch("src.core.vectorstore.pgvector_store.psycopg.connect")
+def test_provenance_rides_the_same_statement_for_patched_rows(mock_connect):
+    cursor = _cursor(mock_connect)
+    cursor.fetchall.side_effect = [[(DOC, 0)], [], []]
+    store = PgVectorStore(dsn="mock", dimension=1024)
+    store.retag_ingestion_id(
+        [DOC], "new", {DOC: {"role": "implementation"}},
+        expected_ingestion_id="old",
         source_ranges_by_document_id={DOC: [ok(0)]},
     )
     stmt = next(
         str(c.args[0]) for c in cursor.execute.call_args_list
         if "start_line" in str(c.args[0])
     )
-    # The only column written is source_metadata, through the three keys.
-    set_clause = stmt.split("SET", 1)[1].split("FROM", 1)[0]
-    assert "source_metadata" in set_clause
-    for forbidden in ("vector", "chunk_text", "chunk_index", "chunk_id", "provider",
-                      "ingestion_id"):
-        assert forbidden not in set_clause.replace("source_metadata", "")
-    for key in ("'start_line'", "'end_line'", "'range_reason'"):
-        assert key in stmt
-    # Guards: the digest of the stored passage, and the new generation.
-    assert "sha256" in stmt and "chunk_text" in stmt
-    assert "vc.ingestion_id = %s" in stmt
-    params = next(
-        c.args[1] for c in cursor.execute.call_args_list
-        if "start_line" in str(c.args[0])
-    )
-    assert "new" in params
+    assert "jsonb_set" in stmt  # provenance applied in the same write
 
 
 @patch("src.core.vectorstore.pgvector_store.psycopg.connect")
 def test_unmatched_patches_are_reported_with_a_reason_not_dropped(mock_connect):
     cursor = _cursor(mock_connect)
-    # Retag moves DOC. Patch matches only chunk 0; chunk 1 mismatched its
-    # digest (the row exists), chunk 2 does not exist at the new generation.
-    cursor.fetchall.side_effect = [[(DOC,)], [(DOC, 0)], [(DOC, 1)]]
+    # Move-and-patch moves chunk 0 only. The plain retag then moves chunk 1's row
+    # (digest mismatch). Chunk 2 does not exist at the new generation.
+    cursor.fetchall.side_effect = [[(DOC, 0)], [(DOC,)], [(DOC, 1)]]
     store = PgVectorStore(dsn="mock", dimension=1024)
 
     result = store.retag_ingestion_id(
@@ -176,21 +219,6 @@ def test_bad_input_is_refused_before_any_sql(mock_connect):
                 source_ranges_by_document_id=bad,
             )
     cursor.execute.assert_not_called()
-
-
-@patch("src.core.vectorstore.pgvector_store.psycopg.connect")
-def test_patches_are_sent_in_bounded_batches(mock_connect):
-    cursor = _cursor(mock_connect)
-    cursor.fetchall.return_value = []
-    store = PgVectorStore(dsn="mock", dimension=1024)
-    store.RANGE_PATCH_BATCH = 2
-    store.retag_ingestion_id(
-        [DOC], "new", expected_ingestion_id="old",
-        source_ranges_by_document_id={DOC: [ok(i) for i in range(5)]},
-    )
-    updates = [c for c in cursor.execute.call_args_list
-               if "start_line" in str(c.args[0]) and "UPDATE" in str(c.args[0])]
-    assert len(updates) == 3  # 2 + 2 + 1
 
 
 @patch("src.core.vectorstore.pgvector_store.psycopg.connect")

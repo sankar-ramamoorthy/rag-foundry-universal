@@ -123,6 +123,12 @@ The patch is applied in the same request that moves the rows to the new
 generation (as the existing provenance patch is), so a row never carries the
 new generation with an old range.
 
+**Correction after the first live run:** the patch must move and patch a row in
+a single UPDATE (a second UPDATE of the same row rewrites its indexes again and
+made a large request outlast its timeout), requests are bounded by patch count,
+and a timeout is never retried or treated as missing documents. See
+`DOCS/notes/20261122-retag-timeout-and-generation-promotion.md`.
+
 **Atomicity (owner, 2026-11-21):** the metadata update and the generation
 transition are one atomic unit. If any part fails, no row of that request is
 left half-transitioned: either every eligible row moves to the new generation
