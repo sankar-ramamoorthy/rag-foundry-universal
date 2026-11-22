@@ -781,7 +781,11 @@ def test_failure_between_retag_requests_is_never_servable_and_recovers_by_full_r
     assert calls["n"] == 2
     assert _request_row(id2).status == "failed"
     generations = {g for d in docs for g in _vector_ingestion_ids(d)}
-    assert generations == {str(id1), str(id2)}
+    assert generations == {str(id1), str(id2)}, (
+        f"generations on the reused documents: {sorted(generations)}; "
+        f"id1={id1} id2={id2}; per document: "
+        f"{ {d: sorted(_vector_ingestion_ids(d)) for d in docs} }"
+    )
     assert db_utils.resolve_current_generation(repo_id) is None
     assert db_utils.generation_status(repo_id) == "failed"
 
