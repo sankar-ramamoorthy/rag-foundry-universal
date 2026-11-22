@@ -11,6 +11,23 @@ from src.core.worker_context import check_ownership
 
 logger = logging.getLogger(__name__)
 
+
+class RetagIncompleteError(RuntimeError):
+    """A retag request's outcome is unknown (timeout or lost connection).
+
+    The vector store applies each request atomically, but the client cannot tell
+    whether a request that timed out committed. Retrying, or re-embedding the
+    documents as if they were missing, could duplicate vectors, so the ingestion
+    fails instead. A failed generation is never served (its ingestion is not
+    `completed`), and the next ingestion of the repository is a full one because
+    its prior generation did not complete.
+    """
+
+    def __init__(self, message: str, documents_moved: int, documents_total: int):
+        super().__init__(message)
+        self.documents_moved = documents_moved
+        self.documents_total = documents_total
+
 class HttpVectorStore:
     def __init__(self, base_url: str, provider: str = "ollama"):
         """
@@ -240,18 +257,29 @@ class HttpVectorStore:
         total = 0
         retagged: set[str] = set()
         for batch in self._retag_batches(document_ids, ranges):
-            body = self._post_retag(
-                batch, new_ingestion_id, expected_ingestion_id,
-                provenance_by_document_id, ranges, stats,
-            )
+            try:
+                body = self._post_retag(
+                    batch, new_ingestion_id, expected_ingestion_id,
+                    provenance_by_document_id, ranges, stats,
+                )
+            except (requests.Timeout, requests.ConnectionError) as exc:
+                raise RetagIncompleteError(
+                    f"retag request outcome unknown ({type(exc).__name__}) after "
+                    f"{len(retagged)} of {len(document_ids)} document(s) moved; "
+                    "not retried because it may have committed",
+                    len(retagged), len(document_ids),
+                ) from exc
             total += body.get("count", 0)
             retagged.update(str(d) for d in body["document_ids"])
         return total, retagged
 
     # Issue #416 WP4: a retag request carries at most this many passage patches
     # (a single document with more gets a request of its own).
-    RANGE_PATCHES_PER_REQUEST = 4000
+    # Kept small so a request finishes well inside its timeout on a large
+    # repository (#416: a 4,000-patch request outlasted a 90 s timeout live).
+    RANGE_PATCHES_PER_REQUEST = 500
     RANGE_SKIPS_KEPT = 200
+    RETAG_TIMEOUT_SECONDS = 180
     last_range_patch: "dict | None" = None
 
     def _retag_batches(self, document_ids, ranges):
@@ -293,7 +321,9 @@ class HttpVectorStore:
         }
         if batch_ranges:
             payload["source_ranges_by_document_id"] = batch_ranges
-        resp = requests.post(url, json=payload, timeout=90)
+        resp = requests.post(
+            url, json=payload, timeout=self.RETAG_TIMEOUT_SECONDS
+        )
         try:
             resp.raise_for_status()
         except requests.HTTPError:
@@ -309,7 +339,9 @@ class HttpVectorStore:
             plain = {
                 k: v for k, v in payload.items() if k != "source_ranges_by_document_id"
             }
-            resp = requests.post(url, json=plain, timeout=90)
+            resp = requests.post(
+                url, json=plain, timeout=self.RETAG_TIMEOUT_SECONDS
+            )
             resp.raise_for_status()
             batch_ranges = {}
         body = resp.json()

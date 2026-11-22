@@ -325,21 +325,47 @@ class PgVectorStore(VectorStore):
                 flat.append((document_id, index, digest, patch))
         return flat
 
-    def _patch_range_batch(self, cur, new_ingestion_id: str, batch: "list[tuple]"):
-        """Patch one batch inside the caller's transaction. Only the three
-        location keys of source_metadata are written; a row is touched only if
-        it belongs to the new generation and its stored passage hashes to the
-        digest the range was computed for. Returns the (document_id,
-        chunk_index) pairs actually patched."""
+    def _patch_range_batch(
+        self,
+        cur,
+        new_ingestion_id: str,
+        expected_ingestion_id: str,
+        batch: "list[tuple]",
+    ):
+        """Move AND patch one batch of passages in a single UPDATE.
+
+        Each row is written once: it leaves the expected (prior) generation and
+        gets its new location metadata (and refreshed provenance, if any) in the
+        same statement. A second UPDATE of the same row would rewrite it and its
+        indexes (the HNSW vector index included) again, which is what made a
+        large reuse request outlast its client timeout (#416, live finding).
+
+        Only rows of ``expected_ingestion_id`` whose stored passage hashes to the
+        digest sent are touched, and only source_metadata and ingestion_id are
+        written; of source_metadata only the three location keys and, when sent,
+        provenance. Returns the (document_id, chunk_index) pairs moved.
+        """
         values = sql.SQL(", ").join(
-            sql.SQL("(%s::uuid, %s::int, %s, %s::jsonb)") for _ in batch
+            sql.SQL("(%s::uuid, %s::int, %s, %s::jsonb, %s::jsonb)") for _ in batch
         )
         statement = sql.SQL("""
             UPDATE {schema}.vector_chunks AS vc
-            SET source_metadata = (
-                vc.source_metadata - 'start_line' - 'end_line' - 'range_reason'
-            ) || v.patch
-            FROM (VALUES {values}) AS v(document_id, chunk_index, text_sha256, patch)
+            SET ingestion_id = %s,
+                source_metadata = CASE WHEN v.provenance IS NULL
+                    THEN (
+                        vc.source_metadata
+                        - 'start_line' - 'end_line' - 'range_reason'
+                    ) || v.patch
+                    ELSE jsonb_set(
+                        (
+                            vc.source_metadata
+                            - 'start_line' - 'end_line' - 'range_reason'
+                        ) || v.patch,
+                        %s, v.provenance, true
+                    ) END
+            FROM (VALUES {values}) AS v(
+                document_id, chunk_index, text_sha256, patch, provenance
+            )
             WHERE vc.document_id = v.document_id
               AND vc.chunk_index = v.chunk_index
               AND vc.ingestion_id = %s
@@ -347,46 +373,71 @@ class PgVectorStore(VectorStore):
                   = v.text_sha256
             RETURNING vc.document_id, vc.chunk_index
         """).format(schema=sql.Identifier(self.SCHEMA), values=values)
-        params: list = []
-        for document_id, index, digest, patch in batch:
-            params.extend([document_id, index, digest, Jsonb(patch)])
-        params.append(new_ingestion_id)
+        params: list = [new_ingestion_id, ["provenance"]]
+        for document_id, index, digest, patch, provenance in batch:
+            params.extend(
+                [
+                    document_id,
+                    index,
+                    digest,
+                    Jsonb(patch),
+                    None if provenance is None else Jsonb(provenance),
+                ]
+            )
+        params.append(expected_ingestion_id)
         cur.execute(statement, params)
         return {(str(r[0]), int(r[1])) for r in cur.fetchall()}
 
-    def _apply_range_patches(self, cur, new_ingestion_id: str, flat: "list[tuple]"):
-        """Patch every batch, then explain each patch that did not apply. All of
-        it runs in the caller's transaction, so a failure anywhere rolls back
-        the retag and every earlier batch."""
-        patched: set = set()
+    def _move_and_patch(
+        self,
+        cur,
+        new_ingestion_id: str,
+        expected_ingestion_id: str,
+        flat: "list[tuple]",
+        provenance_by_document_id: dict,
+    ):
+        """Run the move-and-patch UPDATE in bounded batches inside the caller's
+        transaction. Returns the (document_id, chunk_index) pairs moved."""
+        moved: set = set()
         size = max(1, int(self.RANGE_PATCH_BATCH))
-        for start in range(0, len(flat), size):
-            patched |= self._patch_range_batch(
-                cur, new_ingestion_id, flat[start : start + size]
+        rows = [
+            (d, i, sha, patch, provenance_by_document_id.get(d))
+            for d, i, sha, patch in flat
+        ]
+        for start in range(0, len(rows), size):
+            moved |= self._patch_range_batch(
+                cur, new_ingestion_id, expected_ingestion_id, rows[start : start + size]
             )
-        pending = [(d, i) for d, i, _, _ in flat if (d, i) not in patched]
-        skipped: list = []
-        if pending:
-            cur.execute(
-                sql.SQL("""
-                    SELECT vc.document_id, vc.chunk_index
-                    FROM {schema}.vector_chunks AS vc
-                    WHERE vc.ingestion_id = %s AND vc.document_id = ANY(%s::uuid[])
-                """).format(schema=sql.Identifier(self.SCHEMA)),
-                (new_ingestion_id, sorted({d for d, _ in pending})),
-            )
-            present = {(str(r[0]), int(r[1])) for r in cur.fetchall()}
-            for document_id, index in pending:
-                skipped.append(
-                    {
-                        "document_id": document_id,
-                        "chunk_index": index,
-                        "reason": "digest mismatch"
-                        if (document_id, index) in present
-                        else "row not found at this generation",
-                    }
-                )
-        return len(patched), skipped
+        return moved
+
+    def _explain_skipped_ranges(
+        self, cur, new_ingestion_id: str, flat: "list[tuple]", moved: set
+    ):
+        """After the plain retag has moved the remaining rows, say why each patch
+        that did not apply did not: its row is at the new generation but its
+        passage digest differed, or no such row exists at this generation."""
+        pending = [(d, i) for d, i, _, _ in flat if (d, i) not in moved]
+        if not pending:
+            return []
+        cur.execute(
+            sql.SQL("""
+                SELECT vc.document_id, vc.chunk_index
+                FROM {schema}.vector_chunks AS vc
+                WHERE vc.ingestion_id = %s AND vc.document_id = ANY(%s::uuid[])
+            """).format(schema=sql.Identifier(self.SCHEMA)),
+            (new_ingestion_id, sorted({d for d, _ in pending})),
+        )
+        present = {(str(r[0]), int(r[1])) for r in cur.fetchall()}
+        return [
+            {
+                "document_id": document_id,
+                "chunk_index": index,
+                "reason": "digest mismatch"
+                if (document_id, index) in present
+                else "row not found at this generation",
+            }
+            for document_id, index in pending
+        ]
 
     def retag_ingestion_id(
         self,
@@ -431,8 +482,19 @@ class PgVectorStore(VectorStore):
 
         updated = 0
         retagged: set[str] = set()
+        moved: set = set()
         with psycopg.connect(self._dsn) as conn:
             with conn.cursor() as cur:
+                # Issue #416: rows with a verified range are moved and patched in
+                # one UPDATE (each row written once); the retag below then moves
+                # only what is still at the expected generation.
+                if range_patches:
+                    moved = self._move_and_patch(
+                        cur, new_ingestion_id, expected_ingestion_id,
+                        range_patches, provenance_by_document_id,
+                    )
+                    updated += len(moved)
+                    retagged.update(d for d, _ in moved)
                 if without_provenance:
                     plain_sql = sql.SQL("""
                         UPDATE {schema}.vector_chunks
@@ -483,14 +545,12 @@ class PgVectorStore(VectorStore):
                 # this transaction. If anything above or below raises, the whole
                 # request (retag included) rolls back; no row is left moved with
                 # a stale or partial range.
-                ranges_patched, ranges_skipped = 0, []
+                ranges_skipped: list = []
                 if range_patches:
-                    ranges_patched, ranges_skipped = self._apply_range_patches(
-                        cur, new_ingestion_id, range_patches
+                    ranges_skipped = self._explain_skipped_ranges(
+                        cur, new_ingestion_id, range_patches, moved
                     )
-        return RetagResult(
-            updated, sorted(retagged), ranges_patched, ranges_skipped
-        )
+        return RetagResult(updated, sorted(retagged), len(moved), ranges_skipped)
 
     def get_chunks_by_document_id(
         self, document_id: str, k: int = 3,

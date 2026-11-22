@@ -173,3 +173,69 @@ def test_a_failing_request_without_ranges_is_not_retried(store, monkeypatch):
     with pytest.raises(requests.HTTPError):
         retag(store, server, monkeypatch, ["d1"], None)
     assert len(server.sent) == 1
+
+
+# --- timeouts: the outcome is unknown, so nothing is retried or re-embedded ---
+
+from src.core.http_vectorstore import RetagIncompleteError  # noqa: E402
+
+
+class TimingOut(Server):
+    def __init__(self, fail_on_call):
+        super().__init__()
+        self.fail_on_call = fail_on_call
+
+    def __call__(self, url, json=None, timeout=None):
+        if len(self.sent) + 1 == self.fail_on_call:
+            self.sent.append(json)
+            raise requests.Timeout("read timed out")
+        return super().__call__(url, json=json, timeout=timeout)
+
+
+def test_a_timeout_is_never_retried_and_fails_loudly(store, monkeypatch):
+    server = TimingOut(fail_on_call=1)
+    with pytest.raises(RetagIncompleteError) as caught:
+        retag(store, server, monkeypatch, ["d1"], {"d1": [entry(0)]})
+    assert len(server.sent) == 1  # no retry with or without ranges
+    assert caught.value.documents_moved == 0 and caught.value.documents_total == 1
+
+
+def test_a_timeout_part_way_reports_how_many_documents_had_already_moved(
+    store, monkeypatch
+):
+    store.RETAG_BATCH_SIZE = 1
+    server = TimingOut(fail_on_call=3)
+    docs = ["d1", "d2", "d3", "d4"]
+    with pytest.raises(RetagIncompleteError) as caught:
+        retag(store, server, monkeypatch, docs, {d: [entry(0)] for d in docs})
+    assert (caught.value.documents_moved, caught.value.documents_total) == (2, 4)
+    assert "not retried" in str(caught.value)
+    assert len(server.sent) == 3  # d4 was never attempted
+
+
+def test_a_lost_connection_without_ranges_is_the_same_failure(store, monkeypatch):
+    def post(url, json=None, timeout=None):
+        raise requests.ConnectionError("reset")
+
+    monkeypatch.setattr(requests, "post", post)
+    with pytest.raises(RetagIncompleteError):
+        store.retag_ingestion_id(["d1"], "new", None, expected_ingestion_id="old")
+
+
+def test_requests_are_small_and_the_timeout_is_generous(store):
+    assert store.RANGE_PATCHES_PER_REQUEST <= 500
+    assert store.RETAG_TIMEOUT_SECONDS >= 120
+
+
+def test_the_configured_timeout_is_what_is_sent(store, monkeypatch):
+    seen = []
+
+    def post(url, json=None, timeout=None):
+        seen.append(timeout)
+        return response(
+            {"status": "ok", "count": 1, "document_ids": json["document_ids"]}
+        )
+
+    monkeypatch.setattr(requests, "post", post)
+    store.retag_ingestion_id(["d1"], "new", None, expected_ingestion_id="old")
+    assert seen == [store.RETAG_TIMEOUT_SECONDS]
