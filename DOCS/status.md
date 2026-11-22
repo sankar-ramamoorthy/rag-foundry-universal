@@ -1118,6 +1118,12 @@ a full rebuild; the 15,619-of-17,676 range yield and a clean audit of readable r
 (one UPDATE per row, smaller requests, explicit timeout handling, and a documented generation-promotion and recovery behavior) is in a PR
 and not yet deployed. See [the note](/DOCS/notes/20261122-retag-timeout-and-generation-promotion.md).
 
+Live verification of #416 on the deployed fix (SHA `f2e3f2a`): a no-change incremental ingest of Mealie completed with zero
+re-embedding and 17,676 of 17,676 passages patched; 15,619 passages (88.4%, 100% of those with a verified artifact range) carry a
+range; the audit (seed 416, 1,000 passages) found no wrong range, with 33 Markdown ranges unverifiable because the source reader
+does not serve Markdown; `/v1/rag` citations with a range rose from 1 of 5 to 18 of 19. See
+[the results](/DOCS/test_results/2026-11-22-416-live-verification.md).
+
 ## Known issues
 
 **Production-correctness track (WP-R1–R8) is substantially closed.**
