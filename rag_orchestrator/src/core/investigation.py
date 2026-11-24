@@ -35,12 +35,42 @@ class BackendUnavailable(Exception):
     """The investigation service could not be reached or answered badly."""
 
 
+class BackendBusy(BackendUnavailable):
+    """The service accepts one active run at a time and is running another."""
+
+
+class BackendRefused(BackendUnavailable):
+    """The service refused the run for a reason a user can be told about (for
+    example, a deployment that allows no further runs). `message` is written by
+    Foundry, never copied from the service."""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+class RunFailed(Exception):
+    """The run ended `failed` (no answer). `code` is the service's failure code;
+    it is a closed vocabulary of short identifiers and is safe to show."""
+
+    def __init__(self, code: str):
+        super().__init__(code)
+        self.code = code
+
+
+class CitationNotFound(Exception):
+    """The service has no such citation for that run."""
+
+
 class UpstreamEvidence(BaseModel):
     path: str
     start_line: int
     end_line: int
     repo_id: Optional[str] = None
     generation_id: Optional[str] = None
+    # The service's identifier for this citation within the run; lets Foundry
+    # fetch the recorded excerpt later.
+    citation_id: Optional[str] = None
 
 
 class UpstreamFinding(BaseModel):
@@ -57,6 +87,20 @@ class UpstreamRun(BaseModel):
     observed_generation_id: Optional[str] = None
     findings: list[UpstreamFinding] = Field(default_factory=list)
     open_gaps: list[str] = Field(default_factory=list)
+    # Limits the service reported about its own answer (shown as envelope notes).
+    limitations: list[str] = Field(default_factory=list)
+    evidence_mode: Literal["live", "fixture"] = "live"
+
+
+class UpstreamCitation(BaseModel):
+    """A citation as recorded by the service, with its stored, verified text."""
+
+    repo_id: str
+    generation_id: str
+    path: str
+    start_line: int
+    end_line: int
+    text: str
     evidence_mode: Literal["live", "fixture"] = "live"
 
 
@@ -65,7 +109,14 @@ class InvestigationBackend(Protocol):
         """Start a run pinned to `generation_id`; return the service's run ID."""
 
     async def status(self, upstream_run_id: str) -> UpstreamRun:
-        """Current state of a run. Raises BackendUnavailable on failure."""
+        """Current state of a run. Raises BackendUnavailable on failure and
+        RunFailed when the run ended without an answer."""
+
+    async def citation(
+        self, upstream_run_id: str, citation_id: str
+    ) -> UpstreamCitation:
+        """The recorded, verified text of one citation. Raises CitationNotFound
+        or BackendUnavailable."""
 
 
 # --- signed run IDs -------------------------------------------------------
@@ -127,12 +178,24 @@ class FixtureBackend:
                 UpstreamFinding(
                     statement="Synthetic finding: not derived from the repository.",
                     evidence=[
-                        UpstreamEvidence(path="README.md", start_line=1, end_line=3)
+                        UpstreamEvidence(
+                            path="README.md",
+                            start_line=1,
+                            end_line=3,
+                            citation_id="c1",
+                        )
                     ],
                 )
             ],
             open_gaps=["Synthetic run: no repository evidence was inspected."],
         )
+
+    async def citation(
+        self, upstream_run_id: str, citation_id: str
+    ) -> UpstreamCitation:
+        if citation_id != "c1":
+            raise CitationNotFound(citation_id)
+        raise BackendUnavailable("the fixture backend holds no recorded text")
 
 
 def get_backend() -> Optional[InvestigationBackend]:
@@ -144,8 +207,18 @@ def get_backend() -> Optional[InvestigationBackend]:
     if choice == "fixture":
         return FixtureBackend()
     if choice == "http":
-        # The adapter needs the investigation service's published schema.
-        logger.warning("INVESTIGATE_BACKEND=http has no adapter yet; mode disabled")
-        return None
+        url = settings.INVESTIGATION_SERVICE_URL.strip()
+        token = settings.INVESTIGATION_SERVICE_TOKEN
+        alias = settings.INVESTIGATION_MODEL_ALIAS.strip()
+        if not (url and token and alias):
+            # The model profile is an owner decision: there is no default alias.
+            logger.warning(
+                "INVESTIGATE_BACKEND=http needs the service URL, token and model "
+                "alias; mode disabled"
+            )
+            return None
+        from src.core.investigation_http import HttpInvestigationBackend
+
+        return HttpInvestigationBackend(url, token, alias)
     logger.warning("unknown INVESTIGATE_BACKEND %r; mode disabled", choice)
     return None

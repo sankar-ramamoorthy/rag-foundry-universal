@@ -121,6 +121,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/product/repos/{repo_id}/investigations/{run_id}/citations/{citation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Investigation Citation
+         * @description The recorded excerpt for one citation of a run. It is served from the
+         *     run's stored record, so it is still available after a re-indexing; callers
+         *     must label it as recorded, not as the current source.
+         */
+        get: operations["get_investigation_citation_v1_product_repos__repo_id__investigations__run_id__citations__citation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/product/repos/{repo_id}/locate": {
         parameters: {
             query?: never;
@@ -284,11 +306,43 @@ export interface components {
             question: string;
         };
         /**
+         * InvestigationCitationText
+         * @description The text the investigation recorded for one citation, as stored with the
+         *     run. It is not read from the repository now, so it may differ from the
+         *     current source if the repository was re-indexed.
+         */
+        InvestigationCitationText: {
+            /** Citation Id */
+            citation_id: string;
+            /** End Line */
+            end_line: number;
+            /**
+             * Evidence Mode
+             * @default live
+             * @enum {string}
+             */
+            evidence_mode?: "live" | "fixture";
+            /** Generation Id */
+            generation_id: string;
+            /** Path */
+            path: string;
+            /** Repo Id */
+            repo_id: string;
+            /** Run Id */
+            run_id: string;
+            /** Start Line */
+            start_line: number;
+            /** Text */
+            text: string;
+        };
+        /**
          * InvestigationEvidence
          * @description A reference the run admitted. Inclusive, one-based lines; always in the
          *     repository and generation the run was pinned to.
          */
         InvestigationEvidence: {
+            /** Citation Id */
+            citation_id?: string | null;
             /** End Line */
             end_line: number;
             /** Generation Id */
@@ -1020,6 +1074,93 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductInvestigation"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Requested Range Not Satisfiable */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+        };
+    };
+    get_investigation_citation_v1_product_repos__repo_id__investigations__run_id__citations__citation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                repo_id: string;
+                run_id: string;
+                citation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvestigationCitationText"];
                 };
             };
             /** @description Bad Request */

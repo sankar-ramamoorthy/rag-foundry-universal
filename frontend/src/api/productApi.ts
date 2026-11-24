@@ -49,6 +49,11 @@ export interface ProductApi {
     repoId: string,
     runId: string,
   ): Promise<Result<Schemas["ProductInvestigation"]>>;
+  getInvestigationCitation(
+    repoId: string,
+    runId: string,
+    citationId: string,
+  ): Promise<Result<Schemas["InvestigationCitationText"]>>;
 }
 
 type Settled<T> = {
@@ -161,6 +166,17 @@ export function createHttpProductApi(baseUrl = ""): ProductApi {
           params: { path: { repo_id: repoId } },
           body: { question, generation_id: generationId },
         }),
+      ),
+    getInvestigationCitation: (repoId, runId, citationId) =>
+      guarded(() =>
+        client.GET(
+          "/v1/product/repos/{repo_id}/investigations/{run_id}/citations/{citation_id}",
+          {
+            params: {
+              path: { repo_id: repoId, run_id: runId, citation_id: citationId },
+            },
+          },
+        ),
       ),
     getInvestigation: (repoId, runId) =>
       guarded(() =>

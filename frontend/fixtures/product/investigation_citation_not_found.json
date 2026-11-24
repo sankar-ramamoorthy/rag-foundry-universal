@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "not_found",
+      "details": {},
+      "message": "citation not found"
+    }
+  },
+  "description": "No such citation for this run.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}/citations/{citation_id}"
+  },
+  "status": 404
+}

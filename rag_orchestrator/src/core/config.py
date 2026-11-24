@@ -149,16 +149,19 @@ class Settings(BaseSettings):
     # Product Investigate mode (issue #439, ADR-057)
     # -------------------------------------------------
     # Off unless an operator chooses a backend. "fixture" serves clearly
-    # labeled synthetic runs for integration testing; "http" is the adapter
-    # to the separate investigation service (not yet implemented: it needs
-    # that service's published schema). No address, token or secret has a
-    # default here, and none is ever sent to the browser.
+    # labeled synthetic runs for integration testing; "http" is the adapter to
+    # the separate investigation service (needs its URL, token and model alias).
+    # No address, token or secret has a default here, and none is ever sent to
+    # the browser.
     INVESTIGATE_BACKEND: str = "disabled"
     # HMAC key that binds a run ID to its repository and generation.
     INVESTIGATE_RUN_SECRET: str = ""
     INVESTIGATE_DEADLINE_SECONDS: int = Field(default=120, gt=0, le=900)
     INVESTIGATION_SERVICE_URL: str = ""
     INVESTIGATION_SERVICE_TOKEN: str = ""
+    # The service requires a model alias on every run. The operator chooses it;
+    # there is deliberately no default (model profile is an owner decision).
+    INVESTIGATION_MODEL_ALIAS: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -10,6 +10,7 @@ import askOk from "../../fixtures/product/ask_ok.json";
 import askStale from "../../fixtures/product/ask_stale.json";
 import filesOk from "../../fixtures/product/files_ok.json";
 import capabilitiesOk from "../../fixtures/product/capabilities_ok.json";
+import investigationCitation from "../../fixtures/product/investigation_citation_ok.json";
 import investigationNone from "../../fixtures/product/investigation_finished_none.json";
 import investigationPartial from "../../fixtures/product/investigation_finished_partial.json";
 import investigationRunning from "../../fixtures/product/investigation_running.json";
@@ -55,6 +56,7 @@ export const checked = {
     conforms<Schemas["ProductAsk"]>(askNoRange.body),
   ],
   capabilities: conforms<Schemas["Capabilities"]>(capabilitiesOk.body),
+  citation: conforms<Schemas["InvestigationCitationText"]>(investigationCitation.body),
   investigations: [
     conforms<Schemas["ProductInvestigation"]>(investigationRunning.body),
     conforms<Schemas["ProductInvestigation"]>(investigationPartial.body),

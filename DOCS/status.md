@@ -1081,6 +1081,12 @@ error message); the
 Markdown limitation it surfaced (#430), the bug it found and fixed (Ask returned
 a bare 500),
 and the follow-up #450. Nothing has been verified on a deployed host.
+Investigate (#439) is built on Foundry's side and merged, and its HTTP adapter to
+the investigation service was added from the service's published OpenAPI artifact
+(0.3.0-draft, released by the owner): the mode is off by default and
+[how to enable it](/DOCS/notes/20261124-enabling-investigate.md) is documented.
+The adapter is verified against mock transports and a schema conformance test,
+not against the real service or a model.
 The [access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
 (#438, proposed, owner decides) records that no authentication, caller identity or
 rate limit exists in the orchestrator or ingestion service and that all service
