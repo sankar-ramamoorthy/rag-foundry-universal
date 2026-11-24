@@ -419,12 +419,15 @@ async def locate(
     query: str,
     limit: int = 20,
     include_definitions: bool = True,
+    cursor: Optional[str] = None,
 ):
+    """Pass `next_cursor` back with the same `query` and `generation_id` to get
+    the next page of the same match set."""
     try:
         _uuid_or_fail(repo_id=repo_id, generation_id=generation_id)
         body = await _unwrap(
             source_routes.locate(
-                repo_id, query, generation_id, limit, include_definitions
+                repo_id, query, generation_id, limit, include_definitions, cursor
             )
         )
         return ProductLocate(**body)

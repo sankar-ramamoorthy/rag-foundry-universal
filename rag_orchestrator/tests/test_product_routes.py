@@ -360,6 +360,36 @@ def test_existing_routes_are_unchanged(monkeypatch):
     assert "error" not in body
 
 
+def test_locate_cursor_continues_the_same_match_set(monkeypatch):
+    class Paged(Ingestion):
+        def __call__(self, request):
+            if request.url.path.endswith("/source/files"):
+                cursor = request.url.params.get("cursor")
+                response = super().__call__(request).json()
+                response["files"][0]["path"] = (
+                    "pkg/second.py" if cursor else "pkg/mod.py"
+                )
+                response["next_cursor"] = None if cursor else "page-2"
+                return httpx.Response(200, json=response)
+            return super().__call__(request)
+
+    backend = Paged()
+    client = _serve(monkeypatch, backend)
+    params = {"generation_id": GEN, "query": "*.py", "include_definitions": False}
+    first = client.get(f"/v1/product/repos/{REPO}/locate", params=params).json()
+    assert first["next_cursor"] == "page-2"
+    assert first["envelope"]["coverage"] == "partial"
+    second = client.get(
+        f"/v1/product/repos/{REPO}/locate",
+        params={**params, "cursor": first["next_cursor"]},
+    ).json()
+    assert second["candidates"][0]["path"] == "pkg/second.py"
+    assert second["next_cursor"] is None and second["pattern"] == first["pattern"]
+    sent = [c[1] for c in backend.calls if c[0].endswith("/source/files")]
+    assert sent[0].get("cursor") is None and sent[1]["cursor"] == "page-2"
+    assert sent[0]["pattern"] == sent[1]["pattern"]
+
+
 def test_unexpected_failure_in_any_route_is_the_stable_error(monkeypatch):
     async def explode(path):
         raise RuntimeError("secret internal detail")
