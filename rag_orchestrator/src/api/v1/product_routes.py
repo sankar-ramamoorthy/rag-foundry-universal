@@ -18,7 +18,7 @@ import json
 import logging
 from datetime import datetime
 from typing import Any, Literal, Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import httpx
 from fastapi import APIRouter, HTTPException
@@ -26,7 +26,10 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.api.v1 import source_routes
+from src.api.v1.models import RAGQuery, RAGResponse
 from src.core import envelope
+from src.core import service
+from src.core.citations import Citation
 from src.core.config import get_settings
 from src.core.envelope import EvidenceEnvelope
 from src.core.evidence_service import fetch_orient_response
@@ -96,6 +99,15 @@ def failure_response(exc: ProductFailure) -> JSONResponse:
         error=ProductError(code=exc.code, message=exc.message, details=exc.details)
     )
     return JSONResponse(body.model_dump(), status_code=exc.status)
+
+
+def unexpected_failure_response() -> JSONResponse:
+    """Any failure a route did not anticipate still answers with the stable
+    error body, never a bare 500 and never exception text."""
+    logger.exception("unexpected failure in a product route")
+    return failure_response(
+        ProductFailure("unavailable", 503, "the service could not complete the request")
+    )
 
 
 def _from_ingestion_body(status: int, body: Any) -> ProductFailure:
@@ -217,6 +229,8 @@ async def list_repos():
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 @router.get("/repos/{repo_id}/readiness", response_model=Readiness, responses=ERRORS)
@@ -241,6 +255,8 @@ async def readiness(repo_id: str):
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 # --- orient ---
@@ -320,6 +336,8 @@ async def orient(repo_id: str, generation_id: str):
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 # --- files, locate, source ---
@@ -358,6 +376,8 @@ async def files(
         return ProductFiles(**body)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 class LocateDefinition(BaseModel):
@@ -406,6 +426,8 @@ async def locate(
         return ProductLocate(**body)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 class ProductSource(BaseModel):
@@ -460,3 +482,128 @@ async def source(
         return ProductSource(**body)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
+
+
+# --- ask (issue #433) ---
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=8192)
+    generation_id: str
+    top_k: int = Field(default=5, ge=1, le=20)
+    provider: Optional[str] = None
+    model: Optional[str] = None
+
+
+class ProductAsk(BaseModel):
+    mode: Literal["ask"] = "ask"
+    run_id: str
+    repo_id: str
+    generation_id: str
+    question: str
+    answer: str
+    sources: list[str]
+    model_used: Optional[str] = None
+    trace_id: Optional[str] = None
+    envelope: EvidenceEnvelope
+    citations: list[Citation]
+
+
+async def _current_generation(repo_id: str) -> str:
+    return await service._query_generation(repo_id)
+
+
+async def _run_standard_rag(query: RAGQuery) -> RAGResponse:
+    # Imported here: routes.py is the owner of the standard RAG wiring.
+    from src.api.v1 import routes
+
+    result = await routes.rag_endpoint(query)
+    # The pipeline returns its own result model (RAGResult); FastAPI only turns
+    # it into RAGResponse through response_model on the legacy route. Coerce it
+    # here so a caller never depends on that.
+    return RAGResponse.model_validate(result.model_dump())
+
+
+def _stale(expected: str, current: str, when: str) -> ProductFailure:
+    return ProductFailure(
+        "stale",
+        409,
+        f"repository generation is not the requested generation ({when})",
+        {"current_generation_id": current},
+    )
+
+
+@router.post("/repos/{repo_id}/ask", response_model=ProductAsk, responses=ERRORS)
+async def ask(repo_id: str, request: AskRequest):
+    """Standard Foundry RAG pinned to one generation.
+
+    The generation is verified before any retrieval or generation call, and
+    again before the result is returned. A result is never published against
+    a generation other than the one requested.
+    """
+    try:
+        _uuid_or_fail(repo_id=repo_id, generation_id=request.generation_id)
+        try:
+            current = await _current_generation(repo_id)
+        except HTTPException as exc:
+            raise _from_http_exception(exc) from exc
+        if current != request.generation_id:
+            raise _stale(request.generation_id, current, "before dispatch")
+
+        try:
+            result = await _run_standard_rag(
+                RAGQuery(
+                    query=request.question,
+                    repo_id=repo_id,
+                    execution_mode="rag",
+                    top_k=request.top_k,
+                    provider=request.provider,
+                    model=request.model,
+                )
+            )
+        except HTTPException as exc:
+            raise _from_http_exception(exc) from exc
+
+        env = result.envelope
+        if env is None or env.generation_id != request.generation_id:
+            raise _stale(
+                request.generation_id,
+                str(env.generation_id) if env else "unknown",
+                "answer was produced from another generation",
+            )
+        try:
+            current = await _current_generation(repo_id)
+        except HTTPException as exc:
+            raise _from_http_exception(exc) from exc
+        if current != request.generation_id:
+            raise _stale(request.generation_id, current, "during answer")
+        outside = [
+            c
+            for c in result.citations
+            if c.repo_id != repo_id or c.generation_id != request.generation_id
+        ]
+        if outside:
+            logger.error(
+                "ask: %d citations outside repo/generation scope", len(outside)
+            )
+            raise ProductFailure(
+                "unavailable", 503, "evidence fell outside the requested scope"
+            )
+        return ProductAsk(
+            run_id=str(uuid4()),
+            repo_id=repo_id,
+            generation_id=request.generation_id,
+            question=request.question,
+            answer=result.answer,
+            sources=result.sources,
+            model_used=result.model_used,
+            trace_id=result.trace_id,
+            envelope=env,
+            citations=result.citations,
+        )
+    except ProductFailure as exc:
+        return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
