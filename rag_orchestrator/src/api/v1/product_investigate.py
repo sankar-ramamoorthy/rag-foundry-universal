@@ -247,6 +247,8 @@ async def start_investigation(repo_id: str, request: InvestigateRequest):
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return product_routes.unexpected_failure_response()
 
 
 @router.get(
@@ -267,3 +269,5 @@ async def get_investigation(repo_id: str, run_id: str):
         return await _record(run_id, repo_id, generation_id, run)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return product_routes.unexpected_failure_response()

@@ -324,3 +324,14 @@ def test_repository_not_ready_maps_to_unavailable(setup):
     setup.current = HTTPException(503, "Repository is not ready; retry")
     _error(_start(setup), "unavailable", 503)
     assert setup.backend.submitted == []
+
+
+def test_unexpected_failure_is_the_stable_error_not_a_bare_500(setup):
+    class Broken(Fake):
+        async def submit(self, *args):
+            raise RuntimeError("secret internal detail")
+
+    setup.backend = Broken()
+    response = _start(setup)
+    _error(response, "unavailable", 503)
+    assert "secret" not in response.text
