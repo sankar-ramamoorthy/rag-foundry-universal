@@ -172,6 +172,37 @@ services:
       - rag_orchestrator
     networks:
       - ragnet
+
+  ######################
+  # Product frontend (#437, ADR-057)
+  ######################
+  # Opt-in: `docker compose --profile frontend up --build`. A profile keeps it
+  # out of plain `up`, `build` and the operator's production refresh until the
+  # owner decides to release it (access review: #438). Gradio stays as is.
+  frontend:
+    profiles: ["frontend"]
+    build:
+      context: ./frontend
+    container_name: foundry-frontend
+    ports:
+      # Localhost only by default (#438: the first release serves a single local
+      # user; the product API has no caller authentication). Binding wider is a
+      # deliberate operator choice, not a default.
+      - "127.0.0.1:8080:8080"
+    environment:
+      # Same-origin mapping target for /v1/product; see frontend/nginx.
+      RAG_ORCHESTRATOR_URL: http://rag_orchestrator:8000
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    depends_on:
+      rag_orchestrator:
+        condition: service_healthy
+    networks:
+      - ragnet
 networks:
   ragnet:
     driver: bridge
