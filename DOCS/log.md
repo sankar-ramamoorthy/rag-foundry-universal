@@ -6,6 +6,13 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-23
+
+Recorded owner acceptance of [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)
+and the frontend-only exception to #208. Added the
+[frontend API assessment](/DOCS/notes/20261123-frontend-api-assessment.md) and
+[first-release spec](/specs/016-product-frontend/spec.md) for review.
+
 ## 2026-11-20
 
 Added the [evidence API assessment](/DOCS/notes/20261120-evidence-api-assessment-404.md) (#404) and the [LAB boundary and communication-folder rules](/DOCS/notes/20261120-lab-boundary-and-communication-folder.md), with a pointer in `CLAUDE.md` so any agent finds them. Proposal and process only; no code or API change.

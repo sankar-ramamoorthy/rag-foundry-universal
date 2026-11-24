@@ -7,11 +7,16 @@ summary: "Read-only assessment. Most evidence primitives exist, but they are spr
 tags: [assessment, evidence-api, first-slice, agent, issue-404, phase-6]
 related:
   - "[Issue #404](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/404)"
-  - "[ADR-057 (proposed)](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)"
+  - "[ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)"
+  - "[Frontend API assessment update](/DOCS/notes/20261123-frontend-api-assessment.md)"
   - "[Source navigation contract](/DOCS/architecture/source-navigation-api.md)"
 ---
 
 # Evidence API assessment (#404)
+
+This assessment records the November 20 baseline. See the
+[current frontend API assessment](/DOCS/notes/20261123-frontend-api-assessment.md)
+for the implemented contracts, later validation evidence and remaining release gaps.
 
 Method: read-only inspection of `main` at e58264c plus the ADR-057 branch (the
 LAB assessed bf5d680, which differs from main only by that ADR). No code run,
