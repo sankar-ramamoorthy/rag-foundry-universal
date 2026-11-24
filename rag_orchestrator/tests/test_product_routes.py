@@ -10,6 +10,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from src.api.v1 import product_routes
 from src.api.v1.main import app
 
 pytestmark = pytest.mark.unit
@@ -387,3 +388,18 @@ def test_locate_cursor_continues_the_same_match_set(monkeypatch):
     sent = [c[1] for c in backend.calls if c[0].endswith("/source/files")]
     assert sent[0].get("cursor") is None and sent[1]["cursor"] == "page-2"
     assert sent[0]["pattern"] == sent[1]["pattern"]
+
+
+def test_unexpected_failure_in_any_route_is_the_stable_error(monkeypatch):
+    async def explode(path):
+        raise RuntimeError("secret internal detail")
+
+    monkeypatch.setattr(product_routes, "_ingestion_json", explode)
+    client = TestClient(app)
+    for url in (
+        "/v1/product/repos",
+        f"/v1/product/repos/{REPO}/readiness",
+    ):
+        response = client.get(url)
+        _error(response, "unavailable", 503)
+        assert "secret" not in response.text

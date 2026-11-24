@@ -105,6 +105,15 @@ def failure_response(exc: ProductFailure) -> JSONResponse:
     return JSONResponse(body.model_dump(), status_code=exc.status)
 
 
+def unexpected_failure_response() -> JSONResponse:
+    """Any failure a route did not anticipate still answers with the stable
+    error body, never a bare 500 and never exception text."""
+    logger.exception("unexpected failure in a product route")
+    return failure_response(
+        ProductFailure("unavailable", 503, "the service could not complete the request")
+    )
+
+
 def _from_ingestion_body(status: int, body: Any) -> ProductFailure:
     if isinstance(body, dict) and "error_code" in body:
         code, http = _INGESTION_CODES.get(str(body["error_code"]), ("unavailable", 503))
@@ -224,6 +233,8 @@ async def list_repos():
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 @router.get("/repos/{repo_id}/readiness", response_model=Readiness, responses=ERRORS)
@@ -248,6 +259,8 @@ async def readiness(repo_id: str):
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 # --- orient ---
@@ -327,6 +340,8 @@ async def orient(repo_id: str, generation_id: str):
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 # --- files, locate, source ---
@@ -365,6 +380,8 @@ async def files(
         return ProductFiles(**body)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 class LocateDefinition(BaseModel):
@@ -416,6 +433,8 @@ async def locate(
         return ProductLocate(**body)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 class ProductSource(BaseModel):
@@ -470,6 +489,8 @@ async def source(
         return ProductSource(**body)
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
 
 
 # --- ask (issue #433) ---
@@ -506,8 +527,10 @@ async def _run_standard_rag(query: RAGQuery) -> RAGResponse:
     from src.api.v1 import routes
 
     result = await routes.rag_endpoint(query)
-    assert isinstance(result, RAGResponse)
-    return result
+    # The pipeline returns its own result model (RAGResult); FastAPI only turns
+    # it into RAGResponse through response_model on the legacy route. Coerce it
+    # here so a caller never depends on that.
+    return RAGResponse.model_validate(result.model_dump())
 
 
 def _stale(expected: str, current: str, when: str) -> ProductFailure:
@@ -589,3 +612,5 @@ async def ask(repo_id: str, request: AskRequest):
         )
     except ProductFailure as exc:
         return failure_response(exc)
+    except Exception:
+        return unexpected_failure_response()
