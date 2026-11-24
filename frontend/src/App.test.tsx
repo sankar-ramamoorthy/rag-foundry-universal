@@ -104,7 +104,6 @@ describe("file search", () => {
     await user.click(typescript);
     expect(typescript).toHaveAttribute("aria-pressed", "true");
     expect(python).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByText(/selected file/i)).toHaveTextContent("web/mod.ts");
   });
 
   it("shows verified Python definitions with spans and labels unsupported coverage", async () => {

@@ -152,7 +152,7 @@ export interface components {
              * Top K
              * @default 5
              */
-            top_k: number;
+            top_k?: number;
         };
         /** Citation */
         Citation: {
@@ -172,7 +172,7 @@ export interface components {
              * Range Reason
              * @default line span not persisted at ingestion
              */
-            range_reason: string | null;
+            range_reason?: string | null;
             /** Repo Id */
             repo_id: string;
             /** Start Line */
@@ -189,7 +189,7 @@ export interface components {
              * @default unknown
              * @enum {string}
              */
-            coverage: "complete" | "partial" | "unknown";
+            coverage?: "complete" | "partial" | "unknown";
             /** Generation Id */
             generation_id?: string | null;
             /** Limitations */
@@ -200,7 +200,7 @@ export interface components {
              * Schema Version
              * @default 1
              */
-            schema_version: string;
+            schema_version?: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -285,7 +285,7 @@ export interface components {
              * @default ask
              * @constant
              */
-            mode: "ask";
+            mode?: "ask";
             /** Model Used */
             model_used?: string | null;
             /** Question */
@@ -475,7 +475,7 @@ export interface components {
              * Is Incremental
              * @default false
              */
-            is_incremental: boolean;
+            is_incremental?: boolean;
             /** Repo Id */
             repo_id: string;
             /**

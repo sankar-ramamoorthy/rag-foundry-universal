@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Foundry product frontend (ADR-057). The API client is generated from openapi/product.openapi.json.",
   "scripts": {
-    "generate:api": "openapi-typescript openapi/product.openapi.json -o src/api/schema.d.ts",
+    "generate:api": "openapi-typescript openapi/product.openapi.json --default-non-nullable false -o src/api/schema.d.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
@@ -14,7 +14,8 @@
   "dependencies": {
     "openapi-fetch": "^0.14.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "react-markdown": "^10.1.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^8.0.0",

@@ -1,16 +1,20 @@
 import { useCallback, useState } from "react";
 import type { ProductApi } from "./api/productApi";
+import { AskPanel } from "./components/AskPanel";
 import { LocatePanel } from "./components/LocatePanel";
 import { OrientPanel } from "./components/OrientPanel";
 import { RepoPicker } from "./components/RepoPicker";
 import { SessionBanner } from "./components/SessionBanner";
+import { SourceViewer, type ViewerTarget } from "./components/SourceViewer";
 import { useRequest } from "./hooks/useRequest";
 
 export function App({ api }: { api: ProductApi }) {
   const [repoId, setRepoId] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [stale, setStale] = useState(false);
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<ViewerTarget | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+  const [rerun, setRerun] = useState<string | undefined>(undefined);
 
   const readiness = useRequest(
     repoId ? () => api.readiness(repoId) : null,
@@ -24,12 +28,15 @@ export function App({ api }: { api: ProductApi }) {
   function selectRepo(next: string | null) {
     setRepoId(next);
     setStale(false);
-    setSelectedPath(null);
+    setViewer(null);
+    setLastQuestion(null);
+    setRerun(undefined);
   }
 
-  function refreshGeneration() {
+  function refreshGeneration(rerunQuestion?: string) {
     setStale(false);
-    setSelectedPath(null);
+    setViewer(null);
+    setRerun(rerunQuestion);
     setRefresh((n) => n + 1);
   }
 
@@ -37,14 +44,25 @@ export function App({ api }: { api: ProductApi }) {
     <main>
       <h1>Foundry</h1>
       <RepoPicker api={api} selected={repoId} onSelect={selectRepo} />
-      <SessionBanner readiness={readiness} onRetry={refreshGeneration} />
+      <SessionBanner readiness={readiness} onRetry={() => refreshGeneration()} />
       {stale ? (
         <div role="alert" className="notice notice-error">
-          <strong>This repository was re-indexed.</strong> Results from the
-          previous generation have been cleared.{" "}
-          <button type="button" onClick={refreshGeneration}>
+          <strong>This repository was re-indexed.</strong> Results and source
+          from the previous generation have been cleared.{" "}
+          <button type="button" onClick={() => refreshGeneration()}>
             Refresh to the current generation
           </button>
+          {lastQuestion ? (
+            <>
+              {" "}
+              <button
+                type="button"
+                onClick={() => refreshGeneration(lastQuestion)}
+              >
+                Refresh and rerun my last question
+              </button>
+            </>
+          ) : null}
         </div>
       ) : null}
       {repoId && generationId && !stale ? (
@@ -57,18 +75,35 @@ export function App({ api }: { api: ProductApi }) {
             generationId={generationId}
             onStale={markStale}
           />
+          <AskPanel
+            api={api}
+            repoId={repoId}
+            generationId={generationId}
+            initialQuestion={rerun}
+            onAsked={(question) => {
+              setLastQuestion(question);
+              setRerun(undefined);
+            }}
+            onOpenSource={setViewer}
+            onStale={markStale}
+          />
           <LocatePanel
             api={api}
             repoId={repoId}
             generationId={generationId}
-            selectedPath={selectedPath}
-            onSelectFile={setSelectedPath}
+            selectedPath={viewer?.path ?? null}
+            onSelectFile={(path) =>
+              setViewer({ repoId, path, generationId })
+            }
             onStale={markStale}
           />
-          {selectedPath ? (
-            <p aria-live="polite">
-              Selected file: <code>{selectedPath}</code>
-            </p>
+          {viewer ? (
+            <SourceViewer
+              api={api}
+              target={viewer}
+              sessionGenerationId={generationId}
+              onClose={() => setViewer(null)}
+            />
           ) : null}
         </div>
       ) : null}
