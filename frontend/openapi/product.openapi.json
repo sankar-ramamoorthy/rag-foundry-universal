@@ -50,6 +50,24 @@
         "title": "AskRequest",
         "type": "object"
       },
+      "Capabilities": {
+        "properties": {
+          "ask": {
+            "default": true,
+            "title": "Ask",
+            "type": "boolean"
+          },
+          "investigate": {
+            "title": "Investigate",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "investigate"
+        ],
+        "title": "Capabilities",
+        "type": "object"
+      },
       "Citation": {
         "properties": {
           "canonical_id": {
@@ -231,6 +249,81 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "InvestigateRequest": {
+        "properties": {
+          "generation_id": {
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "generation_id"
+        ],
+        "title": "InvestigateRequest",
+        "type": "object"
+      },
+      "InvestigationEvidence": {
+        "description": "A reference the run admitted. Inclusive, one-based lines; always in the\nrepository and generation the run was pinned to.",
+        "properties": {
+          "end_line": {
+            "title": "End Line",
+            "type": "integer"
+          },
+          "generation_id": {
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "repo_id": {
+            "title": "Repo Id",
+            "type": "string"
+          },
+          "start_line": {
+            "title": "Start Line",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "repo_id",
+          "generation_id",
+          "path",
+          "start_line",
+          "end_line"
+        ],
+        "title": "InvestigationEvidence",
+        "type": "object"
+      },
+      "InvestigationFinding": {
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/InvestigationEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "statement",
+          "evidence"
+        ],
+        "title": "InvestigationFinding",
         "type": "object"
       },
       "LocateCandidate": {
@@ -648,6 +741,116 @@
           "envelope"
         ],
         "title": "ProductFiles",
+        "type": "object"
+      },
+      "ProductInvestigation": {
+        "properties": {
+          "completion_detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Detail"
+          },
+          "envelope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceEnvelope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "evidence_mode": {
+            "default": "live",
+            "enum": [
+              "live",
+              "fixture"
+            ],
+            "title": "Evidence Mode",
+            "type": "string"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/InvestigationFinding"
+            },
+            "title": "Findings",
+            "type": "array"
+          },
+          "generation_id": {
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "mode": {
+            "const": "investigate",
+            "default": "investigate",
+            "title": "Mode",
+            "type": "string"
+          },
+          "open_gaps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Open Gaps",
+            "type": "array"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "complete",
+                  "partial",
+                  "none",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "repo_id": {
+            "title": "Repo Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "finished"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "stop_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stop Reason"
+          }
+        },
+        "required": [
+          "run_id",
+          "repo_id",
+          "generation_id",
+          "status"
+        ],
+        "title": "ProductInvestigation",
         "type": "object"
       },
       "ProductLocate": {
@@ -1089,10 +1292,32 @@
   },
   "info": {
     "title": "Foundry product API",
-    "version": "0.1.0"
+    "version": "0.2.0"
   },
   "openapi": "3.1.0",
   "paths": {
+    "/v1/product/capabilities": {
+      "get": {
+        "description": "Which optional modes this deployment offers. The UI shows Investigate\nonly when it is enabled.",
+        "operationId": "capabilities_v1_product_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "product"
+        ]
+      }
+    },
     "/v1/product/repos": {
       "get": {
         "operationId": "list_repos_v1_product_repos_get",
@@ -1429,6 +1654,230 @@
           }
         },
         "summary": "Files",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/v1/product/repos/{repo_id}/investigations": {
+      "post": {
+        "description": "Start a run pinned to the generation the user was shown. Returns at once\nwith a `running` record; poll the run for its result.",
+        "operationId": "start_investigation_v1_product_repos__repo_id__investigations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "repo_id",
+            "required": true,
+            "schema": {
+              "title": "Repo Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvestigateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInvestigation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "416": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Requested Range Not Satisfiable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Start Investigation",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/v1/product/repos/{repo_id}/investigations/{run_id}": {
+      "get": {
+        "operationId": "get_investigation_v1_product_repos__repo_id__investigations__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "repo_id",
+            "required": true,
+            "schema": {
+              "title": "Repo Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductInvestigation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "416": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Requested Range Not Satisfiable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Investigation",
         "tags": [
           "product"
         ]

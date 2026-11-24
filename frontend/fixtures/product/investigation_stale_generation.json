@@ -1,0 +1,17 @@
+{
+  "body": {
+    "error": {
+      "code": "stale",
+      "details": {
+        "current_generation_id": "00000000-0000-4000-8000-000000000003"
+      },
+      "message": "repository generation is not the requested generation (reported by the investigation)"
+    }
+  },
+  "description": "The run ended because the generation changed.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}"
+  },
+  "status": 409
+}

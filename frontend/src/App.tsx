@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import type { ProductApi } from "./api/productApi";
 import { AskPanel } from "./components/AskPanel";
+import { InvestigatePanel } from "./components/InvestigatePanel";
 import { LocatePanel } from "./components/LocatePanel";
 import { OrientPanel } from "./components/OrientPanel";
 import { RepoPicker } from "./components/RepoPicker";
@@ -8,7 +9,13 @@ import { SessionBanner } from "./components/SessionBanner";
 import { SourceViewer, type ViewerTarget } from "./components/SourceViewer";
 import { useRequest } from "./hooks/useRequest";
 
-export function App({ api }: { api: ProductApi }) {
+export function App({
+  api,
+  investigatePollMs,
+}: {
+  api: ProductApi;
+  investigatePollMs?: number;
+}) {
   const [repoId, setRepoId] = useState<string | null>(null);
   const [refresh, setRefresh] = useState(0);
   const [stale, setStale] = useState(false);
@@ -20,6 +27,11 @@ export function App({ api }: { api: ProductApi }) {
     repoId ? () => api.readiness(repoId) : null,
     `readiness:${repoId ?? ""}:${refresh}`,
   );
+  // Investigate is offered only where the deployment enables it; if the
+  // capability lookup fails, the mode stays hidden and Ask is unaffected.
+  const capabilities = useRequest(() => api.capabilities(), "capabilities");
+  const investigateEnabled =
+    capabilities.status === "ok" && capabilities.data.investigate;
   const generationId =
     readiness.status === "ok" ? readiness.data.generation_id : null;
 
@@ -87,6 +99,16 @@ export function App({ api }: { api: ProductApi }) {
             onOpenSource={setViewer}
             onStale={markStale}
           />
+          {investigateEnabled ? (
+            <InvestigatePanel
+              api={api}
+              repoId={repoId}
+              generationId={generationId}
+              pollMs={investigatePollMs}
+              onOpenSource={setViewer}
+              onStale={markStale}
+            />
+          ) : null}
           <LocatePanel
             api={api}
             repoId={repoId}

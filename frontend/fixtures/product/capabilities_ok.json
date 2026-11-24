@@ -1,0 +1,12 @@
+{
+  "body": {
+    "ask": true,
+    "investigate": true
+  },
+  "description": "Investigate is enabled in this deployment.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/capabilities"
+  },
+  "status": 200
+}

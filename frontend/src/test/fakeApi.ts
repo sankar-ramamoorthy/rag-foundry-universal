@@ -6,6 +6,8 @@ import locateOk from "../../fixtures/product/locate_ok.json";
 import readinessReady from "../../fixtures/product/readiness_ready.json";
 import reposList from "../../fixtures/product/repos_list.json";
 import askOk from "../../fixtures/product/ask_ok.json";
+import investigationPartial from "../../fixtures/product/investigation_finished_partial.json";
+import investigationRunning from "../../fixtures/product/investigation_running.json";
 
 // The fixtures are the contract fixtures validated against the OpenAPI schema
 // by the Python tests; JSON imports widen enum strings, hence the assertions.
@@ -24,6 +26,11 @@ export const repos = {
 export const readiness = readinessReady.body as Schemas["Readiness"];
 export const orient = orientOk.body as Schemas["ProductOrient"];
 export const locate = locateOk.body as Schemas["ProductLocate"];
+
+export const runningRecord =
+  investigationRunning.body as Schemas["ProductInvestigation"];
+export const partialRecord =
+  investigationPartial.body as Schemas["ProductInvestigation"];
 
 export const askAnswer = askOk.body as Schemas["ProductAsk"];
 
@@ -99,6 +106,9 @@ export function makeApi(overrides: Partial<ProductApi> = {}) {
       ok(sourceFor(s, e)),
     ),
     ask: vi.fn(async () => ok(askAnswer)),
+    capabilities: vi.fn(async () => ok({ ask: true, investigate: false })),
+    startInvestigation: vi.fn(async () => ok(runningRecord)),
+    getInvestigation: vi.fn(async () => ok(partialRecord)),
     ...overrides,
   };
   return api as unknown as FakeApi;

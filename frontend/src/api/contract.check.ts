@@ -9,6 +9,11 @@ import askNoRange from "../../fixtures/product/ask_no_range_citations.json";
 import askOk from "../../fixtures/product/ask_ok.json";
 import askStale from "../../fixtures/product/ask_stale.json";
 import filesOk from "../../fixtures/product/files_ok.json";
+import capabilitiesOk from "../../fixtures/product/capabilities_ok.json";
+import investigationNone from "../../fixtures/product/investigation_finished_none.json";
+import investigationPartial from "../../fixtures/product/investigation_finished_partial.json";
+import investigationRunning from "../../fixtures/product/investigation_running.json";
+import investigationStaleGen from "../../fixtures/product/investigation_stale_generation.json";
 import locateOk from "../../fixtures/product/locate_ok.json";
 import orientOk from "../../fixtures/product/orient_ok.json";
 import readinessNoCommit from "../../fixtures/product/readiness_no_commit.json";
@@ -49,7 +54,14 @@ export const checked = {
     conforms<Schemas["ProductAsk"]>(askOk.body),
     conforms<Schemas["ProductAsk"]>(askNoRange.body),
   ],
+  capabilities: conforms<Schemas["Capabilities"]>(capabilitiesOk.body),
+  investigations: [
+    conforms<Schemas["ProductInvestigation"]>(investigationRunning.body),
+    conforms<Schemas["ProductInvestigation"]>(investigationPartial.body),
+    conforms<Schemas["ProductInvestigation"]>(investigationNone.body),
+  ],
   errors: [
+    conforms<Schemas["ProductErrorResponse"]>(investigationStaleGen.body),
     conforms<Schemas["ProductErrorResponse"]>(sourceStale.body),
     conforms<Schemas["ProductErrorResponse"]>(askStale.body),
   ],

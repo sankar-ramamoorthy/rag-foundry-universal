@@ -1,0 +1,22 @@
+{
+  "body": {
+    "completion_detail": "a_value_added_later",
+    "envelope": null,
+    "evidence_mode": "live",
+    "findings": [],
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "investigate",
+    "open_gaps": [],
+    "outcome": "unknown",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "eyJ.example-signed-run-id",
+    "status": "finished",
+    "stop_reason": "a_reason_added_later"
+  },
+  "description": "Values the service adds later must not break a client.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}"
+  },
+  "status": 200
+}
