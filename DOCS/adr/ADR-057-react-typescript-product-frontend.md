@@ -2,7 +2,7 @@
 title: "ADR-057: React + TypeScript is the product frontend; Gradio stays during the transition"
 date: 2026-11-20
 type: adr
-status: proposed
+status: accepted
 tags: [adr, frontend, react, typescript, gradio, product-identity, phase-6]
 related:
   - "[WP-E6 product web UI](/DOCS/audit/05-Enterprise-Platform-Plan.md)"
@@ -14,8 +14,8 @@ related:
 
 # ADR-057: React + TypeScript product frontend
 
-**Status: Proposed (2026-11-20).** Awaiting owner acceptance. No code, model
-run or deployment is authorized by this record.
+**Status: Accepted by the owner (2026-11-23).** The first-release spec and
+implementation plan go through review before frontend code or deployment.
 
 Roadmap phase: Phase 6 (repository, document, and coding-agent intelligence).
 
@@ -46,6 +46,15 @@ user) is awkward to build in Gradio.
 4. **The transition is incremental.** Gradio stays operational until the
    React interface meets the agreed first-release requirements. Removing
    Gradio is a separate decision.
+5. **A dedicated frontend container is preferred in Foundry's Docker Compose
+   stack.** Build static assets and serve them with a lightweight web server.
+   Production should expose the UI and its APIs through a unified gateway or
+   equivalent same-origin boundary. Local development may use a simpler
+   arrangement that preserves the API and security boundaries.
+6. **Foundry owns the product API.** The peri-agent stays a separate service
+   behind this API boundary. Backend services own retrieval, evidence
+   verification, model orchestration and authorization. Choose the proxy and
+   service integration during the API assessment and first-release review.
 
 ## Relationship to the parallel agent project
 
@@ -101,7 +110,6 @@ belong in a spec under `specs/`.
 ## Open questions
 
 - Streaming answers: required for the first release, or later?
-- Where the SPA is served (own container, behind a gateway, or by an
-  existing service).
+- Which lightweight web server and same-origin routing arrangement to use.
 - Generated TypeScript client from the OpenAPI schemas versus hand-written.
 - The exact first-release requirement list.

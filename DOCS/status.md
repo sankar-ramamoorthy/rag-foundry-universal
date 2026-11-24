@@ -1052,12 +1052,14 @@ zero-wrong-deterministic-route gate. See the
 [protocol](/DOCS/evaluations/directional-compound-routing/protocol.md). The
 production router stays unchanged.
 
-## Frontend direction (ADR-057, proposed)
+## Frontend direction (ADR-057, accepted)
 
-React with TypeScript (Vite proposed) is the proposed product frontend; Gradio
-stays operational during the transition. Docs only: no frontend code, model run
-or deployment is authorized. See [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)
-and [issue #402](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/402).
+The owner accepted React with TypeScript on November 23, 2026, with a dedicated
+static frontend container preferred and Vite provisional. Gradio stays
+operational during the transition. The first-release spec and implementation plan
+await review. See [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md),
+the [frontend API assessment](/DOCS/notes/20261123-frontend-api-assessment.md)
+and the [first-release spec](/specs/016-product-frontend/spec.md).
 
 ## Evidence envelope (#406)
 
