@@ -27,6 +27,18 @@ export interface ProductApi {
     query: string,
     cursor?: string,
   ): Promise<Result<Schemas["ProductLocate"]>>;
+  source(
+    repoId: string,
+    generationId: string,
+    path: string,
+    startLine?: number,
+    endLine?: number,
+  ): Promise<Result<Schemas["ProductSource"]>>;
+  ask(
+    repoId: string,
+    generationId: string,
+    question: string,
+  ): Promise<Result<Schemas["ProductAsk"]>>;
 }
 
 type Settled<T> = {
@@ -109,6 +121,27 @@ export function createHttpProductApi(baseUrl = ""): ProductApi {
             path: { repo_id: repoId },
             query: { generation_id: generationId, query, cursor },
           },
+        }),
+      ),
+    source: (repoId, generationId, path, startLine, endLine) =>
+      guarded(() =>
+        client.GET("/v1/product/repos/{repo_id}/source", {
+          params: {
+            path: { repo_id: repoId },
+            query: {
+              generation_id: generationId,
+              path,
+              start_line: startLine,
+              end_line: endLine,
+            },
+          },
+        }),
+      ),
+    ask: (repoId, generationId, question) =>
+      guarded(() =>
+        client.POST("/v1/product/repos/{repo_id}/ask", {
+          params: { path: { repo_id: repoId } },
+          body: { question, generation_id: generationId },
         }),
       ),
   };

@@ -39,3 +39,20 @@ main {
 .candidates button[aria-pressed="true"] {
   font-weight: 700;
 }
+.source {
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.source .ln {
+  color: #777;
+  text-align: right;
+  padding-right: 0.75rem;
+  user-select: none;
+}
+.source tr[data-highlighted="true"] {
+  background: #fff3b0;
+}
+.answer {
+  border-top: 1px solid #ccc;
+  margin-top: 1rem;
+}
