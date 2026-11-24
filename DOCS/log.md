@@ -6,6 +6,11 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-24
+
+Added the [product API access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
+(#438) as a proposed assessment awaiting an owner decision. Documentation only; no code, configuration or deployment change.
+
 ## 2026-11-23
 
 Recorded owner acceptance of [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)
