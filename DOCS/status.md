@@ -1075,6 +1075,12 @@ a same-origin mapping that proxies only `/v1/product/*` to the orchestrator. The
 profile keeps it out of plain `up` and the operator's production refresh. None of
 this is deployed; external exposure waits on the access review (#438), and the
 browser flows have not yet been exercised against a live stack (#440).
+The [access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
+(#438, proposed, owner decides) records that no authentication, caller identity or
+rate limit exists in the orchestrator or ingestion service and that all service
+ports are published on every interface; the owner decided on 2026-11-24 that the first release
+serves a single local user, so the frontend port binds to localhost by default.
+A trusted private network or external exposure is not approved.
 
 ## Evidence envelope (#406)
 
