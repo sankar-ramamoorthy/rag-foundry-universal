@@ -1138,6 +1138,90 @@
       ],
       "notes": "Source bodies and private addresses/credentials omitted. Initial harness dict-row assertion error retained separately; corrected SQL-only recheck documented. OCI labels and deployment timeout logs pending SSH."
     },
+    "2026-11-24-440-ask1.json": {
+      "bytes": 3962,
+      "sha256": "f2bd7fa0f130b768c2a6138db1b762b3d6bf0a9b067a100c541c227920e56fa0",
+      "produced_by": "POST /v1/product/repos/{id}/ask through the frontend origin, question 1, local stack, tested tree 154f27ac9",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ask2.json": {
+      "bytes": 4930,
+      "sha256": "b4a89aa8d1937624680e12f08f9841a81d4f85782a9929e41da75066e8f54355",
+      "produced_by": "POST /v1/product/repos/{id}/ask through the frontend origin, question 2",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ask3.json": {
+      "bytes": 4098,
+      "sha256": "5d1343593ef5a4537a441d98ba66dd68a963c977fd574bfc657032dc0b4e9dda",
+      "produced_by": "POST /v1/product/repos/{id}/ask through the frontend origin, question 3",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-classify-digests.py": {
+      "bytes": 943,
+      "sha256": "e64e7343a41746ff3386b4037892ba61ac1a94f134c29c907359e089040cd67c",
+      "produced_by": "script: classifies citation passage digest vs read-back interval text",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-1-answer.png": {
+      "bytes": 111135,
+      "sha256": "228f27b12ea4a1409007867149956b99ca8c3c794d2031c1351f1ebece153ad9",
+      "produced_by": "Playwright screenshot: answer with consulted passages",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-2-viewer-highlight.png": {
+      "bytes": 169758,
+      "sha256": "fba378c034ab6e03d42d1cee34a3249c477f4ed35da5858d179de4bf37c91396",
+      "produced_by": "Playwright screenshot: viewer with highlighted cited interval",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-3-old-citation-stale.png": {
+      "bytes": 118679,
+      "sha256": "4b54531b90990f21a52627cb389d508e2645626b35a8414cf246ecf783915cb6",
+      "produced_by": "Playwright screenshot: old citation after re-ingest shows the stale notice",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-4-stale-banner.png": {
+      "bytes": 22555,
+      "sha256": "8c06dc3322311e0fb58e094f4a721e1f3ef88471962b37c9e6e598b5175a5728",
+      "produced_by": "Playwright screenshot: stale banner with refresh and rerun",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-5-orchestrator-down.png": {
+      "bytes": 89699,
+      "sha256": "330aecbb5ce575915cf81aadba1f0cbcfda7cdf638aad309ce17791cfa63c61c",
+      "produced_by": "Playwright screenshot: orchestrator stopped",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-results.json": {
+      "bytes": 2557,
+      "sha256": "88bfb2e84e9ac5592cb06d4d1dde98942914e0f5abebaa7c4c2db916712fc337",
+      "produced_by": "node ui-verify.mjs (Playwright, Chromium) step results and console problems",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-ui-verify.mjs": {
+      "bytes": 9190,
+      "sha256": "50f9eed1ac534baeea43ea6ee74d1e7c0a752806308d3e6d03f6abc107c81a44",
+      "produced_by": "Playwright script that produced ui-results.json and the screenshots",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-verify_citations.py": {
+      "bytes": 1732,
+      "sha256": "fd20aa443909e963debbba070cd71ff6db281097ea9001ace6c9de054462310b",
+      "produced_by": "script: reads each cited interval back and compares range and digests",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
