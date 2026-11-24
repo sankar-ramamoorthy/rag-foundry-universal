@@ -1067,7 +1067,26 @@ Ask, and #434 the committed OpenAPI artifact
 (`frontend/openapi/product.openapi.json`, version 0.1.0), the generated
 TypeScript types, and contract fixtures. A unit test fails when the artifact
 drifts from the app; a CI job fails when the generated types drift or the
-fixtures stop compiling. None of this is deployed, and no browser UI exists yet.
+fixtures stop compiling. #435 and #436 add the React app (repository picker,
+Orient, file search, generation-pinned Ask, shared source viewer with citation
+highlighting). #437 packages it as an opt-in Compose service
+(`docker compose --profile frontend up --build`, port 8080 on localhost only): static assets plus
+a same-origin mapping that proxies only `/v1/product/*` to the orchestrator. The
+profile keeps it out of plain `up` and the operator's production refresh. None of
+this is deployed; external exposure waits on the access review (#438), and the
+the first local run of the verification plan (#440, 2026-11-24, two small
+repositories, real models, Chromium) passed all twelve steps (one with a poor
+error message); the
+[report](/DOCS/test_results/2026-11-24-440-frontend-first-release.md) records the
+Markdown limitation it surfaced (#430), the bug it found and fixed (Ask returned
+a bare 500),
+and the follow-up #450. Nothing has been verified on a deployed host.
+The [access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
+(#438, proposed, owner decides) records that no authentication, caller identity or
+rate limit exists in the orchestrator or ingestion service and that all service
+ports are published on every interface; the owner decided on 2026-11-24 that the first release
+serves a single local user, so the frontend port binds to localhost by default.
+A trusted private network or external exposure is not approved.
 
 ## Evidence envelope (#406)
 
