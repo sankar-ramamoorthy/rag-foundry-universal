@@ -185,7 +185,10 @@ services:
       context: ./frontend
     container_name: foundry-frontend
     ports:
-      - "8080:8080"
+      # Localhost only by default (#438: the first release serves a single local
+      # user; the product API has no caller authentication). Binding wider is a
+      # deliberate operator choice, not a default.
+      - "127.0.0.1:8080:8080"
     environment:
       # Same-origin mapping target for /v1/product; see frontend/nginx.
       RAG_ORCHESTRATOR_URL: http://rag_orchestrator:8000

@@ -2,7 +2,7 @@
 title: "Product API access enforcement and same-origin boundary: review before external exposure"
 date: 2026-11-24
 type: assessment
-status: proposed
+status: accepted
 tags: [frontend, security, access, phase-6]
 related:
   - "[ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.md)"
@@ -14,9 +14,22 @@ related:
 
 # Product API access enforcement review (#438)
 
-**Status: proposed. The owner decides.** This record states what enforcement the
-product API has today, what each audience needs, and a recommendation. It
-changes no code and authorizes no exposure.
+**Status: accepted (2026-11-24). The first release serves a single local user.**
+This record states what enforcement the product API has today, what each
+audience needs, and the recommendation the owner accepted. It authorizes no
+exposure beyond a single local user.
+
+## Decision
+
+On 2026-11-24 the owner chose **audience A, a single local user**. Consequences:
+
+- The frontend port is published on `127.0.0.1` by default (applied in #437).
+  Binding it wider is a deliberate operator choice and is outside this decision.
+- Audiences B and C are not approved. B needs the items in recommendation 4; C
+  needs recommendation 5 and is tracked under #208.
+- The backend ports remain published on every interface by the existing Compose
+  file; that is a separate hardening decision (recommendation 3).
+- #438 is decided. External exposure stays gated until its prerequisites exist.
 
 ## What exists today
 
@@ -94,7 +107,7 @@ caller who can reach the origin, and `ask` is an unauthenticated cost surface.
    bind run IDs to the authorized caller and repository, as the plan states.
    That is only enforceable once there is a caller identity.
 
-## Decisions for the owner
+## Questions that framed the decision
 
 1. Which audience does the first release serve: A, B, or C?
 2. For B, is "every group member may read every indexed repository" acceptable,

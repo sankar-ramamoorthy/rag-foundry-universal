@@ -21,7 +21,10 @@ VITE = (ROOT / "frontend" / "vite.config.ts").read_text(encoding="utf-8")
 
 
 def _published_host_ports(service):
-    return {str(p).split(":")[0] for p in COMPOSE["services"][service].get("ports", [])}
+    """Host ports, whether written `8080:8080` or `127.0.0.1:8080:8080`."""
+    return {
+        str(p).split(":")[-2] for p in COMPOSE["services"][service].get("ports", [])
+    }
 
 
 def test_frontend_is_opt_in_so_plain_up_and_prod_refresh_do_not_include_it():
@@ -105,3 +108,10 @@ def test_image_is_multi_stage_non_root_and_resolves_upstream_at_request_time():
     # variable upstream are used; the image must export the resolvers.
     assert "NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1" in DOCKERFILE
     assert "resolver ${NGINX_LOCAL_RESOLVERS}" in NGINX
+
+
+def test_frontend_port_is_bound_to_localhost_by_default():
+    # #438: no caller authentication exists, so the default must not expose the
+    # product API on every interface. Widening it is an operator decision.
+    ports = COMPOSE["services"]["frontend"]["ports"]
+    assert ports == ["127.0.0.1:8080:8080"]
