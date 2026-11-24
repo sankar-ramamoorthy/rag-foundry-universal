@@ -1074,7 +1074,13 @@ highlighting). #437 packages it as an opt-in Compose service
 a same-origin mapping that proxies only `/v1/product/*` to the orchestrator. The
 profile keeps it out of plain `up` and the operator's production refresh. None of
 this is deployed; external exposure waits on the access review (#438), and the
-browser flows have not yet been exercised against a live stack (#440).
+the first local run of the verification plan (#440, 2026-11-24, two small
+repositories, real models, Chromium) passed all twelve steps (one with a poor
+error message); the
+[report](/DOCS/test_results/2026-11-24-440-frontend-first-release.md) records the
+Markdown limitation it surfaced (#430), the bug it found and fixed (Ask returned
+a bare 500),
+and the follow-up #450. Nothing has been verified on a deployed host.
 The [access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
 (#438, proposed, owner decides) records that no authentication, caller identity or
 rate limit exists in the orchestrator or ingestion service and that all service
