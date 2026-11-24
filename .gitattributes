@@ -19,3 +19,8 @@ DOCS/evaluations/code-evidence-held-out/preregistration-named-symbol-first.sha25
 # Frozen E1 held-out snapshot clarification (#305): its recorded SHA-256 covers LF content.
 DOCS/evaluations/code-evidence-held-out/clarification-snapshot-tree-equivalence.md text eol=lf
 DOCS/evaluations/code-evidence-held-out/clarification-snapshot-tree-equivalence.sha256 text eol=lf
+
+# Generated and contract files must be byte-identical on every platform (#434).
+frontend/openapi/** text eol=lf
+frontend/fixtures/** text eol=lf
+frontend/src/api/schema.d.ts text eol=lf

@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "unavailable",
+      "details": {},
+      "message": "evidence fell outside the requested scope"
+    }
+  },
+  "description": "Answer withheld: evidence outside the requested repository or generation.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/product/repos/{repo_id}/ask"
+  },
+  "status": 503
+}

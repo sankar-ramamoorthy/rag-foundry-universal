@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "stale",
+      "details": {},
+      "message": "generation is not current"
+    }
+  },
+  "description": "Cited generation is no longer current; no text returned.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/source"
+  },
+  "status": 409
+}

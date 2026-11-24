@@ -23,6 +23,30 @@ jobs:
       - name: No tailnet addresses in code/config
         run: python scripts/check_private_addresses.py
 
+  frontend-contract:
+    # Product API contract (#434): the committed TypeScript types must be what
+    # the committed OpenAPI artifact generates, and the committed fixtures must
+    # compile against them. The artifact itself is checked against the app by
+    # the rag_orchestrator unit tests.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Regenerate TypeScript types from the OpenAPI artifact
+        run: npm run generate:api
+      - name: Generated types are committed and current
+        run: git diff --exit-code -- src/api/schema.d.ts
+      - name: Type-check client and fixtures (strict)
+        run: npm run typecheck
+
   unit-tests:
     runs-on: ubuntu-latest
     steps:

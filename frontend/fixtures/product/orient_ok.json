@@ -1,0 +1,52 @@
+{
+  "body": {
+    "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "docs_dirs": [],
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "test_dirs is heuristic"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "file_counts": {
+      "indexed": 3,
+      "non_indexed": 0,
+      "total": 3
+    },
+    "gaps": [
+      {
+        "category": "services",
+        "path": null,
+        "reason": "no compose file found"
+      }
+    ],
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "heuristic_fields": [
+      "test_dirs"
+    ],
+    "languages": {
+      "python": 3
+    },
+    "manifests": [
+      {
+        "kind": "pyproject",
+        "path": "pyproject.toml"
+      }
+    ],
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "services": [],
+    "test_dirs": [
+      "tests"
+    ]
+  },
+  "description": "Orient overview with reported gaps and limitations.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/orient"
+  },
+  "status": 200
+}

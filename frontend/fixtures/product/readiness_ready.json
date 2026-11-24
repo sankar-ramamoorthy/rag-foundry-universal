@@ -1,0 +1,16 @@
+{
+  "body": {
+    "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "ingested_at": "2026-11-20T10:00:00Z",
+    "is_incremental": false,
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "status": "ready"
+  },
+  "description": "Ready generation with a known commit.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/readiness"
+  },
+  "status": 200
+}

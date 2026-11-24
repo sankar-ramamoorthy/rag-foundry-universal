@@ -1,0 +1,36 @@
+{
+  "body": {
+    "canonical_id": "pkg/mod.py",
+    "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "complete_file": false,
+    "doc_type": "python source",
+    "document_id": "doc-0",
+    "end_line": 2,
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "file continues at line 3"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "next_start_line": 3,
+    "path": "pkg/mod.py",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "representation": "stored_source",
+    "returned_text_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "start_line": 1,
+    "text": "def a():\n    pass\n",
+    "text_sha256": null,
+    "total_lines": null
+  },
+  "description": "Inclusive one-based interval 1-2 of a longer file.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/source"
+  },
+  "status": 200
+}

@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "invalid_range",
+      "details": {},
+      "message": "Start line is beyond EOF"
+    }
+  },
+  "description": "Interval outside the file.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/source"
+  },
+  "status": 416
+}

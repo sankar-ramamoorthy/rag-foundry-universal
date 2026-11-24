@@ -1,0 +1,54 @@
+{
+  "body": {
+    "candidates": [
+      {
+        "canonical_id": "pkg/mod.py",
+        "definitions": [
+          {
+            "end_line": 2,
+            "kind": "function",
+            "name": "a",
+            "start_line": 1
+          }
+        ],
+        "definitions_status": "verified_complete",
+        "doc_type": "python source",
+        "match": "basename",
+        "path": "pkg/mod.py",
+        "returned_text_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "source_status": "available"
+      },
+      {
+        "canonical_id": "web/mod.ts",
+        "definitions": null,
+        "definitions_status": "not_covered_language",
+        "doc_type": "typescript source",
+        "match": "basename",
+        "path": "web/mod.ts",
+        "returned_text_sha256": null,
+        "source_status": "available"
+      }
+    ],
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "definitions not covered for typescript source: web/mod.ts"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "next_cursor": null,
+    "pattern": "**/mod.py",
+    "query": "mod.py",
+    "repo_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "description": "Ambiguous basename match; one file has verified definitions, one has unsupported coverage.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/locate"
+  },
+  "status": 200
+}
