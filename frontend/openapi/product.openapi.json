@@ -271,9 +271,78 @@
         "title": "InvestigateRequest",
         "type": "object"
       },
+      "InvestigationCitationText": {
+        "description": "The text the investigation recorded for one citation, as stored with the\nrun. It is not read from the repository now, so it may differ from the\ncurrent source if the repository was re-indexed.",
+        "properties": {
+          "citation_id": {
+            "title": "Citation Id",
+            "type": "string"
+          },
+          "end_line": {
+            "title": "End Line",
+            "type": "integer"
+          },
+          "evidence_mode": {
+            "default": "live",
+            "enum": [
+              "live",
+              "fixture"
+            ],
+            "title": "Evidence Mode",
+            "type": "string"
+          },
+          "generation_id": {
+            "title": "Generation Id",
+            "type": "string"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "repo_id": {
+            "title": "Repo Id",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "start_line": {
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "citation_id",
+          "repo_id",
+          "generation_id",
+          "path",
+          "start_line",
+          "end_line",
+          "text"
+        ],
+        "title": "InvestigationCitationText",
+        "type": "object"
+      },
       "InvestigationEvidence": {
         "description": "A reference the run admitted. Inclusive, one-based lines; always in the\nrepository and generation the run was pinned to.",
         "properties": {
+          "citation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citation Id"
+          },
           "end_line": {
             "title": "End Line",
             "type": "integer"
@@ -1292,7 +1361,7 @@
   },
   "info": {
     "title": "Foundry product API",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "openapi": "3.1.0",
   "paths": {
@@ -1878,6 +1947,127 @@
           }
         },
         "summary": "Get Investigation",
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/v1/product/repos/{repo_id}/investigations/{run_id}/citations/{citation_id}": {
+      "get": {
+        "description": "The recorded excerpt for one citation of a run. It is served from the\nrun's stored record, so it is still available after a re-indexing; callers\nmust label it as recorded, not as the current source.",
+        "operationId": "get_investigation_citation_v1_product_repos__repo_id__investigations__run_id__citations__citation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "repo_id",
+            "required": true,
+            "schema": {
+              "title": "Repo Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "citation_id",
+            "required": true,
+            "schema": {
+              "title": "Citation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestigationCitationText"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Request Entity Too Large"
+          },
+          "416": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Requested Range Not Satisfiable"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "summary": "Get Investigation Citation",
         "tags": [
           "product"
         ]

@@ -1,0 +1,19 @@
+{
+  "body": {
+    "citation_id": "c1",
+    "end_line": 14,
+    "evidence_mode": "live",
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "path": "app/auth.py",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "eyJ.example-signed-run-id",
+    "start_line": 10,
+    "text": "def recover(account):\n    link = build(account)\n    send(link)\n"
+  },
+  "description": "The excerpt recorded with the run; still served after the repository is re-indexed.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}/citations/{citation_id}"
+  },
+  "status": 200
+}

@@ -24,7 +24,11 @@ from src.core import envelope
 from src.core.config import get_settings
 from src.core.envelope import EvidenceEnvelope
 from src.core.investigation import (
+    BackendBusy,
+    BackendRefused,
     BackendUnavailable,
+    CitationNotFound,
+    RunFailed,
     UpstreamRun,
     get_backend,
     open_run,
@@ -35,8 +39,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/product", tags=["product"])
 
 Outcome = Literal["complete", "partial", "none", "unknown"]
-_COMPLETE = {"complete", "verified_complete"}
+# "supported" is the investigation service's word for a run whose findings all
+# carry verified citations; it is not a claim that the statements are proven.
+_COMPLETE = {"complete", "verified_complete", "supported"}
 MAX_PATH = 1024
+MAX_CITATION_ID = 128
+MAX_EXCERPT_CHARS = 262_144
 
 
 class Capabilities(BaseModel):
@@ -58,6 +66,25 @@ class InvestigationEvidence(BaseModel):
     path: str
     start_line: int
     end_line: int
+    # Lets the client fetch the recorded excerpt, which stays available after
+    # the repository is re-indexed.
+    citation_id: Optional[str] = None
+
+
+class InvestigationCitationText(BaseModel):
+    """The text the investigation recorded for one citation, as stored with the
+    run. It is not read from the repository now, so it may differ from the
+    current source if the repository was re-indexed."""
+
+    run_id: str
+    citation_id: str
+    repo_id: str
+    generation_id: str
+    path: str
+    start_line: int
+    end_line: int
+    text: str
+    evidence_mode: Literal["live", "fixture"] = "live"
 
 
 class InvestigationFinding(BaseModel):
@@ -120,9 +147,27 @@ def _backend():
 
 
 async def _bounded(awaitable):
+    """Run a backend call within the deadline and translate its failures into
+    Foundry's stable errors. Nothing from the service is passed through except
+    messages Foundry itself wrote."""
     seconds = get_settings().INVESTIGATE_DEADLINE_SECONDS
     try:
         return await asyncio.wait_for(awaitable, timeout=seconds)
+    except BackendBusy as exc:
+        raise _unavailable(
+            "Another investigation is running. Try again when it finishes."
+        ) from exc
+    except BackendRefused as exc:
+        raise _unavailable(exc.message) from exc
+    except RunFailed as exc:
+        raise ProductFailure(
+            "unavailable",
+            503,
+            f"The investigation did not complete ({exc.code}).",
+            {"failure_code": exc.code},
+        ) from exc
+    except CitationNotFound as exc:
+        raise ProductFailure("not_found", 404, "citation not found") from exc
     except (BackendUnavailable, asyncio.TimeoutError) as exc:
         logger.warning("investigation service failure: %s", type(exc).__name__)
         raise _unavailable("The investigation service is unavailable") from exc
@@ -148,6 +193,11 @@ def _evidence(repo_id: str, generation_id: str, run: UpstreamRun):
                 or not 1 <= ref.start_line <= ref.end_line
             ):
                 raise _unavailable("evidence carried an invalid source reference")
+            cid = ref.citation_id
+            if cid is not None and not (
+                0 < len(cid) <= MAX_CITATION_ID and cid.isprintable()
+            ):
+                raise _unavailable("evidence carried an invalid citation id")
             admitted.append(
                 InvestigationEvidence(
                     repo_id=repo_id,
@@ -155,6 +205,7 @@ def _evidence(repo_id: str, generation_id: str, run: UpstreamRun):
                     path=ref.path,
                     start_line=ref.start_line,
                     end_line=ref.end_line,
+                    citation_id=cid,
                 )
             )
         findings.append(
@@ -183,7 +234,7 @@ async def _record(
     if current != generation_id:
         raise _stale(current, "during the run")
     outcome = _outcome(run.completion)
-    notes = []
+    notes = list(run.limitations)
     if run.stop_reason:
         notes.append(f"investigation stopped: {run.stop_reason}")
     if run.evidence_mode == "fixture":
@@ -267,6 +318,52 @@ async def get_investigation(repo_id: str, run_id: str):
         _, generation_id, upstream = opened
         run = await _bounded(backend.status(upstream))
         return await _record(run_id, repo_id, generation_id, run)
+    except ProductFailure as exc:
+        return failure_response(exc)
+    except Exception:
+        return product_routes.unexpected_failure_response()
+
+
+@router.get(
+    "/repos/{repo_id}/investigations/{run_id}/citations/{citation_id}",
+    response_model=InvestigationCitationText,
+    responses=ERRORS,
+)
+async def get_investigation_citation(repo_id: str, run_id: str, citation_id: str):
+    """The recorded excerpt for one citation of a run. It is served from the
+    run's stored record, so it is still available after a re-indexing; callers
+    must label it as recorded, not as the current source."""
+    try:
+        product_routes._uuid_or_fail(repo_id=repo_id)
+        backend = _backend()
+        opened = open_run(get_settings().INVESTIGATE_RUN_SECRET, run_id)
+        if opened is None or opened[0] != repo_id:
+            raise ProductFailure("not_found", 404, "investigation not found")
+        if not (0 < len(citation_id) <= MAX_CITATION_ID and citation_id.isprintable()):
+            raise ProductFailure("invalid_request", 400, "invalid citation id")
+        _, generation_id, upstream = opened
+        cited = await _bounded(backend.citation(upstream, citation_id))
+        if cited.repo_id != repo_id or cited.generation_id != generation_id:
+            raise _unavailable("the citation fell outside the run's scope")
+        if (
+            not cited.path
+            or len(cited.path) > MAX_PATH
+            or "\x00" in cited.path
+            or not 1 <= cited.start_line <= cited.end_line
+            or len(cited.text) > MAX_EXCERPT_CHARS
+        ):
+            raise _unavailable("the citation was not valid")
+        return InvestigationCitationText(
+            run_id=run_id,
+            citation_id=citation_id,
+            repo_id=repo_id,
+            generation_id=generation_id,
+            path=cited.path,
+            start_line=cited.start_line,
+            end_line=cited.end_line,
+            text=cited.text,
+            evidence_mode=cited.evidence_mode,
+        )
     except ProductFailure as exc:
         return failure_response(exc)
     except Exception:

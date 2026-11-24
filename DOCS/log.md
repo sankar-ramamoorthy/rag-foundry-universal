@@ -8,6 +8,8 @@ governed.
 
 ## 2026-11-24
 
+Added [Enabling Investigate](/DOCS/notes/20261124-enabling-investigate.md) (#439): the settings, what to expect from the service, and what enabling does not authorize. Documentation only.
+
 Added the [product API access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
 (#438) and recorded the owner's decision the same day: the first release serves a single local user. Documentation only here; the localhost port binding is applied in #437.
 

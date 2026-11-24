@@ -8,6 +8,7 @@ import {
   GEN_A,
   GEN_B,
   REPO_A,
+  citationText,
   fail,
   makeApi,
   ok,
@@ -204,5 +205,101 @@ describe("stopReasonLabel", () => {
     expect(stopReasonLabel("repeated_action")).toMatch(/repeated an action/);
     expect(stopReasonLabel("brand_new")).toBe("Stopped: brand_new");
     expect(stopReasonLabel(null)).toBe("");
+  });
+});
+
+
+describe("supported outcome, recorded excerpts and stop reasons", () => {
+  it("words a supported run without overclaiming", async () => {
+    const api = enabledApi();
+    api.getInvestigation.mockResolvedValue(
+      ok(finished({ outcome: "complete", completion_detail: "supported", stop_reason: "finished" })),
+    );
+    await openAndInvestigate(api);
+    expect(await screen.findByText(/Supported: each finding has verified citations/)).toBeInTheDocument();
+    expect(screen.getByText(/confirm the lines exist, not that they prove the statement/)).toBeInTheDocument();
+    expect(screen.getByText(/The investigation finished\./)).toBeInTheDocument();
+  });
+
+  it("labels the documented budget stop reasons and leaves ambiguous ones to the default", async () => {
+    const api = enabledApi();
+    api.getInvestigation.mockResolvedValue(ok(finished({ stop_reason: "time_budget" })));
+    await openAndInvestigate(api);
+    expect(await screen.findByText(/It ran out of time\./)).toBeInTheDocument();
+    expect(stopReasonLabel("cost_cap")).toBe("Stopped: cost_cap");
+    expect(stopReasonLabel("scope_mismatch")).toBe("Stopped: scope_mismatch");
+  });
+
+  it("shows the recorded excerpt, labeled as recorded and not the current source", async () => {
+    const api = enabledApi();
+    const user = await openAndInvestigate(api);
+    await user.click(await screen.findByRole("button", { name: "Show recorded excerpt" }));
+    const figure = await screen.findByRole("figure", { name: "Recorded excerpt" });
+    expect(api.getInvestigationCitation).toHaveBeenCalledWith(REPO_A, partialRecord.run_id, "c1");
+    expect(figure).toHaveTextContent(/stored; it is not read from the repository now/i);
+    expect(figure).toHaveTextContent(citationText.generation_id);
+    expect(figure).toHaveTextContent("def recover(account):");
+  });
+
+  it("renders a recorded excerpt as text, never as markup", async () => {
+    const api = enabledApi({
+      getInvestigationCitation: vi.fn(async () =>
+        ok({
+          ...citationText,
+          text: ["<img src=x onerror=alert(1)>", "<b>bold</b>", ""].join(String.fromCharCode(10)),
+        }),
+      ),
+    });
+    const user = await openAndInvestigate(api);
+    await user.click(await screen.findByRole("button", { name: "Show recorded excerpt" }));
+    await screen.findByRole("figure", { name: "Recorded excerpt" });
+    expect(document.querySelector("figure img")).toBeNull();
+    expect(document.querySelector("figure b")).toBeNull();
+    expect(screen.getByRole("figure", { name: "Recorded excerpt" })).toHaveTextContent("<img src=x onerror=alert(1)>");
+  });
+
+  it("keeps the recorded excerpt available for evidence from an older generation", async () => {
+    const api = enabledApi();
+    const old = finished();
+    old.findings = [
+      {
+        statement: "Old claim",
+        evidence: [
+          { ...partialRecord.findings![0]!.evidence[0]!, generation_id: GEN_B, citation_id: "c1" },
+        ],
+      },
+    ];
+    api.getInvestigation.mockResolvedValue(ok(old));
+    const user = await openAndInvestigate(api);
+    expect(await screen.findByText(/older generation: the source jump is disabled/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /show lines/i })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Show recorded excerpt" }));
+    expect(await screen.findByRole("figure", { name: "Recorded excerpt" })).toBeInTheDocument();
+    expect(api.source).not.toHaveBeenCalled();
+  });
+
+  it("shows a missing excerpt as an error and offers no fake text", async () => {
+    const api = enabledApi({
+      getInvestigationCitation: vi.fn(async () => fail("not_found", "citation not found", 404)),
+    });
+    const user = await openAndInvestigate(api);
+    await user.click(await screen.findByRole("button", { name: "Show recorded excerpt" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/citation not found/i);
+    expect(screen.queryByRole("figure", { name: "Recorded excerpt" })).toBeNull();
+  });
+
+  it("offers no excerpt button for evidence without a citation id", async () => {
+    const api = enabledApi();
+    const rec = finished();
+    rec.findings = [
+      {
+        statement: "No id",
+        evidence: [{ ...partialRecord.findings![0]!.evidence[0]!, citation_id: null }],
+      },
+    ];
+    api.getInvestigation.mockResolvedValue(ok(rec));
+    await openAndInvestigate(api);
+    await screen.findByText("No id");
+    expect(screen.queryByRole("button", { name: "Show recorded excerpt" })).toBeNull();
   });
 });

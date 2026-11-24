@@ -7,6 +7,7 @@ import readinessReady from "../../fixtures/product/readiness_ready.json";
 import reposList from "../../fixtures/product/repos_list.json";
 import askOk from "../../fixtures/product/ask_ok.json";
 import investigationPartial from "../../fixtures/product/investigation_finished_partial.json";
+import investigationCitation from "../../fixtures/product/investigation_citation_ok.json";
 import investigationRunning from "../../fixtures/product/investigation_running.json";
 
 // The fixtures are the contract fixtures validated against the OpenAPI schema
@@ -31,6 +32,9 @@ export const runningRecord =
   investigationRunning.body as Schemas["ProductInvestigation"];
 export const partialRecord =
   investigationPartial.body as Schemas["ProductInvestigation"];
+
+export const citationText =
+  investigationCitation.body as Schemas["InvestigationCitationText"];
 
 export const askAnswer = askOk.body as Schemas["ProductAsk"];
 
@@ -109,6 +113,7 @@ export function makeApi(overrides: Partial<ProductApi> = {}) {
     capabilities: vi.fn(async () => ok({ ask: true, investigate: false })),
     startInvestigation: vi.fn(async () => ok(runningRecord)),
     getInvestigation: vi.fn(async () => ok(partialRecord)),
+    getInvestigationCitation: vi.fn(async () => ok(citationText)),
     ...overrides,
   };
   return api as unknown as FakeApi;
