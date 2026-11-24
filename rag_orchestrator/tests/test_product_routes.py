@@ -10,6 +10,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from src.api.v1 import product_routes
 from src.api.v1.main import app
 
 pytestmark = pytest.mark.unit
@@ -357,3 +358,18 @@ def test_existing_routes_are_unchanged(monkeypatch):
     ).json()
     assert "envelope" in body and "files" in body
     assert "error" not in body
+
+
+def test_unexpected_failure_in_any_route_is_the_stable_error(monkeypatch):
+    async def explode(path):
+        raise RuntimeError("secret internal detail")
+
+    monkeypatch.setattr(product_routes, "_ingestion_json", explode)
+    client = TestClient(app)
+    for url in (
+        "/v1/product/repos",
+        f"/v1/product/repos/{REPO}/readiness",
+    ):
+        response = client.get(url)
+        _error(response, "unavailable", 503)
+        assert "secret" not in response.text
