@@ -1,0 +1,45 @@
+{
+  "body": {
+    "answer": "It does X.",
+    "citations": [
+      {
+        "canonical_id": null,
+        "chunk_id": null,
+        "document_id": null,
+        "end_line": null,
+        "generation_id": "00000000-0000-4000-8000-000000000002",
+        "path": "README.md",
+        "range_reason": "line span not persisted at ingestion",
+        "repo_id": "00000000-0000-4000-8000-000000000001",
+        "start_line": null,
+        "text_sha256": null
+      }
+    ],
+    "envelope": {
+      "commit_sha": null,
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "commit_sha not recorded for this generation"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "ask",
+    "model_used": null,
+    "question": "What does it do?",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "00000000-0000-4000-8000-0000000000ab",
+    "sources": [
+      "README.md"
+    ],
+    "trace_id": null
+  },
+  "description": "Citation without a usable range keeps its reason; the commit is unknown.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/product/repos/{repo_id}/ask"
+  },
+  "status": 200
+}

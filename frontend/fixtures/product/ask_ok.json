@@ -1,0 +1,45 @@
+{
+  "body": {
+    "answer": "It does X.",
+    "citations": [
+      {
+        "canonical_id": "pkg/mod.py",
+        "chunk_id": "c-1",
+        "document_id": "doc-0",
+        "end_line": 2,
+        "generation_id": "00000000-0000-4000-8000-000000000002",
+        "path": "pkg/mod.py",
+        "range_reason": null,
+        "repo_id": "00000000-0000-4000-8000-000000000001",
+        "start_line": 1,
+        "text_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      }
+    ],
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "ranked, bounded retrieval: evidence is a subset of the repository"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "ask",
+    "model_used": "m1",
+    "question": "What does it do?",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "00000000-0000-4000-8000-0000000000aa",
+    "sources": [
+      "pkg/mod.py"
+    ],
+    "trace_id": "t1"
+  },
+  "description": "Answer with one citation carrying a usable range.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/product/repos/{repo_id}/ask"
+  },
+  "status": 200
+}

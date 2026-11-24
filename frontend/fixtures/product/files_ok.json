@@ -1,0 +1,33 @@
+{
+  "body": {
+    "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "more pages available; pass next_cursor"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "files": [
+      {
+        "canonical_id": "pkg/mod.py",
+        "doc_type": "python source",
+        "document_id": "doc-0",
+        "path": "pkg/mod.py",
+        "source_status": "available"
+      }
+    ],
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "next_cursor": "opaque-cursor",
+    "repo_id": "00000000-0000-4000-8000-000000000001"
+  },
+  "description": "One page of files with a cursor.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/files"
+  },
+  "status": 200
+}

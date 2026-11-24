@@ -1,0 +1,17 @@
+{
+  "body": {
+    "error": {
+      "code": "unavailable",
+      "details": {
+        "generation_status": "unknown"
+      },
+      "message": "repository has no ready generation"
+    }
+  },
+  "description": "No ready generation: questions and source reads must stay disabled.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/readiness"
+  },
+  "status": 503
+}

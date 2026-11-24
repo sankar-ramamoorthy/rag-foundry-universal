@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "resource_limit",
+      "details": {},
+      "message": "At most 500 lines per read"
+    }
+  },
+  "description": "Read larger than the cap.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/source"
+  },
+  "status": 413
+}

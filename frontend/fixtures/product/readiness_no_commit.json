@@ -1,0 +1,16 @@
+{
+  "body": {
+    "commit_sha": null,
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "ingested_at": null,
+    "is_incremental": false,
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "status": "ready"
+  },
+  "description": "Ready generation whose commit is not recorded (nullable).",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/readiness"
+  },
+  "status": 200
+}

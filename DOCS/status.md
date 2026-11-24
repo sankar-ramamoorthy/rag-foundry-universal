@@ -1061,6 +1061,14 @@ await review. See [ADR-057](/DOCS/adr/ADR-057-react-typescript-product-frontend.
 the [frontend API assessment](/DOCS/notes/20261123-frontend-api-assessment.md)
 and the [first-release spec](/specs/016-product-frontend/spec.md).
 
+Implementation (issues #432-#440, tracked by #402): #432 added the additive
+`/v1/product` read routes and one stable error body, #433 the generation-pinned
+Ask, and #434 the committed OpenAPI artifact
+(`frontend/openapi/product.openapi.json`, version 0.1.0), the generated
+TypeScript types, and contract fixtures. A unit test fails when the artifact
+drifts from the app; a CI job fails when the generated types drift or the
+fixtures stop compiling. None of this is deployed, and no browser UI exists yet.
+
 ## Evidence envelope (#406)
 
 Evidence-bearing orchestrator responses (`/v1/rag`, `/v1/repos/{id}/evidence`, orient, trace, impact) now carry an additive

@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "not_found",
+      "details": {},
+      "message": "File not found in generation"
+    }
+  },
+  "description": "Path not in this generation.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/source"
+  },
+  "status": 404
+}

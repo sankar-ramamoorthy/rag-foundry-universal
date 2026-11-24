@@ -111,5 +111,9 @@ belong in a spec under `specs/`.
 
 - Streaming answers: required for the first release, or later?
 - Which lightweight web server and same-origin routing arrangement to use.
-- Generated TypeScript client from the OpenAPI schemas versus hand-written.
+- ~~Generated TypeScript client from the OpenAPI schemas versus hand-written.~~
+  Resolved in #434 (for owner confirmation in that PR): generated types
+  (`openapi-typescript`) plus the small `openapi-fetch` runtime, from the
+  committed `frontend/openapi/product.openapi.json`. No hand-written response
+  shapes.
 - The exact first-release requirement list.

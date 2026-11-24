@@ -1,0 +1,22 @@
+{
+  "body": {
+    "repos": [
+      {
+        "branch": "main",
+        "display_name": "acme/demo",
+        "file_count": 3,
+        "ingested_at": "2026-11-20T10:00:00Z",
+        "name": "demo",
+        "node_count": 9,
+        "repo_id": "00000000-0000-4000-8000-000000000001",
+        "source_type": "git"
+      }
+    ]
+  },
+  "description": "Sanitized repository list: no paths, no URLs.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos"
+  },
+  "status": 200
+}
