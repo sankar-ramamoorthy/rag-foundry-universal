@@ -1,0 +1,41 @@
+:root {
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+}
+main {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1rem;
+}
+.session {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 1rem;
+}
+.session dt {
+  font-weight: 600;
+}
+.session dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.notice {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #888;
+  border-radius: 4px;
+}
+.notice-error {
+  border-color: #b00020;
+  background: #fdecee;
+}
+.hint,
+.meta {
+  color: #555;
+  font-size: 0.9rem;
+}
+.candidates {
+  padding-left: 1rem;
+}
+.candidates button[aria-pressed="true"] {
+  font-weight: 700;
+}

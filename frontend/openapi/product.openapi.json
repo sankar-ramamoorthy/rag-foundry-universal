@@ -1436,6 +1436,7 @@
     },
     "/v1/product/repos/{repo_id}/locate": {
       "get": {
+        "description": "Pass `next_cursor` back with the same `query` and `generation_id` to get\nthe next page of the same match set.",
         "operationId": "locate_v1_product_repos__repo_id__locate_get",
         "parameters": [
           {
@@ -1483,6 +1484,22 @@
               "default": true,
               "title": "Include Definitions",
               "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
             }
           }
         ],

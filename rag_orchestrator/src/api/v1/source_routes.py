@@ -198,6 +198,7 @@ async def locate(
     generation_id: Optional[str] = None,
     limit: int = 20,
     include_definitions: bool = True,
+    cursor: Optional[str] = None,
 ):
     try:
         UUID(repo_id)
@@ -212,7 +213,12 @@ async def locate(
     response = await _ingestion_get(
         repo_id,
         "files",
-        {"generation_id": generation, "pattern": pattern, "limit": limit},
+        {
+            "generation_id": generation,
+            "pattern": pattern,
+            "limit": limit,
+            "cursor": cursor,
+        },
     )
     if response.is_error:
         return _passthrough_error(response)

@@ -69,7 +69,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Locate */
+        /**
+         * Locate
+         * @description Pass `next_cursor` back with the same `query` and `generation_id` to get
+         *     the next page of the same match set.
+         */
         get: operations["locate_v1_product_repos__repo_id__locate_get"];
         put?: never;
         post?: never;
@@ -758,6 +762,7 @@ export interface operations {
                 query: string;
                 limit?: number;
                 include_definitions?: boolean;
+                cursor?: string | null;
             };
             header?: never;
             path: {

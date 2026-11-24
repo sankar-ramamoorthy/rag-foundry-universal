@@ -44,8 +44,12 @@ jobs:
         run: npm run generate:api
       - name: Generated types are committed and current
         run: git diff --exit-code -- src/api/schema.d.ts
-      - name: Type-check client and fixtures (strict)
+      - name: Type-check client, fixtures and app (strict)
         run: npm run typecheck
+      - name: UI tests (fixture-driven, no live services)
+        run: npm test
+      - name: Production build
+        run: npm run build
 
   unit-tests:
     runs-on: ubuntu-latest
