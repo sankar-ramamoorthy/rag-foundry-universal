@@ -1067,7 +1067,14 @@ Ask, and #434 the committed OpenAPI artifact
 (`frontend/openapi/product.openapi.json`, version 0.1.0), the generated
 TypeScript types, and contract fixtures. A unit test fails when the artifact
 drifts from the app; a CI job fails when the generated types drift or the
-fixtures stop compiling. None of this is deployed, and no browser UI exists yet.
+fixtures stop compiling. #435 and #436 add the React app (repository picker,
+Orient, file search, generation-pinned Ask, shared source viewer with citation
+highlighting). #437 packages it as an opt-in Compose service
+(`docker compose --profile frontend up --build`, port 8080): static assets plus
+a same-origin mapping that proxies only `/v1/product/*` to the orchestrator. The
+profile keeps it out of plain `up` and the operator's production refresh. None of
+this is deployed; external exposure waits on the access review (#438), and the
+browser flows have not yet been exercised against a live stack (#440).
 
 ## Evidence envelope (#406)
 

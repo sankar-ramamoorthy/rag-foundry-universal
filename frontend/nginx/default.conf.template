@@ -1,0 +1,63 @@
+# Same-origin boundary for the product frontend (issue #437).
+#
+# Browser paths are identical in development (vite.config.ts proxy) and here:
+# /v1/product/* goes to the orchestrator and nothing else under /v1 does.
+# ${RAG_ORCHESTRATOR_URL} comes from the container environment; there is no
+# address in this file. This is a routing allowlist, not caller authorization
+# (see #438 before any external exposure).
+
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    server_tokens off;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "no-referrer" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" always;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Resolve the orchestrator at request time (not once at start) so a
+    # restarted orchestrator with a new address keeps working. The official
+    # image exports NGINX_LOCAL_RESOLVERS from the container's resolv.conf.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+
+    location /v1/product/ {
+        set $orchestrator "${RAG_ORCHESTRATOR_URL}";
+        proxy_pass $orchestrator;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Ask runs retrieval and generation.
+        proxy_read_timeout 300s;
+        proxy_send_timeout 60s;
+    }
+
+    # Every other API path stays unreachable through this origin.
+    location /v1/ {
+        return 404;
+    }
+
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        add_header X-Content-Type-Options "nosniff" always;
+        try_files $uri =404;
+    }
+
+    location / {
+        add_header Cache-Control "no-cache";
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header Referrer-Policy "no-referrer" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" always;
+        try_files $uri /index.html;
+    }
+}
