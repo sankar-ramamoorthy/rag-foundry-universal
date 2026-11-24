@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "not_found",
+      "details": {},
+      "message": "investigation not found"
+    }
+  },
+  "description": "Unknown, forged or wrong-repository run ID.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}"
+  },
+  "status": 404
+}

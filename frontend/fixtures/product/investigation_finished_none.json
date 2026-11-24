@@ -1,0 +1,31 @@
+{
+  "body": {
+    "completion_detail": "none",
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "unknown",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "investigation stopped: invalid_model_output"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "evidence_mode": "live",
+    "findings": [],
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "investigate",
+    "open_gaps": [],
+    "outcome": "none",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "eyJ.example-signed-run-id",
+    "status": "finished",
+    "stop_reason": "invalid_model_output"
+  },
+  "description": "A normal result: no findings, with the stop reason.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}"
+  },
+  "status": 200
+}

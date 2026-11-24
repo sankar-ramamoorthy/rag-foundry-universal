@@ -1,0 +1,12 @@
+{
+  "body": {
+    "ask": true,
+    "investigate": false
+  },
+  "description": "Investigate is not enabled: the UI must not offer the mode.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/capabilities"
+  },
+  "status": 200
+}

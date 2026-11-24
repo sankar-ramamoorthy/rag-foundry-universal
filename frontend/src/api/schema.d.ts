@@ -4,6 +4,27 @@
  */
 
 export interface paths {
+    "/v1/product/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Capabilities
+         * @description Which optional modes this deployment offers. The UI shows Investigate
+         *     only when it is enabled.
+         */
+        get: operations["capabilities_v1_product_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/product/repos": {
         parameters: {
             query?: never;
@@ -54,6 +75,44 @@ export interface paths {
         };
         /** Files */
         get: operations["files_v1_product_repos__repo_id__files_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/product/repos/{repo_id}/investigations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Investigation
+         * @description Start a run pinned to the generation the user was shown. Returns at once
+         *     with a `running` record; poll the run for its result.
+         */
+        post: operations["start_investigation_v1_product_repos__repo_id__investigations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/product/repos/{repo_id}/investigations/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Investigation */
+        get: operations["get_investigation_v1_product_repos__repo_id__investigations__run_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -154,6 +213,16 @@ export interface components {
              */
             top_k?: number;
         };
+        /** Capabilities */
+        Capabilities: {
+            /**
+             * Ask
+             * @default true
+             */
+            ask?: boolean;
+            /** Investigate */
+            investigate: boolean;
+        };
         /** Citation */
         Citation: {
             /** Canonical Id */
@@ -206,6 +275,37 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InvestigateRequest */
+        InvestigateRequest: {
+            /** Generation Id */
+            generation_id: string;
+            /** Question */
+            question: string;
+        };
+        /**
+         * InvestigationEvidence
+         * @description A reference the run admitted. Inclusive, one-based lines; always in the
+         *     repository and generation the run was pinned to.
+         */
+        InvestigationEvidence: {
+            /** End Line */
+            end_line: number;
+            /** Generation Id */
+            generation_id: string;
+            /** Path */
+            path: string;
+            /** Repo Id */
+            repo_id: string;
+            /** Start Line */
+            start_line: number;
+        };
+        /** InvestigationFinding */
+        InvestigationFinding: {
+            /** Evidence */
+            evidence: components["schemas"]["InvestigationEvidence"][];
+            /** Statement */
+            statement: string;
         };
         /** LocateCandidate */
         LocateCandidate: {
@@ -346,6 +446,43 @@ export interface components {
             next_cursor?: string | null;
             /** Repo Id */
             repo_id: string;
+        };
+        /** ProductInvestigation */
+        ProductInvestigation: {
+            /** Completion Detail */
+            completion_detail?: string | null;
+            envelope?: components["schemas"]["EvidenceEnvelope"] | null;
+            /**
+             * Evidence Mode
+             * @default live
+             * @enum {string}
+             */
+            evidence_mode?: "live" | "fixture";
+            /** Findings */
+            findings?: components["schemas"]["InvestigationFinding"][];
+            /** Generation Id */
+            generation_id: string;
+            /**
+             * Mode
+             * @default investigate
+             * @constant
+             */
+            mode?: "investigate";
+            /** Open Gaps */
+            open_gaps?: string[];
+            /** Outcome */
+            outcome?: ("complete" | "partial" | "none" | "unknown") | null;
+            /** Repo Id */
+            repo_id: string;
+            /** Run Id */
+            run_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "finished";
+            /** Stop Reason */
+            stop_reason?: string | null;
         };
         /** ProductLocate */
         ProductLocate: {
@@ -502,6 +639,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    capabilities_v1_product_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+        };
+    };
     list_repos_v1_product_repos_get: {
         parameters: {
             query?: never;
@@ -688,6 +845,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductFiles"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Requested Range Not Satisfiable */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+        };
+    };
+    start_investigation_v1_product_repos__repo_id__investigations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                repo_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InvestigateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductInvestigation"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Request Entity Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Requested Range Not Satisfiable */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductErrorResponse"];
+                };
+            };
+        };
+    };
+    get_investigation_v1_product_repos__repo_id__investigations__run_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                repo_id: string;
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductInvestigation"];
                 };
             };
             /** @description Bad Request */

@@ -1,0 +1,15 @@
+{
+  "body": {
+    "error": {
+      "code": "unavailable",
+      "details": {},
+      "message": "The investigation service is unavailable"
+    }
+  },
+  "description": "Service down or mode off: Ask must stay usable.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/product/repos/{repo_id}/investigations"
+  },
+  "status": 503
+}

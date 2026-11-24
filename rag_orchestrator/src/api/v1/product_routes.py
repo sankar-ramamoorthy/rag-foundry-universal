@@ -37,7 +37,7 @@ from src.core.evidence_service import fetch_orient_response
 logger = logging.getLogger(__name__)
 # Version of the browser-facing contract in the published OpenAPI artifact
 # (frontend/openapi/product.openapi.json). Bump it with any schema change.
-PRODUCT_API_VERSION = "0.1.0"
+PRODUCT_API_VERSION = "0.2.0"
 
 router = APIRouter(prefix="/product", tags=["product"])
 

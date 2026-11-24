@@ -1,0 +1,46 @@
+{
+  "body": {
+    "completion_detail": "partial",
+    "envelope": {
+      "commit_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "coverage": "partial",
+      "generation_id": "00000000-0000-4000-8000-000000000002",
+      "limitations": [
+        "investigation stopped: repeated_action"
+      ],
+      "repo_id": "00000000-0000-4000-8000-000000000001",
+      "schema_version": "1"
+    },
+    "evidence_mode": "live",
+    "findings": [
+      {
+        "evidence": [
+          {
+            "end_line": 14,
+            "generation_id": "00000000-0000-4000-8000-000000000002",
+            "path": "app/auth.py",
+            "repo_id": "00000000-0000-4000-8000-000000000001",
+            "start_line": 10
+          }
+        ],
+        "statement": "Account recovery is handled in auth.py."
+      }
+    ],
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "investigate",
+    "open_gaps": [
+      "The email template was not read."
+    ],
+    "outcome": "partial",
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "eyJ.example-signed-run-id",
+    "status": "finished",
+    "stop_reason": "repeated_action"
+  },
+  "description": "A partial run: a finding, an open gap and an explicit stop reason.",
+  "request": {
+    "method": "GET",
+    "path": "/v1/product/repos/{repo_id}/investigations/{run_id}"
+  },
+  "status": 200
+}

@@ -39,6 +39,16 @@ export interface ProductApi {
     generationId: string,
     question: string,
   ): Promise<Result<Schemas["ProductAsk"]>>;
+  capabilities(): Promise<Result<Schemas["Capabilities"]>>;
+  startInvestigation(
+    repoId: string,
+    generationId: string,
+    question: string,
+  ): Promise<Result<Schemas["ProductInvestigation"]>>;
+  getInvestigation(
+    repoId: string,
+    runId: string,
+  ): Promise<Result<Schemas["ProductInvestigation"]>>;
 }
 
 type Settled<T> = {
@@ -142,6 +152,20 @@ export function createHttpProductApi(baseUrl = ""): ProductApi {
         client.POST("/v1/product/repos/{repo_id}/ask", {
           params: { path: { repo_id: repoId } },
           body: { question, generation_id: generationId },
+        }),
+      ),
+    capabilities: () => guarded(() => client.GET("/v1/product/capabilities")),
+    startInvestigation: (repoId, generationId, question) =>
+      guarded(() =>
+        client.POST("/v1/product/repos/{repo_id}/investigations", {
+          params: { path: { repo_id: repoId } },
+          body: { question, generation_id: generationId },
+        }),
+      ),
+    getInvestigation: (repoId, runId) =>
+      guarded(() =>
+        client.GET("/v1/product/repos/{repo_id}/investigations/{run_id}", {
+          params: { path: { repo_id: repoId, run_id: runId } },
         }),
       ),
   };

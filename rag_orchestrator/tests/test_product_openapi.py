@@ -81,6 +81,8 @@ def test_every_route_declares_a_json_success_and_the_stable_error_body():
     for path, item in artifact["paths"].items():
         for method, operation in item.items():
             assert "200" in operation["responses"], (method, path)
+            if path == "/v1/product/capabilities":
+                continue  # a static report of enabled modes; it has no 4xx
             errors = [c for c in operation["responses"] if c != "200" and c != "422"]
             assert errors, (method, path)
             for code in errors:
@@ -91,13 +93,22 @@ def test_every_route_declares_a_json_success_and_the_stable_error_body():
 def test_generation_is_required_on_every_pinned_route():
     artifact = _artifact()
     for path, item in artifact["paths"].items():
-        if path == "/v1/product/repos" or path.endswith("/readiness"):
+        if path in ("/v1/product/repos", "/v1/product/capabilities") or path.endswith(
+            "/readiness"
+        ):
             continue
         operation = next(iter(item.values()))
         if path.endswith("/ask"):
             required = artifact["components"]["schemas"]["AskRequest"]["required"]
             assert "generation_id" in required, path
             continue
+        if path.endswith("/investigations"):
+            schemas = artifact["components"]["schemas"]
+            required = schemas["InvestigateRequest"]["required"]
+            assert "generation_id" in required, path
+            continue
+        if "/investigations/" in path:
+            continue  # the signed run ID carries its generation
         names = {p["name"] for p in operation["parameters"] if p["required"]}
         assert "generation_id" in names, path
 

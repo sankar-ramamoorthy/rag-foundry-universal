@@ -1,0 +1,22 @@
+{
+  "body": {
+    "completion_detail": null,
+    "envelope": null,
+    "evidence_mode": "live",
+    "findings": [],
+    "generation_id": "00000000-0000-4000-8000-000000000002",
+    "mode": "investigate",
+    "open_gaps": [],
+    "outcome": null,
+    "repo_id": "00000000-0000-4000-8000-000000000001",
+    "run_id": "eyJ.example-signed-run-id",
+    "status": "running",
+    "stop_reason": null
+  },
+  "description": "A run was accepted and is still running.",
+  "request": {
+    "method": "POST",
+    "path": "/v1/product/repos/{repo_id}/investigations"
+  },
+  "status": 200
+}
