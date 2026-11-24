@@ -189,3 +189,45 @@ def test_existing_rag_route_has_no_generation_field():
     from src.api.v1.models import RAGQuery
 
     assert "generation_id" not in RAGQuery.model_fields
+
+
+def test_standard_rag_result_model_is_coerced_not_asserted(monkeypatch):
+    """Found by the #440 live run: the pipeline returns its own RAGResult, not
+    RAGResponse. The helper must accept it (FastAPI's response_model does that
+    coercion only on the legacy route)."""
+    import asyncio
+
+    from src.api.v1 import routes
+    from src.api.v1.models import RAGQuery, RAGResponse
+    from src.core.service import RAGResult
+
+    pipeline_result = RAGResult(
+        answer="coerced",
+        sources=["pkg/mod.py"],
+        repo_id=REPO,
+        retrieval_plan={"generation_id": GEN},
+        model_used="m1",
+        envelope=EvidenceEnvelope(repo_id=REPO, generation_id=GEN),
+        citations=[Citation(repo_id=REPO, generation_id=GEN, path="pkg/mod.py")],
+    )
+
+    async def fake_endpoint(query):
+        return pipeline_result
+
+    monkeypatch.setattr(routes, "rag_endpoint", fake_endpoint)
+    result = asyncio.run(
+        product_routes._run_standard_rag(RAGQuery(query="q", repo_id=REPO))
+    )
+    assert isinstance(result, RAGResponse) and not isinstance(result, RAGResult)
+    assert result.answer == "coerced" and result.model_used == "m1"
+    assert result.citations[0].path == "pkg/mod.py"
+    assert result.envelope.generation_id == GEN
+
+
+def test_unexpected_pipeline_exception_still_returns_the_stable_error(monkeypatch):
+    h = Harness(
+        monkeypatch, [GEN], rag_error=RuntimeError("boom: /srv/private/path.py")
+    )
+    response = h.ask()
+    _error(response, "unavailable", 503)
+    assert "boom" not in response.text and "private" not in response.text
