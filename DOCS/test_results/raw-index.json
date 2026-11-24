@@ -1138,6 +1138,13 @@
       ],
       "notes": "Source bodies and private addresses/credentials omitted. Initial harness dict-row assertion error retained separately; corrected SQL-only recheck documented. OCI labels and deployment timeout logs pending SSH."
     },
+    "2026-11-24-440-ask-md.json": {
+      "bytes": 3488,
+      "sha256": "183b3ceadbf4afd6fe597ccfc176e3d06d1418d20777dbb19189c9e268f9a386",
+      "produced_by": "POST .../ask through the frontend origin on the smoke_repo (README plus Python), step 6",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
     "2026-11-24-440-ask1.json": {
       "bytes": 3962,
       "sha256": "f2bd7fa0f130b768c2a6138db1b762b3d6bf0a9b067a100c541c227920e56fa0",
@@ -1163,6 +1170,34 @@
       "bytes": 943,
       "sha256": "e64e7343a41746ff3386b4037892ba61ac1a94f134c29c907359e089040cd67c",
       "produced_by": "script: classifies citation passage digest vs read-back interval text",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-step6-1-no-range.png": {
+      "bytes": 87474,
+      "sha256": "55bb52cfd4d1b3f03e715ec8c3b6003081807ded87d14fd1b8f16cd9bd57357b",
+      "produced_by": "Playwright screenshot: no-range citations with reason",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-step6-2-open-markdown.png": {
+      "bytes": 93775,
+      "sha256": "c46ec6959cf10a81599e1e756a576ae14aa0994f6a686a7149f9589cdd179b2a",
+      "produced_by": "Playwright screenshot: opening the Markdown file",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-step6-results.json": {
+      "bytes": 1029,
+      "sha256": "d3592372430cdc43d498da8c5ff3ef21ba67bfed91ace4ba1c03e19aa64e11aa",
+      "produced_by": "node step6.mjs (Playwright) step results",
+      "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
+      "notes": ""
+    },
+    "2026-11-24-440-step6.mjs": {
+      "bytes": 3401,
+      "sha256": "030ae4a30e805b15543e9aa45f868ae85fbc31f2164b4e139914b0c0af13b59f",
+      "produced_by": "Playwright script for step 6",
       "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
       "notes": ""
     },

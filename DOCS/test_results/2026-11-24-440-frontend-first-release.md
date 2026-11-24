@@ -3,7 +3,7 @@ title: "#440 product frontend first-release verification: local stack, real mode
 date: 2026-11-24
 type: test-results
 status: current
-summary: "Local run of the verification plan on one small repository. Eleven of twelve steps passed in Chromium and over HTTP through the frontend origin (step 9 with a poor error message); step 6 (a citation with no range) was not run live. 19 of 19 citations across three real questions carried ranges and every one read back to the same interval (14 byte-identical to the cited passage, 5 identical except the final newline). The run found and fixed one real bug (Ask returned a bare 500) that unit tests with fakes had missed."
+summary: "Local run of the verification plan on two small repositories. All twelve steps passed in Chromium and over HTTP through the frontend origin (step 9 with a poor error message; step 6 on a second small repository that contains a Markdown file). 19 of 19 citations across three real questions carried ranges and every one read back to the same interval (14 byte-identical to the cited passage, 5 identical except the final newline). The run found and fixed one real bug (Ask returned a bare 500) that unit tests with fakes had missed."
 tags: [evaluation, results, frontend, citations, issue-440, development-diagnostic]
 related:
   - "[Issue #440](https://github.com/sankar-ramamoorthy/rag-foundry-universal/issues/440)"
@@ -15,8 +15,8 @@ related:
 
 # #440 first-release verification (local run)
 
-**Evidence class: development measurement (ADR-054).** One small repository,
-author-chosen questions, a local developer machine. Not a held-out claim and not
+**Evidence class: development measurement (ADR-054).** Two small repositories
+(one Python-only, one with a README), author-chosen questions, a local developer machine. Not a held-out claim and not
 a statement about any deployed host. No host addresses or credentials are
 recorded. The run contacted the owner's model host for embeddings and
 generation, as the owner authorized for this run.
@@ -56,7 +56,7 @@ generation, as the owner authorized for this run.
 | 3 | Locate path and basename | **Pass** | `base.py` matched with a verified definition span (lines 16-24); the page states it is file search; selecting a file opens it in the shared viewer. The glob returned all four files, no cursor. |
 | 4 | Ask | **Pass** | Three real questions answered in 27.5 s, 20.7 s and 10.1 s through the frontend origin. The answer shows the generation, the limits and the consulted-passage label. |
 | 5 | Ranged citation: highlighted text equals stored source | **Pass** | In the browser, the highlighted lines for `text.py` 278-304 (27 lines) equal the source route's text for that interval line by line. Over HTTP all 19 cited intervals read back with the same range (below). |
-| 6 | Citation without a range | **Not run live** | The freshly indexed corpus produced no citation without a range. The behavior is covered by unit and UI tests only. |
+| 6 | Citation without a range | **Pass** | Run on a second repository (`/app/shared/smoke_repo`: a README plus three Python files, generation `98ea1f57-7459-43ea-888b-eb8336be294c`), because the first corpus produced none. A README question returned four citations: two `README.md` citations with no range and the stated reason "artifact range not verified", and two Python citations with ranges. In the browser the no-range citations stayed visible with that reason and offered no highlighted jump; "Open file (no highlight)" highlighted nothing and showed "Not available. Stored source unavailable", because Markdown source cannot be read (#430). |
 | 7 | Range yield | **Pass, small sample** | 19 of 19 citations carried a range across three questions, and 7 of 7 on a fourth question after incremental reuse. Not comparable to the 88.4% Mealie figure in #416: different repository, Python only, three questions. No regression observed. |
 | 8 | Generation change while a result is open | **Pass** | After the re-ingest, opening an old citation showed the stale notice and no source text; the next question was rejected with the stale banner; "Refresh and rerun my last question" produced an answer for the new generation only. |
 | 9 | Orchestrator unavailable | **Pass, with a defect** | With the orchestrator stopped the UI showed an error and recovered once it returned (nginx re-resolved the upstream). The message was "Unexpected response", which is not helpful (finding 2). |
@@ -105,9 +105,8 @@ For each of the 19 citations, the cited interval was read through
 ## Not verified
 
 - Anything on a deployed host (the Linux run is next).
-- A citation without a range, live (step 6).
-- Markdown citation ranges (#430) and any repository with documents or other
-  languages.
+- Markdown citation ranges and Markdown source reads (#430: the viewer cannot
+  show a README), and any repository with other languages.
 - Investigate against the real investigation service or any model run. The mode
   was disabled, and no run was made.
 - Larger repositories, concurrent users, long answers, or any audience beyond a
@@ -123,6 +122,6 @@ git-ignored.
 
 ## Status of #440
 
-Not closed. Step 6 was not run live and step 9's message needs the follow-up.
-The owner may accept step 6 as covered by tests, or it can be exercised on the
-Linux host against a generation indexed before the line-span migration.
+Not closed. Step 9's message needs the follow-up (#450), nothing has been
+verified on a deployed host, and the Investigate second pass waits on #439's
+adapter. The Linux run is the remaining local-to-deployed gap.
