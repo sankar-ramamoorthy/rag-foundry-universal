@@ -6,6 +6,10 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-25
+
+Added the [#440 Linux dev host verification report](/DOCS/test_results/2026-11-25-440-linux-deployed-run.md) and its raw capture index entries. Documentation only.
+
 ## 2026-11-24
 
 Added [Enabling Investigate](/DOCS/notes/20261124-enabling-investigate.md) (#439): the settings, what to expect from the service, and what enabling does not authorize. Documentation only.

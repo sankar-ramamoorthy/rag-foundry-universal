@@ -1080,7 +1080,12 @@ error message); the
 [report](/DOCS/test_results/2026-11-24-440-frontend-first-release.md) records the
 Markdown limitation it surfaced (#430), the bug it found and fixed (Ask returned
 a bare 500),
-and the follow-up #450. Nothing has been verified on a deployed host.
+and the follow-up #450. On the Linux dev host (build 6538e93, equal to main) the HTTP half of the
+verification plan passed on two repositories (2026-11-25;
+[report](/DOCS/test_results/2026-11-25-440-linux-deployed-run.md)): the browser
+steps and the steps that mutate or stop the stack were not run there, because the
+frontend port is bound to localhost. The run exposed a duplicate-line defect in the
+Orient limits (#453, fix in #454, not yet deployed).
 Investigate (#439) is built on Foundry's side and merged, and its HTTP adapter to
 the investigation service was added from the service's published OpenAPI artifact
 (0.3.0-draft, released by the owner): the mode is off by default and

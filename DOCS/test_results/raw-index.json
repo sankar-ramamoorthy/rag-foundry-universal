@@ -1257,6 +1257,146 @@
       "cited_by": "DOCS/test_results/2026-11-24-440-frontend-first-release.md",
       "notes": ""
     },
+    "2026-11-25-440-db-ro_paths.py": {
+      "bytes": 1303,
+      "sha256": "85b6c6e7025f6ea94f09eea36d955d6f0d8f9fe0e737a49f45a25b9718f42229",
+      "produced_by": "script (read-only; endpoints from the gitignored endpoints file, no address inside)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-db-ro_verify.py": {
+      "bytes": 8733,
+      "sha256": "8e8455f754971f1c4f9a4350a3cacd3e917c1467d74ea59c66dee120dc0cb713",
+      "produced_by": "script (read-only; endpoints from the gitignored endpoints file, no address inside)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-db-ro_verify2.py": {
+      "bytes": 3804,
+      "sha256": "db00a60782429474328b8cc6afd013d4709b5992b06a36fddacc1a552b1b18ee",
+      "produced_by": "script (read-only; endpoints from the gitignored endpoints file, no address inside)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-db-ro_verify3.py": {
+      "bytes": 3290,
+      "sha256": "2a7404f77dbb5d134fc887d21bd94b95800ba6b346c617504701e6de79914bdc",
+      "produced_by": "script (read-only; endpoints from the gitignored endpoints file, no address inside)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-ask1.json": {
+      "bytes": 6301,
+      "sha256": "3a4577f5aa8060519c1c4d6fdc51417d20b3c64f64a19d8df49042bbec63a80d",
+      "produced_by": "POST /v1/product/repos/{id}/ask against the deployed orchestrator",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-ask2.json": {
+      "bytes": 6448,
+      "sha256": "1ccf1a2dd03b71b00bc052ff14a6d9900cd0aa652fc10ab9cac0cb4558390660",
+      "produced_by": "POST /v1/product/repos/{id}/ask against the deployed orchestrator",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-ask3.json": {
+      "bytes": 5954,
+      "sha256": "d99281799cca2a260eb6e59e97c695c5044182480b0b6dfe0468d4124e2dc4c5",
+      "produced_by": "POST /v1/product/repos/{id}/ask against the deployed orchestrator",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-locate.json": {
+      "bytes": 2779,
+      "sha256": "a8d5a3bc257c57edfb2d86af795b8b4d79a6ff599e7b538d98002502eb1c2c8e",
+      "produced_by": "GET against the deployed product routes (readiness, orient or locate)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-orient.json": {
+      "bytes": 3142,
+      "sha256": "c9c6c223d7ba51b14756feaa82faa70181552e25a06daa31531adeb7411627a5",
+      "produced_by": "GET against the deployed product routes (readiness, orient or locate)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-readiness.json": {
+      "bytes": 276,
+      "sha256": "3de15ae235cd5040a2c3ced18b6113ad98573298b8ad698bad60e2a40e83ef85",
+      "produced_by": "GET against the deployed product routes (readiness, orient or locate)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux-verify-results.json": {
+      "bytes": 3153,
+      "sha256": "2ee82dd14879778312c990709a7419e842d87197187942ecec575d35c7e40ea3",
+      "produced_by": "step results written by linux_verify.py",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux_probe.py": {
+      "bytes": 2887,
+      "sha256": "3ad4a5bb4e50d065597076a0b0cad30c0810b244c7fc71891f5d57790a208938",
+      "produced_by": "script (read-only; endpoints from the gitignored endpoints file, no address inside)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-linux_verify.py": {
+      "bytes": 8310,
+      "sha256": "9803bc20b51017546c188c46334c02390780aa08e3c6cf7683af4256c848877f",
+      "produced_by": "script (read-only; endpoints from the gitignored endpoints file, no address inside)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-ask1.json": {
+      "bytes": 6989,
+      "sha256": "95c94f0fb4a1910fac436e66dbd91da0d636e5e5ab1b9a992ba92cf391c3508b",
+      "produced_by": "POST /v1/product/repos/{id}/ask against the deployed orchestrator",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-ask2.json": {
+      "bytes": 5815,
+      "sha256": "50de26f089221bef96451f73e233c23235344690e788a351503e2d53f859b063",
+      "produced_by": "POST /v1/product/repos/{id}/ask against the deployed orchestrator",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-ask3.json": {
+      "bytes": 5764,
+      "sha256": "769d5e26f7f3411e9c3ecca160ba2e73c95e098350e9b40b972153ee892b0e8a",
+      "produced_by": "POST /v1/product/repos/{id}/ask against the deployed orchestrator",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-locate.json": {
+      "bytes": 1643,
+      "sha256": "3147f0f6a26e7879c79abe10bda185239dcb7fdd9f3b7cdef1ffdbd4a011553e",
+      "produced_by": "GET against the deployed product routes (readiness, orient or locate)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-orient.json": {
+      "bytes": 89900,
+      "sha256": "30b150c228f43a37da4f6fa7308108972d0662fed17b131b605f277112a049bb",
+      "produced_by": "GET against the deployed product routes (readiness, orient or locate)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-readiness.json": {
+      "bytes": 275,
+      "sha256": "142ecdeda03d9e5c15780771d16f04920f5f912f5c014bdcef425227eb78b96b",
+      "produced_by": "GET against the deployed product routes (readiness, orient or locate)",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
+    "2026-11-25-440-mealie-verify-results.json": {
+      "bytes": 3060,
+      "sha256": "6035ce081177bd426fac42d88030f5e8c47a2cab5f76db361fedc3b1e25bfa01",
+      "produced_by": "step results written by linux_verify.py",
+      "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
+      "notes": ""
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
