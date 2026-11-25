@@ -218,3 +218,47 @@ describe("context changes", () => {
     expect(screen.queryByRole("button", { name: "pkg/mod.py" })).toBeNull();
   });
 });
+
+
+describe("overview limits match how the server builds the envelope (#453)", () => {
+  const reason =
+    "no explicit compose 'command:' -- entry point not trivially resolvable";
+  const realistic = {
+    ...orient,
+    gaps: [
+      { category: "entry_point", path: "docker-compose.yml#docs", reason },
+      { category: "entry_point", path: "docker-compose.yml#postgres", reason },
+    ],
+    envelope: {
+      ...orient.envelope,
+      // The server adds one unpathed note per gap, then the heuristic fields.
+      limitations: [
+        `entry_point: ${reason}`,
+        `entry_point: ${reason}`,
+        "heuristic field: test_dirs",
+        "heuristic field: docs_dirs",
+      ],
+    },
+  } as Schemas["ProductOrient"];
+
+  it("shows each gap once, with its path, and keeps the other notes", async () => {
+    await openRepo(makeApi({ orient: vi.fn(async () => ok(realistic)) }));
+    const overview = await screen.findByRole("region", { name: "Overview" });
+    const items = within(overview)
+      .getAllByRole("listitem")
+      .map((li) => li.textContent ?? "");
+    const entryPoint = items.filter((t) => t.includes("entry_point"));
+    expect(entryPoint).toHaveLength(2);
+    expect(entryPoint.some((t) => t.includes("(docker-compose.yml#docs)"))).toBe(true);
+    expect(entryPoint.some((t) => t.includes("(docker-compose.yml#postgres)"))).toBe(true);
+    expect(items.filter((t) => t === "heuristic field: test_dirs")).toHaveLength(1);
+    expect(items.filter((t) => t === "heuristic field: docs_dirs")).toHaveLength(1);
+  });
+
+  it("does not repeat an unpathed gap note", async () => {
+    await openRepo(makeApi());
+    const overview = await screen.findByRole("region", { name: "Overview" });
+    const items = within(overview).getAllByRole("listitem").map((li) => li.textContent ?? "");
+    expect(items.filter((t) => t.includes("services: no compose file found"))).toHaveLength(1);
+  });
+});
