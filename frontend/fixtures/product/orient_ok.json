@@ -7,6 +7,7 @@
       "coverage": "partial",
       "generation_id": "00000000-0000-4000-8000-000000000002",
       "limitations": [
+        "services: no compose file found",
         "test_dirs is heuristic"
       ],
       "repo_id": "00000000-0000-4000-8000-000000000001",
