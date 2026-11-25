@@ -37,11 +37,16 @@ export function OrientPanel({
     );
   }
   const o = orient.data;
+  // The server already turns every gap into an envelope note ("category:
+  // reason"). Show each gap once, with its path, and keep the other notes.
+  const gapNotes = new Set(o.gaps.map((g) => `${g.category}: ${g.reason}`));
   const limits = [
-    ...(o.envelope.limitations ?? []),
-    ...o.gaps.map(
-      (g) => `${g.category}${g.path ? ` (${g.path})` : ""}: ${g.reason}`,
-    ),
+    ...new Set([
+      ...(o.envelope.limitations ?? []).filter((t) => !gapNotes.has(t)),
+      ...o.gaps.map(
+        (g) => `${g.category}${g.path ? ` (${g.path})` : ""}: ${g.reason}`,
+      ),
+    ]),
   ];
   return (
     <section aria-label="Overview">
