@@ -1397,6 +1397,20 @@
       "cited_by": "DOCS/test_results/2026-11-25-440-linux-deployed-run.md",
       "notes": ""
     },
+    "2026-11-26-439-investigate-start.json": {
+      "bytes": 201,
+      "sha256": "7b686d43e4cee073a87847a13222bd0e1a5cebd852547fd8e8c27e67874d2e71",
+      "produced_by": "the product API's response to the single authorized submission",
+      "cited_by": "DOCS/test_results/2026-11-26-439-first-contact-real-service.md",
+      "notes": ""
+    },
+    "2026-11-26-439-linux_investigate.py": {
+      "bytes": 6208,
+      "sha256": "20ee3a4c722f8075e6ffb2383d90f366bda84baf58cce2f150e4b04537e553b3",
+      "produced_by": "script that makes exactly one submission and never retries; endpoints from the gitignored endpoints file, no address inside",
+      "cited_by": "DOCS/test_results/2026-11-26-439-first-contact-real-service.md",
+      "notes": ""
+    },
     "20261104-status-update-307-hatch-reingest.md": {
       "bytes": 2477,
       "sha256": "8ada6b7aa521f9264ab378344eece66dc64ebd4a2867ddc80e9c4fb5065c2957",
