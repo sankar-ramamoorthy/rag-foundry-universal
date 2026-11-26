@@ -1090,8 +1090,11 @@ Investigate (#439) is built on Foundry's side and merged, and its HTTP adapter t
 the investigation service was added from the service's published OpenAPI artifact
 (0.3.0-draft, released by the owner): the mode is off by default and
 [how to enable it](/DOCS/notes/20261124-enabling-investigate.md) is documented.
-The adapter is verified against mock transports and a schema conformance test,
-not against the real service or a model.
+The adapter is verified against mock transports and a schema conformance test.
+First contact with the real service (2026-11-26,
+[report](/DOCS/test_results/2026-11-26-439-first-contact-real-service.md)): the
+authorized Haiku run was refused because the service's single metered run was
+already used, so no investigation has run yet.
 The [access enforcement review](/DOCS/notes/20261124-product-api-access-enforcement-review.md)
 (#438, proposed, owner decides) records that no authentication, caller identity or
 rate limit exists in the orchestrator or ingestion service and that all service
