@@ -6,6 +6,10 @@ Routine content edits are tracked by `git log`, not here; this file is
 for changes that affect how the knowledge base itself is organized or
 governed.
 
+## 2026-11-26
+
+Added the [Ask capability-boundary note](/DOCS/notes/20261126-ask-capability-boundary-and-architecture-views.md): what Ask (D1) is designed to answer, with the reviewed Ask sequence. Documentation only; no proposals.
+
 ## 2026-11-25
 
 Added the [#440 Linux dev host verification report](/DOCS/test_results/2026-11-25-440-linux-deployed-run.md) and its raw capture index entries. Documentation only.
