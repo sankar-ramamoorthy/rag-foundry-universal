@@ -1,0 +1,17 @@
+flowchart TB
+    Q["1. User asks a question"]
+    EMB["2. Embed question<br/>Embedding model"]
+    SEARCH["3. Vector search<br/>Top 5 relevant chunks"]
+    GRAPH["4. Graph expansion<br/>Find related code — 1 hop"]
+    FETCH["5. Retrieve passages<br/>Seed and related artifacts"]
+    SELECT["6. Select context<br/>Rank, deduplicate and apply byte budget"]
+    LLM["7. LLM generates answer<br/>Using selected passages"]
+    ANSWER["8. Return answer<br/>With sources and citations"]
+
+    Q --> EMB
+    EMB --> SEARCH
+    SEARCH --> GRAPH
+    GRAPH --> FETCH
+    FETCH --> SELECT
+    SELECT --> LLM
+    LLM --> ANSWER

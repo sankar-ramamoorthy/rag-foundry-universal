@@ -142,9 +142,13 @@ evaluates nor proposes using them. No decision is recorded.
 
 ## Appendix: D1, one Ask request on the product path
 
-The three working diagrams (L1 logical, P1 physical, D1 flow) exist as
-untracked drafts under `DOCS/architecture/` and were not changed here. The
-sequence below is the reviewed version this note relies on.
+The three working diagrams are committed alongside this note as Mermaid
+sources: [L1 logical](/DOCS/architecture/foundry-L1-logical-architecture.mmd),
+[P1 physical](/DOCS/architecture/foundry-P1-physical-architecture.mmd) and
+[D1 flow](/DOCS/architecture/foundry-D1-ask-data-flow.mmd). The saved P1 and
+D1 are simplified overviews (D1 is a stage flowchart). The chronological
+sequence below was reviewed against the code and is the version this note
+relies on.
 
 ```mermaid
 sequenceDiagram
