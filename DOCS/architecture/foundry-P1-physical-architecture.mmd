@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph UI["User interfaces"]
+        GR["Gradio UI"]
+        RE["React UI"]
+    end
+
+    subgraph DOCKER["Docker — Foundry"]
+        FE["Frontend / nginx"]
+        OR["RAG Orchestrator"]
+        IN["Ingestion Service"]
+        VS["Vector Store Service"]
+        LL["LLM Service"]
+        DB[("PostgreSQL + pgvector")]
+    end
+
+    EM["Embedding Model / Ollama"]
+    GM["Generation Model"]
+
+    RE --> FE
+    FE -->|"Product API"| OR
+
+    GR -->|"Ask"| OR
+    GR -->|"Repository management"| IN
+
+    OR -->|"Repository knowledge"| IN
+    OR -->|"Vector search"| VS
+    OR -->|"Generate answer"| LL
+    OR -->|"Embed question"| EM
+
+    IN -->|"Read repository data"| DB
+    VS -->|"Vector queries"| DB
+
+    IN -->|"Vector operations"| VS
+    IN -->|"Embed source chunks"| EM
+
+    LL -->|"Model inference"| GM

@@ -1,0 +1,70 @@
+flowchart TB
+    subgraph CLIENTS["1. Entry points"]
+        G["Gradio"]
+        R["React"]
+        E["External API clients"]
+    end
+
+    subgraph API["2. Foundry interfaces"]
+        P["Product API"]
+        A["Ask /v1/rag"]
+        N["ORIENT / LOCATE / Source Read"]
+        T["TRACE / IMPACT / Evidence"]
+        CAT["Repository List / Readiness"]
+    end
+
+    subgraph LOGIC["3. Knowledge access and answering"]
+        RET["Semantic retrieval<br/>Top 5 seeds"]
+        EXP["One-hop graph expansion"]
+        FETCH["Fetch document chunks<br/>Up to 3 each"]
+        CTX["Rank and budget context"]
+        GEN["Answer generation"]
+        HAR["Deterministic Python inventory"]
+        NAV["Source navigation"]
+        STRUCT["Graph traversal"]
+    end
+
+    subgraph DB["4. Persistent storage — PostgreSQL"]
+        NODES[("Source nodes and relationships")]
+        REQ[("Ingestion requests<br/>Status, lineage, inventory")]
+        VC[("Vector chunks")]
+    end
+
+    subgraph MEM["5. Orchestrator memory"]
+        CG["Generation-scoped graph cache"]
+    end
+
+    LLM["LLM service"]
+
+    G --> A
+    R --> P
+    P -->|"In-process"| A
+    P --> N
+    P --> CAT
+    E --> N
+    E -.-> A
+    E -.-> T
+
+    A --> RET
+    A -->|"Inventory pattern"| HAR
+    RET --> CTX
+    RET --> EXP
+    RET --> FETCH
+    EXP --> CG
+    EXP --> FETCH
+    FETCH --> VC
+    FETCH --> CTX
+    CTX --> GEN
+    GEN --> LLM
+
+    N --> NAV
+    N --> HAR
+    NAV --> NODES
+    NAV --> REQ
+    HAR --> NODES
+    CAT --> NODES
+    CAT --> REQ
+
+    T --> STRUCT
+    STRUCT --> CG
+    NODES -->|"HTTP load and cache"| CG
